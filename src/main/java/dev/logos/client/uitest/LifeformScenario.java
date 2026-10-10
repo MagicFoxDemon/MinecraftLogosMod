@@ -36,7 +36,7 @@ public class LifeformScenario implements UIScenario {
 
     private ManaLifeform spawn(ServerLevel level, net.minecraft.server.level.ServerPlayer p, int lv, double x) {
         ManaLifeform lf = LogosMod.MANA_LIFEFORM.get().create(level, EntitySpawnReason.MOB_SUMMONED);
-        lf.snapTo(ORIGIN.getX() + x, ORIGIN.getY() + 1.5, ORIGIN.getZ() + 4.5, 180, 0);
+        lf.snapTo(ORIGIN.getX() + x, ORIGIN.getY() + 1.2, ORIGIN.getZ() + 2.2, 180, 0);
         lf.setLifeLevel(lv);
         lf.setMana(ManaLifeform.maxMana(lv));
         Familiars.bindForTest(lf, p);
@@ -52,11 +52,11 @@ public class LifeformScenario implements UIScenario {
                 .clearArea(ORIGIN.offset(0, 5, 6), 8)
                 .fill(ORIGIN.offset(-10, 0, -6), ORIGIN.offset(10, 0, 18), Blocks.SMOOTH_STONE.defaultBlockState())
                 // Within 6 blocks of both, so they hover in place instead of walking up to the camera.
-                .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() - 0.5, 0, 5)
+                .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() - 0.5, 0, 25)
                 .server("summon a level-1 and a level-5 lifeform", sc -> {
                     var p = sc.player();
-                    small = spawn(p.level(), p, 1, -1.2);
-                    big = spawn(p.level(), p, 5, 2.6);
+                    small = spawn(p.level(), p, 1, -0.3);
+                    big = spawn(p.level(), p, 5, 1.4);
                     small.core.setItem(0, SpellPages.write(new ItemStack(LogosMod.SPELL_PAGE.get()), "(spell :name \"灵弹\" :mana 20 (damage (foe) 6))", null));
                 })
                 .ticks(30)

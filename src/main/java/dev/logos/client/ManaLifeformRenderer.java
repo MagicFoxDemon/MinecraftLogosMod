@@ -25,7 +25,7 @@ public class ManaLifeformRenderer<R extends LivingEntityRenderState & GeoRenderS
 
     public ManaLifeformRenderer(EntityRendererProvider.Context context) {
         super(context, new DefaultedEntityGeoModel<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_lifeform")));
-        this.shadowRadius = 0.4f;
+        this.shadowRadius = 0.2f;
     }
 
     @Override

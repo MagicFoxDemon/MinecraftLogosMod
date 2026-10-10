@@ -72,8 +72,8 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     public static final int CAST_TICKS = 48, RELEASE_AT = 24;
     /** The startup animation, during which the orbit stays still. */
     public static final int STARTUP_TICKS = 76;
-    /** Base hitbox at level 1 (render scale 0.4); it grows with the model. */
-    private static final EntityDimensions BASE = EntityDimensions.scalable(0.9f, 1.5f);
+    /** Hitbox at level 1, about an allay's; it grows with the model. */
+    private static final EntityDimensions BASE = EntityDimensions.scalable(0.4f, 0.5f);
     private static final int CORE_SLOTS = MAX_LEVEL;
 
     private static final EntityDataAccessor<Integer> LEVEL = SynchedEntityData.defineId(ManaLifeform.class, EntityDataSerializers.INT);
@@ -135,9 +135,12 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         return Mth.clamp(level, 1, MAX_LEVEL);
     }
 
-    /** Model scale: 0.4 at level 1 up to 0.6 at level 5 (the model itself is nearly four blocks tall). */
+    /**
+     * Model scale. The model is built nearly four blocks tall for its detail; the creature itself is
+     * small, like an allay: half a block tall at level 1 (0.13), growing to about 0.8 blocks at level 5 (0.21).
+     */
     public static float renderScale(int level) {
-        return 0.35f + 0.05f * Mth.clamp(level, 1, MAX_LEVEL);
+        return 0.11f + 0.02f * Mth.clamp(level, 1, MAX_LEVEL);
     }
 
     // ---- state ----------------------------------------------------------------------------------
@@ -274,11 +277,12 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
                 if (mana() <= 0) goDormant();
             }
             if (isDormant()) getNavigation().stop();
-        } else if (!isDormant() && tickCount % 3 == 0) {
-            // A loose glitter of mana about its core.
-            double r = getBbWidth() * 0.7;
-            level().addParticle(ParticleTypes.END_ROD, getX() + (random.nextDouble() - 0.5) * r * 2, getY() + getBbHeight() * (0.3 + random.nextDouble() * 0.5),
-                    getZ() + (random.nextDouble() - 0.5) * r * 2, 0, 0.01, 0);
+        } else if (!isDormant() && tickCount % 5 == 0) {
+            // Small glyphs drifting into its core (an enchanting particle flies from pos + velocity to pos).
+            Vec3 core = position().add(0, getBbHeight() * 0.5, 0);
+            double r = getBbWidth() * 1.5;
+            level().addParticle(ParticleTypes.ENCHANT, core.x, core.y, core.z,
+                    (random.nextDouble() - 0.5) * r, random.nextDouble() * r * 0.5, (random.nextDouble() - 0.5) * r);
         }
     }
 
@@ -382,7 +386,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
             receiveMana(fuel.mana());
             if (!player.getAbilities().instabuild) held.shrink(1);
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 1.2f + random.nextFloat() * 0.4f);
-            ((ServerLevel) level()).sendParticles(ParticleTypes.END_ROD, getX(), getY() + getBbHeight() / 2, getZ(), 12, 0.3, 0.3, 0.3, 0.05);
+            ((ServerLevel) level()).sendParticles(ParticleTypes.END_ROD, getX(), getY() + getBbHeight() / 2, getZ(), 6, 0.15, 0.15, 0.15, 0.02);
             player.sendOverlayMessage(status());
             return InteractionResult.SUCCESS;
         }

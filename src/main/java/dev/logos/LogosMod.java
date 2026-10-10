@@ -150,7 +150,7 @@ public class LogosMod {
     public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.ManaLifeform>> MANA_LIFEFORM =
             ENTITY_TYPES.register("mana_lifeform", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ManaLifeform>of(
                             dev.logos.runtime.ManaLifeform::new, net.minecraft.world.entity.MobCategory.MISC)
-                    .sized(0.9f, 1.5f).clientTrackingRange(10)
+                    .sized(0.4f, 0.5f).clientTrackingRange(10)
                     .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
     /** Items that give a mana lifeform mana when it is fed with them (data/logos/data_maps/item/mana_fuel.json). */
