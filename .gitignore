@@ -6,6 +6,6 @@ out/
 *.iml
 repo/
 runs/
-net/
+/net/
 素材/
 README.md
