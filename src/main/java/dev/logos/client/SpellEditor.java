@@ -22,6 +22,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphPanel;
 import dev.logos.LogosMod;
 import dev.logos.graph.GraphBuilder;
 import dev.logos.graph.GraphCompiler;
+import dev.logos.graph.SpecialNodes;
 import dev.logos.graph.SpellGraph;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
@@ -42,7 +43,8 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
  * The spell workbench: a node-graph canvas on the left (typed ports, wires snap only when the
- * slot shapes agree) and, on the right, the live compilation of what is drawn.
+ * slot shapes agree) and, on the right, an overview of what is drawn: whether it holds, roughly what
+ * one cast costs against what it injects, and its intent — inferred, or set here by the player.
  */
 public final class SpellEditor {
     /** Where the inscription table holding the page stands; saving writes into that page. */
@@ -51,7 +53,10 @@ public final class SpellEditor {
     private final PageTier tier;
     private final GraphEditorView editor = new GraphEditorView();
     private final Label status = new Label();
-    private final Label source = new Label();
+    private final Label overview = new Label();
+    private final Selector<SpecialNodes.IntentChoice> intent = new Selector<>();
+    /** Set while the selector is being matched to the graph, so that does not count as the player choosing. */
+    private boolean syncingIntent;
     private SpellGraph graph;
     /** Ticks until the canvas is framed around a freshly loaded graph (node sizes need a layout pass first). */
     private int fitIn = -1;
@@ -132,14 +137,28 @@ public final class SpellEditor {
         inscribe.setOnClick(ev -> inscribe());
 
         status.setId("status");
-        source.setId("source");
-        for (Label l : List.of(status, source)) {
+        overview.setId("overview");
+        for (Label l : List.of(status, overview)) {
             l.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true));
             l.layout(x -> x.widthPercent(100));
         }
-        ScrollerView sourceView = new ScrollerView();
-        sourceView.layout(l -> l.widthPercent(100).flex(1));
-        sourceView.addScrollViewChild(source);
+        ScrollerView overviewView = new ScrollerView();
+        overviewView.layout(l -> l.widthPercent(100).flex(1));
+        overviewView.addScrollViewChild(overview);
+
+        // The intent a lifeform files this spell under: inferred unless the player picks one.
+        intent.setId("intent");
+        intent.setCandidateUIProvider(UIElementProvider.text(c -> Component.translatable("dev.logos.graph.SpecialNodes$IntentChoice." + c.name())));
+        intent.setCandidates(List.of(SpecialNodes.IntentChoice.values()));
+        intent.setSelected(SpecialNodes.IntentChoice.AUTO, false);
+        intent.layout(l -> l.widthPercent(100));
+        intent.setOnValueChanged(choice -> {
+            if (syncingIntent || choice == null) return;
+            SpecialNodes.SpellRoot root = root();
+            if (root == null) return;
+            root.setOption(SpecialNodes.SpellRoot.INTENT, choice);
+            graph.invalidate();
+        });
 
         UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(4).widthPercent(100));
         row.addChildren(loadTemplate, clear);
@@ -152,8 +171,10 @@ public final class SpellEditor {
                 templates,
                 row,
                 status,
-                new Label().setText(Component.literal("🜍 生成的术式")),
-                sourceView,
+                new Label().setText(Component.literal("☷ 总览")),
+                new Label().setText(Component.literal("意图（魔力生命体据此决定何时施放）")),
+                intent,
+                overviewView,
                 inscribe);
 
         UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).widthPercent(100).heightPercent(100));
@@ -176,7 +197,35 @@ public final class SpellEditor {
         } else {
             status.setText(Component.literal("✗ " + r.error()));
         }
-        source.setText(Component.literal(r.source() == null ? "" : r.source()));
+        overview.setText(Component.literal(r.ok() ? overview(r.spell()) : ""));
+        SpecialNodes.SpellRoot root = root();
+        SpecialNodes.IntentChoice chosen = root == null ? null : root.option(SpecialNodes.SpellRoot.INTENT, SpecialNodes.IntentChoice.class);
+        syncingIntent = true;
+        intent.setValue(chosen == null ? SpecialNodes.IntentChoice.AUTO : chosen, false);
+        syncingIntent = false;
+    }
+
+    private SpecialNodes.@org.jspecify.annotations.Nullable SpellRoot root() {
+        for (var n : graph.getNodes()) if (n instanceof SpecialNodes.SpellRoot r) return r;
+        return null;
+    }
+
+    /** Mana against the estimate, reach and intent, in the player's terms; the source itself is not shown. */
+    private static String overview(dev.logos.lang.Spell s) {
+        var p = s.profile();
+        StringBuilder sb = new StringBuilder();
+        double left = s.mana() - p.estimate();
+        sb.append("✦ 一次施放估计约需 ").append(Math.round(p.estimate())).append(" 魔力（注入 ").append(Node.fmt(s.mana())).append("）\n");
+        if (left < 0) sb.append("⚠ 估计比注入的多 ").append(Math.round(-left)).append("：术式可能在中途魔力耗尽而熄灭\n");
+        else if (left > Math.max(5, s.mana() * 0.5)) sb.append("∴ 估计会剩下约 ").append(Math.round(left)).append("，自然结束时化为游离魔力，可以少注入一些\n");
+        else sb.append("∴ 注入大致合适\n");
+        sb.append("⚑ 意图：").append(p.intentsZh()).append(p.declared() ? "（已指定）" : "（推测）").append('\n');
+        if (p.range() > 0) sb.append("➶ 作用距离约 ").append(Math.round(p.range())).append(" 格\n");
+        if (!p.assumptions().isEmpty()) {
+            sb.append("\n估算依据：\n");
+            for (String a : p.assumptions()) sb.append(" · ").append(a).append('\n');
+        }
+        return sb.toString().strip();
     }
 
     /** The inscribe button saves through the editor, so it shares one path with the editor's own save (ctrl+S). */

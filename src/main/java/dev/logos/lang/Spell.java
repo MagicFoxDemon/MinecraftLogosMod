@@ -10,8 +10,9 @@ import java.util.List;
  * @param immolate  whether a wand with Formula Immolation may burn the page to inject past its capacity (on by default)
  * @param mana      mana injected per invocation; the whole spell lifecycle draws from this pool
  * @param stability static complexity cost, must fit the caster's stability capacity
+ * @param profile   what it is for and roughly what it costs (see {@link SpellProfile})
  */
-public record Spell(String name, String trigger, boolean affectsPlayers, boolean immolate, double mana, double stability, List<Node> body, List<String> notes, String source) {
+public record Spell(String name, String trigger, boolean affectsPlayers, boolean immolate, double mana, double stability, List<Node> body, List<String> notes, String source, SpellProfile profile) {
     public static final List<String> TRIGGERS = List.of("cast", "hurt", "attack", "kill");
 
     public boolean isPassive() {

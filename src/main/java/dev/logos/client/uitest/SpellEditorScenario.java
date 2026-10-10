@@ -72,7 +72,7 @@ public class SpellEditorScenario implements UIScenario {
                 .awaitModularUI()
                 .ticks(10)
                 .checkTextContains("#status", "成立")
-                .checkTextContains("#source", "(projectile")
+                .checkTextContains("#overview", "意图")
                 .screenshot("fireball_graph")
                 .click("#inscribe")
                 .waitUntilServer("the page on the table keeps the drawing", sc ->

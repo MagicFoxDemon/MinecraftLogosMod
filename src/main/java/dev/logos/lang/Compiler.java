@@ -85,6 +85,7 @@ public final class Compiler {
         String name = "无名术式";
         String trigger = "cast";
         double mana = DEFAULT_MANA;
+        List<Intent> declared = new ArrayList<>();
         List<SExpr> bodyRaw = top;
         if (top.size() == 1 && top.getFirst() instanceof ListExpr l && "spell".equals(l.head())) {
             bodyRaw = new ArrayList<>();
@@ -119,7 +120,15 @@ public final class Compiler {
                             }
                             immolate = ia.text().equals("true");
                         }
-                        default -> throw err(a, "spell 没有 " + a.text() + " 插槽，可用: :name :mana :trigger :players :immolate");
+                        case ":intent" -> {
+                            // One intent, or several joined by +, the first filing the spell: heal, area+control
+                            for (String w : v.toString().split("[+]")) {
+                                Intent in = Intent.parse(w.strip());
+                                if (in == null) throw err(v, "未知的意图 '" + w + "'，可用: " + Intent.words() + "（几个用 + 连起来，第一个为主）");
+                                if (!declared.contains(in)) declared.add(in);
+                            }
+                        }
+                        default -> throw err(a, "spell 没有 " + a.text() + " 插槽，可用: :name :mana :trigger :players :immolate :intent");
                     }
                 } else {
                     bodyRaw.add(it);
@@ -130,7 +139,7 @@ public final class Compiler {
         Scope root = new Scope(!trigger.equals("cast"), Map.of(), List.of(), 0, false);
         List<Node> body = statements(bodyRaw, root);
         if (recursive) notes.add("含有递归 (recurse)：每层递归都会重新支付魔力，最多 " + LogosConfig.maxRecursion() + " 层（配置 maxRecursion）");
-        return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src);
+        return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src, SpellProfile.of(body, declared));
     }
 
     private List<Node> statements(List<SExpr> raw, Scope s) {

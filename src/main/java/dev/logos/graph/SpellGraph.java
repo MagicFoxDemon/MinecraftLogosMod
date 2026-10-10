@@ -61,6 +61,12 @@ public class SpellGraph extends Graph {
         return last;
     }
 
+    /** Recompiles now, as after an edit: for changes made from outside the canvas (the overview's intent picker). */
+    public void invalidate() {
+        last = GraphCompiler.compile(this);
+        listeners.forEach(Runnable::run);
+    }
+
     @Override
     public void onGraphChanged(GraphLogger logger) {
         last = GraphCompiler.compile(this);

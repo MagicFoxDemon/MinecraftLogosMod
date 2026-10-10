@@ -32,6 +32,19 @@ public final class SpecialNodes {
         }
     }
 
+    /** What the spell is for, as a lifeform reads it: AUTO lets the compiler infer it from the runes. */
+    public enum IntentChoice {
+        AUTO, STRIKE, AREA, CONTROL, HEAL, WARD, MOVE, UTILITY;
+
+        public dev.logos.lang.@org.jspecify.annotations.Nullable Intent intent() {
+            return this == AUTO ? null : dev.logos.lang.Intent.valueOf(name());
+        }
+
+        public static IntentChoice of(dev.logos.lang.@org.jspecify.annotations.Nullable Intent intent) {
+            return intent == null ? AUTO : valueOf(intent.name());
+        }
+    }
+
     /** ☉ The entry point: spell name, injected mana and invocation trigger. */
     @NodeAttribute(name = "spell", group = INVOCATION, graphTypes = SpellGraph.class, priority = 100)
     public static class SpellRoot extends LogosNode {
@@ -40,6 +53,7 @@ public final class SpecialNodes {
         public static final String TRIGGER = "trigger";
         public static final String PLAYERS = "players";
         public static final String IMMOLATE = "immolate";
+        public static final String INTENT = "intent";
         public static final String START = "start";
 
         @Override
@@ -70,6 +84,7 @@ public final class SpecialNodes {
             context.addOption(TRIGGER, Trigger.class).withDefaultValue(Trigger.CAST).withDisplayName(Component.literal("启式"));
             context.addOption(PLAYERS, Boolean.class).withDefaultValue(false).withDisplayName(Component.literal("影响玩家"));
             context.addOption(IMMOLATE, Boolean.class).withDefaultValue(true).withDisplayName(Component.literal("允许焚式"));
+            context.addOption(INTENT, IntentChoice.class).withDefaultValue(IntentChoice.AUTO).withDisplayName(Component.literal("意图"));
         }
 
         @Override

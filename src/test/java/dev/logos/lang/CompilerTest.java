@@ -16,12 +16,28 @@ class CompilerTest {
         for (Map.Entry<String, String> e : Examples.ALL.entrySet()) {
             try {
                 Spell s = Compiler.compile(e.getValue());
-                System.out.printf("%-16s %-10s mana=%-5s stability=%-6s notes=%s%n", e.getKey(), s.trigger(), Node.fmt(s.mana()), Node.fmt(s.stability()), s.notes());
+                System.out.printf("%-16s %-10s mana=%-5s est=%-6s intents=%-14s range=%-4s stability=%-6s notes=%s%n", e.getKey(), s.trigger(), Node.fmt(s.mana()),
+                        Node.fmt(s.profile().estimate()), s.profile().intents(), Math.round(s.profile().range()), Node.fmt(s.stability()), s.notes());
                 assertTrue(s.stability() <= 80, e.getKey() + " exceeds default stability: " + s.stability());
             } catch (LogosError err) {
                 throw new AssertionError(e.getKey() + ": " + err.describe(), err);
             }
         }
+    }
+
+    /** Intents are read off the runes unless declared; the estimate prices the runes that run. */
+    @Test
+    void intentProfile() {
+        assertEquals(Intent.STRIKE, Compiler.compile("(spell :mana 20 (damage (foe) 6))").profile().primary());
+        assertEquals(Intent.HEAL, Compiler.compile("(spell :trigger hurt :mana 20 (heal (master) 4))").profile().primary());
+        assertEquals(Intent.AREA, Compiler.compile("(spell :mana 40 (damage-all (enemies) 5 fire))").profile().primary());
+        Spell declared = Compiler.compile("(spell :intent ward+heal :mana 20 (heal (master) 4))");
+        assertEquals(List.of(Intent.WARD, Intent.HEAL), declared.profile().intents());
+        assertTrue(declared.profile().declared());
+        // heal 4 = 6 mana; damage 6 physical = 4.8
+        assertEquals(6, Compiler.compile("(spell :mana 20 (heal (master) 4))").profile().estimate(), 1e-6);
+        assertEquals(4.8, Compiler.compile("(spell :mana 20 (damage (foe) 6))").profile().estimate(), 1e-6);
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell :intent dance (damage (foe) 6))"));
     }
 
     @Test

@@ -96,6 +96,11 @@ public final class GraphCompiler {
                 items.add(atom(root, ":immolate"));
                 items.add(atom(root, "false"));
             }
+            SpecialNodes.IntentChoice intent = root.option(SpellRoot.INTENT, SpecialNodes.IntentChoice.class);
+            if (intent != null && intent.intent() != null) {
+                items.add(atom(root, ":intent"));
+                items.add(atom(root, intent.intent().word));
+            }
             List<SExpr> body = chain(root.out(SpellRoot.START));
             if (body.isEmpty()) throw new GraphError(root, "启式的 ▶ 施放 还没有连接任何行动");
             items.addAll(body);

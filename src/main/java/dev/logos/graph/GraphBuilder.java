@@ -56,6 +56,8 @@ public final class GraphBuilder {
         root.setOption(SpellRoot.TRIGGER, Trigger.of(spell.trigger()));
         root.setOption(SpellRoot.PLAYERS, spell.affectsPlayers());
         root.setOption(SpellRoot.IMMOLATE, spell.immolate());
+        // Only a declared intent is kept on the node; an inferred one is worked out again on compiling.
+        root.setOption(SpellRoot.INTENT, spell.profile().declared() ? SpecialNodes.IntentChoice.of(spell.profile().primary()) : SpecialNodes.IntentChoice.AUTO);
         b.y = height(root) + GAP_Y;
         b.chain(spell.body(), root.out(SpellRoot.START), x);
         return b.graph;
