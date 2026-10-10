@@ -46,7 +46,8 @@ public final class LogosGameTests {
             "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects",
             "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
-            "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed");
+            "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed",
+            "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role");
 
     private LogosGameTests() {}
 
@@ -90,6 +91,11 @@ public final class LogosGameTests {
         FUNCTIONS.register("lifeform_summon_rules", () -> LifeformGameTests::summonRules);
         FUNCTIONS.register("lifeform_casts_attack_page", () -> LifeformGameTests::castsAttackPage);
         FUNCTIONS.register("lifeform_dormant_and_fed", () -> LifeformGameTests::dormantAndFed);
+        FUNCTIONS.register("lifeform_hovers", () -> LifeformGameTests::hoversAtMaster);
+        FUNCTIONS.register("lifeform_combo", () -> LifeformGameTests::comboWhenRich);
+        FUNCTIONS.register("lifeform_heals_master", () -> LifeformGameTests::healsMaster);
+        FUNCTIONS.register("lifeform_forages", () -> LifeformGameTests::foragesFreeMana);
+        FUNCTIONS.register("lifeform_role", () -> LifeformGameTests::roleByStance);
         FUNCTIONS.register("construct_stops_movement", () -> ConstructGameTests::wallStopsMovement);
         FUNCTIONS.register("construct_one_way_arrows", () -> ConstructGameTests::oneWayStopsArrows);
         FUNCTIONS.register("construct_shields_explosion", () -> ConstructGameTests::wallShieldsExplosion);

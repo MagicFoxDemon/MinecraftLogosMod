@@ -171,6 +171,19 @@ public final class FreeManaEntity extends Entity {
         return m.mana < m.maxMana && p.getAttributeValue(LogosMod.MANA_ABSORPTION) > 0;
     }
 
+    /**
+     * A vessel (a mana lifeform) draws this in at {@code efficiency}: what fits is taken, the rest
+     * stays here. Returns the mana the vessel gained.
+     */
+    public double drainInto(ManaVessel vessel, double efficiency) {
+        if (!isAlive() || efficiency <= 0) return 0;
+        double gained = vessel.receiveMana(amount() * efficiency);
+        double left = amount() - gained / efficiency;
+        if (left <= 1e-4) discard();
+        else setAmount(left);
+        return gained;
+    }
+
     /** Gathered at the player's efficiency; what does not fit in their pool stays here. */
     @Override
     public void playerTouch(Player player) {

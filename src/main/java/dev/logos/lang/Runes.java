@@ -746,18 +746,29 @@ public final class Runes {
                     }
                     return null;
                 });
-        def("stance", EFFECT, ACTION).eachOr("familiar", "(familiar)").kw("hunt", FILTER, null).kw("radius", NUM, null).stab(1)
+        def("stance", EFFECT, ACTION).eachOr("familiar", "(familiar)").kw("hunt", FILTER, null).kw("radius", NUM, null).kw("role", TEXT, null).stab(1)
                 .doc("设置使魔属性（姿态）：:hunt 是它主动猎杀的对象，如 (kind hostile)、\"#minecraft:undead\"；"
                         + "没有你的战斗时，它会去打 :radius 格内（默认 " + (int) dev.logos.runtime.Familiars.HUNT_RADIUS + "，最多 "
                         + (int) dev.logos.runtime.Familiars.MAX_HUNT_RADIUS + "）离它最近、它或你看得见的那个；驻守时以驻守点为圆心。"
                         + "你开战或下令时以你的目标为先。(kind none) 让它收手。只写的项才改。"
-                        + "绝不猎杀你、你的使魔和宠物，其他玩家要 :players true。不连使魔时是最后召唤的那只。每只 2 魔力")
+                        + "绝不猎杀你、你的使魔和宠物，其他玩家要 :players true。"
+                        + ":role 只对魔力生命体有效，调整它的取舍：\"auto\" 自然（默认）、\"striker\" 进攻、\"guard\" 护卫、\"support\" 辅助，也可以写中文。"
+                        + "不连使魔时是最后召唤的那只。每只 2 魔力")
                 .exec((n, c) -> {
-                    Node hunt = kw(n, "hunt"), radius = kw(n, "radius");
+                    Node hunt = kw(n, "hunt"), radius = kw(n, "radius"), roleNode = kw(n, "role");
+                    dev.logos.runtime.ManaLifeform.Role role = null;
+                    if (roleNode != null) {
+                        role = dev.logos.runtime.ManaLifeform.Role.parse(text(roleNode, c).strip());
+                        if (role == null) {
+                            c.inst().terminate(":role 只能是 auto / striker / guard / support（自然 / 进攻 / 护卫 / 辅助），不是 " + text(roleNode, c));
+                            return null;
+                        }
+                    }
                     for (Entity t : entities(n.arg(0), c)) {
                         if (!(t instanceof net.minecraft.world.entity.Mob m) || !c.inst().caster.getUUID().equals(dev.logos.runtime.Familiars.masterOf(m))) continue;
                         if (!c.inst().spend(2, "stance")) return null;
                         dev.logos.runtime.Familiars.setStance(m, hunt == null ? null : filter(hunt, c), c.inst(), radius == null ? null : num(radius, c));
+                        if (role != null && m instanceof dev.logos.runtime.ManaLifeform lf) lf.setRole(role);
                     }
                     return null;
                 });

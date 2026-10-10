@@ -8,6 +8,8 @@ import dev.logos.runtime.Casting;
 import dev.logos.runtime.Familiars;
 import dev.logos.runtime.ManaLifeform;
 import dev.logos.runtime.SpellInstance;
+import dev.logos.runtime.StatusData;
+import dev.logos.lang.Status;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -100,5 +102,76 @@ final class LifeformGameTests {
                 fed[0] = true;
             }
         });
+    }
+
+    /** Its mind keeps it in the air at its master's shoulder: set down on the ground across the room, it rises and comes over. */
+    static void hoversAtMaster(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 200 (summon mana_lifeform :at (pos-of caster)))");
+        Vec3 start = h.absoluteVec(new Vec3(7.5, 2, 7.5));
+        lf.snapTo(start.x, start.y, start.z, 0, 0);
+        double floor = h.absoluteVec(new Vec3(0, 2, 0)).y;
+        h.succeedWhen(() -> {
+            h.assertTrue(lf.distanceTo(p) < 3.5, "it should come to its master, " + lf.distanceTo(p) + " away");
+            h.assertTrue(lf.getY() - floor >= 0.8, "hovering at least a block up, not on the ground: " + (lf.getY() - floor));
+        });
+    }
+
+    /** Two attack pages: the cheaper is its attack, and with a third of its pool to spare it looses the dearer one too. */
+    static void comboWhenRich(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 2000 (summon mana_lifeform :level 3 :at (pos-of caster)))");
+        lf.core.setItem(0, page("(spell :name \"轻\" :intent strike :mana 5 (mark (foe) #weak))"));
+        lf.core.setItem(1, page("(spell :name \"重\" :intent strike :mana 30 (mark (foe) #strong))"));
+        h.assertTrue(lf.attackSlots().equals(List.of(0, 1)), "the cheaper page comes first: " + lf.attackSlots());
+        lf.setMana(0.3 * lf.maxMana() + 20);
+        h.assertTrue(!lf.comboAffordable(0, 1), "with less than a third to spare after both, no combo");
+        lf.setMana(0.8 * lf.maxMana());
+        h.assertTrue(lf.comboAffordable(0, 1), "with plenty, the combo");
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        husk.setNoAi(true);
+        Familiars.order(lf, husk);
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.has(husk, Status.parse("#weak")), "its attack should land");
+            h.assertTrue(StatusData.has(husk, Status.parse("#strong")), "and the dearer page with it");
+        });
+    }
+
+    /** Its master hurt, it uses its HEAL page on them. */
+    static void healsMaster(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
+        // Declared a heal so the test can see it was cast (a mark), whatever the difficulty does to health.
+        lf.core.setItem(0, page("(spell :name \"回春\" :intent heal :mana 10 (mark (master) #healed))"));
+        p.setHealth(6);
+        h.succeedWhen(() -> h.assertTrue(StatusData.has(p, Status.parse("#healed")), "it should cast its heal page on its master"));
+    }
+
+    /** Free mana nearby and nothing to fight: it flies over and drinks it. */
+    static void foragesFreeMana(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 200 (summon mana_lifeform :at (pos-of caster)))");
+        double before = lf.mana();
+        Casting.cast(p, Casting.compile("(spell :mana 41 (mark caster #a))"), null, null);
+        // Its master full, so the free mana is not drawn to them instead.
+        dev.logos.runtime.PlayerMagic m = dev.logos.runtime.PlayerMagic.of(p);
+        m.mana = m.maxMana;
+        h.succeedWhen(() -> h.assertTrue(lf.mana() > before + 20, "it should have drunk the free mana: " + lf.mana() + " from " + before));
+    }
+
+    /** stance :role sets how it weighs its choices; an unknown role puts the spell out. */
+    static void roleByStance(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        ManaLifeform lf = summon(h, p, "(spell :mana 200 (summon mana_lifeform :at (pos-of caster)))");
+        h.assertTrue(lf.role() == ManaLifeform.Role.AUTO, "it starts out balanced");
+        Casting.cast(p, Casting.compile("(stance :role \"guard\")"), null, null);
+        h.assertTrue(lf.role() == ManaLifeform.Role.GUARD, "stance :role guard should make it a guard");
+        SpellInstance bad = Casting.cast(p, Casting.compile("(stance :role \"dance\")"), null, null);
+        h.assertTrue(bad != null && bad.dead && lf.role() == ManaLifeform.Role.GUARD, "an unknown role is refused");
+        h.succeed();
     }
 }

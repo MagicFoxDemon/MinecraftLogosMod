@@ -8,7 +8,6 @@ import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 
 import dev.logos.LogosMod;
 import dev.logos.item.SpellPages;
-import dev.logos.runtime.Familiars;
 import dev.logos.runtime.Lifeforms;
 import dev.logos.runtime.ManaLifeform;
 import net.minecraft.core.BlockPos;
@@ -39,7 +38,7 @@ public class LifeformScenario implements UIScenario {
         lf.snapTo(ORIGIN.getX() + x, ORIGIN.getY() + 1.2, ORIGIN.getZ() + 2.2, 180, 0);
         lf.setLifeLevel(lv);
         lf.setMana(ManaLifeform.maxMana(lv));
-        Familiars.bindForTest(lf, p);
+        // Left without a master: its mind then keeps it where it is, for the camera.
         level.addFreshEntity(lf);
         return lf;
     }
@@ -62,12 +61,14 @@ public class LifeformScenario implements UIScenario {
                 .ticks(30)
                 .screenshot("lifeform_awake")
                 .server("both cast", sc -> {
-                    small.triggerAnim("main", "cast");
-                    big.triggerAnim("main", "cast");
+                    small.setCasting(true);
+                    big.setCasting(true);
                 })
                 .ticks(24)
                 .screenshot("lifeform_cast_release")
                 .server("run both dry", sc -> {
+                    small.setCasting(false);
+                    big.setCasting(false);
                     small.setMana(0.01);
                     big.setMana(0.01);
                 })
@@ -81,7 +82,7 @@ public class LifeformScenario implements UIScenario {
                 .screenshot("lifeform_waking")
                 .ticks(60)
                 .screenshot("lifeform_awake_again")
-                .server("open the level-1 core", sc -> Lifeforms.openCore(sc.player(), small))
+                .server("open the level-5 core", sc -> Lifeforms.openCore(sc.player(), big))
                 .ticks(5)
                 .screenshot("lifeform_core");
     }

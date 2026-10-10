@@ -201,24 +201,39 @@ public final class Lifeforms {
             root.addChildren(new Label().setText(Component.literal("（魔力生命体已不在）")), new InventorySlots());
             return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
         }
-        int n = ManaLifeform.slots(lf.lifeLevel());
-        UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(6));
-        for (int i = 0; i < n; i++) {
-            UIElement cell = new UIElement().layout(l -> l.gapAll(1));
-            ItemSlot slot = new ItemSlot();
-            slot.bind(lf.core.slot(i));
-            cell.addChildren(new Label().setText(Component.literal(i == 0 ? "普攻" : "被动 " + i)), slot);
-            row.addChild(cell);
-        }
+        int lv = lf.lifeLevel();
+        UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(8));
+        row.addChildren(
+                group(lf, "主动", ManaLifeform.ACTIVE_FIRST, ManaLifeform.activeSlots(lv)),
+                group(lf, "被动", ManaLifeform.PASSIVE_FIRST, ManaLifeform.passiveSlots(lv)),
+                group(lf, "炼金道具", ManaLifeform.DEVICE_FIRST, ManaLifeform.deviceSlots(lv)));
         Label hint = new Label();
-        hint.setText(Component.literal("普攻：放主动启式的术式，战斗中它会对准目标施放。被动：受击（hurt）、主人出手（attack）、"
-                + "目标倒下（kill）时触发。等级越高被动格越多。施法花的是它自己的魔力。"));
+        hint.setText(Component.literal("主动：放主动启式的术式。按意图使用：攻击类对准敌人，较便宜的那张是普攻，"
+                + "魔力充足（放完仍剩三成）时较贵的那张一起放出；治疗、守护类用来照顾你。"
+                + "被动：受击（hurt）、主人出手（attack）、目标倒下（kill）时触发。施法花的是它自己的魔力。"
+                + (ManaLifeform.quick(lv) ? "4 级起它的施法、移动与恢复更快。" : "")));
         hint.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
         hint.layout(x -> x.width(9 * 19));
         root.addChildren(
-                new Label().setText(Component.literal("✦ " + lf.getName().getString() + " 的心核 · " + lf.lifeLevel() + " 级")),
+                new Label().setText(Component.literal("✦ " + lf.getName().getString() + " 的心核 · " + lv + " 级 · " + lf.role().zh)),
+                new Label().setText(Component.literal(lf.temperamentZh())),
                 row, hint, new InventorySlots());
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
+    }
+
+    /** A labelled column of {@code n} core slots from {@code first}; a group with none open is left out. */
+    private static UIElement group(ManaLifeform lf, String title, int first, int n) {
+        UIElement col = new UIElement().layout(l -> l.gapAll(1));
+        if (n <= 0) return col;
+        col.addChild(new Label().setText(Component.literal(title)));
+        UIElement slots = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(1));
+        for (int i = 0; i < n; i++) {
+            ItemSlot slot = new ItemSlot();
+            slot.bind(lf.core.slot(first + i));
+            slots.addChild(slot);
+        }
+        col.addChild(slots);
+        return col;
     }
 
     // ---- passive pages --------------------------------------------------------------------------
@@ -226,6 +241,10 @@ public final class Lifeforms {
     @SubscribeEvent
     static void onDamage(LivingIncomingDamageEvent event) {
         LivingEntity victim = event.getEntity();
+        // Its alchemical devices take their share first (a mana ward, say), whatever the damage comes from.
+        if (victim instanceof ManaLifeform shielded && !victim.level().isClientSide()) {
+            event.setAmount(shielded.shieldedDamage(event.getSource(), event.getAmount()));
+        }
         if (Effects.inSpell() || victim.level().isClientSide()) return;
         Entity attacker = event.getSource().getEntity();
         if (victim instanceof ManaLifeform lf && !lf.isDormant()) LogosMod.defer(() -> lf.firePassives("hurt", attacker));

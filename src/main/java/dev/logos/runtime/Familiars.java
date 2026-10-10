@@ -154,6 +154,24 @@ public final class Familiars {
         return true;
     }
 
+    /** Where it was sent ({@code gather}) or stands guard, or null if it is with its master. */
+    public static @Nullable Vec3 orderPoint(Mob m) {
+        State s = STATE.get(m);
+        return s == null ? null : s.errand != null ? s.errand : s.post;
+    }
+
+    /** Whether it is on an errand (not just standing guard). */
+    public static boolean onErrand(Mob m) {
+        State s = STATE.get(m);
+        return s != null && s.errand != null;
+    }
+
+    /** Whether its current target is one it found itself by its stance, rather than its master's fight or an order. */
+    public static boolean isHunting(Mob m) {
+        State s = STATE.get(m);
+        return s != null && s.hunting;
+    }
+
     /** Whether it is on an errand or standing guard: then it does not walk after its master. */
     public static boolean hasOrders(Mob m) {
         State s = STATE.get(m);
@@ -212,14 +230,16 @@ public final class Familiars {
         m.setData(LogosMod.FAMILIAR, new Bond(owner.getUUID(), expiresAt));
         m.setPersistenceRequired();
         m.setTarget(null);
-        if (m instanceof PathfinderMob pm) m.goalSelector.addGoal(1, new FollowMaster(pm));
+        // A lifeform has a mind of its own (LifeformMind) that does its following.
+        if (m instanceof PathfinderMob pm && !(m instanceof ManaLifeform)) m.goalSelector.addGoal(1, new FollowMaster(pm));
         STATE.computeIfAbsent(m, k -> new State()).seq = ++summoned;
         LIVE.add(m);
     }
 
     /** A kept familiar (a mana lifeform) loaded again with its chunk: it answers to its master as before. */
     static void rebind(Mob m) {
-        if (m instanceof PathfinderMob pm) m.goalSelector.addGoal(1, new FollowMaster(pm));
+        // A lifeform has a mind of its own (LifeformMind) that does its following.
+        if (m instanceof PathfinderMob pm && !(m instanceof ManaLifeform)) m.goalSelector.addGoal(1, new FollowMaster(pm));
         STATE.computeIfAbsent(m, k -> new State()).seq = ++summoned;
         LIVE.add(m);
     }
@@ -424,7 +444,7 @@ public final class Familiars {
 
         boolean dragon = m instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon;
         if (s.errand != null) runErrand(m, owner, s, level.getGameTime(), dragon);
-        else if (s.post != null && s.target == null && !dragon && m.position().distanceTo(s.post) > 4 && level.getGameTime() % 40 == 0) {
+        else if (s.post != null && s.target == null && !dragon && !kept(m) && m.position().distanceTo(s.post) > 4 && level.getGameTime() % 40 == 0) {
             m.getNavigation().moveTo(s.post.x, s.post.y, s.post.z, 1.0); // back to its post
         }
         if (dragon) DragonFamiliar.tick((net.minecraft.world.entity.boss.enderdragon.EnderDragon) m, owner, s.target, s.errand, s.post);
@@ -460,7 +480,7 @@ public final class Familiars {
             s.lastProgress = now;
         }
         boolean stuck = now - s.lastProgress > 100 || now - s.errandSince > 600;
-        if (!dragon && !stuck && (now - s.errandSince) % 20 == 0 && !m.getNavigation().moveTo(dest.x, dest.y, dest.z, 1.2)) {
+        if (!dragon && !kept(m) && !stuck && (now - s.errandSince) % 20 == 0 && !m.getNavigation().moveTo(dest.x, dest.y, dest.z, 1.2)) {
             stuck = now - s.errandSince >= 40; // no path at all: a few tries, then give up
         }
         if (stuck) {

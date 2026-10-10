@@ -92,6 +92,7 @@ public final class LogosCommands {
                 .then(Commands.literal("examples").executes(LogosCommands::examples))
                 .then(Commands.literal("kit").executes(LogosCommands::kit))
                 .then(Commands.literal("anchors").executes(LogosCommands::anchors))
+                .then(Commands.literal("mind").executes(LogosCommands::mind))
                 .then(Commands.literal("runes").executes(c -> runes(c, null))
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests((c, b) -> SharedSuggestionProvider.suggest(Runes.all().stream().map(r -> r.name).toList(), b))
@@ -185,6 +186,20 @@ public final class LogosCommands {
                     .append(Component.literal("  " + desc).withStyle(ChatFormatting.GRAY)), false);
         }
         return 1;
+    }
+
+    /** Debug: what each of the player's mana lifeforms is doing and how it scores its choices. */
+    private static int mind(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> c) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        var p = c.getSource().getPlayerOrException();
+        int n = 0;
+        for (var m : dev.logos.runtime.Familiars.of(p)) {
+            if (!(m instanceof dev.logos.runtime.ManaLifeform lf)) continue;
+            n++;
+            String mind = lf.isDormant() || lf.mind() == null ? "沉寂" : lf.mind().describe();
+            c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("✦ " + lf.getName().getString() + "（" + lf.role().zh + "，" + lf.temperamentZh() + "）\n  " + mind), false);
+        }
+        if (n == 0) c.getSource().sendFailure(net.minecraft.network.chat.Component.literal("附近没有你的魔力生命体"));
+        return n;
     }
 
     private static int anchors(CommandContext<CommandSourceStack> c) throws CommandSyntaxException {

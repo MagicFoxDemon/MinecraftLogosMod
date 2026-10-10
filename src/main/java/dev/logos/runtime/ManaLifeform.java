@@ -1,7 +1,8 @@
 package dev.logos.runtime;
 
-import java.util.EnumSet;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
@@ -17,6 +18,7 @@ import com.geckolib.util.GeckoLibUtil;
 import dev.logos.LogosMod;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
+import dev.logos.lang.Intent;
 import dev.logos.lang.Spell;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
@@ -38,13 +40,11 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
-import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
@@ -56,11 +56,16 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 魔力生命体: the most basic alchemical life, mana that has gathered itself into a body. It has no
- * instincts of its own: it follows its master like any familiar, and everything else it does is the
- * spell pages in its core. The first slot holds its attack, an active spell it casts at whatever its
- * master is fighting; from level 2 each level adds a slot for a passive page (hurt / attack / kill,
- * read from its own point of view, see {@link Lifeforms}).
+ * 魔力生命体: the most basic alchemical life, mana that has gathered itself into a body. What it
+ * does is decided by its mind ({@link LifeformMind}, a utility AI) from what its master orders and
+ * from the pages in its core, read by their intent:
+ * <ul>
+ * <li>active pages (one slot, a second from level 3): the cheaper is its attack, and when it has
+ * mana to spare it looses the dearer one with it; heal and ward pages it uses to look after its master;</li>
+ * <li>passive pages (one slot per level past the first): hurt / attack / kill, read from its own side;</li>
+ * <li>alchemical devices (one slot from level 2, a second at level 5), see {@link LifeformAugment}.</li>
+ * </ul>
+ * Level 4 quickens it: it casts, moves and recovers faster.
  * <p>
  * It lives on its own pool of mana: idling costs a little, every cast costs what the page injects,
  * and the leftovers of its own spells flow back into it. Run dry, it goes dormant — it falls and
@@ -68,13 +73,50 @@ import net.minecraft.world.phys.Vec3;
  */
 public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel {
     public static final int MAX_LEVEL = 5;
-    /** The cast animation lasts 2.4 s and lets go at 1.2 s. */
+    /** The cast animation lasts 2.4 s and lets go at 1.2 s; quickened (level 4+) it plays at 1.5×. */
     public static final int CAST_TICKS = 48, RELEASE_AT = 24;
+    public static final float QUICK = 1.5f;
     /** The startup animation, during which the orbit stays still. */
     public static final int STARTUP_TICKS = 76;
+    /** A second active page joins the cast only if this share of the pool is still left after both. */
+    public static final double COMBO_RESERVE = 0.3;
     /** Hitbox at level 1, about an allay's; it grows with the model. */
     private static final EntityDimensions BASE = EntityDimensions.scalable(0.4f, 0.5f);
-    private static final int CORE_SLOTS = MAX_LEVEL;
+
+    /** Core layout: two active slots, four passive, two devices. Which are open depends on its level. */
+    public static final int ACTIVE_FIRST = 0, ACTIVES = 2, PASSIVE_FIRST = 2, PASSIVES = 4, DEVICE_FIRST = 6, DEVICES = 2;
+    public static final int CORE_SLOTS = ACTIVES + PASSIVES + DEVICES;
+    /** Save layout version: before 2, slot 0 was the attack and 1–4 the passives. */
+    private static final int CORE_LAYOUT = 2;
+
+    public enum SlotKind { ACTIVE, PASSIVE, DEVICE }
+
+    /**
+     * How it weighs its choices, set by its master with {@code (stance :role …)}. AUTO is the
+     * balanced default for a master who never touches it.
+     */
+    public enum Role {
+        AUTO("auto", "自然", 1, 1, 1),
+        STRIKER("striker", "进攻", 1.3, 0.7, 0.9),
+        GUARD("guard", "护卫", 0.9, 1.0, 1.4),
+        SUPPORT("support", "辅助", 0.8, 1.4, 1.1);
+
+        public final String word, zh;
+        public final double engage, support, protect;
+
+        Role(String word, String zh, double engage, double support, double protect) {
+            this.word = word;
+            this.zh = zh;
+            this.engage = engage;
+            this.support = support;
+            this.protect = protect;
+        }
+
+        public static @Nullable Role parse(String s) {
+            for (Role r : values()) if (r.word.equals(s) || r.zh.equals(s)) return r;
+            return null;
+        }
+    }
 
     private static final EntityDataAccessor<Integer> LEVEL = SynchedEntityData.defineId(ManaLifeform.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> MANA = SynchedEntityData.defineId(ManaLifeform.class, EntityDataSerializers.FLOAT);
@@ -88,9 +130,14 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     private static final RawAnimation ORBIT = RawAnimation.begin().thenLoop("animation.mana_lifeform.core_orbit");
 
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
-    /** Its core: slot 0 the attack, then one passive slot per level past the first. */
     public final Core core = new Core();
     private final Map<Integer, Long> passiveCooldowns = new HashMap<>();
+    /** Set in registerGoals, which runs inside the Mob constructor: no initializer, or it would be wiped. */
+    private LifeformMind mind;
+    private Role role = Role.AUTO;
+    /** Its temperament, rolled at birth (0.7–1.3 each): how readily it fights, wanders, keeps close. */
+    private float bravery = 1, curiosity = 1, loyalty = 1;
+    private boolean temperamentRolled;
     /** Client only: when it last woke, so the startup plays once and the orbit waits for it. */
     private int wokeAt = Integer.MIN_VALUE;
     private boolean woke;
@@ -104,7 +151,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, health(1))
-                .add(Attributes.FLYING_SPEED, 0.5)
+                .add(Attributes.FLYING_SPEED, flyingSpeed(1))
                 .add(Attributes.MOVEMENT_SPEED, 0.25)
                 .add(Attributes.FOLLOW_RANGE, 32);
     }
@@ -125,14 +172,43 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         return 30 + 20 * level;
     }
 
+    static double flyingSpeed(int level) {
+        return level >= 4 ? 0.45 : 0.35;
+    }
+
     /** Idling for a whole in-game day costs 15% of a full pool: a full one lasts about a week of idling. */
     public static double upkeepPerDay(int level) {
         return 0.15 * maxMana(level);
     }
 
-    /** Core slots: the attack slot, plus one per level past the first. */
-    public static int slots(int level) {
-        return Mth.clamp(level, 1, MAX_LEVEL);
+    public static int activeSlots(int level) {
+        return level >= 3 ? 2 : 1;
+    }
+
+    public static int passiveSlots(int level) {
+        return Mth.clamp(level - 1, 0, PASSIVES);
+    }
+
+    public static int deviceSlots(int level) {
+        return level >= 5 ? 2 : level >= 2 ? 1 : 0;
+    }
+
+    /** Level 4 and up: faster casting, movement and recovery. */
+    public static boolean quick(int level) {
+        return level >= 4;
+    }
+
+    public static SlotKind kind(int slot) {
+        return slot < PASSIVE_FIRST ? SlotKind.ACTIVE : slot < DEVICE_FIRST ? SlotKind.PASSIVE : SlotKind.DEVICE;
+    }
+
+    /** Whether core slot {@code slot} is open at {@code level}. */
+    public static boolean open(int slot, int level) {
+        return switch (kind(slot)) {
+            case ACTIVE -> slot - ACTIVE_FIRST < activeSlots(level);
+            case PASSIVE -> slot - PASSIVE_FIRST < passiveSlots(level);
+            case DEVICE -> slot - DEVICE_FIRST < deviceSlots(level);
+        };
     }
 
     /**
@@ -158,13 +234,32 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         return entityData.get(LEVEL);
     }
 
-    /** Sets its level and the health that comes with it, at full health. */
+    /** Sets its level and what comes with it (health, at full; speed), and rolls its temperament if it has none yet. */
     public void setLifeLevel(int level) {
         int lv = Mth.clamp(level, 1, MAX_LEVEL);
         entityData.set(LEVEL, lv);
         getAttribute(Attributes.MAX_HEALTH).setBaseValue(health(lv));
+        getAttribute(Attributes.FLYING_SPEED).setBaseValue(flyingSpeed(lv));
         setHealth(getMaxHealth());
         refreshDimensions();
+        if (!temperamentRolled) {
+            bravery = 0.7f + random.nextFloat() * 0.6f;
+            curiosity = 0.7f + random.nextFloat() * 0.6f;
+            loyalty = 0.7f + random.nextFloat() * 0.6f;
+            temperamentRolled = true;
+        }
+    }
+
+    public boolean quick() {
+        return quick(lifeLevel());
+    }
+
+    public int castTicks() {
+        return quick() ? Math.round(CAST_TICKS / QUICK) : CAST_TICKS;
+    }
+
+    public int releaseAt() {
+        return quick() ? Math.round(RELEASE_AT / QUICK) : RELEASE_AT;
     }
 
     @Override
@@ -175,6 +270,10 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     @Override
     public double maxMana() {
         return maxMana(lifeLevel());
+    }
+
+    public double manaFraction() {
+        return mana() / maxMana();
     }
 
     public void setMana(double mana) {
@@ -197,13 +296,40 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         return entityData.get(CASTING);
     }
 
+    /** Plays (or ends) the cast animation; the orbit rests while it plays. */
+    public void setCasting(boolean casting) {
+        entityData.set(CASTING, casting);
+    }
+
+    public Role role() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public float bravery() {
+        return bravery;
+    }
+
+    public float curiosity() {
+        return curiosity;
+    }
+
+    public float loyalty() {
+        return loyalty;
+    }
+
+    public @Nullable LifeformMind mind() {
+        return mind;
+    }
+
     /** Out of mana: it falls and lies still. */
     void goDormant() {
         if (isDormant()) return;
         entityData.set(DORMANT, true);
         entityData.set(CASTING, false);
-        // A triggered cast keeps the controller until it is stopped; the shutdown must take over.
-        stopTriggeredAnim("main", "cast");
         setNoGravity(false);
         getNavigation().stop();
         setTarget(null);
@@ -249,7 +375,8 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
 
     @Override
     protected void registerGoals() {
-        goalSelector.addGoal(2, new CastAtTarget(this));
+        mind = new LifeformMind(this);
+        goalSelector.addGoal(1, mind);
     }
 
     @Override
@@ -271,6 +398,12 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     public void tick() {
         super.tick();
         if (level() instanceof ServerLevel) {
+            if (!isDormant()) {
+                for (int i = 0; i < DEVICES; i++) {
+                    ItemStack device = core.getItem(DEVICE_FIRST + i);
+                    if (open(DEVICE_FIRST + i, lifeLevel()) && device.getItem() instanceof LifeformAugment a) a.tickAugment(this, device);
+                }
+            }
             if (tickCount % 20 == 0 && !isDormant()) {
                 // Idling: a day's upkeep spread over its 1200 seconds.
                 setMana(mana() - upkeepPerDay(lifeLevel()) / 1200);
@@ -279,11 +412,20 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
             if (isDormant()) getNavigation().stop();
         } else if (!isDormant() && tickCount % 5 == 0) {
             // Small glyphs drifting into its core (an enchanting particle flies from pos + velocity to pos).
-            Vec3 core = position().add(0, getBbHeight() * 0.5, 0);
+            Vec3 c = position().add(0, getBbHeight() * 0.5, 0);
             double r = getBbWidth() * 1.5;
-            level().addParticle(ParticleTypes.ENCHANT, core.x, core.y, core.z,
+            level().addParticle(ParticleTypes.ENCHANT, c.x, c.y, c.z,
                     (random.nextDouble() - 0.5) * r, random.nextDouble() * r * 0.5, (random.nextDouble() - 0.5) * r);
         }
+    }
+
+    /** What its devices leave of incoming damage. */
+    float shieldedDamage(DamageSource source, float amount) {
+        for (int i = 0; i < DEVICES && amount > 0; i++) {
+            ItemStack device = core.getItem(DEVICE_FIRST + i);
+            if (open(DEVICE_FIRST + i, lifeLevel()) && device.getItem() instanceof LifeformAugment a) amount = a.absorbDamage(this, device, source, amount);
+        }
+        return amount;
     }
 
     @Override
@@ -299,6 +441,11 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         out.putInt("life_level", lifeLevel());
         out.putDouble("mana", mana());
         out.putBoolean("dormant", isDormant());
+        out.putString("role", role.word);
+        out.putFloat("bravery", bravery);
+        out.putFloat("curiosity", curiosity);
+        out.putFloat("loyalty", loyalty);
+        out.putInt("core_layout", CORE_LAYOUT);
         NonNullList<ItemStack> items = NonNullList.withSize(CORE_SLOTS, ItemStack.EMPTY);
         for (int i = 0; i < CORE_SLOTS; i++) items.set(i, core.getItem(i));
         ContainerHelper.saveAllItems(out, items);
@@ -312,19 +459,74 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         boolean dormant = in.getBooleanOr("dormant", false);
         entityData.set(DORMANT, dormant);
         setNoGravity(!dormant);
+        Role r = Role.parse(in.getStringOr("role", "auto"));
+        role = r == null ? Role.AUTO : r;
+        bravery = in.getFloatOr("bravery", 1);
+        curiosity = in.getFloatOr("curiosity", 1);
+        loyalty = in.getFloatOr("loyalty", 1);
+        temperamentRolled = true;
         NonNullList<ItemStack> items = NonNullList.withSize(CORE_SLOTS, ItemStack.EMPTY);
         ContainerHelper.loadAllItems(in, items);
+        if (in.getIntOr("core_layout", 1) < 2) {
+            // The first layout: slot 0 the attack, 1–4 the passives.
+            NonNullList<ItemStack> moved = NonNullList.withSize(CORE_SLOTS, ItemStack.EMPTY);
+            moved.set(0, items.get(0));
+            for (int i = 1; i <= 4; i++) moved.set(PASSIVE_FIRST + i - 1, items.get(i));
+            items = moved;
+        }
         for (int i = 0; i < CORE_SLOTS; i++) core.setItem(i, items.get(i));
         refreshDimensions();
     }
 
     // ---- casting ------------------------------------------------------------------------------
 
-    /** The spell on core slot {@code slot}, if it holds a written page within its level. */
+    /** The spell on core slot {@code slot}, if it is open and holds a written page. */
     public @Nullable Spell spellIn(int slot) {
-        if (slot >= slots(lifeLevel())) return null;
+        if (slot < 0 || slot >= CORE_SLOTS || kind(slot) == SlotKind.DEVICE || !open(slot, lifeLevel())) return null;
         ItemStack page = core.getItem(slot);
         return SpellPages.isInscribed(page) ? SpellPages.spell(page) : null;
+    }
+
+    /** What casting slot {@code slot} would take from its pool: the page's capacity at most. */
+    public double injection(int slot) {
+        Spell s = spellIn(slot);
+        if (s == null) return 0;
+        PageTier tier = SpellPages.tier(core.getItem(slot));
+        return Math.min(s.mana(), (tier == null ? PageTier.BASIC : tier).capacity());
+    }
+
+    /** Its open active slots holding a page filed under one of {@code intents}, cheapest first. */
+    public List<Integer> activeWith(Intent... intents) {
+        List<Integer> out = new ArrayList<>();
+        for (int slot = ACTIVE_FIRST; slot < ACTIVE_FIRST + ACTIVES; slot++) {
+            Spell s = spellIn(slot);
+            if (s == null || s.isPassive()) continue;
+            for (Intent i : intents) {
+                if (s.profile().primary() == i) {
+                    out.add(slot);
+                    break;
+                }
+            }
+        }
+        out.sort((a, b) -> Double.compare(injection(a), injection(b)));
+        return out;
+    }
+
+    /** Its attack pages: active pages meant for enemies (or of no particular intent), cheapest first. */
+    public List<Integer> attackSlots() {
+        return activeWith(Intent.STRIKE, Intent.AREA, Intent.CONTROL, Intent.UTILITY);
+    }
+
+    /** Roughly how far its attack reaches: it keeps about this far from its foe. */
+    public double attackRange() {
+        double r = 0;
+        for (int slot : attackSlots()) r = Math.max(r, spellIn(slot).profile().range());
+        return r <= 0 ? 8 : Mth.clamp(r, 4, 10);
+    }
+
+    /** Whether, after casting both, it would still hold {@value #COMBO_RESERVE} of its pool. */
+    public boolean comboAffordable(int basic, int strong) {
+        return mana() - injection(basic) - injection(strong) >= COMBO_RESERVE * maxMana();
     }
 
     /**
@@ -341,7 +543,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         if (spell.stability() > stability) return false;
         PageTier tier = SpellPages.tier(core.getItem(slot));
         if (tier == null) tier = PageTier.BASIC;
-        double pay = Math.min(Math.min(spell.mana(), tier.capacity()), mana());
+        double pay = Math.min(injection(slot), mana());
         if (pay <= 0) return false;
         setMana(mana() - pay);
         Casting.castAs(this, spell, pay, tier.recovery(), target, null);
@@ -352,7 +554,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     /** The passive pages bound to {@code trigger}, each at most once a second. */
     public void firePassives(String trigger, @Nullable Entity target) {
         long now = level().getGameTime();
-        for (int slot = 1; slot < slots(lifeLevel()); slot++) {
+        for (int slot = PASSIVE_FIRST; slot < PASSIVE_FIRST + PASSIVES; slot++) {
             Spell s = spellIn(slot);
             if (s == null || !s.isPassive() || !s.trigger().equals(trigger)) continue;
             if (passiveCooldowns.getOrDefault(slot, 0L) > now) continue;
@@ -386,7 +588,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
             receiveMana(fuel.mana());
             if (!player.getAbilities().instabuild) held.shrink(1);
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 1.2f + random.nextFloat() * 0.4f);
-            ((ServerLevel) level()).sendParticles(ParticleTypes.END_ROD, getX(), getY() + getBbHeight() / 2, getZ(), 6, 0.15, 0.15, 0.15, 0.02);
+            LifeformMind.emote(this, LifeformMind.Emote.HAPPY);
             player.sendOverlayMessage(status());
             return InteractionResult.SUCCESS;
         }
@@ -404,19 +606,34 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
 
     public Component status() {
         int lv = lifeLevel();
+        String doing = isDormant() ? "沉寂" : mind == null ? "" : mind.doingZh();
         return Component.literal("✦ " + getName().getString() + " · " + lv + " 级 · 魔力 " + Math.round(mana()) + "/" + Math.round(maxMana())
-                + " · 生命 " + Math.round(getHealth()) + "/" + Math.round(getMaxHealth()) + (isDormant() ? " · 沉寂" : ""))
+                + " · 生命 " + Math.round(getHealth()) + "/" + Math.round(getMaxHealth()) + " · " + role.zh + (doing.isEmpty() ? "" : " · " + doing))
                 .withStyle(isDormant() ? ChatFormatting.DARK_GRAY : ChatFormatting.AQUA);
+    }
+
+    /** Its temperament in words, for the status and the debug view. */
+    public String temperamentZh() {
+        return "勇敢 " + Math.round(bravery * 100) + "% · 好奇 " + Math.round(curiosity * 100) + "% · 黏人 " + Math.round(loyalty * 100) + "%";
     }
 
     // ---- animation ------------------------------------------------------------------------------
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        // The cast is a state, not a triggered animation: it follows the synced flag, and quickened it plays faster.
         controllers.add(new AnimationController<ManaLifeform>("main", 4, test -> {
-            if (isDormant()) return test.setAndContinue(SHUTDOWN);
+            if (isDormant()) {
+                test.setControllerSpeed(1f);
+                return test.setAndContinue(SHUTDOWN);
+            }
+            if (isCasting()) {
+                test.setControllerSpeed(quick() ? QUICK : 1f);
+                return test.setAndContinue(CAST);
+            }
+            test.setControllerSpeed(1f);
             return test.setAndContinue(woke ? WAKE : IDLE);
-        }).triggerableAnim("cast", CAST));
+        }));
         // The orbit rests while it lies dormant, while it is waking, and while a cast holds its parts.
         controllers.add(new AnimationController<ManaLifeform>("orbit", 4, test -> {
             if (isDormant() || isCasting() || (woke && tickCount - wokeAt < STARTUP_TICKS)) return PlayState.STOP;
@@ -431,7 +648,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
 
     // ---- the core -----------------------------------------------------------------------------
 
-    /** Core slots: slot 0 takes an active (cast) page, the others passive pages; slots past its level take nothing. */
+    /** Core slots: active pages, passive pages, alchemical devices; closed slots take nothing. */
     public final class Core extends SimpleContainer {
         Core() {
             super(CORE_SLOTS);
@@ -448,9 +665,11 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         }
 
         public boolean accepts(int slot, ItemStack stack) {
-            if (slot >= slots(lifeLevel()) || !SpellPages.isInscribed(stack)) return false;
+            if (slot < 0 || slot >= CORE_SLOTS || !open(slot, lifeLevel())) return false;
+            if (kind(slot) == SlotKind.DEVICE) return stack.getItem() instanceof LifeformAugment;
+            if (!SpellPages.isInscribed(stack)) return false;
             Spell s = SpellPages.spell(stack);
-            return s != null && (slot == 0) != s.isPassive();
+            return s != null && (kind(slot) == SlotKind.PASSIVE) == s.isPassive();
         }
 
         @Override
@@ -471,84 +690,6 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
                     return 1;
                 }
             };
-        }
-    }
-
-    /**
-     * Its fighting: when its master is fighting something (or it was ordered or hunts), it keeps a
-     * casting distance, turns to the foe and casts its attack page — the cast animation gathers,
-     * lets go at 1.2 s, and settles. With no attack page it only watches.
-     */
-    static final class CastAtTarget extends Goal {
-        private final ManaLifeform mob;
-        private int castTimer, cooldown;
-        private @Nullable LivingEntity casting;
-
-        CastAtTarget(ManaLifeform mob) {
-            this.mob = mob;
-            setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
-        }
-
-        private @Nullable LivingEntity target() {
-            LivingEntity t = Familiars.orderedTarget(mob);
-            return t != null && t.isAlive() && t.level() == mob.level() ? t : null;
-        }
-
-        @Override
-        public boolean canUse() {
-            return !mob.isDormant() && target() != null;
-        }
-
-        @Override
-        public boolean canContinueToUse() {
-            return !mob.isDormant() && (target() != null || castTimer > 0);
-        }
-
-        @Override
-        public boolean requiresUpdateEveryTick() {
-            return true;
-        }
-
-        @Override
-        public void tick() {
-            LivingEntity t = target();
-            if (cooldown > 0) cooldown--;
-            if (t != null) {
-                mob.getLookControl().setLookAt(t, 30, 30);
-                double d = mob.distanceTo(t);
-                if (d > 10 || !mob.hasLineOfSight(t)) mob.getNavigation().moveTo(t, 1.0);
-                else mob.getNavigation().stop();
-            }
-            if (castTimer > 0) {
-                castTimer--;
-                if (castTimer == CAST_TICKS - RELEASE_AT && casting != null && casting.isAlive()) {
-                    mob.face(casting);
-                    mob.castSlot(0, casting);
-                }
-                if (castTimer == 0) {
-                    mob.entityData.set(CASTING, false);
-                    mob.stopTriggeredAnim("main", "cast"); // hand the controller back to idle
-                    casting = null;
-                    cooldown = 10;
-                }
-                return;
-            }
-            if (t != null && cooldown == 0 && mob.spellIn(0) != null && mob.distanceTo(t) <= 16 && mob.hasLineOfSight(t)) {
-                casting = t;
-                castTimer = CAST_TICKS;
-                mob.entityData.set(CASTING, true);
-                mob.triggerAnim("main", "cast");
-                mob.level().playSound(null, mob.getX(), mob.getY(), mob.getZ(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.NEUTRAL, 1f, 1.3f);
-            }
-        }
-
-        @Override
-        public void stop() {
-            if (castTimer > 0) mob.stopTriggeredAnim("main", "cast");
-            castTimer = 0;
-            casting = null;
-            mob.entityData.set(CASTING, false);
-            mob.getNavigation().stop();
         }
     }
 }

@@ -53,7 +53,8 @@ public final class Targeting {
 
     /** Whether a spell effect may touch {@code e} at all: the caster always, other players only if allowed. */
     public static boolean mayAffect(SpellInstance inst, Entity e) {
-        return e == inst.caster || !(e instanceof Player) || inst.spell.affectsPlayers();
+        // A lifeform's spells may always touch its master, as a player's may touch themselves: that is how it heals and wards them.
+        return e == inst.caster || !(e instanceof Player) || inst.spell.affectsPlayers() || e.getUUID().equals(Familiars.masterOf(inst.caster));
     }
 
     public static List<LivingEntity> enemiesNear(SpellInstance inst, ServerLevel level, Vec3 at, double radius, boolean fresh) {

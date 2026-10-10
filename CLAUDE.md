@@ -42,12 +42,16 @@ git -c credential.helper= -c "http.https://github.com/.extraheader=AUTHORIZATION
 ## 代码地图（`src/main/java/dev/logos`）
 
 - `lang/`：语言本身。`Type` 类型、`Compiler` 解析与类型检查、`Runes` 全部符文定义、`Examples` 示例术式。
+  - `SpellProfile` 是术式的「意图档案」：从语法树读出意图（`Intent`）、作用距离和一次施放的魔力估算，不需要运行术式。编辑器侧栏的总览和魔力生命体的心智都用它。
+  - 新增会花魔力的符文时，要在 `SpellProfile.Reader.cost` 里补上它的价格和意图，否则总览会按 0 估算。
 - `runtime/`：法术执行。`Interp` 求值，`Familiars` / `FamiliarEvents` / `DragonFamiliar` / `FamiliarRiding` 使魔，`Construct*` 炼成体，`Anchors` 锚点，`Filter` ⊙ 筛选。
 - `graph/`：LDLib2 节点编辑器。新符文要在 `RuneNodes` 里加节点类并在 `BY_RUNE` 登记，名字写进 `assets/logos/lang/*.json` 的 `logos.rune.*`。
 - `mixin/`：对原版的少量改动，登记在 `src/main/resources/logos.mixins.json`。
 - `client/`：渲染、界面与客户端事件。`client/uitest/` 是无窗口客户端场景（截图检查），例如 `LifeformScenario`。
 - 魔力生命体：
-  - `runtime/ManaLifeform`：实体、心核、施法 AI、GeckoLib 动画控制器；
+  - `runtime/ManaLifeform`：实体、心核（主动 / 被动 / 炼金道具三组槽位，按等级开放）、连携规则、GeckoLib 动画控制器；
+  - `runtime/LifeformMind`：心智（效用 AI）。每个行为是一个内部类，负责打分、开始、每刻执行和结束；悬浮移动也在这里。加新行为只需加一个类，并放进构造器里的列表。`/logos mind` 显示各行为的分数；
+  - `runtime/LifeformAugment`：炼金道具接口（道具还没有做）；
   - `runtime/Lifeforms`：召唤规则、每人上限的存档登记、心核界面、被动触发；
   - `client/ManaLifeformRenderer`：渲染。
   - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`，原始 bbmodel 在 `D:\dev\LogosArt\mana_lifeform.zip`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`。
