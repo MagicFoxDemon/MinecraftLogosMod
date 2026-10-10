@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.logos.mixin",
+  "mixins": [
+    "EntityMixin",
+    "ServerGamePacketListenerMixin",
+    "EnderDragonAccessor",
+    "EnderDragonFightAccessor",
+    "EnderDragonMixin",
+    "MobMixin",
+    "LivingEntityMixin",
+    "WardenMixin"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

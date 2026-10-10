@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:paper",
+    "minecraft:gold_nugget",
+    "minecraft:amethyst_shard"
+  ],
+  "result": {
+    "id": "logos:crystal_spell_page"
+  }
+}

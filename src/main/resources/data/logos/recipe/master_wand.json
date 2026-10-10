@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_transmute",
+  "category": "equipment",
+  "input": "logos:adept_wand",
+  "material": "minecraft:nether_star",
+  "result": {
+    "id": "logos:master_wand"
+  }
+}

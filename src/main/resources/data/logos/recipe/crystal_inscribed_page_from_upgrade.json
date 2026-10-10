@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_transmute",
+  "category": "misc",
+  "group": "crystal_spell_page_upgrade",
+  "input": "logos:inscribed_page",
+  "material": "minecraft:amethyst_shard",
+  "result": {
+    "id": "logos:crystal_inscribed_page"
+  }
+}

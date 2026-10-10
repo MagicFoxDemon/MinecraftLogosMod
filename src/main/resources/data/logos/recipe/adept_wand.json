@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_transmute",
+  "category": "equipment",
+  "input": "logos:wand",
+  "material": "minecraft:gold_block",
+  "result": {
+    "id": "logos:adept_wand"
+  }
+}

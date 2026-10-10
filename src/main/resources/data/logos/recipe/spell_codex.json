@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "logos:spell_page",
+    "logos:spell_page",
+    "logos:spell_page",
+    "minecraft:leather"
+  ],
+  "result": {
+    "id": "logos:spell_codex"
+  }
+}

@@ -1,0 +1,86 @@
+{
+ "textures": {
+  "page": "logos:block/inscription_table_page_inscribed",
+  "particle": "logos:block/inscription_table"
+ },
+ "elements": [
+  {
+   "from": [
+    -0.5533,
+    15.56066,
+    7.5
+   ],
+   "to": [
+    9.9467,
+    16.06066,
+    15
+   ],
+   "rotation": {
+    "x": 90,
+    "y": -45,
+    "z": -90,
+    "origin": [
+     8.75,
+     8.5,
+     8
+    ]
+   },
+   "faces": {
+    "north": {
+     "uv": [
+      6,
+      0,
+      11.25,
+      0.25
+     ],
+     "texture": "#page"
+    },
+    "east": {
+     "uv": [
+      6,
+      2,
+      9.75,
+      2.25
+     ],
+     "texture": "#page"
+    },
+    "south": {
+     "uv": [
+      6,
+      1,
+      11.25,
+      1.25
+     ],
+     "texture": "#page"
+    },
+    "west": {
+     "uv": [
+      6,
+      3,
+      9.75,
+      3.25
+     ],
+     "texture": "#page"
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      5.25,
+      3.75
+     ],
+     "texture": "#page"
+    },
+    "down": {
+     "uv": [
+      0,
+      4,
+      5.25,
+      7.75
+     ],
+     "texture": "#page"
+    }
+   }
+  }
+ ]
+}

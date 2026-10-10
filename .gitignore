@@ -1,0 +1,10 @@
+build/
+run/
+.gradle/
+.idea/
+out/
+*.iml
+repo/
+runs/
+net/
+素材/

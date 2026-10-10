@@ -1,0 +1,117 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "blank"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "inscribed"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_inscribed"
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "blank"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "inscribed"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_inscribed",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "blank"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "inscribed"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_inscribed",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "blank"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "inscribed"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_inscribed",
+        "y": 270
+      }
+    }
+  ]
+}
