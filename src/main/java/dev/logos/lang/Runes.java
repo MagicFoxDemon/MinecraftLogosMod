@@ -346,6 +346,15 @@ public final class Runes {
                     return new ArrayList<>(Targeting.near(c.inst(), at.level(), at.pos(), num(kw(n, "radius"), c), false,
                             e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()));
                 });
+        def("master", BINDING, ENTITY)
+                .doc("施法者的主人：魔力生命体心核里的术式用它指向召唤它的玩家，例如 (heal (master) 4)。玩家自己施法时就是施法者本人。免费")
+                .exec((n, c) -> {
+                    java.util.UUID m = dev.logos.runtime.Familiars.masterOf(c.inst().caster);
+                    return m == null ? c.inst().caster : c.inst().caster.level().getPlayerByUUID(m);
+                });
+        def("foe", BINDING, ENTITY)
+                .doc("施法者正在战斗的对象：魔力生命体普攻时就是它对准的那个，例如普攻页写 (damage (foe) 6)。没有时为空（玩家施法时总是空）。免费")
+                .exec((n, c) -> c.inst().caster instanceof net.minecraft.world.entity.Mob m ? dev.logos.runtime.Familiars.orderedTarget(m) : null);
         def("familiar", BINDING, ENTITY).opt("name", TEXT, "\"\"")
                 .doc("你的一只使魔：叫这个名字的（召唤时用 :name 起名），不写名字就是最后召唤的那只；没有则为空。免费")
                 .exec((n, c) -> c.inst().caster instanceof net.minecraft.world.entity.player.Player p
@@ -687,16 +696,29 @@ public final class Runes {
                 });
         blockEffects();
         def("summon", EFFECT, ACTION).p("creature", CREATURE).kw("at", POS, "(ahead 2)").kw("name", TEXT, null)
-                .kw("hunt", FILTER, null).kw("radius", NUM, null).stab(3)
+                .kw("hunt", FILTER, null).kw("radius", NUM, null).kw("level", NUM, "1").kw("mana", NUM, null).stab(3)
                 .doc("召唤一只你击杀过足够多次的生物作为使魔（普通生物 " + dev.logos.runtime.Familiars.NORMAL_KILLS + " 次，Boss "
                         + dev.logos.runtime.Familiars.BOSS_KILLS + " 次），存在一个游戏日。它保留自己的攻击方式，只攻击你在战斗的对象，"
-                        + "跟随你，不伤你和你的其他使魔；它的击杀算你的。:hunt 给它一个猎杀姿态（见 stance）。魔力 = 最大生命值 × 2。数量上限见配置 maxFamiliars")
+                        + "跟随你，不伤你和你的其他使魔；它的击杀算你的。:hunt 给它一个猎杀姿态（见 stance）。魔力 = 最大生命值 × 2。数量上限见配置 maxFamiliars。"
+                        + "召唤 mana_lifeform（魔力生命体）不需要击杀：:level 1–5，至少要 50×等级^1.5 魔力，"
+                        + "默认把术式剩下的魔力全部（最多 1000×等级^1.5）凝成它的魔力，:mana 可以指定多少。它一直存在，靠自己的魔力和心核里的载页行动")
                 .exec((n, c) -> {
                     if (!(c.inst().caster instanceof ServerPlayer sp)) return null;
                     var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.tryParse((String) n.arg(0).value));
                     Place at = place(kw(n, "at"), c);
                     Node name = kw(n, "name");
                     Node hunt = kw(n, "hunt"), radius = kw(n, "radius");
+                    if (Compiler.MANA_LIFEFORM.equals(n.arg(0).value)) {
+                        Node mana = kw(n, "mana");
+                        String why = dev.logos.runtime.Lifeforms.summon(c.inst(), sp, at.level(), at.pos(), name == null ? null : text(name, c),
+                                (int) Math.floor(num(kw(n, "level"), c)), mana == null ? null : num(mana, c));
+                        if (why != null) c.inst().terminate(why);
+                        else if (hunt != null || radius != null) {
+                            dev.logos.runtime.Familiars.setStance(dev.logos.runtime.Familiars.latest(sp, null),
+                                    hunt == null ? null : filter(hunt, c), c.inst(), radius == null ? null : num(radius, c));
+                        }
+                        return null;
+                    }
                     String why = dev.logos.runtime.Familiars.summon(c.inst(), sp, type, at.level(), at.pos(), name == null ? null : text(name, c),
                             hunt == null ? null : filter(hunt, c), radius == null ? null : num(radius, c));
                     if (why != null) c.inst().terminate(why);

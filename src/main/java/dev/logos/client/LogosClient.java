@@ -29,6 +29,7 @@ public final class LogosClient {
     static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
         event.register(FxPayload.TYPE, (payload, ctx) -> LogosFx.handle(payload));
         event.register(dev.logos.net.AnchorsPayload.TYPE, (payload, ctx) -> ClientAnchors.receive(payload));
+        event.register(dev.logos.net.LifeformCorePayload.TYPE, (payload, ctx) -> dev.logos.runtime.Lifeforms.opening(ctx.player(), payload.entityId()));
     }
 
     @SubscribeEvent
@@ -54,6 +55,7 @@ public final class LogosClient {
         // Constructs are drawn with the other spell visuals (LogosFx), not by an entity renderer.
         event.registerEntityRenderer(LogosMod.CONSTRUCT.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
         event.registerEntityRenderer(LogosMod.FREE_MANA.get(), FreeManaRenderer::new);
+        event.registerEntityRenderer(LogosMod.MANA_LIFEFORM.get(), ManaLifeformRenderer::new);
     }
 
     @SubscribeEvent

@@ -408,6 +408,26 @@ public final class Examples {
                   (stance :hunt (except (kind hostile) "minecraft:creeper") :radius 24))
                 """);
 
+        add("mana-lifeform", """
+                ; 凝魔成灵：把这道术式剩下的魔力凝成一只 1 级魔力生命体「灵」（至少 50，最多 1000）
+                ; 它一直存在，靠自己的魔力行动；潜行右键它打开心核，放入下面两种载页
+                ; 魔力耗尽会沉寂落地，拿紫水晶碎片、青金石或回响碎片右键喂它
+                (spell :name "凝魔成灵" :mana 300
+                  (summon mana_lifeform :level 1 :name "灵"))
+                """);
+
+        add("lifeform-bolt", """
+                ; 灵弹：放进魔力生命体心核的「普攻」格。它战斗时会转向敌人施放，(foe) 就是它对准的那个
+                (spell :name "灵弹" :mana 20
+                  (damage (foe) 6))
+                """);
+
+        add("lifeform-guard", """
+                ; 护主：放进心核的被动格（2 级起才有）。生命体受击时，治疗它的主人
+                (spell :name "护主" :trigger hurt :mana 15
+                  (heal (master) 4))
+                """);
+
         add("ender-gale", """
                 ; 末影疾风：:trail 把尾迹换成末影粒子；phantasm（幻像显现）在命中处召出旋风粒子
                 ; 拖尾与幻象只是表象：击退来自 push，而不是 gust 粒子

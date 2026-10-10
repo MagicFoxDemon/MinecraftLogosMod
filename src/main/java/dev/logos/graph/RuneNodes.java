@@ -295,6 +295,20 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "master", group = BINDING, graphTypes = SpellGraph.class)
+    public static class Master extends RuneNode {
+        public Master() {
+            super("master");
+        }
+    }
+
+    @NodeAttribute(name = "foe", group = BINDING, graphTypes = SpellGraph.class)
+    public static class Foe extends RuneNode {
+        public Foe() {
+            super("foe");
+        }
+    }
+
     @NodeAttribute(name = "familiar", group = BINDING, graphTypes = SpellGraph.class)
     public static class Familiar extends RuneNode {
         public Familiar() {
@@ -788,6 +802,8 @@ public final class RuneNodes {
         BY_RUNE.put("sic", Sic::new);
         BY_RUNE.put("stance", Stance::new);
         BY_RUNE.put("familiar", Familiar::new);
+        BY_RUNE.put("master", Master::new);
+        BY_RUNE.put("foe", Foe::new);
         BY_RUNE.put("dismiss", Dismiss::new);
         BY_RUNE.put("unanchor", Unanchor::new);
         BY_RUNE.put("halt", Halt::new);

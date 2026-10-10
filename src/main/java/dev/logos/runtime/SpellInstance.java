@@ -128,7 +128,9 @@ public final class SpellInstance {
         finished = true;
         if (endReason == null) endReason = "自然消散";
         double free = endedNaturally() ? mana : mana * recovery;
-        FreeManaEntity.release(this, lastLevel, lastPos, free);
+        // A vessel that cast it (a mana lifeform) takes its leftover back; anyone else's goes free.
+        if (caster instanceof ManaVessel vessel) vessel.receiveMana(free);
+        else FreeManaEntity.release(this, lastLevel, lastPos, free);
         if (!(caster instanceof ServerPlayer player) || !PlayerMagic.of(player).trace) return;
         double secs = (SpellRuntime.now() - startTick) / 20.0;
         ChatFormatting color = endedNaturally() ? ChatFormatting.GRAY : ChatFormatting.RED;

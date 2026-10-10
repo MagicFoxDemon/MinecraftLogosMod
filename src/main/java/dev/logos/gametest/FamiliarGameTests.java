@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
 final class FamiliarGameTests {
     private FamiliarGameTests() {}
 
-    private static ServerPlayer master(GameTestHelper h) {
+    static ServerPlayer master(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();

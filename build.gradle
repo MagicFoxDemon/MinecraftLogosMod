@@ -31,6 +31,11 @@ sourceSets.main.resources {
 repositories {
     // LDLib2 (UI + node graph toolkit), Photon (VFX), KilaGraph (Photon dependency)
     maven { url = "https://maven.firstdark.dev/snapshots" }
+    // GeckoLib (animated entity models), from Modrinth's Maven; only the modrinth group is looked up there.
+    exclusiveContent {
+        forRepository { maven { url = "https://api.modrinth.com/maven" } }
+        filter { includeGroup "maven.modrinth" }
+    }
     // Add here additional repositories if required by some of the dependencies below.
 }
 
@@ -208,4 +213,6 @@ dependencies {
     implementation "com.lowdragmc.ldlib2:ldlib2-neoforge-26.1:${ldlib2_version}"
     implementation("com.lowdragmc.photon:photon-neoforge-26.1:${photon_version}") { transitive = false }
     implementation("com.lowdragmc.kilagraph:kilagraph-neoforge-26.1:${kilagraph_version}") { transitive = false }
+    // geckolib-neoforge-26.1.2-5.5.2 (Modrinth version id; the version number is shared with the Fabric build)
+    implementation "maven.modrinth:geckolib:${geckolib_version}"
 }

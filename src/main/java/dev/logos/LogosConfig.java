@@ -48,6 +48,12 @@ public final class LogosConfig {
             .translation("logos.configuration.maxFamiliars")
             .defineInRange("maxFamiliars", 4, 0, 256);
 
+    public static final ModConfigSpec.IntValue MAX_LIFEFORMS = BUILDER
+            .comment("How many mana lifeforms one player may have at once (kept in the world, so they cost the server more than familiars).",
+                    "Summoning one past the limit unmakes the oldest.")
+            .translation("logos.configuration.maxLifeforms")
+            .defineInRange("maxLifeforms", 1, 0, 64);
+
     public static final ModConfigSpec.IntValue MAX_ANCHORS = BUILDER
             .comment("How many named anchors (^name) one player may keep.")
             .translation("logos.configuration.maxAnchors")
@@ -117,6 +123,10 @@ public final class LogosConfig {
 
     public static int maxFamiliars() {
         return read(MAX_FAMILIARS::getAsInt, 4);
+    }
+
+    public static int maxLifeforms() {
+        return read(MAX_LIFEFORMS::getAsInt, 1);
     }
 
     public static int maxAnchors() {

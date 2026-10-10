@@ -7,7 +7,8 @@
 - 地址：https://github.com/MagicFoxDemon/MinecraftLogosMod ，目前是**私有**仓库。
 - 主分支 `main`，远程名 `origin`。从现在开始所有改动都提交到这里。
 - 提交前必须测试通过（见下文「测试」）。提交说明用英文，一句话说清改了什么。
-- 不进仓库的东西：`build/`、`run/`、`.gradle/`、`README.md`（工作文档）、`素材/`（原图）、`net/`（反编译参考）。美术原图和 Blockbench 文件在工程外的 `D:\dev\LogosArt`。
+- 不进仓库的东西：`build/`、`run/`、`.gradle/`、`README.md`（工作文档）、`素材/`（原图）、根目录的 `/net/`（反编译参考）。美术原图和 Blockbench 文件在工程外的 `D:\dev\LogosArt`。
+- `.gitignore` 里忽略文件夹时要加前导 `/`，锚定在根目录。曾经写成 `net/`，结果把源码包 `dev/logos/net`（全部网络包）也忽略了，仓库因此编译不过。提交前用 `git status --ignored --short src` 确认源码没有被忽略。
 
 ### 凭据
 
@@ -22,7 +23,11 @@ git -c credential.helper= -c "http.https://github.com/.extraheader=AUTHORIZATION
 
 ## 构建与测试
 
-需要 JDK 25。
+需要 JDK 25。依赖：
+- LDLib2、Photon、KilaGraph：来自 `maven.firstdark.dev`；
+- GeckoLib 5.5.2：从 Modrinth 的 Maven 拉取，坐标 `maven.modrinth:geckolib:<版本 id>`，版本 id 在 `gradle.properties` 的 `geckolib_version`。
+
+它们都是玩家必装的前置，写在 `neoforge.mods.toml` 里。
 
 | 命令 | 内容 |
 | --- | --- |
@@ -40,7 +45,12 @@ git -c credential.helper= -c "http.https://github.com/.extraheader=AUTHORIZATION
 - `runtime/`：法术执行。`Interp` 求值，`Familiars` / `FamiliarEvents` / `DragonFamiliar` / `FamiliarRiding` 使魔，`Construct*` 炼成体，`Anchors` 锚点，`Filter` ⊙ 筛选。
 - `graph/`：LDLib2 节点编辑器。新符文要在 `RuneNodes` 里加节点类并在 `BY_RUNE` 登记，名字写进 `assets/logos/lang/*.json` 的 `logos.rune.*`。
 - `mixin/`：对原版的少量改动，登记在 `src/main/resources/logos.mixins.json`。
-- `client/`：渲染、界面与客户端事件。
+- `client/`：渲染、界面与客户端事件。`client/uitest/` 是无窗口客户端场景（截图检查），例如 `LifeformScenario`。
+- 魔力生命体：
+  - `runtime/ManaLifeform`：实体、心核、施法 AI、GeckoLib 动画控制器；
+  - `runtime/Lifeforms`：召唤规则、每人上限的存档登记、心核界面、被动触发；
+  - `client/ManaLifeformRenderer`：渲染。
+  - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`，原始 bbmodel 在 `D:\dev\LogosArt\mana_lifeform.zip`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`。
 
 ## 开发约定
 
@@ -49,4 +59,5 @@ git -c credential.helper= -c "http.https://github.com/.extraheader=AUTHORIZATION
 - 测试的坑：
   - 模拟玩家要 `connection.markClientLoaded()` 才会受伤；和平难度下怪物对玩家的伤害是 0。
   - 需要实体 tick 的测试（生物移动、游离魔力、使魔行为）先调用 `FamiliarGameTests.forceAround(h, 1)` 强制加载周围区块，否则机器忙时实体可能整场测试都不 tick。
+  - GeckoLib 的触发式动画（`triggerAnim`）播完后不会自己把控制器交还给状态处理器，必须调用 `stopTriggeredAnim`，否则停机、苏醒这类状态动画永远不会播放。
   - 等实体行为时用 `h.succeedWhen(...)` 轮询，不要用 `runAfterDelay(固定刻数)`：区块开始 tick 的时间不固定，固定等待会偶发失败。每个测试上限 400 刻。

@@ -45,7 +45,8 @@ public final class LogosGameTests {
             "familiar_dragon_circles", "familiar_dragon_throne",
             "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects",
             "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies",
-            "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts");
+            "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
+            "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed");
 
     private LogosGameTests() {}
 
@@ -86,6 +87,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("familiar_warden_vs_warden", () -> FamiliarGameTests::wardenFightsWildWarden);
         FUNCTIONS.register("familiar_sic", () -> FamiliarGameTests::sicOrdersAttack);
         FUNCTIONS.register("familiar_stance_hunts", () -> FamiliarGameTests::stanceHunts);
+        FUNCTIONS.register("lifeform_summon_rules", () -> LifeformGameTests::summonRules);
+        FUNCTIONS.register("lifeform_casts_attack_page", () -> LifeformGameTests::castsAttackPage);
+        FUNCTIONS.register("lifeform_dormant_and_fed", () -> LifeformGameTests::dormantAndFed);
         FUNCTIONS.register("construct_stops_movement", () -> ConstructGameTests::wallStopsMovement);
         FUNCTIONS.register("construct_one_way_arrows", () -> ConstructGameTests::oneWayStopsArrows);
         FUNCTIONS.register("construct_shields_explosion", () -> ConstructGameTests::wallShieldsExplosion);

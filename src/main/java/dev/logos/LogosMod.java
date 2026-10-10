@@ -146,6 +146,19 @@ public class LogosMod {
                     .sized(0.5f, 0.5f).clientTrackingRange(6).updateInterval(2)
                     .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
+    /** 魔力生命体: the most basic alchemical life, summoned from mana alone; its size grows with its level. */
+    public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.ManaLifeform>> MANA_LIFEFORM =
+            ENTITY_TYPES.register("mana_lifeform", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ManaLifeform>of(
+                            dev.logos.runtime.ManaLifeform::new, net.minecraft.world.entity.MobCategory.MISC)
+                    .sized(0.9f, 1.5f).clientTrackingRange(10)
+                    .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+
+    /** Items that give a mana lifeform mana when it is fed with them (data/logos/data_maps/item/mana_fuel.json). */
+    public static final net.neoforged.neoforge.registries.datamaps.DataMapType<net.minecraft.world.item.Item, dev.logos.runtime.Lifeforms.ManaFuel> MANA_FUEL =
+            net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "mana_fuel"),
+                    net.minecraft.core.registries.Registries.ITEM, dev.logos.runtime.Lifeforms.ManaFuel.CODEC)
+                    .synced(dev.logos.runtime.Lifeforms.ManaFuel.CODEC, false).build();
+
     public static final DeferredRegister<net.minecraft.world.entity.ai.attributes.Attribute> ATTRIBUTES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.ATTRIBUTE, MODID);
     /** How far free mana is drawn towards a player (experience orbs use 8). Gear can raise it. */
@@ -204,6 +217,10 @@ public class LogosMod {
         ATTACHMENTS.register(modBus);
         ATTRIBUTES.register(modBus);
         modBus.addListener(this::registerPayloads);
+        modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) ->
+                e.put(MANA_LIFEFORM.get(), dev.logos.runtime.ManaLifeform.createAttributes().build()));
+        modBus.addListener((net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent e) -> e.register(MANA_FUEL));
+        dev.logos.runtime.Lifeforms.registerUI();
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent e) -> {
             e.add(net.minecraft.world.entity.EntityType.PLAYER, MANA_ATTRACTION);
             e.add(net.minecraft.world.entity.EntityType.PLAYER, MANA_ABSORPTION);
@@ -237,6 +254,7 @@ public class LogosMod {
         var registrar = event.registrar("1");
         registrar.playToServer(dev.logos.net.InscribePayload.TYPE, dev.logos.net.InscribePayload.CODEC, dev.logos.net.InscribePayload::handle);
         registrar.playToClient(dev.logos.net.FxPayload.TYPE, dev.logos.net.FxPayload.CODEC);
+        registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
         registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
         registrar.playToServer(dev.logos.net.AnchorEditPayload.TYPE, dev.logos.net.AnchorEditPayload.CODEC, dev.logos.net.AnchorEditPayload::handle);
@@ -266,6 +284,11 @@ public class LogosMod {
     @SubscribeEvent
     public void onServerStarted(ServerStartedEvent event) {
         LogosCommands.exportExamples();
+    }
+
+    /** Runs {@code r} after this server tick's events, outside whatever event is being handled now. */
+    public static void defer(Runnable r) {
+        DEFERRED.add(r);
     }
 
     @SubscribeEvent

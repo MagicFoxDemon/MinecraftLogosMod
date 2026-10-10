@@ -230,8 +230,13 @@ public final class Compiler {
         return Node.lit(Type.ANCHOR, name, a.line(), a.col());
     }
 
+    /** The one creature of this mod that summon knows by its bare name. */
+    public static final String MANA_LIFEFORM = "logos:mana_lifeform";
+
     private static Node creature(SExpr e) {
         String id = e instanceof Atom a ? registryId(a.text()) : null;
+        // The mana lifeform is this mod's own creature: written bare, it needs no logos: prefix.
+        if ("minecraft:mana_lifeform".equals(id)) id = MANA_LIFEFORM;
         if (id == null) throw err(e, "summon 需要一个生物名，如 zombie、skeleton、minecraft:wither、模组id:生物名");
         if (!creatureExists.test(id)) throw err(e, "没有叫 " + id + " 的生物");
         return Node.lit(Type.CREATURE, id, e.line(), e.col());

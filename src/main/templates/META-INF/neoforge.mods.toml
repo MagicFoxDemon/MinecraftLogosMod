@@ -101,3 +101,11 @@ config="${mod_id}.mixins.json"
     versionRange="[26.1.2.3,)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="geckolib"
+    type="required"
+    reason="Animated model of the mana lifeform (魔力生命体)"
+    versionRange="[5.5.2,)"
+    ordering="AFTER"
+    side="BOTH"

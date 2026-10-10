@@ -3,6 +3,7 @@ package dev.logos.runtime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import net.minecraft.core.BlockPos;
@@ -43,6 +44,10 @@ public final class Targeting {
         if (e instanceof OwnableEntity o && o.getOwner() == inst.caster) return false;
         // Nor the caster's own familiars.
         if (inst.caster.getUUID().equals(Familiars.masterOf(e))) return false;
+        // A familiar casting (a mana lifeform) spares its master's whole side: them, their familiars, their pets.
+        UUID master = Familiars.masterOf(inst.caster);
+        if (master != null && (Familiars.friendly(master, e)
+                || e instanceof OwnableEntity o && o.getOwner() != null && master.equals(o.getOwner().getUUID()))) return false;
         return !inst.caster.isAlliedTo(e);
     }
 

@@ -77,6 +77,12 @@ final class FamiliarEvents {
     @SubscribeEvent
     static void onJoin(EntityJoinLevelEvent event) {
         if (event.loadedFromDisk() && Familiars.isFamiliar(event.getEntity())) {
+            // A mana lifeform is kept with the world: it answers again, unless it was unmade meanwhile.
+            if (event.getEntity() instanceof ManaLifeform lf && !event.getLevel().isClientSide()) {
+                boolean kept = Lifeforms.registered(lf);
+                Lifeforms.onLoaded(lf);
+                if (kept) return;
+            }
             event.setCanceled(true);
             return;
         }
@@ -94,7 +100,7 @@ final class FamiliarEvents {
 
     @SubscribeEvent
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        for (Mob m : Familiars.of(event.getEntity())) Familiars.dismiss(m);
+        for (Mob m : Familiars.of(event.getEntity())) if (!Familiars.kept(m)) Familiars.dismiss(m);
     }
 
     /** Not even peaceful difficulty sends a familiar away; only its bond does. */

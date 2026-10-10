@@ -186,7 +186,7 @@ public final class Familiars {
         if (!owner.getAbilities().instabuild && kills(owner, type) < killsNeeded(type)) {
             return "还不能召唤" + name + "：击杀 " + kills(owner, type) + " / " + killsNeeded(type);
         }
-        if (of(owner).size() >= LogosConfig.maxFamiliars()) return "使魔已达上限 " + LogosConfig.maxFamiliars() + " 只（配置 maxFamiliars）";
+        if (of(owner).stream().filter(f -> !(f instanceof ManaLifeform)).count() >= LogosConfig.maxFamiliars()) return "使魔已达上限 " + LogosConfig.maxFamiliars() + " 只（配置 maxFamiliars）";
         if (!(type.create(level, EntitySpawnReason.MOB_SUMMONED) instanceof Mob m)) return name + "不是能召唤的生物";
         m.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);
         if (!inst.spend(m.getMaxHealth() * 2, "召唤" + name)) return null; // the spell itself reports running dry
@@ -217,6 +217,18 @@ public final class Familiars {
         LIVE.add(m);
     }
 
+    /** A kept familiar (a mana lifeform) loaded again with its chunk: it answers to its master as before. */
+    static void rebind(Mob m) {
+        if (m instanceof PathfinderMob pm) m.goalSelector.addGoal(1, new FollowMaster(pm));
+        STATE.computeIfAbsent(m, k -> new State()).seq = ++summoned;
+        LIVE.add(m);
+    }
+
+    /** Kept with the world rather than unmade: mana lifeforms. */
+    static boolean kept(Mob m) {
+        return m instanceof ManaLifeform;
+    }
+
     private static long seq(Mob m) {
         State s = STATE.get(m);
         return s == null ? 0 : s.seq;
@@ -243,6 +255,10 @@ public final class Familiars {
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             ItemStack s = m.getItemBySlot(slot);
             if (!s.isEmpty() && m.getDropChances().isPreserved(slot)) out.add(s.copy());
+        }
+        // A lifeform's core pages are its master's.
+        if (m instanceof ManaLifeform lf) {
+            for (int i = 0; i < lf.core.getContainerSize(); i++) if (!lf.core.getItem(i).isEmpty()) out.add(lf.core.getItem(i).copy());
         }
         return out;
     }
@@ -367,6 +383,16 @@ public final class Familiars {
         if (b == null || !(m.level() instanceof ServerLevel level)) return;
         // Looked up in its own world: a master who left (or went to another dimension) is not found, and it fades.
         Player owner = level.getPlayerByUUID(b.owner());
+        // A kept lifeform waits where it is for a master who is away, and lies still while dormant.
+        if (kept(m) && (owner == null || ((ManaLifeform) m).isDormant())) {
+            State st = STATE.get(m);
+            if (st != null) {
+                st.target = null;
+                st.hunting = false;
+                st.errand = null;
+            }
+            return;
+        }
         if (owner == null || level.getGameTime() >= b.expiresAt()) {
             fade(m);
             return;
@@ -412,7 +438,7 @@ public final class Familiars {
         }
         if (d > lost) {
             if (teleportNear(m, owner)) s.failedRescues = 0;
-            else if (++s.failedRescues >= RESCUE_TRIES) fade(m);
+            else if (++s.failedRescues >= RESCUE_TRIES && !kept(m)) fade(m);
         } else if (d > leash) {
             teleportNear(m, owner);
         }
@@ -489,13 +515,17 @@ public final class Familiars {
         @Override
         public boolean canUse() {
             Player p = master();
-            return p != null && orderedTarget(mob) == null && !hasOrders(mob) && mob.distanceToSqr(p) > 6 * 6;
+            return p != null && orderedTarget(mob) == null && !hasOrders(mob) && !dormant() && mob.distanceToSqr(p) > 6 * 6;
         }
 
         @Override
         public boolean canContinueToUse() {
             Player p = master();
-            return p != null && orderedTarget(mob) == null && !hasOrders(mob) && mob.distanceToSqr(p) > 2.5 * 2.5;
+            return p != null && orderedTarget(mob) == null && !hasOrders(mob) && !dormant() && mob.distanceToSqr(p) > 2.5 * 2.5;
+        }
+
+        private boolean dormant() {
+            return mob instanceof ManaLifeform lf && lf.isDormant();
         }
 
         @Override

@@ -110,8 +110,17 @@ public final class Casting {
         return true;
     }
 
-    private static SpellInstance run(ServerPlayer caster, Spell spell, double mana, double recovery, @Nullable Entity target, @Nullable Vec3 here) {
-        ServerLevel level = caster.level();
+    /**
+     * Starts {@code spell} for a caster that is not a player (a mana lifeform), with {@code mana} it has
+     * already paid from its own pool. Its eyes and gaze are where the spell starts and points.
+     */
+    public static SpellInstance castAs(net.minecraft.world.entity.LivingEntity caster, Spell spell, double mana, double recovery,
+            @Nullable Entity target, @Nullable Vec3 here) {
+        return run(caster, spell, mana, recovery, target, here);
+    }
+
+    private static SpellInstance run(net.minecraft.world.entity.LivingEntity caster, Spell spell, double mana, double recovery, @Nullable Entity target, @Nullable Vec3 here) {
+        ServerLevel level = (ServerLevel) caster.level();
         SpellInstance inst = new SpellInstance(spell, caster, level, mana, recovery);
         Vec3 origin = here != null ? here : caster.getEyePosition();
         Ctx ctx = new Ctx(inst, level, origin, caster.getLookAngle(), target, Map.of(), 0, 0);
