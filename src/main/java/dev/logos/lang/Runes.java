@@ -36,6 +36,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.BaseFireBlock;
@@ -102,6 +104,19 @@ public final class Runes {
         List<Entity> out = new ArrayList<>();
         for (Entity e : entities(n, c)) if (e.isAlive() && Targeting.mayAffect(c.inst(), e)) out.add(e);
         return out;
+    }
+
+    /** What disarm takes first: main hand, off hand, then head, chest, legs, feet; armour bound by a curse stays. */
+    private static EquipmentSlot disarmSlot(LivingEntity t) {
+        for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND, EquipmentSlot.HEAD,
+                EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+            ItemStack s = t.getItemBySlot(slot);
+            if (s.isEmpty()) continue;
+            if (slot.isArmor() && net.minecraft.world.item.enchantment.EnchantmentHelper.has(s,
+                    net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) continue;
+            return slot;
+        }
+        return null;
     }
 
     /** Group effects pay once, a multiple of the single-target price, however many targets there are. */
@@ -568,6 +583,43 @@ public final class Runes {
                         StatusData.freeze(t, s);
                         c.inst().affected.add(t.getUUID());
                         Vfx.burst(lv(t), Targeting.center(t), Element.FROST, 12);
+                    }
+                    return null;
+                });
+        def("disarm", EFFECT, ACTION).each("target").stab(2)
+                .doc("缴械：目标掉落一件装备。先主手，主手为空则副手，再依次是头、胸、腿、脚。带绑定诅咒的盔甲不会脱落。"
+                        + "掉落的物品 2 秒内捡不起来。每个目标 8 魔力，没有可掉落的装备时不消耗")
+                .exec((n, c) -> {
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        EquipmentSlot slot = disarmSlot(t);
+                        if (slot == null) continue;
+                        if (!c.inst().spend(8, "disarm")) return null;
+                        ItemStack stack = t.getItemBySlot(slot);
+                        t.setItemSlot(slot, ItemStack.EMPTY);
+                        ItemEntity drop = t.spawnAtLocation(lv(t), stack, (float) (t.getBbHeight() * 0.6));
+                        if (drop != null) drop.setPickUpDelay(40);
+                        c.inst().affected.add(t.getUUID());
+                        Vfx.sound(lv(t), Targeting.center(t), SoundEvents.ITEM_BREAK.value(), 0.6f, 1.6f);
+                        Vfx.burst(lv(t), Targeting.center(t), Element.PHYSICAL, 8);
+                    }
+                    return null;
+                });
+        def("potion", EFFECT, ACTION).each("target").p("effect", Type.MOB_EFFECT).p("seconds", NUM).opt("level", NUM, "1").stab(2)
+                .doc("药水效果：按注册名施加，原版和模组的都可以（如 speed、minecraft:regeneration、模组id:效果名）。"
+                        + "等级从 1 开始，最高 10。持续效果每秒每级 0.8 魔力，最长 600 秒；瞬间效果（instant_health 等）每级 6 魔力")
+                .exec((n, c) -> {
+                    var effect = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.get(Identifier.parse((String) n.arg(1).value)).orElse(null);
+                    if (effect == null) return null;
+                    double s = clamp(num(n.arg(2), c), 0, 600);
+                    int level = (int) clamp(Math.round(num(n.arg(3), c)), 1, 10);
+                    boolean instant = effect.value().isInstantenous();
+                    double cost = instant ? 6 * level : s * level * 0.8;
+                    // An instant effect applies on its first tick; a lasting one needs at least a tick to exist.
+                    int ticks = instant ? 1 : Math.max(1, (int) Math.round(s * 20));
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        if (!c.inst().spend(cost, "potion")) return null;
+                        t.addEffect(new MobEffectInstance(effect, ticks, level - 1), c.inst().caster);
+                        c.inst().affected.add(t.getUUID());
                     }
                     return null;
                 });

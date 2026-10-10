@@ -69,10 +69,17 @@ public final class SpellBag {
         return all.get(Math.floorMod(i, all.size()));
     }
 
-    /** Passive spells (hurt / attack / kill) carried by the wand and off-hand codex. */
+    /**
+     * Passive spells (hurt / attack / kill) on any wand or codex held in either hand. They need not
+     * be selected, and a codex works on its own, without a wand.
+     */
     public static List<Entry> passives(Player player) {
-        ItemStack wand = heldWand(player);
-        if (wand == null) return List.of();
-        return entries(player, wand).stream().filter(e -> e.spell().isPassive()).toList();
+        List<Entry> out = new ArrayList<>();
+        for (InteractionHand hand : InteractionHand.values()) {
+            ItemStack holder = player.getItemInHand(hand);
+            if (holder.getItem() instanceof WandItem || holder.getItem() instanceof CodexItem) add(out, holder, holder.getItem() instanceof CodexItem);
+        }
+        out.removeIf(e -> !e.spell().isPassive());
+        return out;
     }
 }

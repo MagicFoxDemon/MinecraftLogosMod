@@ -270,7 +270,7 @@ public final class LogosCommands {
     private static int passives(CommandContext<CommandSourceStack> c) throws CommandSyntaxException {
         var list = SpellBag.passives(c.getSource().getPlayerOrException());
         if (list.isEmpty()) {
-            c.getSource().sendSuccess(() -> Component.literal("手持的法杖（及副手典籍）上没有被动术式。把带 :trigger hurt/attack/kill 的术式载页挂上去即可"), false);
+            c.getSource().sendSuccess(() -> Component.literal("主手和副手的法杖、法式典籍里都没有被动术式。把带 :trigger hurt/attack/kill 的术式载页放进去，拿在任一只手上即可"), false);
             return 1;
         }
         for (var e : list) {

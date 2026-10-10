@@ -68,14 +68,15 @@ public final class Casting {
         return new Injection(Math.min(spell.mana(), cap * mult), true, mult);
     }
 
-    /** The Formula Immolation level on {@code wand} (0 if none). */
-    public static int immolation(ServerPlayer player, ItemStack wand) {
+    /** The Formula Immolation level on {@code wand} (0 if none). A codex held without a wand has none. */
+    public static int immolation(ServerPlayer player, @Nullable ItemStack wand) {
+        if (wand == null) return 0;
         return player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).get(LogosMod.FORMULA_IMMOLATION)
                 .map(h -> EnchantmentHelper.getItemEnchantmentLevel(h, wand)).orElse(0);
     }
 
     /** Casts the spell written on a page held by {@code wand} (or the off-hand codex). Returns null if refused. */
-    public static @Nullable SpellInstance cast(ServerPlayer player, SpellBag.Entry entry, ItemStack wand, @Nullable Entity target, @Nullable Vec3 here) {
+    public static @Nullable SpellInstance cast(ServerPlayer player, SpellBag.Entry entry, @Nullable ItemStack wand, @Nullable Entity target, @Nullable Vec3 here) {
         Spell spell = entry.spell();
         PageTier tier = entry.tier();
         Injection in = injection(spell, tier, immolation(player, wand));
@@ -129,12 +130,12 @@ public final class Casting {
         return inst;
     }
 
-    /** Fires the passive spells on the held wand (and off-hand codex) bound to {@code trigger}. */
+    /** Fires the passive spells bound to {@code trigger} on every wand or codex held in either hand. */
     public static void firePassives(ServerPlayer player, String trigger, @Nullable Entity target, Vec3 here) {
         PlayerMagic m = PlayerMagic.of(player);
         long now = player.level().getGameTime();
+        // Formula Immolation comes from a wand in either hand, if there is one; a codex on its own has none.
         ItemStack wand = SpellBag.heldWand(player);
-        if (wand == null) return;
         for (SpellBag.Entry entry : SpellBag.passives(player)) {
             Spell spell = entry.spell();
             if (!spell.trigger().equals(trigger)) continue;

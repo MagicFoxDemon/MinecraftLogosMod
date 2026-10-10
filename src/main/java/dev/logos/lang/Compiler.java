@@ -28,6 +28,7 @@ public final class Compiler {
     public static Predicate<String> particleExists = id -> true;
     /** Whether a creature (living entity type) exists; installed by the game like {@link #itemExists}. */
     public static Predicate<String> creatureExists = id -> true;
+    public static Predicate<String> effectExists = id -> true;
 
     static {
         MAGNITUDES.put("minor", 2.0);
@@ -236,6 +237,13 @@ public final class Compiler {
         return Node.lit(Type.CREATURE, id, e.line(), e.col());
     }
 
+    private static Node effect(SExpr e) {
+        String id = e instanceof Atom a ? registryId(a.text()) : null;
+        if (id == null) throw err(e, "需要一个药水效果的注册名，如 speed、minecraft:regeneration、模组id:效果名");
+        if (!effectExists.test(id)) throw err(e, "没有叫 " + id + " 的药水效果");
+        return Node.lit(Type.MOB_EFFECT, id, e.line(), e.col());
+    }
+
     private static Node kind(SExpr e) {
         TargetKind k = e instanceof Atom a ? TargetKind.parse(a.text()) : null;
         if (k == null) throw err(e, "kind 需要一个种类: " + TargetKind.words());
@@ -318,6 +326,9 @@ public final class Compiler {
             } else if (i < pos.size() && p.type() == Type.CREATURE) {
                 // Creature names (zombie, skeleton…) are written bare inside (summon …).
                 arg = creature(pos.get(i));
+            } else if (i < pos.size() && p.type() == Type.MOB_EFFECT) {
+                // Effect ids (speed, minecraft:regeneration…) are written bare, like creatures.
+                arg = effect(pos.get(i));
             } else if (i < pos.size()) {
                 arg = expr(pos.get(i), s);
             } else if (p.defaultSrc() != null) {

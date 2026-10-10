@@ -69,7 +69,7 @@ public final class Node {
     /** Compact source-like rendering used in messages. */
     public String show() {
         return switch (kind) {
-            case LIT -> value instanceof Double d ? fmt(d) : type == Type.DIMENSION ? "@" + value : type == Type.LOOK ? "&" + value : type == Type.PARTICLE ? "%" + value : type == Type.ANCHOR ? "^" + value : type == Type.CREATURE ? String.valueOf(value).replace("minecraft:", "") : value instanceof TargetKind k ? k.word : value instanceof String s ? '"' + s + '"' : String.valueOf(value).toLowerCase();
+            case LIT -> value instanceof Double d ? fmt(d) : type == Type.DIMENSION ? "@" + value : type == Type.LOOK ? "&" + value : type == Type.PARTICLE ? "%" + value : type == Type.ANCHOR ? "^" + value : (type == Type.CREATURE || type == Type.MOB_EFFECT) ? String.valueOf(value).replace("minecraft:", "") : value instanceof TargetKind k ? k.word : value instanceof String s ? '"' + s + '"' : String.valueOf(value).toLowerCase();
             case CTX, VAR -> (String) value;
             case CALL -> {
                 StringBuilder sb = new StringBuilder("(").append(rune.name);

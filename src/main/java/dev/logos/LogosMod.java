@@ -224,6 +224,11 @@ public class LogosMod {
             var key = net.minecraft.resources.Identifier.tryParse(id);
             return key != null && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.containsKey(key);
         };
+        // ⚗ effects (potion target speed …) likewise: any registered mob effect, modded ones included.
+        dev.logos.lang.Compiler.effectExists = id -> {
+            var key = net.minecraft.resources.Identifier.tryParse(id);
+            return key != null && net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.containsKey(key);
+        };
         dev.logos.gametest.LogosGameTests.register(modBus);
         NeoForge.EVENT_BUS.register(this);
     }

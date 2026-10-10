@@ -84,12 +84,12 @@ public abstract class RuneNode extends LogosNode {
 
     /** Slots chosen from a fixed list on the node itself (◐ dimension, ◈ kind) rather than wired. */
     public static boolean isOption(Rune.Param p) {
-        return p.type() == Type.DIMENSION || p.type() == Type.KIND || p.type() == Type.ANCHOR || p.type() == Type.CREATURE;
+        return p.type() == Type.DIMENSION || p.type() == Type.KIND || p.type() == Type.ANCHOR || p.type() == Type.CREATURE || p.type() == Type.MOB_EFFECT;
     }
 
     /** The option id holding such a slot's choice. */
     public static String option(Rune.Param p) {
-        return p.type() == Type.KIND ? "kind_" + p.name() : p.type() == Type.ANCHOR ? "anchor_" + p.name() : p.type() == Type.CREATURE ? "creature_" + p.name() : dim(p.name());
+        return p.type() == Type.KIND ? "kind_" + p.name() : p.type() == Type.ANCHOR ? "anchor_" + p.name() : p.type() == Type.CREATURE ? "creature_" + p.name() : p.type() == Type.MOB_EFFECT ? "effect_" + p.name() : dim(p.name());
     }
 
     @Override
@@ -103,6 +103,9 @@ public abstract class RuneNode extends LogosNode {
             }
             if (p.type() == Type.CREATURE) {
                 context.addOption(option(p), String.class).withDefaultValue("zombie").withDisplayName(Component.literal("❦ 生物"));
+            }
+            if (p.type() == Type.MOB_EFFECT) {
+                context.addOption(option(p), String.class).withDefaultValue("speed").withDisplayName(Component.literal("⚗ 药水效果"));
             }
             if (p.type() == Type.ANCHOR) {
                 // Typed, not picked: anchor may name a new one.

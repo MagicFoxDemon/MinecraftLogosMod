@@ -223,6 +223,15 @@ class CompilerTest {
     }
 
     @Test
+    void disarmAndPotionCompile() {
+        Compiler.compile("(disarm (enemies :radius 5))");
+        Compiler.compile("(potion caster speed 10 2)");
+        Compiler.compile("(potion (enemies) minecraft:slowness 5)");
+        assertError("(potion caster speed)", "seconds");
+        assertError("(disarm here)", "插槽形状不符");
+    }
+
+    @Test
     void immolationSwitchDefaultsOn() {
         assertTrue(Compiler.compile("(spell :mana 80 (heal caster 1))").immolate());
         assertFalse(Compiler.compile("(spell :mana 80 :immolate false (heal caster 1))").immolate());

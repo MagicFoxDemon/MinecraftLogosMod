@@ -88,7 +88,7 @@ public final class LTypes {
             case ELEMENT -> ELEMENT;
             case MOTION -> MOTION;
             case SHAPE -> SHAPE;
-            case STATUS, TEXT, DIMENSION, LOOK, PARTICLE, FILTER, KIND, ANCHOR, CREATURE -> STATUS;
+            case STATUS, TEXT, DIMENSION, LOOK, PARTICLE, FILTER, KIND, ANCHOR, CREATURE, MOB_EFFECT -> STATUS;
             case ACTION -> FLOW;
             case NUM, ANY -> NUM;
         };

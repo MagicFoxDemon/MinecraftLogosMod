@@ -43,6 +43,7 @@ public final class LogosGameTests {
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
             "familiar_dragon_circles", "familiar_dragon_throne",
+            "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects",
             "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts");
 
@@ -97,6 +98,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("world_nether_step", () -> WorldGameTests::netherStep);
         FUNCTIONS.register("world_wand_casts_selected_page", () -> WorldGameTests::wandCastsSelectedPage);
         FUNCTIONS.register("world_table_inscribes", () -> WorldGameTests::tableInscribes);
+        FUNCTIONS.register("passive_codex_without_wand", () -> RuneGameTests::codexPassiveWithoutWand);
+        FUNCTIONS.register("rune_disarm_order", () -> RuneGameTests::disarmOrder);
+        FUNCTIONS.register("rune_potion_effects", () -> RuneGameTests::potionEffects);
         FUNCTIONS.register("page_capacity_caps_injection", () -> PageGameTests::capacityCapsInjection);
         FUNCTIONS.register("page_immolation_burns", () -> PageGameTests::immolationBurnsPage);
         FUNCTIONS.register("free_mana_from_leftovers", () -> PageGameTests::freeManaFromLeftovers);

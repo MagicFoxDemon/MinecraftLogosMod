@@ -199,6 +199,11 @@ public final class GraphCompiler {
                 items.add(atom(n, cr == null || cr.isBlank() ? "zombie" : cr.strip().toLowerCase(Locale.ROOT)));
                 continue;
             }
+            if (p.type() == Type.MOB_EFFECT) {
+                String ef = n.option(RuneNode.option(p), String.class);
+                items.add(atom(n, ef == null || ef.isBlank() ? "speed" : ef.strip().toLowerCase(Locale.ROOT)));
+                continue;
+            }
             if (p.type() == Type.ANCHOR) {
                 String a = n.option(RuneNode.option(p), String.class);
                 items.add(atom(n, "^" + (a == null || a.isBlank() ? "家" : a.strip())));

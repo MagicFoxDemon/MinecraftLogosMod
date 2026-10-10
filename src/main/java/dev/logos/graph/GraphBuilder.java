@@ -193,7 +193,7 @@ public final class GraphBuilder {
                 n.setOption(RuneNode.dim(p.name()), (String) s.args.get(i).value);
                 continue;
             }
-            if (p.type() == dev.logos.lang.Type.CREATURE) {
+            if (p.type() == dev.logos.lang.Type.CREATURE || p.type() == dev.logos.lang.Type.MOB_EFFECT) {
                 n.setOption(RuneNode.option(p), String.valueOf(s.args.get(i).value).replace("minecraft:", ""));
                 continue;
             }

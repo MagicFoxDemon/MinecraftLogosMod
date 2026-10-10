@@ -45,5 +45,6 @@ public class CodexItem extends Item implements HeldItemUIMenuType.HeldItemUI {
         long n = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).count();
         builder.accept(Component.literal("收录 " + n + " 篇术式").withStyle(ChatFormatting.GRAY));
         builder.accept(Component.literal("右键打开 · 放在副手时，其中的术式可被法杖使用").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.literal("被动术式（受伤/攻击/击杀时）拿在任一只手上就会生效").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

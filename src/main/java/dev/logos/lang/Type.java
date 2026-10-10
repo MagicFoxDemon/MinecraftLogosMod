@@ -31,6 +31,8 @@ public enum Type {
     ANCHOR("⚓", "锚点"),
     /** A creature type by registry id; only written inside {@code (summon …)}. */
     CREATURE("❦", "生物"),
+    /** A mob effect (potion effect) by registry id; vanilla and modded alike. */
+    MOB_EFFECT("⚗", "药效"),
     TEXT("¶", "文字"),
     ACTION("▶", "行动"),
     ANY("✱", "任意");
