@@ -11,19 +11,161 @@
     {
       "when": {
         "facing": "south",
-        "page": "blank"
+        "page": "blank",
+        "page_tier": "basic"
       },
       "apply": {
-        "model": "logos:block/inscription_table_page"
+        "model": "logos:block/inscription_table_page_basic_blank"
       }
     },
     {
       "when": {
         "facing": "south",
-        "page": "inscribed"
+        "page": "inscribed",
+        "page_tier": "basic"
       },
       "apply": {
-        "model": "logos:block/inscription_table_page_inscribed"
+        "model": "logos:block/inscription_table_page_basic_inscribed"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "blank",
+        "page_tier": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_crystal_blank"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "inscribed",
+        "page_tier": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_crystal_inscribed"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "blank",
+        "page_tier": "echo"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_echo_blank"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "inscribed",
+        "page_tier": "echo"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_echo_inscribed"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "blank",
+        "page_tier": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_transmuted_blank"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "inscribed",
+        "page_tier": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_transmuted_inscribed"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "blank",
+        "page_tier": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_chalk_blank"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "inscribed",
+        "page_tier": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_chalk_inscribed"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "blank",
+        "page_tier": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_firmament_blank"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "inscribed",
+        "page_tier": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_firmament_inscribed"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "blank",
+        "page_tier": "sage"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_sage_blank"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "inscribed",
+        "page_tier": "sage"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_sage_inscribed"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "blank",
+        "page_tier": "principle"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_principle_blank"
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "page": "inscribed",
+        "page_tier": "principle"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_principle_inscribed"
       }
     },
     {
@@ -38,20 +180,176 @@
     {
       "when": {
         "facing": "west",
-        "page": "blank"
+        "page": "blank",
+        "page_tier": "basic"
       },
       "apply": {
-        "model": "logos:block/inscription_table_page",
+        "model": "logos:block/inscription_table_page_basic_blank",
         "y": 90
       }
     },
     {
       "when": {
         "facing": "west",
-        "page": "inscribed"
+        "page": "inscribed",
+        "page_tier": "basic"
       },
       "apply": {
-        "model": "logos:block/inscription_table_page_inscribed",
+        "model": "logos:block/inscription_table_page_basic_inscribed",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "blank",
+        "page_tier": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_crystal_blank",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "inscribed",
+        "page_tier": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_crystal_inscribed",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "blank",
+        "page_tier": "echo"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_echo_blank",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "inscribed",
+        "page_tier": "echo"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_echo_inscribed",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "blank",
+        "page_tier": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_transmuted_blank",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "inscribed",
+        "page_tier": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_transmuted_inscribed",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "blank",
+        "page_tier": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_chalk_blank",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "inscribed",
+        "page_tier": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_chalk_inscribed",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "blank",
+        "page_tier": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_firmament_blank",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "inscribed",
+        "page_tier": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_firmament_inscribed",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "blank",
+        "page_tier": "sage"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_sage_blank",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "inscribed",
+        "page_tier": "sage"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_sage_inscribed",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "blank",
+        "page_tier": "principle"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_principle_blank",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "page": "inscribed",
+        "page_tier": "principle"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_principle_inscribed",
         "y": 90
       }
     },
@@ -67,20 +365,176 @@
     {
       "when": {
         "facing": "north",
-        "page": "blank"
+        "page": "blank",
+        "page_tier": "basic"
       },
       "apply": {
-        "model": "logos:block/inscription_table_page",
+        "model": "logos:block/inscription_table_page_basic_blank",
         "y": 180
       }
     },
     {
       "when": {
         "facing": "north",
-        "page": "inscribed"
+        "page": "inscribed",
+        "page_tier": "basic"
       },
       "apply": {
-        "model": "logos:block/inscription_table_page_inscribed",
+        "model": "logos:block/inscription_table_page_basic_inscribed",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "blank",
+        "page_tier": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_crystal_blank",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "inscribed",
+        "page_tier": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_crystal_inscribed",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "blank",
+        "page_tier": "echo"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_echo_blank",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "inscribed",
+        "page_tier": "echo"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_echo_inscribed",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "blank",
+        "page_tier": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_transmuted_blank",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "inscribed",
+        "page_tier": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_transmuted_inscribed",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "blank",
+        "page_tier": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_chalk_blank",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "inscribed",
+        "page_tier": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_chalk_inscribed",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "blank",
+        "page_tier": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_firmament_blank",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "inscribed",
+        "page_tier": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_firmament_inscribed",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "blank",
+        "page_tier": "sage"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_sage_blank",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "inscribed",
+        "page_tier": "sage"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_sage_inscribed",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "blank",
+        "page_tier": "principle"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_principle_blank",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "page": "inscribed",
+        "page_tier": "principle"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_principle_inscribed",
         "y": 180
       }
     },
@@ -96,20 +550,176 @@
     {
       "when": {
         "facing": "east",
-        "page": "blank"
+        "page": "blank",
+        "page_tier": "basic"
       },
       "apply": {
-        "model": "logos:block/inscription_table_page",
+        "model": "logos:block/inscription_table_page_basic_blank",
         "y": 270
       }
     },
     {
       "when": {
         "facing": "east",
-        "page": "inscribed"
+        "page": "inscribed",
+        "page_tier": "basic"
       },
       "apply": {
-        "model": "logos:block/inscription_table_page_inscribed",
+        "model": "logos:block/inscription_table_page_basic_inscribed",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "blank",
+        "page_tier": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_crystal_blank",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "inscribed",
+        "page_tier": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_crystal_inscribed",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "blank",
+        "page_tier": "echo"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_echo_blank",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "inscribed",
+        "page_tier": "echo"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_echo_inscribed",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "blank",
+        "page_tier": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_transmuted_blank",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "inscribed",
+        "page_tier": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_transmuted_inscribed",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "blank",
+        "page_tier": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_chalk_blank",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "inscribed",
+        "page_tier": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_chalk_inscribed",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "blank",
+        "page_tier": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_firmament_blank",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "inscribed",
+        "page_tier": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_firmament_inscribed",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "blank",
+        "page_tier": "sage"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_sage_blank",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "inscribed",
+        "page_tier": "sage"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_sage_inscribed",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "blank",
+        "page_tier": "principle"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_principle_blank",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "page": "inscribed",
+        "page_tier": "principle"
+      },
+      "apply": {
+        "model": "logos:block/inscription_table_page_principle_inscribed",
         "y": 270
       }
     }

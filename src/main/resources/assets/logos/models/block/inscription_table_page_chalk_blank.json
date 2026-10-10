@@ -1,0 +1,52 @@
+{
+  "textures": {
+    "page": "logos:block/inscription_table_page_chalk_blank",
+    "particle": "logos:block/inscription_table"
+  },
+  "elements": [
+    {
+      "from": [
+        -0.5533,
+        15.56066,
+        7.5
+      ],
+      "to": [
+        9.9467,
+        16.06066,
+        15
+      ],
+      "rotation": {
+        "x": 90,
+        "y": -45,
+        "z": -90,
+        "origin": [
+          8.75,
+          8.5,
+          8
+        ]
+      },
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#page",
+          "rotation": 270
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#page",
+          "rotation": 270
+        }
+      }
+    }
+  ]
+}

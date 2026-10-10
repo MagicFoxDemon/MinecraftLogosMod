@@ -64,6 +64,7 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
     }
 
     public static final EnumProperty<Page> PAGE = EnumProperty.create("page", Page.class);
+    public static final EnumProperty<PageTier> PAGE_TIER = EnumProperty.create("page_tier", PageTier.class);
 
     /**
      * Desk body plus the slanted drawing board (drawers facing north). The model overhangs the block
@@ -75,7 +76,7 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
 
     public InscriptionTableBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PAGE, Page.NONE));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PAGE, Page.NONE).setValue(PAGE_TIER, PageTier.BASIC));
     }
 
     @Override
@@ -85,7 +86,7 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, PAGE);
+        builder.add(FACING, PAGE, PAGE_TIER);
     }
 
     /** The drawers face whoever placed the table. */

@@ -10,7 +10,7 @@ import net.neoforged.neoforge.registries.DeferredItem;
  * entropic mana (left over when it is extinguished rather than ending on its own) returns as free
  * mana. Both numbers are defaults; the config file can change them.
  */
-public enum PageTier {
+public enum PageTier implements net.minecraft.util.StringRepresentable {
     BASIC("basic", 50, 0.10),
     CRYSTAL("crystal", 150, 0.15),
     ECHO("echo", 400, 0.20),
@@ -24,6 +24,11 @@ public enum PageTier {
     public final String id;
     public final int defaultCapacity;
     public final double defaultRecovery;
+
+    @Override
+    public String getSerializedName() {
+        return id;
+    }
 
     PageTier(String id, int defaultCapacity, double defaultRecovery) {
         this.id = id;

@@ -3,6 +3,8 @@ package dev.logos.block;
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
+import dev.logos.item.PageTier;
+import dev.logos.item.SpellPages;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -34,9 +36,20 @@ public class InscriptionTableBlockEntity extends BlockEntity {
         setChanged();
         if (level == null) return;
         BlockState state = getBlockState();
-        BlockState shown = state.hasProperty(InscriptionTableBlock.PAGE) ? state.setValue(InscriptionTableBlock.PAGE, InscriptionTableBlock.Page.of(stack)) : state;
+        PageTier tier = SpellPages.tier(stack);
+        BlockState shown = state.hasProperty(InscriptionTableBlock.PAGE)
+                ? state.setValue(InscriptionTableBlock.PAGE, InscriptionTableBlock.Page.of(stack))
+                    .setValue(InscriptionTableBlock.PAGE_TIER, tier == null ? PageTier.BASIC : tier)
+                : state;
         if (shown != state && !level.isClientSide()) level.setBlock(worldPosition, shown, Block.UPDATE_ALL);
         else level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_ALL);
+    }
+
+    /** Rebuild the displayed material for tables loaded from older saves, too. */
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide()) setPage(page);
     }
 
     @Override
