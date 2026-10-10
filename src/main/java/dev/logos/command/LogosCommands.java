@@ -223,7 +223,7 @@ public final class LogosCommands {
         give(p, new ItemStack(LogosMod.ANCHOR_NAIL.get(), 16));
         give(p, new ItemStack(Items.WRITABLE_BOOK));
         c.getSource().sendSuccess(() -> Component.literal("已给予：大师法杖（挂着 " + onWand + " 篇示例术式）、法式典籍（其余 " + (pages.size() - onWand)
-                + " 篇，放在副手即可使用）、法式编纂台、咒语抄写台、8 张空白术式载页、16 枚锚钉。按 R 打开术式轮盘选择术式。")
+                + " 篇，放在副手即可使用）、法式编纂台、术式拓印台、8 张空白术式载页、16 枚锚钉。按 R 打开术式轮盘选择术式。")
                 .withStyle(ChatFormatting.GOLD), false);
         return 1;
     }

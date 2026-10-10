@@ -1,0 +1,32 @@
+{
+  "textures": {
+    "page": "logos:block/inscription_table_page_echo_inscribed",
+    "particle": "logos:block/copy_table"
+  },
+  "elements": [
+    {
+      "name": "左原本载页",
+      "from": [
+        1.6,
+        12.13,
+        2.64
+      ],
+      "to": [
+        6.4,
+        12.13,
+        9.94
+      ],
+      "faces": {
+        "up": {
+          "texture": "#page",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      }
+    }
+  ]
+}

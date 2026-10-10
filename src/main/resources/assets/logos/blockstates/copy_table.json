@@ -1,7 +1,702 @@
 {
-  "variants": {
-    "": {
-      "model": "minecraft:block/cartography_table"
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "logos:block/copy_table"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "basic"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_basic"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_crystal"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "echo"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_echo"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_transmuted"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_chalk"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_firmament"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "sage"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_sage"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "principle"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_principle"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "left_page": "ember"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_ember"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "right_page": "basic"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_basic"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "right_page": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_crystal"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "right_page": "echo"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_echo"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "right_page": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_transmuted"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "right_page": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_chalk"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "right_page": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_firmament"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "right_page": "sage"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_sage"
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "right_page": "principle"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_principle"
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "logos:block/copy_table",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "basic"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_basic",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_crystal",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "echo"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_echo",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_transmuted",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_chalk",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_firmament",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "sage"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_sage",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "principle"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_principle",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "left_page": "ember"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_ember",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "right_page": "basic"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_basic",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "right_page": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_crystal",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "right_page": "echo"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_echo",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "right_page": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_transmuted",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "right_page": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_chalk",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "right_page": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_firmament",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "right_page": "sage"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_sage",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "right_page": "principle"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_principle",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "logos:block/copy_table",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "basic"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_basic",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_crystal",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "echo"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_echo",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_transmuted",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_chalk",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_firmament",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "sage"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_sage",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "principle"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_principle",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "left_page": "ember"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_ember",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "right_page": "basic"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_basic",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "right_page": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_crystal",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "right_page": "echo"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_echo",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "right_page": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_transmuted",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "right_page": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_chalk",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "right_page": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_firmament",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "right_page": "sage"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_sage",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "right_page": "principle"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_principle",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "logos:block/copy_table",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "basic"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_basic",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_crystal",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "echo"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_echo",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_transmuted",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_chalk",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_firmament",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "sage"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_sage",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "principle"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_principle",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "left_page": "ember"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_left_ember",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "right_page": "basic"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_basic",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "right_page": "crystal"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_crystal",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "right_page": "echo"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_echo",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "right_page": "transmuted"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_transmuted",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "right_page": "chalk"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_chalk",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "right_page": "firmament"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_firmament",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "right_page": "sage"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_sage",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "right_page": "principle"
+      },
+      "apply": {
+        "model": "logos:block/copy_table_right_principle",
+        "y": 270
+      }
     }
-  }
+  ]
 }

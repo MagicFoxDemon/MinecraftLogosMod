@@ -4,6 +4,7 @@ import java.util.List;
 
 import dev.logos.LogosMod;
 import dev.logos.block.CopyTableBlockEntity;
+import dev.logos.block.CopyTableBlock;
 import dev.logos.item.PageContainer;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellBag;
@@ -166,6 +167,8 @@ final class PageGameTests {
         String src = "(spell :name \"抄\" :mana 10 (mark caster #c))";
         table.inputs().setItem(CopyTableBlockEntity.ORIGINAL, SpellPages.burn(SpellPages.inscribed(src, null)));
         table.inputs().setItem(CopyTableBlockEntity.BLANK, new ItemStack(PageTier.CRYSTAL.blank(), 3));
+        h.assertTrue(table.getBlockState().getValue(CopyTableBlock.LEFT_PAGE) == CopyTableBlock.Sheet.EMBER, "left tray should show the ember");
+        h.assertTrue(table.getBlockState().getValue(CopyTableBlock.RIGHT_PAGE) == CopyTableBlock.Sheet.CRYSTAL, "right tray should show crystal paper");
         ItemStack copy = table.result();
         h.assertTrue(copy.is(PageTier.CRYSTAL.inscribed()), "the copy should be a crystal page, got " + copy);
         h.assertTrue(src.equals(copy.get(LogosMod.SPELL_SOURCE.get())), "the copy lost the spell");
@@ -175,6 +178,15 @@ final class PageGameTests {
         // A written page cannot serve as the empty page.
         table.inputs().setItem(CopyTableBlockEntity.BLANK, SpellPages.inscribed(src, null));
         h.assertTrue(table.result().isEmpty(), "a written page is not an empty page");
+        h.assertTrue(table.getBlockState().getValue(CopyTableBlock.RIGHT_PAGE) == CopyTableBlock.Sheet.NONE, "invalid blank input should not display paper");
+        for (PageTier tier : PageTier.values()) {
+            table.inputs().setItem(CopyTableBlockEntity.ORIGINAL, SpellPages.inscribed(tier, src, null));
+            table.inputs().setItem(CopyTableBlockEntity.BLANK, new ItemStack(tier.blank()));
+            h.assertTrue(table.getBlockState().getValue(CopyTableBlock.LEFT_PAGE) == CopyTableBlock.Sheet.of(table.inputs().getItem(CopyTableBlockEntity.ORIGINAL)), "left tray material should follow the original");
+            h.assertTrue(table.getBlockState().getValue(CopyTableBlock.RIGHT_PAGE) == CopyTableBlock.Sheet.of(table.inputs().getItem(CopyTableBlockEntity.BLANK)), "right tray material should follow the blank");
+            table.onCopyTaken(null);
+            h.assertTrue(table.getBlockState().getValue(CopyTableBlock.RIGHT_PAGE) == CopyTableBlock.Sheet.NONE, "taking the last copy should clear the right tray");
+        }
         h.succeed();
     }
 }

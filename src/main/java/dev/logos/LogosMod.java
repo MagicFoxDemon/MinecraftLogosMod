@@ -129,10 +129,10 @@ public class LogosMod {
             BLOCK_ENTITIES.register("inscription_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.InscriptionTableBlockEntity::new, INSCRIPTION_TABLE.get()));
 
-    /** 咒语抄写台: copies the spell of a page (or ember) onto an empty page. */
+    /** 术式拓印台: copies the spell of a page (or ember) onto an empty page. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.CopyTableBlock> COPY_TABLE = BLOCKS.registerBlock(
             "copy_table", dev.logos.block.CopyTableBlock::new,
-            p -> p.mapColor(net.minecraft.world.level.material.MapColor.WOOD).strength(2.5f)
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.WOOD).strength(2.5f).noOcclusion()
                     .sound(net.minecraft.world.level.block.SoundType.WOOD));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> COPY_TABLE_ITEM = ITEMS.registerSimpleBlockItem("copy_table", COPY_TABLE);
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.CopyTableBlockEntity>> COPY_TABLE_BE =

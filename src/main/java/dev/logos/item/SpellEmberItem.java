@@ -34,6 +34,6 @@ public class SpellEmberItem extends Item {
                     .withStyle(ChatFormatting.GRAY));
         }
         builder.accept(Component.literal("载页已在焚式中烧尽，术式仍可辨读，但无法施放").withStyle(ChatFormatting.DARK_RED));
-        builder.accept(Component.literal("在咒语抄写台上可以把它抄写到新的空载页").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.literal("在术式拓印台上可以把它抄写到新的空载页").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

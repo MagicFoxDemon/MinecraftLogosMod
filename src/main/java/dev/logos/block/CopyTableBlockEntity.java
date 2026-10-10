@@ -11,11 +11,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 /**
- * 咒语抄写台: the original (a written page or an ember) and the empty pages to copy onto. The
+ * 术式拓印台: the original (a written page or an ember) and the empty pages to copy onto. The
  * copy itself is never stored; {@link #result} works it out from what lies here.
  */
 public class CopyTableBlockEntity extends BlockEntity {
@@ -64,6 +65,28 @@ public class CopyTableBlockEntity extends BlockEntity {
 
     public CopyTableBlockEntity(BlockPos pos, BlockState state) {
         super(LogosMod.COPY_TABLE_BE.get(), pos, state);
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        syncAppearance();
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        syncAppearance();
+    }
+
+    private void syncAppearance() {
+        if (level == null || level.isClientSide()) return;
+        BlockState state = getBlockState();
+        if (!state.hasProperty(CopyTableBlock.LEFT_PAGE)) return;
+        BlockState shown = state.setValue(CopyTableBlock.LEFT_PAGE, CopyTableBlock.Sheet.of(inputs.getItem(ORIGINAL)))
+                .setValue(CopyTableBlock.RIGHT_PAGE, SpellPages.isBlank(inputs.getItem(BLANK))
+                        ? CopyTableBlock.Sheet.of(inputs.getItem(BLANK)) : CopyTableBlock.Sheet.NONE);
+        if (shown != state) level.setBlock(worldPosition, shown, Block.UPDATE_ALL);
     }
 
     /** A written page, or the ember of a burnt one: anything that still carries a spell. */

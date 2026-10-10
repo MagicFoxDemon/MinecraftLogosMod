@@ -14,6 +14,18 @@ import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.mojang.serialization.MapCodec;
 
 import dev.logos.item.SpellPages;
+import dev.logos.item.PageTier;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import java.util.Map;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.core.BlockPos;
@@ -33,20 +45,64 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * 咒语抄写台. Like a cartography table: the original (a written page or an ember) on top, empty
+ * 术式拓印台. The original (a written page or an ember) on top, empty
  * pages below, and the copy on the right. Copying is free and keeps the original; each copy uses
  * one empty page and takes that page's grade.
  */
-public class CopyTableBlock extends Block implements EntityBlock, BlockUIMenuType.BlockUI {
+public class CopyTableBlock extends HorizontalDirectionalBlock implements EntityBlock, BlockUIMenuType.BlockUI {
     public static final MapCodec<CopyTableBlock> CODEC = simpleCodec(CopyTableBlock::new);
+
+    /** Visual inventory state only; the copying recipe and menu still use the original inputs. */
+    public enum Sheet implements StringRepresentable {
+        NONE, BASIC, CRYSTAL, ECHO, TRANSMUTED, CHALK, FIRMAMENT, SAGE, PRINCIPLE, EMBER;
+
+        public static Sheet of(ItemStack stack) {
+            if (stack.isEmpty()) return NONE;
+            if (SpellPages.isEmber(stack)) return EMBER;
+            PageTier tier = SpellPages.tier(stack);
+            return tier == null ? NONE : valueOf(tier.name());
+        }
+
+        @Override
+        public String getSerializedName() {
+            return name().toLowerCase(java.util.Locale.ROOT);
+        }
+    }
+
+    public static final EnumProperty<Sheet> LEFT_PAGE = EnumProperty.create("left_page", Sheet.class);
+    public static final EnumProperty<Sheet> RIGHT_PAGE = EnumProperty.create("right_page", Sheet.class);
+    private static final Map<Direction, VoxelShape> SHAPES = Shapes.rotateHorizontal(Shapes.or(
+            Block.box(0, 0, 0, 16, 12, 16), Block.box(.6, 12, 12.25, 15.4, 19.12, 14.7)));
 
     public CopyTableBlock(Properties properties) {
         super(properties);
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH)
+                .setValue(LEFT_PAGE, Sheet.NONE).setValue(RIGHT_PAGE, Sheet.NONE));
     }
 
     @Override
-    protected MapCodec<? extends Block> codec() {
+    protected MapCodec<CopyTableBlock> codec() {
         return CODEC;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING, LEFT_PAGE, RIGHT_PAGE);
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return SHAPES.get(state.getValue(FACING));
+    }
+
+    @Override
+    protected boolean useShapeForLightOcclusion(BlockState state) {
+        return true;
     }
 
     @Override
