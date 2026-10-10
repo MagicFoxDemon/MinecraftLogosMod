@@ -135,14 +135,17 @@ final class PageGameTests {
     static void freeManaGathered(GameTestHelper h) {
         ServerPlayer p = caster(h);
         PlayerMagic m = PlayerMagic.of(p);
+        FamiliarGameTests.forceAround(h, 1); // the orb has to tick
         Casting.cast(p, Casting.compile("(spell :mana 41 (mark caster #a))"), null, null);
         // Full for now, so the free mana neither follows nor is gathered before the checks below.
         m.mana = m.maxMana;
-        h.runAfterDelay(20, () -> {
-            m.mana = 990;
+        // Polled, not timed: the orb must have ticked past its pickup delay, and a test chunk may start ticking late.
+        h.succeedWhen(() -> {
             var orbs = h.getLevel().getEntitiesOfClass(FreeManaEntity.class, new AABB(p.position(), p.position()).inflate(14));
             h.assertTrue(orbs.size() == 1, "expected one free mana, found " + orbs.size());
             FreeManaEntity orb = orbs.getFirst();
+            h.assertTrue(orb.tickCount > 12, "free mana not yet past its pickup delay");
+            m.mana = 990;
             near(h, orb.amount(), 40, "released");
             // Room for 10 at 50%: uses 20 of the 40, the other 20 stays.
             orb.playerTouch(p);
@@ -152,7 +155,6 @@ final class PageGameTests {
             orb.playerTouch(p);
             near(h, m.mana, 510, "player mana after gathering the rest");
             h.assertTrue(orb.isRemoved(), "fully gathered free mana should disappear");
-            h.succeed();
         });
     }
 

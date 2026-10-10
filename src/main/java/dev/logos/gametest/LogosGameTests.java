@@ -110,7 +110,8 @@ public final class LogosGameTests {
         Holder<TestEnvironmentDefinition<?>> env = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf());
         for (String name : TESTS) {
             event.registerTest(id(name), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id(name)),
-                    new TestData<>(env, Identifier.withDefaultNamespace("empty"), 200, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
+                    // 400 ticks: polled tests finish as soon as they pass; the headroom is for a loaded machine.
+                    new TestData<>(env, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
         }
     }
 

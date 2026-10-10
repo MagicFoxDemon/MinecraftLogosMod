@@ -189,7 +189,7 @@ final class FamiliarGameTests {
         h.succeed();
     }
 
-    private static void forceAround(GameTestHelper h, int chunks) {
+    static void forceAround(GameTestHelper h, int chunks) {
         for (int x = -chunks; x <= chunks; x++) for (int z = -chunks; z <= chunks; z++) {
             BlockPos b = h.absolutePos(new BlockPos(x * 16, 0, z * 16));
             h.getLevel().setChunkForced(b.getX() >> 4, b.getZ() >> 4, true);
@@ -292,16 +292,18 @@ final class FamiliarGameTests {
         z.snapTo(h.absoluteVec(new Vec3(6.5, 2, 8.5)));
         Casting.cast(p, Casting.compile("(gather)"), null, null);
         h.assertTrue(Familiars.hasOrders(z), "gather should give it an errand");
-        h.runAfterDelay(80, () -> {
-            h.assertTrue(z.distanceTo(p) < 3.5, "it should have walked to its master, " + z.distanceTo(p) + " away");
-            h.assertTrue(!Familiars.hasOrders(z), "arrived by its master, it follows again (no post)");
-            Vec3 sealed = Vec3.atBottomCenterOf(h.absolutePos(pocket));
-            h.assertTrue(Familiars.sendTo(z, sealed), "the pocket is near enough to try");
-            h.runAfterDelay(90, () -> {
-                h.assertTrue(!Familiars.hasOrders(z), "it should give up on a spot it cannot reach");
-                h.assertTrue(z.position().distanceTo(sealed) > 1, "and not be in the sealed pocket");
-                h.succeed();
-            });
+        // Polled, not timed: a freshly forced chunk takes a variable few ticks before its entities tick.
+        Vec3 sealed = Vec3.atBottomCenterOf(h.absolutePos(pocket));
+        boolean[] sent = {false};
+        h.succeedWhen(() -> {
+            if (!sent[0]) {
+                h.assertTrue(z.distanceTo(p) < 3.5, "it should have walked to its master, " + z.distanceTo(p) + " away");
+                h.assertTrue(!Familiars.hasOrders(z), "arrived by its master, it follows again (no post)");
+                h.assertTrue(Familiars.sendTo(z, sealed), "the pocket is near enough to try");
+                sent[0] = true;
+            }
+            h.assertTrue(!Familiars.hasOrders(z), "it should give up on a spot it cannot reach");
+            h.assertTrue(z.position().distanceTo(sealed) > 1, "and not be in the sealed pocket");
         });
     }
 
@@ -380,13 +382,15 @@ final class FamiliarGameTests {
         cow.setNoAi(true);
         Husk husk = h.spawn(EntityType.HUSK, new Vec3(7.5, 2, 7.5));
         husk.setNoAi(true);
-        h.runAfterDelay(25, () -> {
-            h.assertTrue(z.getTarget() == husk, "it should go after the husk on its own, has " + z.getTarget());
-            Casting.cast(p, Casting.compile("(stance :hunt (kind none))"), null, null);
-            h.runAfterDelay(25, () -> {
-                h.assertTrue(z.getTarget() == null, "(kind none) should call it off, has " + z.getTarget());
-                h.succeed();
-            });
+        // Polled, not timed: a freshly forced chunk takes a variable few ticks before its entities tick.
+        boolean[] calledOff = {false};
+        h.succeedWhen(() -> {
+            if (!calledOff[0]) {
+                h.assertTrue(z.getTarget() == husk, "it should go after the husk on its own, has " + z.getTarget());
+                Casting.cast(p, Casting.compile("(stance :hunt (kind none))"), null, null);
+                calledOff[0] = true;
+            }
+            h.assertTrue(z.getTarget() == null, "(kind none) should call it off, has " + z.getTarget());
         });
     }
 
