@@ -49,7 +49,7 @@ public final class LogosGameTests {
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed",
             "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
-            "colossus_punches_heavy", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered");
+            "colossus_grabs_big", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered");
 
     private LogosGameTests() {}
 
@@ -103,7 +103,8 @@ public final class LogosGameTests {
         FUNCTIONS.register("colossus_heavy_and_finish", () -> ColossusGameTests::heavyAndFinish);
         FUNCTIONS.register("colossus_grab_finishes", () -> ColossusGameTests::grabFinishes);
         FUNCTIONS.register("colossus_grab_slams", () -> ColossusGameTests::grabSlams);
-        FUNCTIONS.register("colossus_punches_heavy", () -> ColossusGameTests::punchesHeavy);
+        FUNCTIONS.register("colossus_grabs_big", () -> ColossusGameTests::grabsBig);
+        FUNCTIONS.register("colossus_punches_dragon", () -> ColossusGameTests::punchesDragon);
         FUNCTIONS.register("colossus_cannon", () -> ColossusGameTests::cannonAtRange);
         FUNCTIONS.register("colossus_cannon_unbroken", () -> ColossusGameTests::cannonActsUnbroken);
         FUNCTIONS.register("colossus_frenzy", () -> ColossusGameTests::frenzyAndBurnout);

@@ -11,8 +11,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.ItemStack;
@@ -54,19 +55,26 @@ final class ColossusGameTests {
         h.succeed();
     }
 
-    /** What it will not pick up, and where it finishes rather than slams. */
+    /** Only the ender dragon is too big to pick up; and where it finishes rather than slams — never a boss. */
     static void heavyAndFinish(GameTestHelper h) {
         var warden = h.spawn(EntityType.WARDEN, new Vec3(2, 2, 2));
         var golem = h.spawn(EntityType.IRON_GOLEM, new Vec3(6, 2, 2));
+        var wither = h.spawn(EntityType.WITHER, new Vec3(6, 2, 6));
+        var dragon = h.spawn(EntityType.ENDER_DRAGON, new Vec3(2, 6, 2));
         Zombie zombie = h.spawn(EntityType.ZOMBIE, new Vec3(2, 2, 6));
-        h.assertTrue(ColossusMind.heavy(warden) && ColossusMind.heavy(golem), "a warden and an iron golem are too heavy to grab");
-        h.assertTrue(!ColossusMind.heavy(zombie), "a zombie is not");
+        h.assertTrue(!ColossusMind.heavy(warden) && !ColossusMind.heavy(golem) && !ColossusMind.heavy(wither), "a warden, an iron golem and a wither can be picked up");
+        h.assertTrue(ColossusMind.heavy(dragon), "the ender dragon cannot");
+        h.assertTrue(!ColossusMind.heavy(zombie), "a zombie can");
+        wither.setHealth(10);
+        h.assertTrue(!ColossusMind.finishable(wither), "a boss is never finished, even nearly dead: only slammed");
         h.assertTrue(ColossusMind.finishable(zombie), "a zombie's health and armour are under 60: finished at once");
         zombie.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
         zombie.setHealth(200);
         h.assertTrue(!ColossusMind.finishable(zombie), "a 200-health zombie at full health is slammed instead");
         warden.discard();
         golem.discard();
+        wither.discard();
+        dragon.discard();
         zombie.discard();
         h.succeed();
     }
@@ -101,16 +109,37 @@ final class ColossusGameTests {
         });
     }
 
-    /** A heavy foe in reach gets its fist instead: 50 damage. */
-    static void punchesHeavy(GameTestHelper h) {
+    /** A big foe is picked up too: a warden, too sturdy to finish, is slammed for 80. */
+    static void grabsBig(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
         p.setGameMode(GameType.CREATIVE);
         FamiliarGameTests.forceAround(h, 1);
         AlchemicalColossus c = raise(h, p, new Vec3(4, 2, 3));
-        IronGolem g = h.spawn(EntityType.IRON_GOLEM, new Vec3(4.5, 2, 6.5));
-        g.setNoAi(true);
-        Familiars.order(c, g);
-        h.succeedWhen(() -> h.assertTrue(g.getHealth() <= 55 || !g.isAlive(), "the golem should take a 50-damage blow: health " + g.getHealth()));
+        Warden w = h.spawn(EntityType.WARDEN, new Vec3(4.5, 2, 6.5));
+        w.setNoAi(true);
+        Familiars.order(c, w);
+        h.succeedWhen(() -> {
+            h.assertTrue(w.isAlive() && w.getHealth() <= 500 - 75, "the warden should be slammed: health " + w.getHealth());
+            h.assertTrue(w.getVehicle() == null, "and let go of");
+        });
+    }
+
+    /**
+     * The ender dragon, too big to hold, gets its fist instead. (Vanilla lets only players and a few
+     * damage types hurt the dragon, so the blow itself does nothing to it yet.)
+     */
+    static void punchesDragon(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 2);
+        AlchemicalColossus c = raise(h, p, new Vec3(4, 2, 3));
+        EnderDragon d = h.spawn(EntityType.ENDER_DRAGON, new Vec3(4.5, 3, 9.5));
+        d.setNoAi(true);
+        Familiars.order(c, d);
+        h.succeedWhen(() -> {
+            h.assertTrue(d.getVehicle() == null && c.act() != AlchemicalColossus.Act.GRAB_REACH, "the dragon must never be grabbed at");
+            h.assertTrue(c.act() == AlchemicalColossus.Act.PUNCH, "it should swing at the dragon: " + c.act());
+        });
     }
 
     /** Out of reach it does not walk up: it charges its palm cannon and burns the target, without knocking it back at first. */
