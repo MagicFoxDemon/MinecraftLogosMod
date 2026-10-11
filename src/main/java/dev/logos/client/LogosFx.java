@@ -35,6 +35,7 @@ import com.mojang.math.Axis;
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
 import dev.logos.net.FxPayload;
+import dev.logos.runtime.AlchemicalColossus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
@@ -379,13 +380,17 @@ public final class LogosFx {
      * gaze — for the caster that is the camera itself, so turning never lags behind the server; only
      * the length comes from the server (where blocks stop it). It leaves the hand thin and swells to
      * its full radius over the first blocks, so a thick beam does not fill the caster's whole view.
+     * A colossus's beam leaves its palm, where the model's muzzle bone was drawn this frame.
      */
     private static void submitBeam(Minecraft mc, Level level, Beam b, CameraRenderState cam, float pt, PoseStack pose, SubmitNodeCollector out) {
         Vec3 from = b.prevFrom.lerp(b.from, pt);
         Vec3 to = b.prevTo.lerp(b.to, pt);
         boolean firstPerson = false;
         Entity anchor = b.anchor >= 0 ? level.getEntity(b.anchor) : null;
-        if (anchor != null) {
+        if (anchor instanceof AlchemicalColossus colossus) {
+            Vec3 muzzle = colossus.drawnBone("attachment_muzzle_right");
+            if (muzzle != null) from = muzzle;
+        } else if (anchor != null) {
             double len = b.from.distanceTo(b.to);
             Vec3 eye = anchor.getEyePosition(pt);
             Vec3 gaze = anchor.getViewVector(pt);

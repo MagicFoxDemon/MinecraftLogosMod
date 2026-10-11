@@ -56,9 +56,12 @@ public final class ColossusCannon {
         this.rider = rider;
     }
 
-    /** Its right palm, raised and pointing ahead (the client draws the beam from the same spot). */
+    /**
+     * Its raised palm while it fires: where the model's {@code attachment_muzzle_right} bone is drawn
+     * (measured in the real client). The client starts the beam from the bone itself.
+     */
     static Vec3 muzzle(AlchemicalColossus c) {
-        return c.local(0.45, 2.75, 2.4);
+        return c.local(-0.86, 2.75, 1.83);
     }
 
     /** Whether the palm has a clear line to {@code e}. */
@@ -123,7 +126,7 @@ public final class ColossusCannon {
         }
         int second = Math.min(4, p / 20);
         Element tone = second < 3 ? Element.FIRE : Element.VOID;
-        Vfx.beam(level, c.getId() * 31 + 7, from, end, tone, 0.3 + 0.1 * second, -1, 0);
+        Vfx.beam(level, c.getId() * 31 + 7, from, end, tone, 0.3 + 0.1 * second, c.getId(), 0);
         if (p % 10 == 0) {
             if (!c.spend(MANA_PER_SECOND[second] / 2)) return false;
             if (hit != null) strike(level, hit, second);
