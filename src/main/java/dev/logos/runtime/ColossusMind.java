@@ -71,6 +71,8 @@ public final class ColossusMind extends Goal {
     private @Nullable Mob shooter;
     private long cannonReadyAt;
     private boolean wantsFlower;
+    /** No second flower until then: a few minutes after the last one was offered. */
+    private long flowerReadyAt;
     private boolean standing;
     private int repath;
 
@@ -325,9 +327,13 @@ public final class ColossusMind extends Goal {
 
     // ---- requests from outside ----------------------------------------------------------------------
 
-    /** Fed (or idle): perhaps it decides to offer its master a flower. */
-    void maybeOfferFlower(Player by, double chance) {
-        if (!c.isBerserk() && c.getRandom().nextDouble() < chance) wantsFlower = true;
+    /** Fed (or idle): perhaps it decides to offer its master a flower — not again within minutes of the last. */
+    public void maybeOfferFlower(Player by, double chance) {
+        if (!c.isBerserk() && c.level().getGameTime() >= flowerReadyAt && c.getRandom().nextDouble() < chance) wantsFlower = true;
+    }
+
+    public boolean wantsFlower() {
+        return wantsFlower;
     }
 
     /** Someone took the flower it holds out. */
@@ -477,7 +483,7 @@ public final class ColossusMind extends Goal {
                 Vec3 g = m.getEyePosition().add(m.getLookAngle().scale(10));
                 c.getLookControl().setLookAt(g.x, g.y, g.z, 10, 10);
             }
-            if (!c.getNavigation().isInProgress() && m != null && c.getRandom().nextInt(2400) == 0) wantsFlower = true;
+            if (!c.getNavigation().isInProgress() && m != null && c.getRandom().nextInt(2400) == 0) maybeOfferFlower(m, 1);
         }
     }
 
@@ -584,6 +590,8 @@ public final class ColossusMind extends Goal {
             halt();
             face(m);
             wantsFlower = false;
+            // Five to eight minutes before the next.
+            flowerReadyAt = c.level().getGameTime() + 6000 + c.getRandom().nextInt(3600);
             runSeq(new Flower(m));
         }
     }

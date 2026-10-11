@@ -268,6 +268,26 @@ final class ColossusGameTests {
         });
     }
 
+    /** Once it has offered a flower it will not want to offer another for minutes, however much it is fed. */
+    static void flowerCooldown(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.SURVIVAL);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(3.5, 2, 3.5));
+        boolean[] asked = {false};
+        h.succeedWhen(() -> {
+            if (!asked[0]) {
+                h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
+                c.mind().maybeOfferFlower(p, 1);
+                h.assertTrue(c.mind().wantsFlower(), "a sure chance should make it want to offer one");
+                asked[0] = true;
+            }
+            h.assertTrue(c.act() == AlchemicalColossus.Act.FLOWER_OFFER, "it should kneel to offer it");
+            c.mind().maybeOfferFlower(p, 1);
+            h.assertTrue(!c.mind().wantsFlower(), "right after one flower it should not want another");
+        });
+    }
+
     /** Seated, a rider who dismounts is lifted down rather than dropped; seated they take half damage. */
     static void riderSheltered(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
