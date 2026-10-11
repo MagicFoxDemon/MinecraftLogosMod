@@ -232,7 +232,7 @@ final class ColossusGameTests {
         FamiliarGameTests.forceAround(h, 1);
         AlchemicalColossus c = raise(h, p, new Vec3(4.5, 2, 3.5));
         Husk ordered = h.spawn(EntityType.HUSK, new Vec3(3.5, 2, 6.5));
-        Husk striker = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        Husk striker = h.spawn(EntityType.HUSK, new Vec3(5.5, 2, 6.5));
         ordered.setNoAi(true);
         striker.setNoAi(true);
         striker.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
@@ -248,7 +248,7 @@ final class ColossusGameTests {
             if (striker.getHealth() < 200 && ordered.isAlive() && ordered.getHealth() >= ordered.getMaxHealth()) strikerFirst[0] = true;
             h.assertTrue(!strikerFirst[0], "it answered its own assailant before its master's order");
             h.assertTrue(!ordered.isAlive(), "the ordered husk first");
-            h.assertTrue(striker.getHealth() < 200, "then what struck it");
+            h.assertTrue(striker.getHealth() < 200, "then what struck it: " + c.mind().describe() + " act " + c.act() + " dist " + c.distanceTo(striker));
         });
     }
 

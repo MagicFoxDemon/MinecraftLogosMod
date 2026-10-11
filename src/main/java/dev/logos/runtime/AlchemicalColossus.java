@@ -148,6 +148,8 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private static final EntityDataAccessor<Integer> SEAT_RIGHT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
     /** What its cannon arm points at, relative to its feet; zero while it is not aiming. */
     private static final EntityDataAccessor<Vector3fc> AIM = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.VECTOR3);
+    /** What its grabbing hand reaches for (an entity id), or -1. */
+    private static final EntityDataAccessor<Integer> REACH = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
 
     /**
      * Its cannon arm, in its own frame (right, up, forward), as the model draws it while firing: the
@@ -186,6 +188,11 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private float runPace = 1;
     /** Client only: how its cannon arm is turned toward its aim (radians), and how far that turn has blended in. */
     private float armYaw, armPitch, armWeight, armYawO, armPitchO, armWeightO;
+    /** Client only: what its hand reaches for, and how fully the reach is drawn (rising as it reaches, easing off after). */
+    private @Nullable Vec3 reachGoal;
+    private float reachWeight, reachWeightO;
+    /** Client only: when the current act began, in its own ticks. */
+    private int actStartedAt;
     /** Client only: whether each foot (left, right) is lifted, to hear it come down; and the beat of unseen steps. */
     private final boolean[] footUp = new boolean[2];
     private int stepClock, footfalls;
@@ -225,6 +232,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         b.define(SEAT_LEFT, -1);
         b.define(SEAT_RIGHT, -1);
         b.define(AIM, new Vector3f());
+        b.define(REACH, -1);
     }
 
     public boolean isBerserk() {
@@ -508,6 +516,18 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             }
             armWeight = Mth.approach(armWeight, aim != null ? 1 : 0, 0.1f);
             stepSounds();
+            reachWeightO = reachWeight;
+            Vec3 reaching = act() == Act.GRAB_REACH ? reachPoint() : null;
+            if (reaching != null) {
+                // The hand follows the animation down at first, and is drawn onto the point as the reach goes on.
+                reachGoal = reaching;
+                float progress = (tickCount - actStartedAt) / (float) Act.GRAB_REACH.ticks;
+                float t = Mth.clamp((progress - 0.15f) / 0.5f, 0, 1);
+                reachWeight = t * t * (3 - 2 * t);
+            } else {
+                // Caught (or given up): the arm eases back to the animation over half a second.
+                reachWeight = Math.max(0, reachWeight - 0.1f);
+            }
         }
         if (level() instanceof ServerLevel level) {
             // Driven, vanilla leaves its movement to the rider's client and skips its AI on the server
@@ -719,6 +739,42 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
 
     @Override
     protected void playCombinationStepSounds(BlockState primary, BlockState secondary, BlockPos primaryPos, BlockPos secondaryPos) {}
+
+    // ---- reaching with its hand ---------------------------------------------------------------------
+
+    /** Its grabbing hand reaches for {@code e} (null: for nothing). */
+    void reachFor(@Nullable Entity e) {
+        int id = e == null ? -1 : e.getId();
+        if (entityData.get(REACH) != id) entityData.set(REACH, id);
+    }
+
+    /**
+     * Where its palm should close on what it reaches for: the middle of anything a block or more tall;
+     * a small creature is taken from above, just under its top. Null when it reaches for nothing.
+     */
+    public @Nullable Vec3 reachPoint() {
+        int id = entityData.get(REACH);
+        Entity e = id < 0 ? null : level().getEntity(id);
+        if (e == null) return null;
+        Vec3 mid = e.getBoundingBox().getCenter();
+        return e.getBbHeight() >= 1 ? mid : new Vec3(mid.x, e.getBoundingBox().maxY - 0.15, mid.z);
+    }
+
+    /** Client: what its hand is reaching for (held a moment after the catch, while the arm eases back), or null. */
+    public @Nullable Vec3 reachGoal() {
+        return reachWeight > 0 ? reachGoal : null;
+    }
+
+    /** Client: how fully the reach is drawn over the animation, 0 to 1. */
+    public float reachWeight(float partialTick) {
+        return Mth.lerp(partialTick, reachWeightO, reachWeight);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (ACT_SEQ.equals(key)) actStartedAt = tickCount;
+    }
 
     // ---- aiming its cannon arm --------------------------------------------------------------------
 
