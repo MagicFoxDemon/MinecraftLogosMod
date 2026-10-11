@@ -27,7 +27,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.CrossbowAttackMob;
 import net.minecraft.world.entity.monster.Enemy;
@@ -42,8 +41,9 @@ import net.neoforged.neoforge.common.Tags;
 /**
  * The colossus's mind: the same kind of utility AI as the lifeform's, but slower and steadier. It
  * stands at its master's side and watches; steps into the line of fire of whatever shoots at them;
- * fights with its palm cannon at range and its hands up close — a heavy foe gets a sweeping blow, a
- * lesser one is picked up, looked at, and either finished or slammed into the ground; powers down
+ * fights with its palm cannon at range and its hands up close — almost anything is picked up, looked
+ * at, and either finished or slammed into the ground (a boss is never finished, only slammed), and
+ * what is too big to hold (the ender dragon) gets a sweeping blow; powers down
  * while its master sleeps or is away; and now and then kneels to offer them a flower.
  * <p>
  * Everything it does with its whole body is a {@link Sequence} of animations timed on the server
@@ -55,7 +55,7 @@ public final class ColossusMind extends Goal {
     static final double WALK = 0.6, RUN = 1.0;
     /** Reach of its hands, measured from its edge to the target's. */
     static final double MELEE = 2.6;
-    /** Heavy creatures it will not pick up: bosses, the knockback-resistant, the big — and anything in this tag. */
+    /** What it will not pick up, only strike: the ender dragon by default; packs may add more. */
     public static final TagKey<EntityType<?>> HEAVY = TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
             Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossus_heavy"));
 
@@ -285,15 +285,14 @@ public final class ColossusMind extends Goal {
 
     // ---- combat decisions -------------------------------------------------------------------------
 
-    /** Too heavy to pick up: a boss, something that will not be knocked back, something big, or tagged so. */
+    /** Too big to pick up (the {@code #logos:colossus_heavy} tag: the ender dragon): it gets a blow instead. */
     public static boolean heavy(LivingEntity e) {
-        if (e.getType().builtInRegistryHolder().is(Tags.EntityTypes.BOSSES) || e.getType().builtInRegistryHolder().is(HEAVY)) return true;
-        if (e.getAttributes().hasAttribute(Attributes.KNOCKBACK_RESISTANCE) && e.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE) >= 0.5) return true;
-        return e.getBbWidth() >= 1.4 || e.getBbHeight() >= 2.6;
+        return e.getType().builtInRegistryHolder().is(HEAVY);
     }
 
-    /** Below the finishing line: at most 35% health, or health and armour together under 60. */
+    /** Below the finishing line: at most 35% health, or health and armour together under 60. A boss is never finished, only slammed. */
     public static boolean finishable(LivingEntity e) {
+        if (e.getType().builtInRegistryHolder().is(Tags.EntityTypes.BOSSES)) return false;
         return e.getHealth() <= e.getMaxHealth() * 0.35 || e.getHealth() + e.getArmorValue() < 60;
     }
 
@@ -679,7 +678,7 @@ public final class ColossusMind extends Goal {
     }
 
     /**
-     * Picks a lesser foe up, looks at it, then finishes it (at or under the finishing line) or slams it
+     * Picks a foe up, looks at it, then finishes it (at or under the finishing line, never a boss) or slams it
      * into the ground. In a frenzy, if what it finished was its own maker, remorse takes it a moment.
      */
     private final class Grab extends Sequence {
