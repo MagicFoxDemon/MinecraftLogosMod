@@ -274,6 +274,11 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         return Math.min(mana, maxMana());
     }
 
+    /** How full its pool looks, 0 to 1 (what its master is shown, of the visible pool); its reservoir tubes show it. Works on the client. */
+    public float fill() {
+        return Mth.clamp(entityData.get(MANA) / (float) maxMana(), 0, 1);
+    }
+
     /** The visible pool: {@value #DISPLAY_CAP}, or {@value #TEMPERED_CAP} once tempered. */
     @Override
     public double maxMana() {
