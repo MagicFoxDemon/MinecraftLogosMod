@@ -106,6 +106,9 @@ final class ColossusGameTests {
             h.assertTrue(z.isAlive(), "slammed, not finished");
             h.assertTrue(z.getHealth() <= 125, "a slam should have taken about 80: health " + z.getHealth());
             h.assertTrue(z.getVehicle() == null, "and let go of it");
+            // The blow counts as its master's, but the zombie's anger goes to the colossus.
+            h.assertTrue(z.getLastHurtByPlayer() == p, "its master should be credited with the blow");
+            h.assertTrue(z.getLastHurtByMob() == c, "the zombie should blame the colossus, not its master: " + z.getLastHurtByMob());
         });
     }
 
@@ -125,8 +128,8 @@ final class ColossusGameTests {
     }
 
     /**
-     * The ender dragon, too big to hold, gets its fist instead. (Vanilla lets only players and a few
-     * damage types hurt the dragon, so the blow itself does nothing to it yet.)
+     * The ender dragon, too big to hold, gets its fist instead — and feels it: only players can hurt the
+     * dragon, and the colossus's blows count as its master's.
      */
     static void punchesDragon(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
@@ -135,10 +138,11 @@ final class ColossusGameTests {
         AlchemicalColossus c = raise(h, p, new Vec3(4, 2, 3));
         EnderDragon d = h.spawn(EntityType.ENDER_DRAGON, new Vec3(4.5, 3, 9.5));
         d.setNoAi(true);
+        float start = d.getHealth();
         Familiars.order(c, d);
         h.succeedWhen(() -> {
             h.assertTrue(d.getVehicle() == null && c.act() != AlchemicalColossus.Act.GRAB_REACH, "the dragon must never be grabbed at");
-            h.assertTrue(c.act() == AlchemicalColossus.Act.PUNCH, "it should swing at the dragon: " + c.act());
+            h.assertTrue(d.getHealth() < start, "the dragon should take its blow: health " + d.getHealth());
         });
     }
 

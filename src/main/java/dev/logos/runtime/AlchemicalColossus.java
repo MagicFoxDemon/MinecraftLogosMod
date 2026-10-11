@@ -2,6 +2,7 @@ package dev.logos.runtime;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
@@ -23,6 +24,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -34,6 +36,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -399,6 +402,20 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         }
         boolean hurt = super.hurtServer(level, source, taken);
         if (hurt && taken >= 15 && mind != null && mind.idleBody()) play(Act.HURT);
+        return hurt;
+    }
+
+    /**
+     * Strikes {@code e} with a blow of {@code type}. Outside a frenzy the blow counts as its master's —
+     * as a tamed wolf's kills do, but further: the ender dragon, which only players can hurt, takes it
+     * too. Whatever it strikes still turns its anger on the colossus, not on its master.
+     */
+    boolean deal(ServerLevel level, LivingEntity e, ResourceKey<DamageType> type, float amount) {
+        UUID id = isBerserk() ? null : Familiars.masterOf(this);
+        Player master = id == null ? null : level.getPlayerByUUID(id);
+        DamageSource source = master == null ? damageSources().source(type, this) : damageSources().source(type, this, master);
+        boolean hurt = e.hurtServer(level, source, amount);
+        if (hurt && master != null && e.isAlive()) e.setLastHurtByMob(this);
         return hurt;
     }
 

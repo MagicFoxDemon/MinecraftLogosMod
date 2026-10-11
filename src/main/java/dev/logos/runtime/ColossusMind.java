@@ -661,7 +661,7 @@ public final class ColossusMind extends Goal {
                 if (e == c || e.getVehicle() == c) continue;
                 if (!c.isBerserk() && master != null && (Familiars.friendly(master, e) || e instanceof Player && !(e == foe))) continue;
                 e.invulnerableTime = 0;
-                e.hurtServer(level, c.damageSources().mobAttack(c), 50);
+                c.deal(level, e, DamageTypes.MOB_ATTACK, 50);
                 Vec3 away = e.position().subtract(c.position()).multiply(1, 0, 1);
                 if (away.lengthSqr() > 1e-4) {
                     away = away.normalize();
@@ -735,7 +735,7 @@ public final class ColossusMind extends Goal {
                 case GRAB_EXECUTE -> {
                     if (p == 8 && c.level() instanceof ServerLevel level && victim.isAlive()) {
                         victim.invulnerableTime = 0;
-                        victim.hurtServer(level, c.damageSources().mobAttack(c), Float.MAX_VALUE);
+                        c.deal(level, victim, DamageTypes.MOB_ATTACK, Float.MAX_VALUE);
                         level.playSound(null, victim.getX(), victim.getY(), victim.getZ(), SoundEvents.IRON_GOLEM_DAMAGE, SoundSource.HOSTILE, 1.4f, 0.5f);
                     }
                     if (p == 17) letGo(null);
@@ -777,7 +777,7 @@ public final class ColossusMind extends Goal {
             Vec3 at = groundBefore();
             if (victim.isAlive()) {
                 victim.invulnerableTime = 0;
-                victim.hurtServer(level, c.damageSources().source(DamageTypes.FALL, c), 80);
+                c.deal(level, victim, DamageTypes.FALL, 80);
             }
             BlockState ground = level.getBlockState(BlockPos.containing(at).below());
             if (!ground.isAir()) level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, ground), at.x, at.y + 0.2, at.z, 90, 1.2, 0.2, 1.2, 0.35);

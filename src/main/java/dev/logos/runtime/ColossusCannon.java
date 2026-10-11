@@ -151,13 +151,13 @@ public final class ColossusCannon {
             double physical = 5 * (second + 1), fire = 10 * (second + 1);
             Colossi.noKnockback(e, () -> {
                 e.invulnerableTime = 0;
-                e.hurtServer(level, c.damageSources().mobAttack(c), (float) physical);
+                c.deal(level, e, DamageTypes.MOB_ATTACK, (float) physical);
                 e.invulnerableTime = 0;
-                e.hurtServer(level, c.damageSources().source(DamageTypes.FIREBALL, c), (float) fire);
+                c.deal(level, e, DamageTypes.FIREBALL, (float) fire);
             });
         } else {
             e.invulnerableTime = 0;
-            e.hurtServer(level, c.damageSources().indirectMagic(c, c), 50);
+            c.deal(level, e, DamageTypes.INDIRECT_MAGIC, 50);
         }
         Vec3 at = Targeting.center(e);
         level.sendParticles(second < 3 ? ParticleTypes.FLAME : ParticleTypes.REVERSE_PORTAL, at.x, at.y, at.z, 10, 0.3, 0.3, 0.3, 0.05);
