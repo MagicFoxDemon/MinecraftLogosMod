@@ -71,8 +71,8 @@ final class FireProjectileVisual implements ProjectileVisual {
         Vec3 right = new Vec3(camera.orientation.transform(new org.joml.Vector3f(1, 0, 0)));
         Vec3 up = new Vec3(camera.orientation.transform(new org.joml.Vector3f(0, 1, 0)));
         if (head) {
-            out.submitCustomGeometry(stack, GLOW, (pose, buf) -> head(pose, buf, origin, right, up, .44f * size, 0x60FF850A));
-            out.submitCustomGeometry(stack, CORE, (pose, buf) -> head(pose, buf, origin, right, up, .09f * size, 0xFFFFD778));
+            out.submitCustomGeometry(stack, GLOW, (pose, buf) -> head(pose, buf, origin, right, up, .66f * size, 0x60FF850A));
+            out.submitCustomGeometry(stack, CORE, (pose, buf) -> head(pose, buf, origin, right, up, .135f * size, 0xFFFFD778));
         }
         stack.popPose();
     }
