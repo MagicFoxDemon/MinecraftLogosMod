@@ -1,7 +1,19 @@
 package dev.logos.client;
 
-import java.util.ArrayList;
 import java.util.List;
+import static dev.logos.client.LogosFx.layer;
+import static dev.logos.client.LogosFx.range;
+import static dev.logos.client.LogosFx.size;
+import static dev.logos.client.LogosFx.sphere;
+import static dev.logos.client.ProjectileParticles.configureTexture;
+import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
+import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction;
+import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction3;
+import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.Curve;
+import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurves;
+import dev.logos.lang.Element;
+import dev.logos.lang.Motion;
+
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
@@ -21,64 +33,47 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
 /** QFX Ares-inspired flowing ribbons and a shared, smoothly moving head; Photon supplies embers. */
-final class FireProjectileVisual {
+final class FireProjectileVisual implements ProjectileVisual {
     private static final RenderType FLAME = material(false);
     private static final RenderType NOISE = material(true);
     private static final RenderType CORE = headMaterial("ares_spark", true);
     private static final RenderType GLOW = headMaterial("ares_glow", true);
-    private final List<Vec3> path = new ArrayList<>();
+    private final ProjectilePath path;
     private final ProjectileMotion motion;
-    private Vec3 position;
     private Vec3 heading = new Vec3(0, 0, 1);
     private float scale;
 
     FireProjectileVisual(Vec3 position, double now) {
-        this.position = position;
+        path = new ProjectilePath(position);
         motion = new ProjectileMotion(position, now);
     }
 
-    void move(Vec3 position, Vec3 heading, float size, double now) {
-        if (this.position.distanceToSqr(position) > 1e-6) {
-            path.addFirst(this.position);
-            if (path.size() > 14) path.removeLast();
-        }
+    @Override
+    public void move(Vec3 position, Vec3 heading, float size, double now) {
+        path.move(position);
         motion.move(position, now);
-        this.position = position;
         if (heading.lengthSqr() > 1e-6) this.heading = heading.normalize();
         scale = Math.max(.6f, size / .3f);
     }
 
-    void submit(CameraRenderState camera, double now, PoseStack stack, SubmitNodeCollector out) {
+    @Override
+    public void submit(CameraRenderState camera, double now, PoseStack stack, SubmitNodeCollector out, boolean head, boolean tail) {
         Vec3 origin = motion.sample(now);
         // Ares uses camera-facing particle trails, not a solid sphere or crossed flat flame cards.
-        List<Vec3> samples = new ArrayList<>();
-        samples.add(origin.add(heading.scale(.12 * scale)));
-        Vec3 last = origin;
-        double length = 0;
-        for (Vec3 p : path) {
-            // Retargeting can leave the newest reported point ahead of the interpolated head.
-            if (p.subtract(origin).dot(heading) > 0) continue;
-            double segment = p.distanceTo(last);
-            if (segment < .05) continue;
-            if (length + segment >= 1.8 * scale) {
-                samples.add(last.lerp(p, (1.8 * scale - length) / segment));
-                length = 1.8 * scale;
-                break;
-            }
-            samples.add(p);
-            length += segment;
-            last = p;
-        }
-        if (length < 1.8 * scale) samples.add(last.subtract(heading.scale(1.8 * scale - length)));
+        List<Vec3> samples = path.samples(origin, heading, 1.8 * scale, .12 * scale);
         float size = scale;
         stack.pushPose();
         stack.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
-        out.submitCustomGeometry(stack, FLAME, (pose, buf) -> ribbon(pose, buf, samples, camera.pos, size, false));
-        out.submitCustomGeometry(stack, NOISE, (pose, buf) -> ribbon(pose, buf, samples, camera.pos, size, true));
+        if (tail) {
+            out.submitCustomGeometry(stack, FLAME, (pose, buf) -> ribbon(pose, buf, samples, camera.pos, size, false));
+            out.submitCustomGeometry(stack, NOISE, (pose, buf) -> ribbon(pose, buf, samples, camera.pos, size, true));
+        }
         Vec3 right = new Vec3(camera.orientation.transform(new org.joml.Vector3f(1, 0, 0)));
         Vec3 up = new Vec3(camera.orientation.transform(new org.joml.Vector3f(0, 1, 0)));
-        out.submitCustomGeometry(stack, GLOW, (pose, buf) -> head(pose, buf, origin, right, up, .44f * size, 0x60FF850A));
-        out.submitCustomGeometry(stack, CORE, (pose, buf) -> head(pose, buf, origin, right, up, .09f * size, 0xFFFFD778));
+        if (head) {
+            out.submitCustomGeometry(stack, GLOW, (pose, buf) -> head(pose, buf, origin, right, up, .44f * size, 0x60FF850A));
+            out.submitCustomGeometry(stack, CORE, (pose, buf) -> head(pose, buf, origin, right, up, .09f * size, 0xFFFFD778));
+        }
         stack.popPose();
     }
 
@@ -95,7 +90,7 @@ final class FireProjectileVisual {
     private static void ribbon(PoseStack.Pose pose, VertexConsumer buf, List<Vec3> samples, Vec3 camera,
             float size, boolean smoke) {
         Vec3[] points = new Vec3[17], edges = new Vec3[17];
-        for (int j = 0; j <= 16; j++) points[j] = point(samples, j / 16f);
+        for (int j = 0; j <= 16; j++) points[j] = ProjectilePath.point(samples, j / 16f);
         for (int j = 0; j <= 16; j++) {
             Vec3 tangent = points[Math.min(16, j + 1)].subtract(points[Math.max(0, j - 1)]);
             Vec3 side = tangent.cross(camera.subtract(points[j]));
@@ -117,18 +112,6 @@ final class FireProjectileVisual {
         int alpha = (int) ((smoke ? 100 : 255) * Math.pow(1 - t, .65));
         // A colored flame body retains orange against a bright sky; only the turbulence adds light.
         return alpha << 24 | (smoke ? 0xFF4000 : 0xFF6905);
-    }
-
-    private static Vec3 point(List<Vec3> points, float t) {
-        double total = 0;
-        for (int i = 1; i < points.size(); i++) total += points.get(i).distanceTo(points.get(i - 1));
-        double distance = total * t;
-        for (int i = 1; i < points.size(); i++) {
-            double segment = points.get(i).distanceTo(points.get(i - 1));
-            if (distance <= segment) return points.get(i - 1).lerp(points.get(i), segment < 1e-6 ? 0 : distance / segment);
-            distance -= segment;
-        }
-        return points.getLast();
     }
 
     private static void vertex(PoseStack.Pose pose, VertexConsumer buf, Vec3 p, float u, float v, int color) {
@@ -162,4 +145,33 @@ final class FireProjectileVisual {
     private static Identifier texture(String name) {
         return Identifier.fromNamespaceAndPath("logos", "textures/vfx/fire/" + name + ".png");
     }
+
+    @Override
+    public List<ParticleEmitter> particles(Motion motion) {
+        ParticleEmitter sparks = layer(Element.FIRE, true, .1f, 0, size(.035f, .065f), range(0, .05f), range(4, 14), sphere(.15f));
+        configureTexture(sparks, "fire/ares_spark", true);
+        sparks.config.emission.setDistanceRate(NumberFunction.constant(3));
+        sparks.config.setStartColor(NumberFunction.color(0xFFFFA218));
+        sparks.config.physics.setGravity(NumberFunction.constant(.005f));
+
+        ParticleEmitter stars = layer(Element.FIRE, true, .05f, 0, size(.09f, .18f), range(0, .035f), range(4, 10), sphere(.2f));
+        configureTexture(stars, "fire/ares_star", true);
+        stars.config.emission.setDistanceRate(NumberFunction.constant(1));
+        stars.config.setStartColor(NumberFunction.color(0xC0FFD578));
+        stars.config.physics.setEnable(false);
+
+        ParticleEmitter smoke = layer(Element.FIRE, false, .05f, 0, size(.3f, .45f), range(0, .01f), range(6, 8), sphere(.1f));
+        configureTexture(smoke, "fire/ares_smoke", true);
+        smoke.config.emission.setDistanceRate(NumberFunction.constant(2));
+        smoke.config.physics.setEnable(false);
+        smoke.config.shape.setPosition(new NumberFunction3(0, 0, -.3f));
+        smoke.config.setStartColor(NumberFunction.color(0x30FF690A));
+        smoke.config.uvAnimation.setEnable(true);
+        smoke.config.uvAnimation.setTiles(new org.joml.Vector2i(5, 5));
+        smoke.config.uvAnimation.setFrameOverTime(new Curve(0, 1, 0, 24, "age", "frame", new ECBCurves(0, 0, .33f, .33f, .67f, .67f, 1, 1)));
+        return List.of(sparks, stars, smoke);
+    }
+
+    @Override
+    public float particleScale(float size, boolean customLook) { return Math.max(.6f, size / .3f); }
 }

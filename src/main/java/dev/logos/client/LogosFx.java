@@ -17,13 +17,10 @@ import com.lowdragmc.photon.client.fx.FX;
 import com.lowdragmc.photon.client.fx.FXRuntime;
 import com.lowdragmc.photon.client.fx.IEffectExecutor;
 import com.lowdragmc.photon.client.gameobject.emitter.data.EmissionSetting;
-import com.lowdragmc.photon.client.gameobject.emitter.data.material.TextureMaterial;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction3;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.RandomConstant;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.color.Gradient;
-import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.Curve;
-import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurves;
 import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Circle;
 import com.lowdragmc.photon.client.gameobject.emitter.data.shape.IShape;
 import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Sphere;
@@ -119,7 +116,7 @@ public final class LogosFx {
     private static final class Trail {
         /** The element trail; stays null when a {@code :trail} particle replaces it. */
         @Nullable FXRuntime runtime;
-        @Nullable FireProjectileVisual fire;
+        @Nullable ProjectileVisual visual;
         final @Nullable ParticleOptions particle;
         final @Nullable Look look;
         long lastSeen;
@@ -200,10 +197,10 @@ public final class LogosFx {
                     t.look.moveTo(pos, p);
                 }
                 t.lastSeen = level.getGameTime();
-                if (el == Element.FIRE && t.particle == null && t.look == null) {
+                if (t.particle == null || t.look == null) {
                     double now = level.getGameTime() + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
-                    if (t.fire == null) t.fire = new FireProjectileVisual(pos, now);
-                    t.fire.move(pos, new Vec3(p.ax(), p.ay(), p.az()), p.size(), now);
+                    if (t.visual == null) t.visual = ProjectileVisual.create(el, pos, now);
+                    t.visual.move(pos, new Vec3(p.ax(), p.ay(), p.az()), p.size(), now);
                 }
                 if (t.particle != null) {
                     // ✧ :trail — a stream of that particle along the path flown since the last report.
@@ -218,15 +215,13 @@ public final class LogosFx {
                 } else {
                     if (t.runtime == null || !t.runtime.isValid()) {
                         Motion m = Motion.values()[Math.floorMod(p.variant(), Motion.values().length)];
-                        // With a :look the item is the body; the element trail shrinks to a wisp behind it.
-                        float scale = Math.max(0.6f, p.size() / 0.3f) * (t.look != null ? 0.2f : 1);
-                        boolean fireProjectile = t.fire != null;
-                        t.runtime = play(level, fx(fireProjectile ? "fire_projectile" : "trail", el, m.ordinal(),
-                                () -> fireProjectile ? fireTrail() : trail(el, m)), pos, scale);
+                        ProjectileVisual visual = t.visual;
+                        t.runtime = play(level, fx("projectile", el, m.ordinal(), () -> visual.particles(m)),
+                                pos, visual.particleScale(p.size(), t.look != null));
                     } else {
                         t.runtime.getRoot().updatePos(new Vector3f(p.x(), p.y(), p.z()));
                     }
-                    if (t.fire != null) {
+                    if (!t.visual.legacyAccents()) {
                         Vector3f heading = new Vector3f(p.ax(), p.ay(), p.az());
                         if (heading.lengthSquared() > 1e-6f) {
                             t.runtime.getRoot().updateRotation(new Quaternionf().rotationTo(new Vector3f(0, 0, 1), heading.normalize()));
@@ -372,9 +367,10 @@ public final class LogosFx {
         ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector());
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
-            if (e.getValue().fire != null) e.getValue().fire.submit(cam, level.getGameTime() + pt,
-                    pose, event.getSubmitNodeCollector());
-            Look l = e.getValue().look;
+            Trail t = e.getValue();
+            if (t.visual != null) t.visual.submit(cam, level.getGameTime() + pt,
+                    pose, event.getSubmitNodeCollector(), t.look == null, t.particle == null);
+            Look l = t.look;
             if (l == null) continue;
             Vector3f h = toCamera.transform(new Vector3f((float) l.heading.x, (float) l.heading.y, (float) l.heading.z));
             if (h.x * h.x + h.y * h.y > 0.04f) l.angle = (float) Math.atan2(h.y, h.x);
@@ -552,15 +548,15 @@ public final class LogosFx {
         });
     }
 
-    private static RandomConstant range(float min, float max) {
+    static RandomConstant range(float min, float max) {
         return new RandomConstant(min, max);
     }
 
-    private static NumberFunction3 size(float min, float max) {
+    static NumberFunction3 size(float min, float max) {
         return new NumberFunction3(range(min, max), range(min, max), range(min, max));
     }
 
-    private static Sphere sphere(float radius) {
+    static Sphere sphere(float radius) {
         Sphere s = new Sphere();
         s.setRadius(radius);
         return s;
@@ -578,7 +574,7 @@ public final class LogosFx {
      * core layers are opaque and fade from the palette's hot centre to the element colour.
      * {@code rate > 0} makes a looping emitter (trails); otherwise it bursts {@code count} once.
      */
-    private static ParticleEmitter layer(Element el, boolean halo, float rate, int count, NumberFunction3 size,
+    static ParticleEmitter layer(Element el, boolean halo, float rate, int count, NumberFunction3 size,
                                          RandomConstant speed, RandomConstant life, IShape shape) {
         ParticleEmitter e = new ParticleEmitter();
         ParticleConfig c = e.config;
@@ -624,59 +620,6 @@ public final class LogosFx {
             c.physics.setGravity(NumberFunction.constant(0.008f));
         }
         return e;
-    }
-
-    /** A spell body's wake. Homing/boomerang/orbit trails linger, wandering ones jitter. */
-    private static List<ParticleEmitter> trail(Element el, Motion m) {
-        boolean lingering = m == Motion.HOMING || m == Motion.BOOMERANG || m == Motion.ORBIT;
-        float spread = m == Motion.WANDER ? 0.08f : 0.03f;
-        return List.of(
-                layer(el, false, el == Element.LIGHTNING ? 22 : 16, 0, size(0.1f, 0.22f), range(0, spread),
-                        lingering ? range(12, 22) : range(8, 14), sphere(0.1f)),
-                layer(el, true, 6, 0, size(0.5f, 0.85f), range(0, 0.005f), range(5, 9), sphere(0.05f)));
-    }
-
-    /** Ares distance-spawned embers; the continuous head is rendered with its ribbon. */
-    private static List<ParticleEmitter> fireTrail() {
-        ParticleEmitter sparks = layer(Element.FIRE, true, .1f, 0, size(.035f, .065f), range(0, .05f), range(4, 14), sphere(.15f));
-        fireTexture(sparks, "ares_spark", true);
-        sparks.config.emission.setDistanceRate(NumberFunction.constant(3));
-        sparks.config.setStartColor(NumberFunction.color(0xFFFFA218));
-        sparks.config.physics.setGravity(NumberFunction.constant(.005f));
-
-        ParticleEmitter stars = layer(Element.FIRE, true, .05f, 0, size(.09f, .18f), range(0, .035f), range(4, 10), sphere(.2f));
-        fireTexture(stars, "ares_star", true);
-        stars.config.emission.setDistanceRate(NumberFunction.constant(1));
-        stars.config.setStartColor(NumberFunction.color(0xC0FFD578));
-        stars.config.physics.setEnable(false);
-
-        ParticleEmitter smoke = layer(Element.FIRE, false, .05f, 0, size(.3f, .45f), range(0, .01f), range(6, 8), sphere(.1f));
-        fireTexture(smoke, "ares_smoke", true);
-        smoke.config.emission.setDistanceRate(NumberFunction.constant(2));
-        smoke.config.physics.setEnable(false);
-        smoke.config.shape.setPosition(new NumberFunction3(0, 0, -.3f));
-        smoke.config.setStartColor(NumberFunction.color(0x30FF690A));
-        smoke.config.uvAnimation.setEnable(true);
-        smoke.config.uvAnimation.setTiles(new org.joml.Vector2i(5, 5));
-        smoke.config.uvAnimation.setFrameOverTime(new Curve(0, 1, 0, 24, "age", "frame", new ECBCurves(0, 0, .33f, .33f, .67f, .67f, 1, 1)));
-        return List.of(sparks, stars, smoke);
-    }
-
-    /** QFX grayscale inputs become white RGBA masks; the emitter supplies their element color. */
-    private static void fireTexture(ParticleEmitter emitter, String texture, boolean additive) {
-        ParticleConfig c = emitter.config;
-        c.colorOverLifetime.setColor(new Gradient(new GradientColor(0xFFFFFFFF, 0xD0FFFFFF, 0x00FFFFFF)));
-        Curve taper = new Curve(0, 1, 0, 1, "age", "size", new ECBCurves(0, 1, .2f, 1, .65f, .65f, 1, 0));
-        c.sizeOverLifetime.setEnable(true);
-        c.sizeOverLifetime.setSize(new NumberFunction3(taper, taper, taper));
-        c.setMaxParticles(48);
-        for (var material : c.renderer.getMaterials()) {
-            TextureMaterial image = new TextureMaterial(Identifier.fromNamespaceAndPath("logos", "textures/vfx/fire/" + texture + ".png"));
-            image.setDiscardThreshold(.005f);
-            material.setMaterial(image);
-            material.getBlendMode().setSrcColorFactor(SourceFactor.SRC_ALPHA);
-            material.getBlendMode().setDstColorFactor(additive ? DestFactor.ONE : DestFactor.ONE_MINUS_SRC_ALPHA);
-        }
     }
 
     private static List<ParticleEmitter> burst(Element el) {
