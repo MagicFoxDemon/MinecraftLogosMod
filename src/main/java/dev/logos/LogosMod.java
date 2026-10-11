@@ -166,6 +166,13 @@ public class LogosMod {
                     .sized(0.4f, 0.5f).clientTrackingRange(10)
                     .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
+    /** One full-mana egg for each of the five lifeform levels. */
+    public static final List<DeferredItem<dev.logos.item.ManaLifeformSpawnEggItem>> MANA_LIFEFORM_SPAWN_EGGS =
+            java.util.stream.IntStream.rangeClosed(1, dev.logos.runtime.ManaLifeform.MAX_LEVEL)
+                    .mapToObj(lv -> ITEMS.registerItem("mana_lifeform_spawn_egg_" + lv,
+                            p -> new dev.logos.item.ManaLifeformSpawnEggItem(p, lv), p -> p.spawnEgg(MANA_LIFEFORM.get())))
+                    .toList();
+
     /** 炼金术巨像: a built colossus; raised by command until alchemy can build one. */
     public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.AlchemicalColossus>> ALCHEMICAL_COLOSSUS =
             ENTITY_TYPES.register("alchemical_colossus", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.AlchemicalColossus>of(
@@ -216,6 +223,7 @@ public class LogosMod {
                 out.accept(MAINTENANCE_KIT.get());
                 out.accept(TAINTED_MANA_SHARD.get());
                 out.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
+                for (var egg : MANA_LIFEFORM_SPAWN_EGGS) out.accept(egg.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
                 for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
@@ -248,7 +256,10 @@ public class LogosMod {
         ATTRIBUTES.register(modBus);
         modBus.addListener(this::registerPayloads);
         modBus.addListener((BuildCreativeModeTabContentsEvent e) -> {
-            if (e.getTabKey() == CreativeModeTabs.SPAWN_EGGS) e.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
+            if (e.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+                e.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
+                for (var egg : MANA_LIFEFORM_SPAWN_EGGS) e.accept(egg.get());
+            }
         });
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) -> {
             e.put(MANA_LIFEFORM.get(), dev.logos.runtime.ManaLifeform.createAttributes().build());
