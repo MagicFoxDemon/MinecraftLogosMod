@@ -779,6 +779,18 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         return Mth.lerp(partialTick, reachWeightO, reachWeight);
     }
 
+    /**
+     * Its body turns as its mind turns it. Vanilla's client keeps a standing creature's body where it was
+     * until its facing is more than 50 degrees off, so a colossus turning on the spot (to its foe, its
+     * arm onto a foe) was drawn up to 50 degrees behind where it truly faced. On the client its body now
+     * eases onto its facing (as the server sets it, body and facing together).
+     */
+    @Override
+    protected void tickHeadTurn(float bodyYaw) {
+        if (level().isClientSide()) yBodyRot += Mth.wrapDegrees(getYRot() - yBodyRot) * 0.3f;
+        else super.tickHeadTurn(bodyYaw);
+    }
+
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);

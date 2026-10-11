@@ -303,6 +303,18 @@ public final class ColossusMind extends Goal {
         turnTo(e.position());
     }
 
+    /**
+     * Turns so its right arm — the one that grabs and strikes — lines up on {@code e}, rather than its
+     * middle: it faces a point as far to the other side of {@code e} as its shoulder is from its middle.
+     */
+    private void faceWithArm(Entity e) {
+        c.getLookControl().setLookAt(e, 20, 20);
+        Vec3 d = e.position().subtract(c.position()).multiply(1, 0, 1);
+        if (d.lengthSqr() < 1e-6) return;
+        Vec3 f = d.normalize(), r = new Vec3(-f.z, 0, f.x);
+        turnTo(e.position().subtract(r.scale(AlchemicalColossus.SHOULDER.x)));
+    }
+
     /** Turns its body toward {@code p}, a little at a time: it is heavy. */
     private void turnTo(Vec3 p) {
         Vec3 d = p.subtract(c.position());
@@ -777,7 +789,7 @@ public final class ColossusMind extends Goal {
 
         @Override
         boolean tick() {
-            if (at != null && t < 14) face(at);
+            if (at != null && t < 14) faceWithArm(at);
             // The blow lands as the fist does: the animation's thrust is fullest at about 0.93 s.
             if (t == 18) strike();
             boolean more = ++t < Act.PUNCH.ticks;
@@ -845,7 +857,7 @@ public final class ColossusMind extends Goal {
             int p = t - phaseAt;
             switch (phase) {
                 case GRAB_REACH -> {
-                    face(victim);
+                    faceWithArm(victim);
                     if (p == 18) {
                         c.reachFor(null); // from here its hand carries the victim
                         if (victim.isAlive() && gap(victim) <= MELEE + 1) {

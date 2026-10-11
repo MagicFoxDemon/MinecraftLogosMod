@@ -49,10 +49,9 @@ public class ColossusReachScenario implements UIScenario {
     /**
      * How close the palm must come: to a tall creature's middle, and to a small one's top. Its arm,
      * with the torso bowed as far as it goes, ends about half a block above the ground: a small creature
-     * on the ground is at the very edge of its reach, and as it faces the creature with its middle rather
-     * than its grabbing shoulder, how near it gets varies (0.4 to 0.55 seen).
+     * on the ground is at the very edge of its reach.
      */
-    static final double WITHIN = 0.35, LOW_WITHIN = 0.6;
+    static final double WITHIN = 0.35, LOW_WITHIN = 0.35;
 
     EntityType<? extends Mob> creature() {
         return EntityType.WARDEN;
