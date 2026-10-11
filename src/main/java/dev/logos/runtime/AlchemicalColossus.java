@@ -162,6 +162,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private int bonesAt = -100;
     /** Client only: what the legs were last doing, to pick the start and stop steps. */
     private int lastSeq = -1;
+    private Act lastAct = Act.NONE;
     private RawAnimation lastLoco = IDLE;
     /** Client only: how fast the run cycle plays, so its planted feet keep pace with the ground. */
     private float runPace = 1;
@@ -711,15 +712,18 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             Act a = act();
             int seq = entityData.get(ACT_SEQ);
             if (a != Act.NONE) {
-                if (seq != lastSeq) {
-                    // The same act again (a second punch) restarts from its first frame.
-                    lastSeq = seq;
-                    test.controller().reset();
-                }
+                // A new act blends in from whatever pose the body is in. Never reset the controller for it:
+                // that drops the pose to blend from, and GeckoLib then blends toward the model's rest pose
+                // (arms hanging) for the first few frames of every act. Only the same act again (a second
+                // punch), which GeckoLib sees as no change, is sent back to its first frame by hand.
+                if (seq != lastSeq && a == lastAct) test.controller().setAnimationTime(0);
+                lastSeq = seq;
+                lastAct = a;
                 lastLoco = null;
                 return test.setAndContinue(a.raw);
             }
             lastSeq = seq;
+            lastAct = Act.NONE;
             RawAnimation loco;
             if (test.isMoving()) {
                 // Driven, it always runs.
