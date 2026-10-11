@@ -55,6 +55,13 @@ public final class ColossusMind extends Goal {
     static final double WALK = 0.6, RUN = 1.0;
     /** Reach of its hands, measured from its edge to the target's. */
     static final double MELEE = 2.6;
+    /**
+     * Choosing between a sweeping blow and a grab: a blow is worth one for each lesser foe it would
+     * catch (a strong one barely feels it); a grab is worth this much for a lesser foe and more for a
+     * strong one. So it swings into a crowd of three lesser foes, and takes a strong foe in hand unless
+     * a crowd of four is about it.
+     */
+    static final double SWEEP_STRONG = 0.3, GRAB_LESSER = 2.5, GRAB_STRONG = 3.5;
     /** What it will not pick up, only strike: the ender dragon by default; packs may add more. */
     public static final TagKey<EntityType<?>> HEAVY = TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
             Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossus_heavy"));
@@ -305,8 +312,7 @@ public final class ColossusMind extends Goal {
         face(f);
         if (gap(f) <= MELEE) {
             halt();
-            if (heavy(f)) runSeq(new Punch(f));
-            else runSeq(new Grab(f));
+            runSeq(melee(f));
             return;
         }
         if (cannonReady() && ColossusCannon.canSee(c, f)) {
@@ -315,6 +321,36 @@ public final class ColossusMind extends Goal {
             return;
         }
         walkTo(f.position(), true);
+    }
+
+    /** Its move against {@code f}, in reach: a sweeping blow into a crowd of lesser foes (or at what it cannot lift), else a grab. */
+    private Sequence melee(LivingEntity f) {
+        if (heavy(f)) return new Punch(f);
+        Vec3 toward = f.position().subtract(c.position()).multiply(1, 0, 1);
+        toward = toward.lengthSqr() < 1e-4 ? Vec3.ZERO : toward.normalize();
+        double sweep = 0;
+        for (LivingEntity e : inSweep(c.position().add(toward.scale(2.2)).add(0, 1.2, 0))) {
+            if (e == f || hostile(e)) sweep += strong(e) ? SWEEP_STRONG : 1;
+        }
+        return sweep > (strong(f) ? GRAB_STRONG : GRAB_LESSER) ? new Punch(f) : new Grab(f);
+    }
+
+    /** A strong foe: a boss, or health and armour together at or past the finishing line's 60. */
+    public static boolean strong(LivingEntity e) {
+        return e.getType().builtInRegistryHolder().is(Tags.EntityTypes.BOSSES) || e.getMaxHealth() + e.getArmorValue() >= 60;
+    }
+
+    /** Something fighting: a monster, or whatever is after it or its master (in a frenzy, anything it would strike). */
+    private boolean hostile(LivingEntity e) {
+        if (c.isBerserk() || e instanceof Enemy) return true;
+        return e instanceof Mob m && m.getTarget() != null && (m.getTarget() == c || master != null && m.getTarget() == master);
+    }
+
+    /** Whom a sweeping blow centred on {@code centre} would strike: everything there but itself, what it carries, and — sane — its own side. */
+    private List<LivingEntity> inSweep(Vec3 centre) {
+        UUID id = Familiars.masterOf(c);
+        return c.level().getEntitiesOfClass(LivingEntity.class, new AABB(centre, centre).inflate(3), e -> e.isAlive() && e != c && e.getVehicle() != c
+                && (c.isBerserk() || id == null || !Familiars.friendly(id, e) && !(e instanceof Player && e != foe)));
     }
 
     private void runSeq(Sequence s) {
@@ -670,10 +706,7 @@ public final class ColossusMind extends Goal {
         private void strike() {
             if (!(c.level() instanceof ServerLevel level)) return;
             Vec3 centre = c.local(0.3, 1.2, 2.2);
-            UUID master = Familiars.masterOf(c);
-            for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(centre, centre).inflate(3), LivingEntity::isAlive)) {
-                if (e == c || e.getVehicle() == c) continue;
-                if (!c.isBerserk() && master != null && (Familiars.friendly(master, e) || e instanceof Player && !(e == foe))) continue;
+            for (LivingEntity e : inSweep(centre)) {
                 e.invulnerableTime = 0;
                 c.deal(level, e, DamageTypes.MOB_ATTACK, 50);
                 Vec3 away = e.position().subtract(c.position()).multiply(1, 0, 1);

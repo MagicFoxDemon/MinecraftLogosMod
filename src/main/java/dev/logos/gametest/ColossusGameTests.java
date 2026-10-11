@@ -112,6 +112,30 @@ final class ColossusGameTests {
         });
     }
 
+    /** Three lesser foes in front of it: it sweeps them with its fist rather than picking one up. */
+    static void punchesCrowd(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(4.5, 2, 3.5));
+        // Husks: they do not burn by day, so only its blow can hurt them.
+        Husk[] crowd = new Husk[3];
+        double[] xs = {3.5, 4.5, 5.5};
+        for (int i = 0; i < 3; i++) {
+            crowd[i] = h.spawn(EntityType.HUSK, new Vec3(xs[i], 2, 6.5));
+            crowd[i].setNoAi(true);
+        }
+        Familiars.order(c, crowd[1]);
+        boolean[] grabbed = {false};
+        h.succeedWhen(() -> {
+            if (c.act() == AlchemicalColossus.Act.GRAB_REACH) grabbed[0] = true;
+            h.assertTrue(!grabbed[0], "it should not grab one out of a crowd");
+            int struck = 0;
+            for (Husk z : crowd) if (!z.isAlive() || z.getHealth() < z.getMaxHealth()) struck++;
+            h.assertTrue(struck == 3, "one blow should catch all three: " + struck);
+        });
+    }
+
     /** A big foe is picked up too: a warden, too sturdy to finish, is slammed for 80. */
     static void grabsBig(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
