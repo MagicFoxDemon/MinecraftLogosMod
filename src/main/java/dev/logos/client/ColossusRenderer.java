@@ -43,7 +43,7 @@ public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState
     private static final String[] RESERVOIR = {"energy_fill_left", "energy_fill_center", "energy_fill_right"};
     /** The spent part of a tube: the same texture, darkened almost to black. */
     private static final int SPENT = 0xFF1E1E22;
-    private static final String[] REPORTED = {"right_hand", "left_hand", "attachment_seat_left", "attachment_seat_right", "attachment_muzzle_right", "attachment_muzzle_left", "right_upper_arm"};
+    private static final String[] REPORTED = {"right_hand", "left_hand", "attachment_seat_left", "attachment_seat_right", "attachment_muzzle_right", "attachment_muzzle_left", "right_upper_arm", "left_foot", "right_foot"};
 
     public ColossusRenderer(EntityRendererProvider.Context context) {
         super(context, new DefaultedEntityGeoModel<AlchemicalColossus>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "alchemical_colossus")) {

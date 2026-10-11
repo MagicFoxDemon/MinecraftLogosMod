@@ -29,6 +29,7 @@ public class ColossusRideScenario implements UIScenario {
     private static final BlockPos ORIGIN = new BlockPos(0, 100, 0);
     private AlchemicalColossus colossus;
     private Vec3 drivenFrom;
+    private int stepsBefore;
 
     @Override
     public void configure(ScenarioOptions o) {
@@ -59,7 +60,10 @@ public class ColossusRideScenario implements UIScenario {
                 .server("take the controls", sc -> Colossi.control(sc.player(), Colossi.TOGGLE_DRIVE))
                 .step("hold forward", ctx -> Minecraft.getInstance().options.keyUp.setDown(true))
                 .ticks(30)
-                .step("mark where it is", ctx -> drivenFrom = Minecraft.getInstance().player.getVehicle().position())
+                .step("mark where it is", ctx -> {
+                    drivenFrom = Minecraft.getInstance().player.getVehicle().position();
+                    stepsBefore = ((AlchemicalColossus) Minecraft.getInstance().player.getVehicle()).footfalls();
+                })
                 .ticks(20)
                 .step("check its pace", ctx -> {
                     double perTick = Minecraft.getInstance().player.getVehicle().position().distanceTo(drivenFrom) / 20;
@@ -68,6 +72,10 @@ public class ColossusRideScenario implements UIScenario {
                     double rate = perTick / (1.395 / 16);
                     System.out.printf("[logos] driven colossus: %.3f blocks/tick, run cycle at %.2fx%n", perTick, rate);
                     if (rate < 1.0 || rate > 1.8) throw new AssertionError("driven pace " + perTick + " blocks/tick is off its run cycle");
+                    // A run cycle (two steps) takes about 17 ticks at this pace: 20 ticks should bring two or three footfalls.
+                    int steps = ((AlchemicalColossus) Minecraft.getInstance().player.getVehicle()).footfalls() - stepsBefore;
+                    System.out.printf("[logos] driven colossus: %d footfalls in 20 ticks%n", steps);
+                    if (steps < 2 || steps > 4) throw new AssertionError(steps + " footfalls in 20 ticks of running");
                 })
                 .screenshot("driving")
                 .step("let go", ctx -> Minecraft.getInstance().options.keyUp.setDown(false))
