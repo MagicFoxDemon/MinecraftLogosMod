@@ -1,8 +1,11 @@
 package dev.logos.client;
 
+import org.joml.Vector3f;
+
 import com.geckolib.cache.model.GeoBone;
 import com.geckolib.cache.model.cuboid.CuboidGeoBone;
 import com.geckolib.cache.model.cuboid.GeoCube;
+import com.geckolib.constant.DataTickets;
 import com.geckolib.constant.dataticket.DataTicket;
 import com.geckolib.model.DefaultedEntityGeoModel;
 import com.geckolib.renderer.GeoEntityRenderer;
@@ -21,6 +24,8 @@ import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * The alchemical colossus (assets/logos/geckolib/…/alchemical_colossus). Its scorched shell — in a
@@ -39,6 +44,9 @@ public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState
     private static final DataTicket<Float> ARM_YAW = DataTicket.create("logos_colossus_arm_yaw", Float.class);
     private static final DataTicket<Float> ARM_PITCH = DataTicket.create("logos_colossus_arm_pitch", Float.class);
     private static final DataTicket<Float> FILL = DataTicket.create("logos_colossus_fill", Float.class);
+    /** What its grabbing hand reaches for (world), and how fully the reach is drawn. */
+    private static final DataTicket<Vec3> REACH_GOAL = DataTicket.create("logos_colossus_reach_goal", Vec3.class);
+    private static final DataTicket<Float> REACH_WEIGHT = DataTicket.create("logos_colossus_reach_weight", Float.class);
     /** The fill of its three reservoir tubes; each is pivoted at its foot, so it shrinks downward. */
     private static final String[] RESERVOIR = {"energy_fill_left", "energy_fill_center", "energy_fill_right"};
     /** The spent part of a tube: the same texture, darkened almost to black. */
@@ -71,6 +79,11 @@ public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState
         state.addGeckolibData(ARM_YAW, turn[0]);
         state.addGeckolibData(ARM_PITCH, turn[1]);
         state.addGeckolibData(FILL, c.fill());
+        Vec3 goal = c.reachGoal();
+        if (goal != null) {
+            state.addGeckolibData(REACH_GOAL, goal);
+            state.addGeckolibData(REACH_WEIGHT, c.reachWeight(partialTick));
+        }
     }
 
     /**
@@ -87,6 +100,16 @@ public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState
                 if (fill <= 0.001f) s.skipRender(true);
                 else s.setScaleY(s.getScaleY() * fill);
             });
+        }
+        Vec3 goal = info.getGeckolibData(REACH_GOAL);
+        float weight = info.getOrDefaultGeckolibData(REACH_WEIGHT, 0f);
+        if (goal != null && weight > 0) {
+            // The reach: its arm (and if need be its torso) posed onto the point, in the model's own space.
+            R s = info.renderState();
+            float yaw = info.getOrDefaultGeckolibData(DataTickets.ENTITY_BODY_YAW, 0f);
+            Vector3f local = new Vector3f((float) (goal.x - s.x), (float) (goal.y - s.y - 0.01), (float) (goal.z - s.z))
+                    .rotateY(-(180 - yaw) * Mth.DEG_TO_RAD);
+            ColossusArmIk.solve(info.model(), snapshots, local, weight);
         }
         float yaw = info.getOrDefaultGeckolibData(ARM_YAW, 0f), pitch = info.getOrDefaultGeckolibData(ARM_PITCH, 0f);
         if (yaw == 0 && pitch == 0) return;

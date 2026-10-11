@@ -55,6 +55,8 @@ public final class ColossusMind extends Goal {
     static final double WALK = 0.6, RUN = 1.0;
     /** Reach of its hands, measured from its edge to the target's. */
     static final double MELEE = 2.6;
+    /** A grab needs it closer than a blow: its arm is under two blocks long, so it steps in to about this gap first. */
+    static final double GRAB_GAP = 0.2;
     /**
      * Choosing between a sweeping blow and a grab: a blow is worth one for each lesser foe it would
      * catch (a strong one barely feels it); a grab is worth this much for a lesser foe and more for a
@@ -335,8 +337,14 @@ public final class ColossusMind extends Goal {
     private void fight(LivingEntity f) {
         face(f);
         if (gap(f) <= MELEE) {
+            Sequence move = melee(f);
+            if (move instanceof Grab && gap(f) > GRAB_GAP && f.getVehicle() != c) {
+                // In reach of a fist but not of its hand (and not already on it): a step closer first.
+                walkTo(f.position(), true);
+                return;
+            }
             halt();
-            runSeq(melee(f));
+            runSeq(move);
             return;
         }
         if (cannonReady() && ColossusCannon.canSee(c, f)) {
@@ -810,6 +818,8 @@ public final class ColossusMind extends Goal {
             phase = a;
             phaseAt = t;
             c.play(a);
+            // Reaching, its arm is guided onto the victim (the client poses it: ColossusArmIk).
+            c.reachFor(a == Act.GRAB_REACH ? victim : null);
         }
 
         @Override
@@ -824,6 +834,7 @@ public final class ColossusMind extends Goal {
                 case GRAB_REACH -> {
                     face(victim);
                     if (p == 18) {
+                        c.reachFor(null); // from here its hand carries the victim
                         if (victim.isAlive() && gap(victim) <= MELEE + 1) {
                             // Whatever it rides — even the colossus itself — it is torn off, and whatever rides it shaken off.
                             if (victim.getVehicle() == c) c.release(victim, null);
@@ -924,6 +935,7 @@ public final class ColossusMind extends Goal {
 
         @Override
         void abort() {
+            c.reachFor(null);
             letGo(null);
         }
     }
