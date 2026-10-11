@@ -187,6 +187,28 @@ final class ColossusGameTests {
         });
     }
 
+    /** The beam strikes the moment it appears (5 physical + 10 fire), not half a second later. */
+    static void cannonStrikesAtOnce(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 2);
+        AlchemicalColossus c = raise(h, p, new Vec3(1.5, 2, 1.5));
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(1.5, 2, 15.5));
+        husk.setNoAi(true);
+        husk.getAttribute(Attributes.MAX_HEALTH).setBaseValue(400);
+        husk.setHealth(400);
+        husk.getAttribute(Attributes.ARMOR).setBaseValue(0); // so the strike lands whole
+        Familiars.order(c, husk);
+        int[] firing = {0};
+        h.succeedWhen(() -> {
+            if (c.act() == AlchemicalColossus.Act.CANNON_FIRE || firing[0] > 0) firing[0]++;
+            h.assertTrue(firing[0] > 0, "not firing yet");
+            if (firing[0] > 4) h.fail("no strike in the beam's first ticks: health " + husk.getHealth());
+            h.assertTrue(husk.getHealth() < 400, "waiting for the opening strike");
+            h.assertTrue(Math.abs(400 - husk.getHealth() - 15) < 0.01, "the opening strike should deal 5 + 10: took " + (400 - husk.getHealth()));
+        });
+    }
+
     /** Fed past what it shows it hides the rest;an unstable fuel sends it berserk; struck down berserk, it burns out tempered. */
     static void frenzyAndBurnout(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);

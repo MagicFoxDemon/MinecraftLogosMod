@@ -27,7 +27,8 @@ import net.minecraft.world.phys.Vec3;
  * the first full block or construct in its way; it ends when the target dies, after five seconds, or
  * once it has been unable to reach the target for a second and a half.
  * <p>
- * Every half second it pays and strikes, growing hotter each second:
+ * Every half second it pays and strikes, growing hotter each second; the first strike lands the moment
+ * the beam appears (10 mana, 5 physical + 10 fire):
  * <pre>
  *  second  mana/s  damage per half second
  *    1      20      5 physical + 10 fire     (no knockback)

@@ -888,7 +888,9 @@ public final class ColossusMind extends Goal {
                     // A rider's beam lasts longer the longer they held it past full charge (one to five seconds).
                     int limit = rider == null ? ColossusCannon.MAX_TICKS
                             : Mth.clamp(20 + Math.max(0, (releasedAt < 0 ? t : releasedAt) - (Act.CANNON_PREPARE.ticks + Act.CANNON_CHARGE.ticks)) * 2, 20, ColossusCannon.MAX_TICKS);
-                    if (!beam.fire(p, limit)) {
+                    // The act began last tick, so this is the beam's first tick when p is 1: count it from 0, so
+                    // the first strike lands as the beam appears rather than half a second later.
+                    if (!beam.fire(p - 1, limit)) {
                         beam.end();
                         phase(Act.CANNON_RECOVER);
                     }
