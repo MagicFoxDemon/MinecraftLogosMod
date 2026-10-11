@@ -118,6 +118,29 @@ final class LifeformGameTests {
         });
     }
 
+    /** Run dry while flying across to its master, it drops to the ground and lies there, instead of hanging in the air. */
+    static void fallsWhenDry(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 200 (summon mana_lifeform :at (pos-of caster)))");
+        Vec3 start = h.absoluteVec(new Vec3(7.5, 4, 7.5));
+        lf.snapTo(start.x, start.y, start.z, 0, 0);
+        double floor = h.absoluteVec(new Vec3(0, 2, 0)).y;
+        int[] stage = {0};
+        h.succeedWhen(() -> {
+            if (stage[0] == 0) {
+                // Once it is on its way (its flight control busy), its mana runs out.
+                h.assertTrue(lf.getNavigation().isInProgress() || lf.getDeltaMovement().horizontalDistance() > 0.02, "not flying yet");
+                lf.setMana(0.01);
+                stage[0] = 1;
+            }
+            h.assertTrue(lf.isDormant(), "out of mana it should go dormant");
+            h.assertTrue(lf.onGround() && lf.getY() - floor < 0.3, "it should lie on the ground, not hang " + (lf.getY() - floor) + " up");
+            h.assertTrue(++stage[0] > 40, "and stay there");
+            h.assertTrue(!lf.isNoGravity(), "still falling under its own weight");
+        });
+    }
+
     /** Two attack pages: the cheaper is its attack, and with a third of its pool to spare it looses the dearer one too. */
     static void comboWhenRich(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
