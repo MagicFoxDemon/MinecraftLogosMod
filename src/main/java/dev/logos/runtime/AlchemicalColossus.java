@@ -18,6 +18,7 @@ import com.geckolib.util.GeckoLibUtil;
 
 import dev.logos.LogosMod;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -48,6 +49,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
@@ -183,6 +186,9 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private float runPace = 1;
     /** Client only: how its cannon arm is turned toward its aim (radians), and how far that turn has blended in. */
     private float armYaw, armPitch, armWeight, armYawO, armPitchO, armWeightO;
+    /** Client only: whether each foot (left, right) is lifted, to hear it come down; and the beat of unseen steps. */
+    private final boolean[] footUp = new boolean[2];
+    private int stepClock, footfalls;
 
     public AlchemicalColossus(EntityType<? extends AlchemicalColossus> type, Level level) {
         super(type, level);
@@ -501,6 +507,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
                 armPitch = Mth.lerp(0.35f, armPitch, turn[1]);
             }
             armWeight = Mth.approach(armWeight, aim != null ? 1 : 0, 0.1f);
+            stepSounds();
         }
         if (level() instanceof ServerLevel level) {
             // Driven, vanilla leaves its movement to the rider's client and skips its AI on the server
@@ -654,6 +661,64 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     public @Nullable Vec3 drawnBone(String bone) {
         return level().isClientSide() && tickCount - bonesAt < 5 ? bones.get(bone) : null;
     }
+
+    // ---- footfalls ----------------------------------------------------------------------------------
+
+    /** A planted foot's ankle sits about 0.27 above its feet; lifted in a step it rises past this, and it lands below the next. */
+    private static final double FOOT_LIFTED = 0.32, FOOT_DOWN = 0.29;
+
+    /**
+     * Client: a heavy footfall each time a foot comes down, heard as the model's foot lands (from the
+     * drawn foot bones). Not drawn (behind the camera), it is heard on the gait's beat instead: every
+     * half run cycle, or every half walk cycle.
+     */
+    private void stepSounds() {
+        boolean seen = false;
+        String[] feet = {"left_foot", "right_foot"};
+        for (int i = 0; i < 2; i++) {
+            Vec3 foot = drawnBone(feet[i]);
+            if (foot == null) continue;
+            seen = true;
+            double h = foot.y - getY();
+            if (h > FOOT_LIFTED) footUp[i] = true;
+            else if (h < FOOT_DOWN && footUp[i]) {
+                footUp[i] = false;
+                footfall(foot);
+            }
+        }
+        if (seen || isDormant() || Math.hypot(getX() - xo, getZ() - zo) < 0.01) {
+            stepClock = 0;
+            return;
+        }
+        int every = isRunning() || isDriven() ? Math.max(4, Math.round(11 / runPace)) : 30;
+        if (++stepClock >= every) {
+            stepClock = 0;
+            footfall(position());
+        }
+    }
+
+    /** One heavy step: a deep metal thud and the ground's own step, low. */
+    private void footfall(Vec3 at) {
+        footfalls++;
+        level().playLocalSound(at.x, getY(), at.z, SoundEvents.IRON_GOLEM_STEP, getSoundSource(), 1.3f, 0.45f + random.nextFloat() * 0.1f, false);
+        BlockState ground = level().getBlockState(BlockPos.containing(at.x, getY() - 0.2, at.z));
+        if (!ground.isAir()) {
+            SoundType type = ground.getSoundType();
+            level().playLocalSound(at.x, getY(), at.z, type.getStepSound(), getSoundSource(), type.getVolume(), type.getPitch() * 0.55f, false);
+        }
+    }
+
+    /** Client: how many footfalls it has made (for checks). */
+    public int footfalls() {
+        return footfalls;
+    }
+
+    /** Its steps are its own (see {@link #footfall}), not the block's light step. */
+    @Override
+    protected void playStepSound(BlockPos pos, BlockState state) {}
+
+    @Override
+    protected void playCombinationStepSounds(BlockState primary, BlockState secondary, BlockPos primaryPos, BlockPos secondaryPos) {}
 
     // ---- aiming its cannon arm --------------------------------------------------------------------
 
