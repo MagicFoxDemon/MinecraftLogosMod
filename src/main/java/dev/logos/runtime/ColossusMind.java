@@ -62,6 +62,8 @@ public final class ColossusMind extends Goal {
      * a crowd of four is about it.
      */
     static final double SWEEP_STRONG = 0.3, GRAB_LESSER = 2.5, GRAB_STRONG = 3.5;
+    /** What it treads on as it walks: hostile things under this tall and with under this much health. */
+    static final double STOMP_HEIGHT = 1, STOMP_HEALTH = 25;
     /** What it will not pick up, only strike: the ender dragon by default; packs may add more. */
     public static final TagKey<EntityType<?>> HEAVY = TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
             Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossus_heavy"));
@@ -82,6 +84,8 @@ public final class ColossusMind extends Goal {
     private long flowerReadyAt;
     private boolean standing;
     private int repath;
+    /** Where its feet were last tick, to tell whether it is walking (driven, its rider's client moves it). */
+    private @Nullable Vec3 lastFeet;
 
     ColossusMind(AlchemicalColossus c) {
         this.c = c;
@@ -338,6 +342,27 @@ public final class ColossusMind extends Goal {
     /** A strong foe: a boss, or health and armour together at or past the finishing line's 60. */
     public static boolean strong(LivingEntity e) {
         return e.getType().builtInRegistryHolder().is(Tags.EntityTypes.BOSSES) || e.getMaxHealth() + e.getArmorValue() >= 60;
+    }
+
+    /**
+     * Walking — on its own or driven — it treads on the small and hostile at its feet: anything inside
+     * its own bounds, about level with its feet, under a block tall and under 25 health (a small slime,
+     * a spider, a cave spider, an endermite) is crushed.
+     */
+    void stomp() {
+        Vec3 at = c.position(), was = lastFeet;
+        lastFeet = at;
+        if (was == null || at.subtract(was).horizontalDistanceSqr() < 0.02 * 0.02 || !(c.level() instanceof ServerLevel level)) return;
+        UUID id = Familiars.masterOf(c);
+        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, c.getBoundingBox(), e -> e.isAlive() && e != c && e.getVehicle() != c
+                && e.getBbHeight() < STOMP_HEIGHT && e.getHealth() < STOMP_HEALTH && Math.abs(e.getY() - c.getY()) <= 0.5 && hostile(e)
+                && (c.isBerserk() || id == null || !Familiars.friendly(id, e)))) {
+            e.invulnerableTime = 0;
+            c.deal(level, e, DamageTypes.MOB_ATTACK, Float.MAX_VALUE);
+            BlockState ground = level.getBlockState(e.blockPosition().below());
+            if (!ground.isAir()) level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, ground), e.getX(), e.getY() + 0.1, e.getZ(), 16, 0.3, 0.05, 0.3, 0.15);
+            level.playSound(null, e.getX(), e.getY(), e.getZ(), SoundEvents.MACE_SMASH_GROUND, SoundSource.HOSTILE, 0.7f, 1.3f);
+        }
     }
 
     /** Something fighting: a monster, or whatever is after it or its master (in a frenzy, anything it would strike). */

@@ -178,6 +178,32 @@ final class ColossusGameTests {
         });
     }
 
+    /** Walking, it treads on a small foe in its path (a cave spider) and crushes it, without stopping to fight; a chicken underfoot is spared. */
+    static void stompsSmallFoes(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(2.5, 2, 1.5));
+        var spider = h.spawn(EntityType.CAVE_SPIDER, new Vec3(2.5, 2, 4.5));
+        var chicken = h.spawn(EntityType.CHICKEN, new Vec3(2.5, 2, 6.5));
+        spider.setNoAi(true);
+        chicken.setNoAi(true);
+        boolean[] sent = {false}, fought = {false};
+        h.succeedWhen(() -> {
+            if (!sent[0]) {
+                h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
+                Familiars.sendTo(c, h.absoluteVec(new Vec3(2.5, 2, 10.5)));
+                sent[0] = true;
+            }
+            AlchemicalColossus.Act a = c.act();
+            if (a == AlchemicalColossus.Act.PUNCH || a == AlchemicalColossus.Act.GRAB_REACH || a == AlchemicalColossus.Act.CANNON_PREPARE) fought[0] = true;
+            h.assertTrue(!fought[0], "it should tread on the spider, not stop to fight it: " + a);
+            h.assertTrue(c.getZ() > h.absoluteVec(new Vec3(0, 0, 7)).z, "not past them yet: z " + (c.getZ() - h.absoluteVec(Vec3.ZERO).z) + ", " + c.mind().doingZh() + ", spider " + spider.isAlive());
+            h.assertTrue(!spider.isAlive(), "the cave spider underfoot should be crushed");
+            h.assertTrue(chicken.isAlive(), "the chicken is no foe: spared");
+        });
+    }
+
     /** A big foe is picked up too: a warden, too sturdy to finish, is slammed for 80. */
     static void grabsBig(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
