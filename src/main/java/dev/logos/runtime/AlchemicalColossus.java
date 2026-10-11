@@ -434,8 +434,10 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         if (level() instanceof ServerLevel level) {
             actTicks++;
             Act a = act();
-            if (a.ticks > 0 && actTicks >= a.ticks && a != Act.POWER_DOWN) {
-                // A finished one-shot gives the body back (the power-down holds into the dormant loop).
+            if (a.ticks > 0 && actTicks >= a.ticks && a != Act.POWER_DOWN && (mind == null || !mind.busy())) {
+                // A finished one-shot gives the body back (the power-down holds into the dormant loop). While a
+                // sequence runs it owns the body: it moves on to its next act itself, a tick or two after this
+                // one ends, and dropping to no act in between would flash the idle pose for a moment.
                 entityData.set(ACT, Act.NONE.ordinal());
             } else if (a == Act.POWER_DOWN && actTicks >= a.ticks) {
                 entityData.set(ACT, Act.DORMANT.ordinal());

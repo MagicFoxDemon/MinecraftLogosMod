@@ -133,7 +133,28 @@ final class ColossusGameTests {
         });
     }
 
-    /** Fed past what it shows it hides the rest; an unstable fuel sends it berserk; struck down berserk, it burns out tempered. */
+    /** From raising its palm to firing, its body never drops back to no act between one part and the next (the animation would flash). */
+    static void cannonActsUnbroken(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 2);
+        AlchemicalColossus c = raise(h, p, new Vec3(1.5, 2, 1.5));
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(1.5, 2, 15.5));
+        husk.setNoAi(true);
+        husk.getAttribute(Attributes.MAX_HEALTH).setBaseValue(400);
+        husk.setHealth(400);
+        Familiars.order(c, husk);
+        boolean[] raised = {false}, gap = {false};
+        h.succeedWhen(() -> {
+            AlchemicalColossus.Act a = c.act();
+            if (a == AlchemicalColossus.Act.CANNON_PREPARE) raised[0] = true;
+            else if (raised[0] && a == AlchemicalColossus.Act.NONE) gap[0] = true;
+            h.assertTrue(!gap[0], "the act dropped to NONE between cannon parts");
+            h.assertTrue(a == AlchemicalColossus.Act.CANNON_FIRE, "not firing yet");
+        });
+    }
+
+    /** Fed past what it shows it hides the rest;an unstable fuel sends it berserk; struck down berserk, it burns out tempered. */
     static void frenzyAndBurnout(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
         AlchemicalColossus c = raise(h, p, new Vec3(5, 2, 5));

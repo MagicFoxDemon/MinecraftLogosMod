@@ -143,6 +143,11 @@ public final class ColossusMind extends Goal {
         c.setRunning(false);
     }
 
+    /** Whether a sequence is running: it holds the body, act after act. */
+    boolean busy() {
+        return sequence != null;
+    }
+
     /** Whether its body is free for a flinch: nothing playing. */
     boolean idleBody() {
         return sequence == null && c.act() == Act.NONE;
