@@ -48,6 +48,7 @@ public final class LogosGameTests {
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed",
             "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role",
+            "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
             "colossus_grabs_big", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered");
 
@@ -99,6 +100,10 @@ public final class LogosGameTests {
         FUNCTIONS.register("lifeform_forages", () -> LifeformGameTests::foragesFreeMana);
         FUNCTIONS.register("lifeform_role", () -> LifeformGameTests::roleByStance);
         FUNCTIONS.register("colossus_armour", () -> ColossusGameTests::armour);
+        FUNCTIONS.register("colossus_spawn_egg_player", () -> ColossusSpawnEggGameTests::player);
+        FUNCTIONS.register("colossus_spawn_egg_dispenser", () -> ColossusSpawnEggGameTests::dispenser);
+        FUNCTIONS.register("colossus_spawn_egg_disabled", () -> ColossusSpawnEggGameTests::disabled);
+        FUNCTIONS.register("colossus_spawn_egg_water", () -> ColossusSpawnEggGameTests::water);
         FUNCTIONS.register("colossus_execute_drains", () -> ColossusGameTests::executeDrains);
         FUNCTIONS.register("colossus_heavy_and_finish", () -> ColossusGameTests::heavyAndFinish);
         FUNCTIONS.register("colossus_grab_finishes", () -> ColossusGameTests::grabFinishes);

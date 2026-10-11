@@ -173,6 +173,11 @@ public class LogosMod {
                     .sized(1.9f, 3.4f).clientTrackingRange(10)
                     .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
+    /** A colossus egg: the same full, loyal guardian the command raises. */
+    public static final DeferredItem<dev.logos.item.ColossusSpawnEggItem> ALCHEMICAL_COLOSSUS_SPAWN_EGG =
+            ITEMS.registerItem("alchemical_colossus_spawn_egg", dev.logos.item.ColossusSpawnEggItem::new,
+                    p -> p.spawnEgg(ALCHEMICAL_COLOSSUS.get()));
+
     /** Items that give a mana lifeform mana when it is fed with them (data/logos/data_maps/item/mana_fuel.json). */
     public static final net.neoforged.neoforge.registries.datamaps.DataMapType<net.minecraft.world.item.Item, dev.logos.runtime.Lifeforms.ManaFuel> MANA_FUEL =
             net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "mana_fuel"),
@@ -210,6 +215,7 @@ public class LogosMod {
                 out.accept(DISORDER_CRYSTAL.get());
                 out.accept(MAINTENANCE_KIT.get());
                 out.accept(TAINTED_MANA_SHARD.get());
+                out.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
                 for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
@@ -241,6 +247,9 @@ public class LogosMod {
         ATTACHMENTS.register(modBus);
         ATTRIBUTES.register(modBus);
         modBus.addListener(this::registerPayloads);
+        modBus.addListener((BuildCreativeModeTabContentsEvent e) -> {
+            if (e.getTabKey() == CreativeModeTabs.SPAWN_EGGS) e.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
+        });
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) -> {
             e.put(MANA_LIFEFORM.get(), dev.logos.runtime.ManaLifeform.createAttributes().build());
             e.put(ALCHEMICAL_COLOSSUS.get(), dev.logos.runtime.AlchemicalColossus.createAttributes().build());

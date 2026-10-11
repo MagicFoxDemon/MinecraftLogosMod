@@ -69,17 +69,24 @@ public final class Colossi {
         if (c == null) return "炼金术巨像无法生成";
         c.snapTo(at.x, at.y, at.z, owner.getYRot() + 180, 0);
         c.yBodyRot = c.yHeadRot = owner.getYRot() + 180;
-        c.setMana(AlchemicalColossus.DISPLAY_CAP);
         if (name != null && !name.isBlank()) {
             c.setCustomName(Component.literal(name.strip()));
             c.setCustomNameVisible(true);
         }
-        Familiars.bind(c, owner, Long.MAX_VALUE);
-        Lifeforms.enlist(level, owner, c, LogosConfig.maxColossi(), "炼金术巨像");
+        prepareSummoned(c, owner);
         level.addFreshEntity(c);
-        c.play(AlchemicalColossus.Act.STARTUP);
-        Vfx.sound(level, at, SoundEvents.IRON_GOLEM_REPAIR, 1.4f, 0.5f);
         return null;
+    }
+
+    /** Commands and eggs start with the same mana, loyalty, owner limit and startup animation. */
+    public static void prepareSummoned(AlchemicalColossus c, @Nullable ServerPlayer owner) {
+        c.setMana(AlchemicalColossus.DISPLAY_CAP);
+        if (owner != null) {
+            Familiars.bind(c, owner, Long.MAX_VALUE);
+            Lifeforms.enlist((ServerLevel) c.level(), owner, c, LogosConfig.maxColossi(), "炼金术巨像");
+        }
+        c.play(AlchemicalColossus.Act.STARTUP);
+        Vfx.sound((ServerLevel) c.level(), c.position(), SoundEvents.IRON_GOLEM_REPAIR, 1.4f, 0.5f);
     }
 
     // ---- holding --------------------------------------------------------------------------------
