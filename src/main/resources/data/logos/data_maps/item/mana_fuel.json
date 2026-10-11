@@ -2,6 +2,7 @@
   "values": {
     "minecraft:amethyst_shard": { "mana": 25 },
     "minecraft:lapis_lazuli": { "mana": 50 },
-    "minecraft:echo_shard": { "mana": 400 }
+    "minecraft:echo_shard": { "mana": 400 },
+    "logos:tainted_mana_shard": { "mana": 500, "unstable": true }
   }
 }

@@ -36,6 +36,7 @@ public final class LogosClient {
     static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.registerCategory(CATEGORY);
         event.register(SPELL_WHEEL);
+        event.register(ColossusInput.MODE);
     }
 
     @SubscribeEvent
@@ -56,11 +57,13 @@ public final class LogosClient {
         event.registerEntityRenderer(LogosMod.CONSTRUCT.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
         event.registerEntityRenderer(LogosMod.FREE_MANA.get(), FreeManaRenderer::new);
         event.registerEntityRenderer(LogosMod.MANA_LIFEFORM.get(), ManaLifeformRenderer::new);
+        event.registerEntityRenderer(LogosMod.ALCHEMICAL_COLOSSUS.get(), ColossusRenderer::new);
     }
 
     @SubscribeEvent
     static void onUse(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         ConstructPlacement.onUse(event);
+        if (!event.isCanceled()) ColossusInput.onInteraction(event);
     }
 
     @SubscribeEvent
@@ -71,6 +74,7 @@ public final class LogosClient {
     @SubscribeEvent
     static void onClientTickStart(ClientTickEvent.Pre event) {
         ConstructRiding.tick();
+        ColossusInput.tick();
     }
 
     @SubscribeEvent

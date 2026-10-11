@@ -204,7 +204,7 @@ public final class Familiars {
         if (!owner.getAbilities().instabuild && kills(owner, type) < killsNeeded(type)) {
             return "还不能召唤" + name + "：击杀 " + kills(owner, type) + " / " + killsNeeded(type);
         }
-        if (of(owner).stream().filter(f -> !(f instanceof ManaLifeform)).count() >= LogosConfig.maxFamiliars()) return "使魔已达上限 " + LogosConfig.maxFamiliars() + " 只（配置 maxFamiliars）";
+        if (of(owner).stream().filter(f -> !(f instanceof KeptFamiliar)).count() >= LogosConfig.maxFamiliars()) return "使魔已达上限 " + LogosConfig.maxFamiliars() + " 只（配置 maxFamiliars）";
         if (!(type.create(level, EntitySpawnReason.MOB_SUMMONED) instanceof Mob m)) return name + "不是能召唤的生物";
         m.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);
         if (!inst.spend(m.getMaxHealth() * 2, "召唤" + name)) return null; // the spell itself reports running dry
@@ -230,8 +230,8 @@ public final class Familiars {
         m.setData(LogosMod.FAMILIAR, new Bond(owner.getUUID(), expiresAt));
         m.setPersistenceRequired();
         m.setTarget(null);
-        // A lifeform has a mind of its own (LifeformMind) that does its following.
-        if (m instanceof PathfinderMob pm && !(m instanceof ManaLifeform)) m.goalSelector.addGoal(1, new FollowMaster(pm));
+        // A made familiar has a mind of its own (LifeformMind, ColossusMind) that does its following.
+        if (m instanceof PathfinderMob pm && !(m instanceof KeptFamiliar)) m.goalSelector.addGoal(1, new FollowMaster(pm));
         STATE.computeIfAbsent(m, k -> new State()).seq = ++summoned;
         LIVE.add(m);
     }
@@ -239,14 +239,14 @@ public final class Familiars {
     /** A kept familiar (a mana lifeform) loaded again with its chunk: it answers to its master as before. */
     static void rebind(Mob m) {
         // A lifeform has a mind of its own (LifeformMind) that does its following.
-        if (m instanceof PathfinderMob pm && !(m instanceof ManaLifeform)) m.goalSelector.addGoal(1, new FollowMaster(pm));
+        if (m instanceof PathfinderMob pm && !(m instanceof KeptFamiliar)) m.goalSelector.addGoal(1, new FollowMaster(pm));
         STATE.computeIfAbsent(m, k -> new State()).seq = ++summoned;
         LIVE.add(m);
     }
 
-    /** Kept with the world rather than unmade: mana lifeforms. */
+    /** Kept with the world rather than unmade: mana lifeforms and alchemical colossi. */
     static boolean kept(Mob m) {
-        return m instanceof ManaLifeform;
+        return m instanceof KeptFamiliar;
     }
 
     private static long seq(Mob m) {
@@ -279,6 +279,10 @@ public final class Familiars {
         // A lifeform's core pages are its master's.
         if (m instanceof ManaLifeform lf) {
             for (int i = 0; i < lf.core.getContainerSize(); i++) if (!lf.core.getItem(i).isEmpty()) out.add(lf.core.getItem(i).copy());
+        }
+        // So are a colossus's devices.
+        if (m instanceof AlchemicalColossus col) {
+            for (int i = 0; i < col.devices.getContainerSize(); i++) if (!col.devices.getItem(i).isEmpty()) out.add(col.devices.getItem(i).copy());
         }
         return out;
     }
@@ -403,8 +407,8 @@ public final class Familiars {
         if (b == null || !(m.level() instanceof ServerLevel level)) return;
         // Looked up in its own world: a master who left (or went to another dimension) is not found, and it fades.
         Player owner = level.getPlayerByUUID(b.owner());
-        // A kept lifeform waits where it is for a master who is away, and lies still while dormant.
-        if (kept(m) && (owner == null || ((ManaLifeform) m).isDormant())) {
+        // A made familiar waits where it is for a master who is away, and acts on its own while dormant or berserk.
+        if (kept(m) && (owner == null || ((KeptFamiliar) m).actsAlone())) {
             State st = STATE.get(m);
             if (st != null) {
                 st.target = null;
@@ -451,7 +455,9 @@ public final class Familiars {
         double d = m.distanceTo(owner);
         double lost = dragon ? DragonFamiliar.LOST : LOST;
         // On an errand or a post it may be far from its master; only losing them altogether calls it back.
-        double leash = s.errand != null || s.post != null ? lost : dragon ? DragonFamiliar.CALM_LEASH : s.target != null ? COMBAT_LEASH : CALM_LEASH;
+        // A colossus walks after its master in its own time: it is only fetched when it has lost them altogether.
+        double leash = s.errand != null || s.post != null || m instanceof AlchemicalColossus ? lost
+                : dragon ? DragonFamiliar.CALM_LEASH : s.target != null ? COMBAT_LEASH : CALM_LEASH;
         if (d > lost) {
             s.errand = null;
             s.post = null;
@@ -545,7 +551,7 @@ public final class Familiars {
         }
 
         private boolean dormant() {
-            return mob instanceof ManaLifeform lf && lf.isDormant();
+            return mob instanceof KeptFamiliar k && k.isDormant();
         }
 
         @Override

@@ -56,20 +56,26 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 public final class Lifeforms {
     public static final Identifier CORE_UI = Identifier.fromNamespaceAndPath(LogosMod.MODID, "lifeform_core");
 
-    /** A {@code logos:mana_fuel} data map entry: how much mana one of this item gives a lifeform. */
-    public record ManaFuel(float mana) {
+    /**
+     * A {@code logos:mana_fuel} data map entry: how much mana one of this item gives a lifeform or a
+     * colossus. An {@code unstable} fuel (tainted, corrupted…) drives a colossus straight into a mana
+     * frenzy, however full it was.
+     */
+    public record ManaFuel(float mana, boolean unstable) {
         public static final Codec<ManaFuel> CODEC = RecordCodecBuilder.create(i -> i.group(
-                Codec.floatRange(0, Float.MAX_VALUE).fieldOf("mana").forGetter(ManaFuel::mana)).apply(i, ManaFuel::new));
+                Codec.floatRange(0, Float.MAX_VALUE).fieldOf("mana").forGetter(ManaFuel::mana),
+                Codec.BOOL.optionalFieldOf("unstable", false).forGetter(ManaFuel::unstable)).apply(i, ManaFuel::new));
     }
 
-    /** Which lifeforms each player has, oldest first: kept with the world, so the limit holds while they lie in unloaded chunks. */
+    /** Which made familiars of one kind each player has, oldest first: kept with the world, so the limit holds while they lie in unloaded chunks. */
     static final class Registry extends SavedData {
         static final Codec<Registry> CODEC = Codec.unboundedMap(UUIDUtil.STRING_CODEC, UUIDUtil.CODEC.listOf()).xmap(m -> {
             Registry r = new Registry();
             m.forEach((owner, list) -> r.owned.put(owner, new ArrayList<>(list)));
             return r;
         }, r -> r.owned);
-        static final SavedDataType<Registry> TYPE = new SavedDataType<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "lifeforms"), Registry::new, CODEC);
+        static final SavedDataType<Registry> LIFEFORMS = new SavedDataType<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "lifeforms"), Registry::new, CODEC);
+        static final SavedDataType<Registry> COLOSSI = new SavedDataType<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossi"), Registry::new, CODEC);
 
         final Map<UUID, List<UUID>> owned = new HashMap<>();
 
@@ -83,22 +89,35 @@ public final class Lifeforms {
 
     private Lifeforms() {}
 
-    private static Registry registry(MinecraftServer server) {
-        return server.getDataStorage().computeIfAbsent(Registry.TYPE);
+    /** The registry for {@code m}'s kind: colossi and lifeforms are counted apart. */
+    private static Registry registry(MinecraftServer server, Mob m) {
+        return server.getDataStorage().computeIfAbsent(m instanceof AlchemicalColossus ? Registry.COLOSSI : Registry.LIFEFORMS);
     }
 
-    /** Whether {@code lf} is still one of its master's lifeforms (one unmade while it lay unloaded is not). */
-    static boolean registered(ManaLifeform lf) {
-        UUID master = Familiars.masterOf(lf);
-        return master != null && lf.level().getServer() != null && registry(lf.level().getServer()).of(master).contains(lf.getUUID());
+    /** Whether {@code m} is still one of its master's made familiars (one unmade while it lay unloaded is not). */
+    static boolean registered(Mob m) {
+        UUID master = Familiars.masterOf(m);
+        return master != null && m.level().getServer() != null && registry(m.level().getServer(), m).of(master).contains(m.getUUID());
     }
 
     /** Gone for good (killed or dismissed, not unloaded): it no longer counts. */
-    static void forget(ManaLifeform lf) {
-        UUID master = Familiars.masterOf(lf);
-        if (master == null || lf.level().getServer() == null) return;
-        Registry r = registry(lf.level().getServer());
-        if (r.of(master).remove(lf.getUUID())) r.setDirty();
+    static void forget(Mob m) {
+        UUID master = Familiars.masterOf(m);
+        if (master == null || m.level().getServer() == null) return;
+        Registry r = registry(m.level().getServer(), m);
+        if (r.of(master).remove(m.getUUID())) r.setDirty();
+    }
+
+    /**
+     * Counts {@code m} as {@code owner}'s, making room first: past {@code limit} of its kind the oldest
+     * is unmade ({@code noun} names the kind in the message).
+     */
+    static void enlist(ServerLevel level, ServerPlayer owner, Mob m, int limit, String noun) {
+        Registry r = registry(level.getServer(), m);
+        List<UUID> mine = r.of(owner.getUUID());
+        while (mine.size() >= Math.max(1, limit)) unmake(level.getServer(), owner, mine.removeFirst(), noun);
+        mine.add(m.getUUID());
+        r.setDirty();
     }
 
     /**
@@ -120,9 +139,6 @@ public final class Lifeforms {
         ManaLifeform lf = LogosMod.MANA_LIFEFORM.get().create(level, EntitySpawnReason.MOB_SUMMONED);
         if (lf == null) return "魔力生命体无法生成";
         if (!inst.spend(amount, "凝聚魔力生命体")) return null; // the spell itself reports running dry
-        Registry r = registry(level.getServer());
-        List<UUID> mine = r.of(owner.getUUID());
-        while (mine.size() >= limit) unmake(level.getServer(), owner, mine.removeFirst());
         lf.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);
         lf.setLifeLevel(lifeLevel);
         lf.setMana(amount);
@@ -131,28 +147,27 @@ public final class Lifeforms {
             lf.setCustomNameVisible(true);
         }
         Familiars.bind(lf, owner, Long.MAX_VALUE);
+        enlist(level, owner, lf, limit, "魔力生命体");
         level.addFreshEntity(lf);
-        mine.add(lf.getUUID());
-        r.setDirty();
         Vfx.burst(level, lf.position().add(0, lf.getBbHeight() / 2, 0), dev.logos.lang.Element.ARCANE, 40);
         Vfx.sound(level, at, SoundEvents.AMETHYST_BLOCK_RESONATE, 1f, 0.8f);
         return null;
     }
 
-    /** The oldest lifeform makes way for a new one: if it is loaded it disperses now, otherwise when it next loads. */
-    private static void unmake(MinecraftServer server, ServerPlayer owner, UUID id) {
+    /** The oldest makes way for a new one: if it is loaded it is unmade now, otherwise when it next loads. */
+    private static void unmake(MinecraftServer server, ServerPlayer owner, UUID id, String noun) {
         for (ServerLevel l : server.getAllLevels()) {
-            if (l.getEntity(id) instanceof ManaLifeform old) {
-                owner.sendSystemMessage(Component.literal("✦ " + old.getName().getString() + " 消散了，为新的魔力生命体让出位置").withStyle(ChatFormatting.GRAY));
+            if (l.getEntity(id) instanceof Mob old && old instanceof KeptFamiliar) {
+                owner.sendSystemMessage(Component.literal("✦ " + old.getName().getString() + " 消散了，为新的" + noun + "让出位置").withStyle(ChatFormatting.GRAY));
                 Familiars.dismiss(old);
                 return;
             }
         }
-        owner.sendSystemMessage(Component.literal("✦ 远方的魔力生命体将在下次被加载时消散，为新的让出位置").withStyle(ChatFormatting.GRAY));
+        owner.sendSystemMessage(Component.literal("✦ 远方的" + noun + "将在下次被加载时消散，为新的让出位置").withStyle(ChatFormatting.GRAY));
     }
 
-    /** One that was unmade while unloaded comes back only to drop its pages and disperse. */
-    static void onLoaded(ManaLifeform lf) {
+    /** One that was unmade while unloaded comes back only to drop what it carried and disperse. */
+    static void onLoaded(Mob lf) {
         if (registered(lf)) {
             Familiars.rebind(lf);
             return;
@@ -171,6 +186,12 @@ public final class Lifeforms {
         OPENING.put(player.getUUID(), lf.getId());
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new dev.logos.net.LifeformCorePayload(lf.getId()));
         PlayerUIMenuType.openUI(player, CORE_UI);
+    }
+
+    /** The entity {@code player} is opening a panel for (a lifeform's core, a colossus's devices), on either side. */
+    public static @Nullable Entity openingEntity(Player player) {
+        Integer id = OPENING.get(player.getUUID());
+        return id == null ? null : player.level().getEntity(id);
     }
 
     /** Client side: the server is about to open {@code entityId}'s core. */

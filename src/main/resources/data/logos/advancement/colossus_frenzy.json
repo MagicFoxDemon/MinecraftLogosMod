@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:adventure/root",
+  "display": {
+    "icon": { "id": "logos:disorder_crystal" },
+    "title": { "translate": "advancements.logos.colossus_frenzy.title" },
+    "description": { "translate": "advancements.logos.colossus_frenzy.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "witnessed": { "trigger": "minecraft:impossible" }
+  }
+}

@@ -54,6 +54,11 @@ public final class LogosConfig {
             .translation("logos.configuration.maxLifeforms")
             .defineInRange("maxLifeforms", 1, 0, 64);
 
+    public static final ModConfigSpec.IntValue MAX_COLOSSI = BUILDER
+            .comment("How many alchemical colossi one player may have at once (kept in the world). Summoning one past the limit unmakes the oldest.")
+            .translation("logos.configuration.maxColossi")
+            .defineInRange("maxColossi", 1, 0, 16);
+
     public static final ModConfigSpec.IntValue MAX_ANCHORS = BUILDER
             .comment("How many named anchors (^name) one player may keep.")
             .translation("logos.configuration.maxAnchors")
@@ -127,6 +132,10 @@ public final class LogosConfig {
 
     public static int maxLifeforms() {
         return read(MAX_LIFEFORMS::getAsInt, 1);
+    }
+
+    public static int maxColossi() {
+        return read(MAX_COLOSSI::getAsInt, 1);
     }
 
     public static int maxAnchors() {

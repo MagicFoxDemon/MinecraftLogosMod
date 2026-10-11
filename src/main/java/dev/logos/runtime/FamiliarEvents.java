@@ -43,6 +43,7 @@ final class FamiliarEvents {
     @SubscribeEvent
     static void onChangeTarget(LivingChangeTargetEvent event) {
         if (!(event.getEntity() instanceof Mob m) || !Familiars.isFamiliar(m)) return;
+        if (m instanceof AlchemicalColossus c && c.isBerserk()) return; // a frenzied colossus answers to no one
         LivingEntity wanted = event.getNewAboutToBeSetTarget();
         LivingEntity ordered = Familiars.orderedTarget(m);
         if (wanted != null && wanted != ordered) event.setNewAboutToBeSetTarget(ordered);
@@ -53,6 +54,8 @@ final class FamiliarEvents {
         LivingEntity victim = event.getEntity();
         Entity attacker = event.getSource().getEntity();
         UUID attackerMaster = Familiars.masterOf(attacker);
+        // A frenzied colossus spares no one, its master included, and earns them nothing.
+        if (attacker instanceof AlchemicalColossus c && c.isBerserk()) attackerMaster = null;
         if (attackerMaster != null) {
             // No friendly fire: not the master, not their other familiars.
             if (Familiars.friendly(attackerMaster, victim)) {
@@ -77,8 +80,8 @@ final class FamiliarEvents {
     @SubscribeEvent
     static void onJoin(EntityJoinLevelEvent event) {
         if (event.loadedFromDisk() && Familiars.isFamiliar(event.getEntity())) {
-            // A mana lifeform is kept with the world: it answers again, unless it was unmade meanwhile.
-            if (event.getEntity() instanceof ManaLifeform lf && !event.getLevel().isClientSide()) {
+            // A made familiar is kept with the world: it answers again, unless it was unmade meanwhile.
+            if (event.getEntity() instanceof Mob lf && lf instanceof KeptFamiliar && !event.getLevel().isClientSide()) {
                 boolean kept = Lifeforms.registered(lf);
                 Lifeforms.onLoaded(lf);
                 if (kept) return;

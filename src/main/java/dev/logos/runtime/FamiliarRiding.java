@@ -59,6 +59,8 @@ public final class FamiliarRiding {
 
     /** The master steering a ground mount (the dragon is flown on the server instead), or null. */
     public static @Nullable Player controller(Entity mount) {
+        // A colossus is driven by its master from a shoulder, in drive mode only.
+        if (mount instanceof AlchemicalColossus c) return c.driver();
         if (mount instanceof EnderDragon || !rideable(mount)) return null;
         return mount.getFirstPassenger() instanceof Player p && isMaster(mount, p) ? p : null;
     }

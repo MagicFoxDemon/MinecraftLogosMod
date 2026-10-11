@@ -71,7 +71,7 @@ import net.minecraft.world.phys.Vec3;
  * and the leftovers of its own spells flow back into it. Run dry, it goes dormant — it falls and
  * lies scattered until fed again. Unlike a familiar it is kept with the world.
  */
-public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel {
+public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel, KeptFamiliar {
     public static final int MAX_LEVEL = 5;
     /** The cast animation lasts 2.4 s and lets go at 1.2 s; quickened (level 4+) it plays at 1.5×. */
     public static final int CAST_TICKS = 48, RELEASE_AT = 24;

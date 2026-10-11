@@ -120,6 +120,19 @@ public class LogosMod {
     public static final DeferredItem<dev.logos.item.AnchorNailItem> ANCHOR_NAIL = ITEMS.registerItem("anchor_nail",
             dev.logos.item.AnchorNailItem::new, p -> p.stacksTo(64));
 
+    // Alchemical colossus materials. Placeholders for now: their alchemy (recipes, planting) comes later.
+    /** 巨像之心: the flower a colossus offers its master. An alchemical material. */
+    public static final DeferredItem<net.minecraft.world.item.Item> COLOSSUS_HEART = ITEMS.registerSimpleItem("colossus_heart",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    /** 失序结晶: left behind when a colossus's mana frenzy burns out. */
+    public static final DeferredItem<net.minecraft.world.item.Item> DISORDER_CRYSTAL = ITEMS.registerSimpleItem("disorder_crystal",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+    /** 维护套件: heals a colossus and mends its scorched shell. */
+    public static final DeferredItem<net.minecraft.world.item.Item> MAINTENANCE_KIT = ITEMS.registerSimpleItem("maintenance_kit", p -> p.stacksTo(16));
+    /** 被污染的魔力碎片: an unstable fuel; fed to a colossus, it sends it into a mana frenzy. */
+    public static final DeferredItem<net.minecraft.world.item.Item> TAINTED_MANA_SHARD = ITEMS.registerSimpleItem("tainted_mana_shard",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.InscriptionTableBlock> INSCRIPTION_TABLE = BLOCKS.registerBlock(
             "inscription_table", dev.logos.block.InscriptionTableBlock::new,
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.WOOD).strength(2.5f).noOcclusion()
@@ -151,6 +164,13 @@ public class LogosMod {
             ENTITY_TYPES.register("mana_lifeform", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ManaLifeform>of(
                             dev.logos.runtime.ManaLifeform::new, net.minecraft.world.entity.MobCategory.MISC)
                     .sized(0.4f, 0.5f).clientTrackingRange(10)
+                    .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+
+    /** 炼金术巨像: a built colossus; raised by command until alchemy can build one. */
+    public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.AlchemicalColossus>> ALCHEMICAL_COLOSSUS =
+            ENTITY_TYPES.register("alchemical_colossus", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.AlchemicalColossus>of(
+                            dev.logos.runtime.AlchemicalColossus::new, net.minecraft.world.entity.MobCategory.MISC)
+                    .sized(1.9f, 3.4f).clientTrackingRange(10)
                     .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
     /** Items that give a mana lifeform mana when it is fed with them (data/logos/data_maps/item/mana_fuel.json). */
@@ -186,6 +206,10 @@ public class LogosMod {
                 out.accept(SPELL_EMBER.get());
                 out.accept(SPELL_CODEX.get());
                 out.accept(ANCHOR_NAIL.get());
+                out.accept(COLOSSUS_HEART.get());
+                out.accept(DISORDER_CRYSTAL.get());
+                out.accept(MAINTENANCE_KIT.get());
+                out.accept(TAINTED_MANA_SHARD.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
                 for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
@@ -217,10 +241,13 @@ public class LogosMod {
         ATTACHMENTS.register(modBus);
         ATTRIBUTES.register(modBus);
         modBus.addListener(this::registerPayloads);
-        modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) ->
-                e.put(MANA_LIFEFORM.get(), dev.logos.runtime.ManaLifeform.createAttributes().build()));
+        modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) -> {
+            e.put(MANA_LIFEFORM.get(), dev.logos.runtime.ManaLifeform.createAttributes().build());
+            e.put(ALCHEMICAL_COLOSSUS.get(), dev.logos.runtime.AlchemicalColossus.createAttributes().build());
+        });
         modBus.addListener((net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent e) -> e.register(MANA_FUEL));
         dev.logos.runtime.Lifeforms.registerUI();
+        dev.logos.runtime.Colossi.registerUI();
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent e) -> {
             e.add(net.minecraft.world.entity.EntityType.PLAYER, MANA_ATTRACTION);
             e.add(net.minecraft.world.entity.EntityType.PLAYER, MANA_ABSORPTION);
@@ -256,6 +283,7 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.FxPayload.TYPE, dev.logos.net.FxPayload.CODEC);
         registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
         registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);
+        registrar.playToServer(dev.logos.net.ColossusControlPayload.TYPE, dev.logos.net.ColossusControlPayload.CODEC, dev.logos.net.ColossusControlPayload::handle);
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
         registrar.playToServer(dev.logos.net.AnchorEditPayload.TYPE, dev.logos.net.AnchorEditPayload.CODEC, dev.logos.net.AnchorEditPayload::handle);
     }

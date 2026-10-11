@@ -51,7 +51,14 @@ git -c credential.helper= -c "http.https://github.com/.extraheader=AUTHORIZATION
 - 魔力生命体：
   - `runtime/ManaLifeform`：实体、心核（主动 / 被动 / 炼金道具三组槽位，按等级开放）、连携规则、GeckoLib 动画控制器；
   - `runtime/LifeformMind`：心智（效用 AI）。每个行为是一个内部类，负责打分、开始、每刻执行和结束；悬浮移动也在这里。加新行为只需加一个类，并放进构造器里的列表。`/logos mind` 显示各行为的分数；
-  - `runtime/LifeformAugment`：炼金道具接口（道具还没有做）；
+  - `runtime/LifeformAugment`：炼金道具接口（道具还没有做），魔力生命体和巨像共用；
+- 炼金术巨像：
+  - `runtime/AlchemicalColossus`：实体（魔力的显示值与真实值、暴走与平息、座位和手、动作 `Act` 的同步、动画控制器）；
+  - `runtime/ColossusMind`：效用 AI 加上按动画计时的动作序列（抓取、挥拳、掌心炮、上肩下肩、献花、懊悔），以及乘客摆放位置 `holdPoint`；
+  - `runtime/ColossusCannon`：掌心炮的伤害表与阻挡判定；
+  - `runtime/Colossi`：召唤、上下马事件、驾驶控制、隐藏进度、炼金道具面板；
+  - `client/ColossusRenderer`、`client/ColossusInput`。
+- `KeptFamiliar` 接口：魔力生命体和巨像这类「造出来的使魔」，会随世界保存、有自己的心智，使魔系统只负责传达命令。
   - `runtime/Lifeforms`：召唤规则、每人上限的存档登记、心核界面、被动触发；
   - `client/ManaLifeformRenderer`：渲染。
   - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`，原始 bbmodel 在 `D:\dev\LogosArt\mana_lifeform.zip`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`。
@@ -60,6 +67,15 @@ git -c credential.helper= -c "http.https://github.com/.extraheader=AUTHORIZATION
 
 - 26.1 用 Mojang 映射：是 `Identifier` 不是 `ResourceLocation`；很多类换了包（如 `projectile.arrow`），找不到时去 `build/moddev/artifacts/minecraft-patched-*.jar` 里查。
 - 环境里没有 Python，脚本用 perl / sed / PowerShell。
+  - **perl 替换的分隔符不要用 `|`**：Java 代码里到处是 `||`，写成 `s|...|...|` 时，模式里的 `\|` 会被当成分隔符或「或」运算，把文件插得面目全非（已经出过两次事）。多行改动直接用编辑工具；非用 perl 不可时，用 `~` 作为分隔符或 `index`/`substr` 替换，并先 `git diff --stat` 检查改动行数。
+  - **PowerShell 的哈希表不区分大小写**：`r` 和 `R` 会被当成同一个键。
+- GeckoLib 5：
+  - 骨骼位置回调的参数顺序是（世界坐标，模型坐标，相对实体的坐标）。
+  - 想让乘客正好待在某块骨骼上：渲染器每帧上报骨骼的世界坐标，客户端摆放乘客时用它；服务端用按动作进度估算的位置（见 `ColossusMind.holdPoint`）。
+- 原版会把「第一个是生物的乘客」当作坐骑的控制者（骷髅骑蜘蛛就是这样），而这会关掉坐骑自己的移动目标。会抱着生物的实体（巨像）要重写 `getControllingPassenger`。
+- 客户端场景测试的坑：
+  - 场景世界默认是和平难度，敌对生物一生成就被删掉，需要先 `/difficulty normal`；
+  - 单个场景跑到大约第 410 个客户端刻时，测试工具会卡住不再推进，所以长场景要拆成几个短的（巨像拆成了 3 个）。
 - 测试的坑：
   - 模拟玩家要 `connection.markClientLoaded()` 才会受伤；和平难度下怪物对玩家的伤害是 0。
   - 需要实体 tick 的测试（生物移动、游离魔力、使魔行为）先调用 `FamiliarGameTests.forceAround(h, 1)` 强制加载周围区块，否则机器忙时实体可能整场测试都不 tick。
