@@ -71,6 +71,13 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     /** In a frenzy every cost is this many times as much, and the frenzy itself burns this much a second on top. */
     public static final double FRENZY_MULTIPLIER = 10, FRENZY_BURN = 250;
     public static final int DEVICES = 3, TEMPERED_DEVICES = 5;
+    /**
+     * Driven, it runs at a heavy pace — about 2.2 blocks a second, its run cycle played a third faster —
+     * rather than at a horse's (its movement speed would carry it at over 10).
+     */
+    public static final float DRIVE_SPEED = 0.047f;
+    /** How far a planted foot slides back per tick in the run cycle at normal playback (1.4 model units, from the animation). */
+    static final double RUN_STRIDE = 1.395 / 16;
 
     /** Everything it does with its whole body, each one animation; null-free so it can be synced as an ordinal. */
     public enum Act {
@@ -156,6 +163,8 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     /** Client only: what the legs were last doing, to pick the start and stop steps. */
     private int lastSeq = -1;
     private RawAnimation lastLoco = IDLE;
+    /** Client only: how fast the run cycle plays, so its planted feet keep pace with the ground. */
+    private float runPace = 1;
 
     public AlchemicalColossus(EntityType<? extends AlchemicalColossus> type, Level level) {
         super(type, level);
@@ -431,6 +440,10 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     @Override
     public void tick() {
         super.tick();
+        if (level().isClientSide()) {
+            double moved = Math.sqrt(Mth.square(getX() - xo) + Mth.square(getZ() - zo));
+            runPace = (float) Mth.lerp(0.3, runPace, Mth.clamp(moved / RUN_STRIDE, 0.5, 2.0));
+        }
         if (level() instanceof ServerLevel level) {
             // Driven, vanilla leaves its movement to the rider's client and skips its AI on the server
             // altogether; its mind must still run the blows and the cannon its rider asks for.
@@ -693,6 +706,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<AlchemicalColossus>("body", 5, test -> {
+            test.setControllerSpeed(1f);
             if (isDeadOrDying()) return test.setAndContinue(DEATH);
             Act a = act();
             int seq = entityData.get(ACT_SEQ);
@@ -708,8 +722,11 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             lastSeq = seq;
             RawAnimation loco;
             if (test.isMoving()) {
-                if (isBerserk()) loco = isRunning() ? RUN_CORRUPTED : WALK_CORRUPTED;
-                else loco = isRunning() ? RUN : WALK;
+                // Driven, it always runs.
+                boolean running = isRunning() || isDriven();
+                if (isBerserk()) loco = running ? RUN_CORRUPTED : WALK_CORRUPTED;
+                else loco = running ? RUN : WALK;
+                if (running) test.setControllerSpeed(runPace);
             } else {
                 loco = lastLoco == RUN ? RUN_STOP : lastLoco == WALK ? WALK_STOP : lastLoco == RUN_STOP || lastLoco == WALK_STOP ? lastLoco : IDLE;
             }

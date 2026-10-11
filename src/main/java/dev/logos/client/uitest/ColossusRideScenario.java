@@ -19,7 +19,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Real-client check of riding the colossus: its master asks to be carried, is lifted from the
- * ground onto its left shoulder, and sits there (seen from behind, in third person).
+ * ground onto its left shoulder, and sits there (seen from behind, in third person); then takes the
+ * controls and drives it forward, running at a pace its feet keep up with.
  * Run: {@code gradlew runClient -PldTest=logos_colossus_ride}.
  */
 @LDLRegisterClient(name = "logos_colossus_ride", group = "logos", registry = UIScenario.REGISTRY,
@@ -27,6 +28,7 @@ import net.minecraft.world.phys.Vec3;
 public class ColossusRideScenario implements UIScenario {
     private static final BlockPos ORIGIN = new BlockPos(0, 100, 0);
     private AlchemicalColossus colossus;
+    private Vec3 drivenFrom;
 
     @Override
     public void configure(ScenarioOptions o) {
@@ -54,6 +56,21 @@ public class ColossusRideScenario implements UIScenario {
                 .screenshot("being_lifted")
                 .ticks(60)
                 .screenshot("on_its_shoulder")
+                .server("take the controls", sc -> Colossi.control(sc.player(), Colossi.TOGGLE_DRIVE))
+                .step("hold forward", ctx -> Minecraft.getInstance().options.keyUp.setDown(true))
+                .ticks(30)
+                .step("mark where it is", ctx -> drivenFrom = Minecraft.getInstance().player.getVehicle().position())
+                .ticks(20)
+                .step("check its pace", ctx -> {
+                    double perTick = Minecraft.getInstance().player.getVehicle().position().distanceTo(drivenFrom) / 20;
+                    // Its feet travel 1.4 model units a tick in the run cycle; the cycle is played faster
+                    // to match, within reason.
+                    double rate = perTick / (1.395 / 16);
+                    System.out.printf("[logos] driven colossus: %.3f blocks/tick, run cycle at %.2fx%n", perTick, rate);
+                    if (rate < 1.0 || rate > 1.8) throw new AssertionError("driven pace " + perTick + " blocks/tick is off its run cycle");
+                })
+                .screenshot("driving")
+                .step("let go", ctx -> Minecraft.getInstance().options.keyUp.setDown(false))
                 .step("first person again", ctx -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
     }
 }
