@@ -49,7 +49,7 @@ public final class LogosGameTests {
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed",
             "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
-            "colossus_punches_heavy", "colossus_cannon", "colossus_frenzy", "colossus_board", "colossus_rider_sheltered");
+            "colossus_punches_heavy", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_rider_sheltered");
 
     private LogosGameTests() {}
 
@@ -105,6 +105,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("colossus_grab_slams", () -> ColossusGameTests::grabSlams);
         FUNCTIONS.register("colossus_punches_heavy", () -> ColossusGameTests::punchesHeavy);
         FUNCTIONS.register("colossus_cannon", () -> ColossusGameTests::cannonAtRange);
+        FUNCTIONS.register("colossus_cannon_unbroken", () -> ColossusGameTests::cannonActsUnbroken);
         FUNCTIONS.register("colossus_frenzy", () -> ColossusGameTests::frenzyAndBurnout);
         FUNCTIONS.register("colossus_board", () -> ColossusGameTests::boardAndPutDown);
         FUNCTIONS.register("colossus_rider_sheltered", () -> ColossusGameTests::riderSheltered);
