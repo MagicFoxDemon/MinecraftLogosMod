@@ -1,6 +1,7 @@
 package dev.logos.runtime;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -56,6 +57,10 @@ public final class Colossi {
     private static final Set<Entity> LETTING_GO = Collections.newSetFromMap(new WeakHashMap<>());
     /** Entities struck by the cannon's opening seconds: no knockback. */
     private static final Set<Entity> STEADY = Collections.newSetFromMap(new WeakHashMap<>());
+    /** When a seated rider last asked to be let down (game time): asked again soon after, they jump off instead. */
+    private static final Map<Entity, Long> ASKED_DOWN = new WeakHashMap<>();
+    /** How soon a second sneak counts as the second of a double press. */
+    static final int DOUBLE_PRESS = 10;
 
     private Colossi() {}
 
@@ -115,8 +120,9 @@ public final class Colossi {
     }
 
     /**
-     * Its hand does not open because the held one wriggles; a seated rider who wants down is lifted
-     * down. Only on the server, which owns the dismount; the client follows.
+     * Its hand does not open because the held one wriggles; a seated rider who wants down (sneak) is
+     * lifted down, and one who sneaks again before its hand has taken them jumps straight off. Only on
+     * the server, which owns the dismount; the client follows.
      */
     @SubscribeEvent
     static void onDismount(EntityMountEvent event) {
@@ -127,7 +133,10 @@ public final class Colossi {
         // A seated rider who wants down is lifted down (a seat counts before any leftover hold).
         if ((h == Hold.SEAT_LEFT || h == Hold.SEAT_RIGHT) && rider instanceof Player p && c.mind() != null) {
             event.setCanceled(true);
-            LogosMod.defer(() -> c.mind().requestPutDown(p));
+            long now = c.level().getGameTime();
+            Long asked = ASKED_DOWN.put(p, now);
+            if (c.mind().puttingDown(p) || asked != null && now - asked <= DOUBLE_PRESS) LogosMod.defer(() -> c.mind().jumpOff(p));
+            else LogosMod.defer(() -> c.mind().requestPutDown(p));
             return;
         }
         if (h == Hold.GRIP || HELD.contains(rider)) event.setCanceled(true);
