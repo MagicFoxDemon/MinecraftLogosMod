@@ -456,6 +456,7 @@ public final class ColossusMind extends Goal {
             Player m = master;
             Vec3 spot;
             if (post != null) spot = post;
+            else if (m != null && m.getVehicle() == c) spot = null; // carrying its master: wherever it stands is beside them
             else if (m != null) {
                 float yaw = m.getYRot() * Mth.DEG_TO_RAD;
                 Vec3 f = new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw));
@@ -465,7 +466,7 @@ public final class ColossusMind extends Goal {
                 halt();
                 return;
             }
-            double d = c.position().distanceTo(spot);
+            double d = spot == null ? 0 : c.position().distanceTo(spot);
             if (d > 3.2) walkTo(spot, d > 12);
             else halt();
             // It watches whatever monster is about; else it looks where its master looks.
@@ -569,7 +570,7 @@ public final class ColossusMind extends Goal {
 
         @Override
         double score() {
-            return wantsFlower && !c.isBerserk() && master != null && foe == null && threats.isEmpty() && master.distanceTo(c) < 24 ? 0.6 : 0;
+            return wantsFlower && !c.isBerserk() && master != null && master.getVehicle() != c && foe == null && threats.isEmpty() && master.distanceTo(c) < 24 ? 0.6 : 0;
         }
 
         @Override
