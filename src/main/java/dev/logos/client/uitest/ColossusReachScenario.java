@@ -46,8 +46,13 @@ public class ColossusReachScenario implements UIScenario {
         }
     }
 
-    /** How close the palm must come: to a tall creature's middle, and (out of an arm's reach of the ground) to a small one's top. */
-    static final double WITHIN = 0.35, LOW_WITHIN = 0.35;
+    /**
+     * How close the palm must come: to a tall creature's middle, and to a small one's top. Its arm,
+     * with the torso bowed as far as it goes, ends about half a block above the ground: a small creature
+     * on the ground is at the very edge of its reach, and as it faces the creature with its middle rather
+     * than its grabbing shoulder, how near it gets varies (0.4 to 0.55 seen).
+     */
+    static final double WITHIN = 0.35, LOW_WITHIN = 0.6;
 
     EntityType<? extends Mob> creature() {
         return EntityType.WARDEN;
@@ -91,8 +96,8 @@ public class ColossusReachScenario implements UIScenario {
 
     private static void offer(ServerContext sc, EntityType<? extends Mob> type) {
         Mob m = type.create(sc.level(), EntitySpawnReason.COMMAND);
-        // Just within its hand's reach (its edge 0.1 from the colossus's), so it reaches at once.
-        m.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5 + 0.95 + m.getBbWidth() / 2 + 0.1, 180, 0);
+        // Just within its hand's reach (its edge 0.15 from the colossus's, clear of its feet), so it reaches at once.
+        m.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5 + 0.95 + m.getBbWidth() / 2 + 0.15, 180, 0);
         m.setNoAi(true);
         sc.level().addFreshEntity(m);
         victimId = m.getId();

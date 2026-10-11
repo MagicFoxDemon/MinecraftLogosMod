@@ -55,8 +55,11 @@ public final class ColossusMind extends Goal {
     static final double WALK = 0.6, RUN = 1.0;
     /** Reach of its hands, measured from its edge to the target's. */
     static final double MELEE = 2.6;
-    /** A grab needs it closer than a blow: its arm is under two blocks long, so it steps in to about this gap first. */
-    static final double GRAB_GAP = 0.2;
+    /**
+     * Its hands reach only about this far past its edge (its arm is under two blocks long): it steps in
+     * this close before it grabs or strikes, so its hand or fist truly meets the foe.
+     */
+    static final double HAND_GAP = 0.2;
     /**
      * Choosing between a sweeping blow and a grab: a blow is worth one for each lesser foe it would
      * catch (a strong one barely feels it); a grab is worth this much for a lesser foe and more for a
@@ -338,8 +341,8 @@ public final class ColossusMind extends Goal {
         face(f);
         if (gap(f) <= MELEE) {
             Sequence move = melee(f);
-            if (move instanceof Grab && gap(f) > GRAB_GAP && f.getVehicle() != c) {
-                // In reach of a fist but not of its hand (and not already on it): a step closer first.
+            if (gap(f) > HAND_GAP && f.getVehicle() != c) {
+                // Close, but not yet within an arm's length (and not already on it): a step closer first.
                 walkTo(f.position(), true);
                 return;
             }
@@ -768,13 +771,23 @@ public final class ColossusMind extends Goal {
         @Override
         void begin() {
             c.play(Act.PUNCH);
+            // Its fist is guided onto the foe as it drives home (the client poses it: ColossusArmIk).
+            c.reachFor(at);
         }
 
         @Override
         boolean tick() {
             if (at != null && t < 14) face(at);
-            if (t == 15) strike();
-            return ++t < Act.PUNCH.ticks;
+            // The blow lands as the fist does: the animation's thrust is fullest at about 0.93 s.
+            if (t == 18) strike();
+            boolean more = ++t < Act.PUNCH.ticks;
+            if (!more) c.reachFor(null);
+            return more;
+        }
+
+        @Override
+        void abort() {
+            c.reachFor(null);
         }
 
         private void strike() {
