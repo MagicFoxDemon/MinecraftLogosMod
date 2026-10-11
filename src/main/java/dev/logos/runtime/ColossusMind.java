@@ -758,7 +758,11 @@ public final class ColossusMind extends Goal {
                 case GRAB_REACH -> {
                     face(victim);
                     if (p == 18) {
-                        if (victim.isAlive() && gap(victim) <= MELEE + 1 && !victim.isPassenger() && victim.getPassengers().isEmpty()) {
+                        if (victim.isAlive() && gap(victim) <= MELEE + 1) {
+                            // Whatever it rides — even the colossus itself — it is torn off, and whatever rides it shaken off.
+                            if (victim.getVehicle() == c) c.release(victim, null);
+                            else if (victim.isPassenger()) victim.stopRiding();
+                            victim.ejectPassengers();
                             caught = true;
                             if (victim instanceof Mob m) {
                                 wasNoAi = m.isNoAi();

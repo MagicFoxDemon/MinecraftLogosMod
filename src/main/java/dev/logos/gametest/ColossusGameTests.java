@@ -158,6 +158,26 @@ final class ColossusGameTests {
         });
     }
 
+    /** A foe that has climbed onto the colossus itself is still picked up — torn off its perch — not grabbed at in vain over and over. */
+    static void grabsRider(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(4.5, 2, 3.5));
+        Husk z = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 5.5));
+        z.setNoAi(true);
+        z.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
+        z.setHealth(200);
+        h.assertTrue(z.startRiding(c, true, false), "the husk should climb on");
+        Familiars.order(c, z);
+        int[] misses = {0};
+        h.succeedWhen(() -> {
+            if (c.act() == AlchemicalColossus.Act.GRAB_MISS) misses[0]++;
+            h.assertTrue(misses[0] == 0, "it grabbed at the husk and missed");
+            h.assertTrue(c.act() == AlchemicalColossus.Act.GRAB_HOLD && c.holdOf(z) == AlchemicalColossus.Hold.GRIP, "it should hold the husk up: " + c.act());
+        });
+    }
+
     /** A big foe is picked up too: a warden, too sturdy to finish, is slammed for 80. */
     static void grabsBig(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
