@@ -49,7 +49,7 @@ public final class LogosGameTests {
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed",
             "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
-            "colossus_punches_heavy", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_rider_sheltered");
+            "colossus_punches_heavy", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered");
 
     private LogosGameTests() {}
 
@@ -110,6 +110,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("colossus_board", () -> ColossusGameTests::boardAndPutDown);
         FUNCTIONS.register("colossus_drive_controls", () -> ColossusGameTests::driveControls);
         FUNCTIONS.register("colossus_carries_master_still", () -> ColossusGameTests::carriesMasterStill);
+        FUNCTIONS.register("colossus_flower_cooldown", () -> ColossusGameTests::flowerCooldown);
         FUNCTIONS.register("colossus_rider_sheltered", () -> ColossusGameTests::riderSheltered);
         FUNCTIONS.register("construct_stops_movement", () -> ConstructGameTests::wallStopsMovement);
         FUNCTIONS.register("construct_one_way_arrows", () -> ConstructGameTests::oneWayStopsArrows);
