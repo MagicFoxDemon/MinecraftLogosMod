@@ -146,12 +146,17 @@ public final class Lifeforms {
             lf.setCustomName(Component.literal(nickname.strip()));
             lf.setCustomNameVisible(true);
         }
-        Familiars.bind(lf, owner, Long.MAX_VALUE);
-        enlist(level, owner, lf, limit, "魔力生命体");
+        bindSummoned(lf, owner);
         level.addFreshEntity(lf);
         Vfx.burst(level, lf.position().add(0, lf.getBbHeight() / 2, 0), dev.logos.lang.Element.ARCANE, 40);
         Vfx.sound(level, at, SoundEvents.AMETHYST_BLOCK_RESONATE, 1f, 0.8f);
         return null;
+    }
+
+    /** Spells and eggs share the same persistent owner binding and per-player lifeform limit. */
+    public static void bindSummoned(ManaLifeform lf, ServerPlayer owner) {
+        Familiars.bind(lf, owner, Long.MAX_VALUE);
+        enlist((ServerLevel) lf.level(), owner, lf, LogosConfig.maxLifeforms(), "魔力生命体");
     }
 
     /** The oldest makes way for a new one: if it is loaded it is unmade now, otherwise when it next loads. */
