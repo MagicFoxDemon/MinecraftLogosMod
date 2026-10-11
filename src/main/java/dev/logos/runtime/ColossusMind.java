@@ -78,6 +78,9 @@ public final class ColossusMind extends Goal {
     private @Nullable LivingEntity foe;
     private List<Mob> threats = List.of();
     private @Nullable Mob shooter;
+    /** What has struck it and is still about: it answers that once nothing more pressing is asked of it. */
+    private @Nullable LivingEntity assailant;
+    private int assailantAt;
     private long cannonReadyAt;
     private boolean wantsFlower;
     /** No second flower until then: a few minutes after the last one was offered. */
@@ -97,6 +100,7 @@ public final class ColossusMind extends Goal {
         behaviors.add(new Standby());
         behaviors.add(new OfferFlower());
         behaviors.add(new Rampage());
+        behaviors.add(new SelfDefense());
     }
 
     // ---- goal ---------------------------------------------------------------------------------
@@ -217,6 +221,22 @@ public final class ColossusMind extends Goal {
             Mob nearest = threats.stream().min((a, b) -> Double.compare(a.distanceToSqr(c), b.distanceToSqr(c))).orElse(null);
             if (nearest != null && Familiars.order(c, nearest)) foe = nearest;
         }
+        rememberAssailant();
+    }
+
+    /**
+     * Keeps track of what struck it — a creature, never a player, and not its own side — for half a
+     * minute after its last blow, or until it dies or wanders off. (Vanilla forgets after five seconds.)
+     */
+    private void rememberAssailant() {
+        LivingEntity by = c.getLastHurtByMob();
+        UUID id = Familiars.masterOf(c);
+        if (by != null && by.isAlive() && !(by instanceof Player) && (id == null || !Familiars.friendly(id, by))) {
+            assailant = by;
+            assailantAt = c.getLastHurtByMobTimestamp();
+        }
+        LivingEntity a = assailant;
+        if (a != null && (!a.isAlive() || a.level() != c.level() || a.distanceTo(c) > 32 || c.tickCount - assailantAt > 600)) assailant = null;
     }
 
     /** In a frenzy: the nearest living thing that is a player or a monster, or whatever last struck it. */
@@ -619,7 +639,7 @@ public final class ColossusMind extends Goal {
 
         @Override
         double score() {
-            if (c.isBerserk() || foe != null) return 0;
+            if (c.isBerserk() || foe != null || assailant != null) return 0;
             if (master == null && Familiars.masterOf(c) != null) return 0.9;
             return master != null && master.isSleeping() ? 0.9 : 0;
         }
@@ -650,7 +670,7 @@ public final class ColossusMind extends Goal {
 
         @Override
         double score() {
-            return wantsFlower && !c.isBerserk() && master != null && master.getVehicle() != c && foe == null && threats.isEmpty() && master.distanceTo(c) < 24 ? 0.6 : 0;
+            return wantsFlower && !c.isBerserk() && master != null && master.getVehicle() != c && foe == null && assailant == null && threats.isEmpty() && master.distanceTo(c) < 24 ? 0.6 : 0;
         }
 
         @Override
@@ -685,6 +705,27 @@ public final class ColossusMind extends Goal {
         void tick(long now) {
             if (foe != null) fight(foe);
             else halt();
+        }
+    }
+
+    /**
+     * Self-defence, the least of its duties: what struck it — a zombified piglin it angered, say, that
+     * has no quarrel with its master — is fought once no order, no threat to its master, no errand is
+     * more pressing.
+     */
+    private final class SelfDefense extends Behavior {
+        SelfDefense() {
+            super("自卫");
+        }
+
+        @Override
+        double score() {
+            return !c.isBerserk() && assailant != null ? 0.7 : 0;
+        }
+
+        @Override
+        void tick(long now) {
+            if (assailant != null) fight(assailant);
         }
     }
 
