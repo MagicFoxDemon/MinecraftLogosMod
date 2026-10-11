@@ -75,6 +75,12 @@ public class LogosMod {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SELECTED = COMPONENTS.registerComponentType("selected",
             b -> b.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
 
+    /** Each completed brewing round adds one shard; the count has no fixed-width integer limit. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<java.math.BigInteger>> MANA_POTION_SHARDS =
+            COMPONENTS.registerComponentType("mana_potion_shards",
+                    b -> b.persistent(dev.logos.item.ManaPotionItem.SHARD_COUNT_CODEC)
+                            .networkSynchronized(ByteBufCodecs.fromCodec(dev.logos.item.ManaPotionItem.SHARD_COUNT_CODEC)));
+
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, MODID);
@@ -132,6 +138,8 @@ public class LogosMod {
     /** 被污染的魔力碎片: an unstable fuel; fed to a colossus, it sends it into a mana frenzy. */
     public static final DeferredItem<net.minecraft.world.item.Item> TAINTED_MANA_SHARD = ITEMS.registerSimpleItem("tainted_mana_shard",
             p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<dev.logos.item.ManaPotionItem> MANA_POTION = ITEMS.registerItem("mana_potion",
+            dev.logos.item.ManaPotionItem::new, p -> p.stacksTo(1));
 
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.InscriptionTableBlock> INSCRIPTION_TABLE = BLOCKS.registerBlock(
             "inscription_table", dev.logos.block.InscriptionTableBlock::new,
@@ -210,6 +218,7 @@ public class LogosMod {
                 out.accept(DISORDER_CRYSTAL.get());
                 out.accept(MAINTENANCE_KIT.get());
                 out.accept(TAINTED_MANA_SHARD.get());
+                out.accept(MANA_POTION.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
                 for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
@@ -275,6 +284,12 @@ public class LogosMod {
         };
         dev.logos.gametest.LogosGameTests.register(modBus);
         NeoForge.EVENT_BUS.register(this);
+    }
+
+    /** Adds the repeatable mana potion recipe to each world's vanilla brewing rules. */
+    @SubscribeEvent
+    public void registerBrewingRecipes(net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent event) {
+        event.getBuilder().addRecipe(new dev.logos.item.ManaPotionBrewingRecipe());
     }
 
     private void registerPayloads(net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent event) {

@@ -1,4 +1,7 @@
 {
+  "item.logos.mana_potion": "魔力药剂",
+  "item.logos.mana_potion.restore": "饮用后恢复 %s 点魔力（不超过魔力池上限）",
+  "item.logos.mana_potion.brewing": "在炼药台中每酿造一次加入一个被污染的魔力碎片，恢复量 +40",
   "item.logos.wand": "学徒法杖",
   "dev.logos.lang.Element.PHYSICAL": "🜃 物理",
   "dev.logos.lang.Element.FIRE": "🜂 火焰",

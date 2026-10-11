@@ -1,4 +1,7 @@
 {
+  "item.logos.mana_potion": "Mana Potion",
+  "item.logos.mana_potion.restore": "Restores %s mana when drunk (up to your mana capacity)",
+  "item.logos.mana_potion.brewing": "Brew with one Tainted Mana Shard per round to add 40 mana",
   "item.logos.wand": "Novice Wand",
   "dev.logos.lang.Element.PHYSICAL": "🜃 Physical",
   "dev.logos.lang.Element.FIRE": "🜂 Fire",

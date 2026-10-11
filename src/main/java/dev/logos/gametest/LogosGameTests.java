@@ -49,7 +49,8 @@ public final class LogosGameTests {
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed",
             "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
-            "colossus_punches_heavy", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered");
+            "colossus_punches_heavy", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered",
+            "mana_potion_brewing", "mana_potion_drinking", "mana_potion_persistence");
 
     private LogosGameTests() {}
 
@@ -132,6 +133,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("free_mana_from_leftovers", () -> PageGameTests::freeManaFromLeftovers);
         FUNCTIONS.register("free_mana_gathered", () -> PageGameTests::freeManaGathered);
         FUNCTIONS.register("copy_table_copies", () -> PageGameTests::copyTableCopies);
+        FUNCTIONS.register("mana_potion_brewing", () -> ManaPotionGameTests::brewing);
+        FUNCTIONS.register("mana_potion_drinking", () -> ManaPotionGameTests::drinking);
+        FUNCTIONS.register("mana_potion_persistence", () -> ManaPotionGameTests::persistence);
         FUNCTIONS.register(modBus);
         modBus.addListener(LogosGameTests::onRegisterTests);
     }
