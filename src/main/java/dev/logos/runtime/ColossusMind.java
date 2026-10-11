@@ -361,6 +361,20 @@ public final class ColossusMind extends Goal {
         runSeq(new PutDown(p, seat));
     }
 
+    /** Whether it is lifting {@code p} down from a shoulder. */
+    boolean puttingDown(Player p) {
+        return sequence instanceof PutDown down && down.p == p;
+    }
+
+    /** A seated rider who asked twice jumps straight off: it stops lifting them down and lets them go at once. */
+    void jumpOff(Player p) {
+        if (puttingDown(p)) {
+            sequence = null;
+            c.play(Act.NONE);
+        }
+        if (p.getVehicle() == c) c.release(p, null);
+    }
+
     /** Drive mode, left click: a blow (or a grab) at what its rider looks at. */
     void driverStrike(Player rider) {
         if (sequence != null) return;

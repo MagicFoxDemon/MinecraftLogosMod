@@ -321,6 +321,36 @@ final class ColossusGameTests {
         });
     }
 
+    /** Seated, a rider who sneaks twice in quick succession jumps straight off, without waiting to be lifted down. */
+    static void jumpsOff(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.SURVIVAL);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(3.5, 2, 3.5));
+        int[] stage = {0};
+        h.succeedWhen(() -> {
+            if (stage[0] == 0) {
+                h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
+                c.interact(p, InteractionHand.MAIN_HAND, c.position());
+                stage[0] = 1;
+            }
+            if (stage[0] == 1) {
+                h.assertTrue(c.holdOf(p) == AlchemicalColossus.Hold.SEAT_LEFT && c.act() == AlchemicalColossus.Act.NONE, "not seated yet");
+                p.stopRiding(); // first sneak: it starts lifting them down
+                stage[0] = 2;
+                return;
+            }
+            if (stage[0] == 2) {
+                h.assertTrue(p.getVehicle() == c, "a single sneak does not drop them off at once");
+                p.stopRiding(); // second sneak
+                stage[0] = 3;
+            }
+            if (stage[0] >= 3 && stage[0]++ > 10) throw new AssertionError("still riding after a double sneak");
+            h.assertTrue(p.getVehicle() == null, "a double sneak should let them jump straight off");
+            h.assertTrue(c.act() != AlchemicalColossus.Act.PUTDOWN_LEFT, "without the lifting down");
+        });
+    }
+
     /** Seated, a rider who dismounts is lifted down rather than dropped; seated they take half damage. */
     static void riderSheltered(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
