@@ -240,6 +240,34 @@ final class ColossusGameTests {
         });
     }
 
+    /** Carrying its master (riding along, not driving), it stands its ground instead of walking after a spot beside them that moves with it. */
+    static void carriesMasterStill(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.SURVIVAL);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(3.5, 2, 3.5));
+        int[] stage = {0};
+        Vec3[] seatedAt = {null};
+        double[] drift = {0};
+        h.succeedWhen(() -> {
+            if (stage[0] == 0) {
+                h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
+                c.interact(p, InteractionHand.MAIN_HAND, c.position());
+                stage[0] = 1;
+            }
+            if (stage[0] == 1) {
+                h.assertTrue(c.holdOf(p) == AlchemicalColossus.Hold.SEAT_LEFT && c.act() == AlchemicalColossus.Act.NONE, "not seated yet");
+                // Facing back over its shoulder: the spot "at its master's side" is then well behind it.
+                p.setYRot(c.getYRot() + 180);
+                seatedAt[0] = c.position();
+                stage[0] = 2;
+            }
+            drift[0] = Math.max(drift[0], c.position().distanceTo(seatedAt[0]));
+            h.assertTrue(drift[0] < 0.5, "it wandered off with its master aboard: " + drift[0]);
+            h.assertTrue(++stage[0] > 80, "watching it stand");
+        });
+    }
+
     /** Seated, a rider who dismounts is lifted down rather than dropped; seated they take half damage. */
     static void riderSheltered(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
