@@ -367,7 +367,7 @@ final class ColossusGameTests {
                 p.stopRiding(); // second sneak
                 stage[0] = 3;
             }
-            if (stage[0] >= 3 && stage[0]++ > 10) throw new AssertionError("still riding after a double sneak");
+            if (stage[0] >= 3 && stage[0]++ > 10) h.fail("still riding after a double sneak");
             h.assertTrue(p.getVehicle() == null, "a double sneak should let them jump straight off");
             h.assertTrue(c.act() != AlchemicalColossus.Act.PUTDOWN_LEFT, "without the lifting down");
         });
