@@ -57,16 +57,16 @@ public final class ColossusCannon {
     }
 
     /**
-     * Its raised palm while it fires: where the model's {@code attachment_muzzle_right} bone is drawn
-     * (measured in the real client). The client starts the beam from the bone itself.
+     * Its raised palm while it fires, its arm turned toward its aim: where the model's
+     * {@code attachment_muzzle_right} bone is drawn. The client starts the beam from the bone itself.
      */
     static Vec3 muzzle(AlchemicalColossus c) {
-        return c.local(-0.86, 2.75, 1.83);
+        return c.palm();
     }
 
-    /** Whether the palm has a clear line to {@code e}. */
+    /** Whether the palm, turned toward {@code e}, has a clear line to it. */
     static boolean canSee(AlchemicalColossus c, Entity e) {
-        Vec3 from = muzzle(c), to = Targeting.center(e);
+        Vec3 to = Targeting.center(e), from = c.palmToward(to);
         return c.level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, c)).getType() == HitResult.Type.MISS;
     }
 
@@ -102,7 +102,7 @@ public final class ColossusCannon {
     }
 
     /** Where the beam points: its target, or where its rider looks. */
-    private Vec3 aim() {
+    Vec3 aim() {
         if (target != null) return Targeting.center(target);
         if (rider != null) return rider.getEyePosition().add(rider.getLookAngle().scale(48));
         return muzzle(c).add(c.getLookAngle().scale(32));

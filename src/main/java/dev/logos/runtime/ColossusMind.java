@@ -851,6 +851,8 @@ public final class ColossusMind extends Goal {
         boolean tick() {
             int p = t - phaseAt;
             if (target != null && phase != Act.CANNON_RECOVER) face(target);
+            // Its arm follows what it shoots at until the beam is spent.
+            c.aimAt(phase == Act.CANNON_RECOVER ? null : beam.aim());
             halt();
             switch (phase) {
                 case CANNON_PREPARE, CANNON_CHARGE -> {
@@ -894,6 +896,7 @@ public final class ColossusMind extends Goal {
         @Override
         void abort() {
             beam.end();
+            c.aimAt(null);
         }
     }
 

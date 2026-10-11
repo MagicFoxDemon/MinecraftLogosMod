@@ -3,6 +3,7 @@ package dev.logos.client;
 import com.geckolib.constant.dataticket.DataTicket;
 import com.geckolib.model.DefaultedEntityGeoModel;
 import com.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
 import com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer;
@@ -21,14 +22,17 @@ import net.minecraft.resources.Identifier;
  * The alchemical colossus (assets/logos/geckolib/…/alchemical_colossus). Its scorched shell — in a
  * frenzy and after one, until maintained — is the animated smouldering texture with its glowmask
  * drawn over it; the normal shell has no glow. Each frame it reports where its hands, seats and
- * muzzles are, so riders and the held sit exactly in them.
+ * muzzles are, so riders and the held sit exactly in them. While it aims its palm cannon, its right
+ * upper arm is turned on top of the animation so the palm points at what it shoots (an aim offset).
  */
 public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState> extends GeoEntityRenderer<AlchemicalColossus, R> {
     private static final Identifier NORMAL = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/alchemical_colossus.png");
     private static final Identifier SCORCHED = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/alchemical_colossus_berserk.png");
     private static final DataTicket<Boolean> SCORCHED_SHELL = DataTicket.create("logos_colossus_scorched", Boolean.class);
     private static final DataTicket<Integer> ENTITY = DataTicket.create("logos_colossus_id", Integer.class);
-    private static final String[] REPORTED = {"right_hand", "left_hand", "attachment_seat_left", "attachment_seat_right", "attachment_muzzle_right", "attachment_muzzle_left"};
+    private static final DataTicket<Float> ARM_YAW = DataTicket.create("logos_colossus_arm_yaw", Float.class);
+    private static final DataTicket<Float> ARM_PITCH = DataTicket.create("logos_colossus_arm_pitch", Float.class);
+    private static final String[] REPORTED = {"right_hand", "left_hand", "attachment_seat_left", "attachment_seat_right", "attachment_muzzle_right", "attachment_muzzle_left", "right_upper_arm"};
 
     public ColossusRenderer(EntityRendererProvider.Context context) {
         super(context, new DefaultedEntityGeoModel<AlchemicalColossus>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "alchemical_colossus")) {
@@ -52,6 +56,25 @@ public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState
         super.addRenderData(c, unused, state, partialTick);
         state.addGeckolibData(SCORCHED_SHELL, c.isScorched());
         state.addGeckolibData(ENTITY, c.getId());
+        float[] turn = c.drawnArmTurn(partialTick);
+        state.addGeckolibData(ARM_YAW, turn[0]);
+        state.addGeckolibData(ARM_PITCH, turn[1]);
+    }
+
+    /**
+     * The aim offset: the raised arm turned toward its aim. In this model a negative turn about the
+     * bone's Y swings the raised arm toward the colossus's right, and a positive turn about X raises it
+     * (both checked against the drawn bones in the logos_colossus scenario).
+     */
+    @Override
+    public void adjustModelBonesForRender(RenderPassInfo<R> info, BoneSnapshots snapshots) {
+        super.adjustModelBonesForRender(info, snapshots);
+        float yaw = info.getOrDefaultGeckolibData(ARM_YAW, 0f), pitch = info.getOrDefaultGeckolibData(ARM_PITCH, 0f);
+        if (yaw == 0 && pitch == 0) return;
+        snapshots.ifPresent("right_upper_arm", arm -> {
+            arm.setRotY(arm.getRotY() - yaw);
+            arm.setRotX(arm.getRotX() + pitch);
+        });
     }
 
     @Override
