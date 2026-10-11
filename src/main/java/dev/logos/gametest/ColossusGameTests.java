@@ -196,6 +196,50 @@ final class ColossusGameTests {
         });
     }
 
+    /**
+     * Driven, its rider's client moves it and vanilla runs none of its AI on the server; held right
+     * button still raises and charges the cannon, letting go fires it, and afterwards a left click is
+     * still a blow.
+     */
+    static void driveControls(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.SURVIVAL);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(3.5, 2, 3.5));
+        int[] stage = {0};
+        h.succeedWhen(() -> {
+            AlchemicalColossus.Act a = c.act();
+            if (stage[0] == 0) {
+                h.assertTrue(a == AlchemicalColossus.Act.NONE, "still starting up");
+                c.interact(p, InteractionHand.MAIN_HAND, c.position());
+                stage[0] = 1;
+            }
+            if (stage[0] == 1) {
+                h.assertTrue(c.holdOf(p) == AlchemicalColossus.Hold.SEAT_LEFT && a == AlchemicalColossus.Act.NONE, "not seated yet");
+                Colossi.control(p, Colossi.TOGGLE_DRIVE);
+                h.assertTrue(c.driver() == p, "its master should be driving");
+                Colossi.control(p, Colossi.CHARGE);
+                stage[0] = 2;
+            }
+            if (stage[0] == 2) {
+                // Charged and held: it waits for the release.
+                h.assertTrue(a == AlchemicalColossus.Act.CANNON_CHARGE && c.actTicks() > 40, "the cannon should charge and stay raised: " + a);
+                Colossi.control(p, Colossi.LOOSE);
+                stage[0] = 3;
+            }
+            if (stage[0] == 3) {
+                h.assertTrue(a == AlchemicalColossus.Act.CANNON_FIRE, "letting go should fire: " + a);
+                stage[0] = 4;
+            }
+            if (stage[0] == 4) {
+                h.assertTrue(c.mind().doingZh().equals("听从驾驶"), "the shot should end: " + c.mind().doingZh());
+                Colossi.control(p, Colossi.STRIKE);
+                stage[0] = 5;
+            }
+            h.assertTrue(a == AlchemicalColossus.Act.PUNCH, "a left click afterwards should still be a blow: " + a);
+        });
+    }
+
     /** Seated, a rider who dismounts is lifted down rather than dropped; seated they take half damage. */
     static void riderSheltered(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);

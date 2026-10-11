@@ -823,7 +823,8 @@ public final class ColossusMind extends Goal {
         void released() {
             released = true;
             releasedAt = t;
-            if (phase == Act.CANNON_PREPARE || phase == Act.CANNON_CHARGE) releasedEarly = true;
+            // Let go before the charge is full, it lowers its palm; once full (and held), it fires.
+            if (phase == Act.CANNON_PREPARE || phase == Act.CANNON_CHARGE && t - phaseAt < Act.CANNON_CHARGE.ticks) releasedEarly = true;
         }
 
         private void phase(Act a) {

@@ -65,8 +65,9 @@ public final class FamiliarRiding {
         return mount.getFirstPassenger() instanceof Player p && isMaster(mount, p) ? p : null;
     }
 
-    /** Like a horse: strafing is slower, backing up much slower. */
-    public static Vec3 riddenInput(Player rider) {
+    /** Like a horse: strafing is slower, backing up much slower. A colossus stands still through a blow or a shot. */
+    public static Vec3 riddenInput(LivingEntity mount, Player rider) {
+        if (mount instanceof AlchemicalColossus c && c.act() != AlchemicalColossus.Act.NONE) return Vec3.ZERO;
         return new Vec3(rider.xxa * 0.5, 0, rider.zza < 0 ? rider.zza * 0.25 : rider.zza);
     }
 
