@@ -409,7 +409,13 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
                 setMana(mana() - upkeepPerDay(lifeLevel()) / 1200);
                 if (mana() <= 0) goDormant();
             }
-            if (isDormant()) getNavigation().stop();
+            if (isDormant()) {
+                // Lying still: no flight left in it. Its flying move control turns gravity back off
+                // whenever it carries out a move it was still given, so drop that move and keep gravity on.
+                getNavigation().stop();
+                getMoveControl().setWait();
+                if (isNoGravity()) setNoGravity(false);
+            }
         } else if (!isDormant() && tickCount % 5 == 0) {
             // Small glyphs drifting into its core (an enchanting particle flies from pos + velocity to pos).
             Vec3 c = position().add(0, getBbHeight() * 0.5, 0);
