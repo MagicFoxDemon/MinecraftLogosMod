@@ -136,6 +136,28 @@ final class ColossusGameTests {
         });
     }
 
+    /** Killed while it holds a foe up, it lets go: the foe drops free with its own will back, not frozen in the air. */
+    static void letsGoWhenKilled(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(4.5, 2, 3.5));
+        Zombie z = h.spawn(EntityType.ZOMBIE, new Vec3(4.5, 2, 6.5));
+        z.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
+        z.setHealth(200);
+        Familiars.order(c, z);
+        boolean[] killed = {false};
+        h.succeedWhen(() -> {
+            if (!killed[0]) {
+                h.assertTrue(c.holdOf(z) == AlchemicalColossus.Hold.GRIP, "not holding it yet");
+                c.kill(h.getLevel());
+                killed[0] = true;
+            }
+            h.assertTrue(z.getVehicle() == null, "its hand should open");
+            h.assertTrue(!z.isNoAi(), "and the zombie get its own will back");
+        });
+    }
+
     /** A big foe is picked up too: a warden, too sturdy to finish, is slammed for 80. */
     static void grabsBig(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);

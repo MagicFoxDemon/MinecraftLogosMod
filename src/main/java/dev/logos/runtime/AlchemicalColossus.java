@@ -461,7 +461,16 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     @Override
     public void remove(RemovalReason reason) {
         if (reason.shouldDestroy() && level() instanceof ServerLevel) Lifeforms.forget(this);
+        // Gone, it lets go of what it held (giving it back its own will) rather than leaving it frozen in the air.
+        if (level() instanceof ServerLevel && mind != null) mind.abortAll();
         super.remove(reason);
+    }
+
+    @Override
+    public void die(DamageSource source) {
+        super.die(source);
+        // Struck down mid-grab, its hand opens at once, not when its body is taken away.
+        if (level() instanceof ServerLevel && mind != null) mind.abortAll();
     }
 
     @Override
