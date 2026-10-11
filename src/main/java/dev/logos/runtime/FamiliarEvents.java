@@ -58,8 +58,9 @@ final class FamiliarEvents {
         // A frenzied colossus spares no one, its master included, and earns them nothing.
         if (attacker instanceof AlchemicalColossus c && c.isBerserk()) attackerMaster = null;
         if (attackerMaster != null) {
-            // No friendly fire: not the master, not their other familiars.
-            if (Familiars.friendly(attackerMaster, victim)) {
+            // No friendly fire: not the master, not their other familiars. A familiar's own spell may still
+            // strike the familiar itself (a lifeform executing itself).
+            if (victim != attacker && Familiars.friendly(attackerMaster, victim)) {
                 event.setCanceled(true);
                 return;
             }

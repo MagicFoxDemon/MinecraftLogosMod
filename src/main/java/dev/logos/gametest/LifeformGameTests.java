@@ -118,6 +118,15 @@ final class LifeformGameTests {
         });
     }
 
+    /** A spell it casts on itself takes hold: executing itself, it dies (no friendly fire to spare it from itself). */
+    static void executesItself(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        ManaLifeform lf = summon(h, p, "(spell :mana 200 (summon mana_lifeform :at (pos-of caster)))");
+        Casting.castAs(lf, Casting.compile("(spell :mana 1000 (execute caster))"), 1000, 0, null, null);
+        h.assertTrue(!lf.isAlive(), "executing itself, it should die");
+        h.succeed();
+    }
+
     /** Run dry while flying across to its master, it drops to the ground and lies there, instead of hanging in the air. */
     static void fallsWhenDry(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
