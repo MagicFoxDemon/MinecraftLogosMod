@@ -27,7 +27,8 @@ import net.neoforged.neoforge.common.NeoForge;
  * firing, a grab, the frenzy's scorched glowing shell, and burnt out. Run: {@code gradlew runClient -PldTest=logos_colossus}.
  * <p>
  * While it charges and fires, its palm must stay raised from one act to the next: switching acts once
- * blended the arm toward its rest pose for a few frames, so it visibly dropped and rose again.
+ * blended the arm toward its rest pose for a few frames, so it visibly dropped and rose again. Firing,
+ * its arm must point at the husk (below it and off to the side), not straight ahead.
  */
 @LDLRegisterClient(name = "logos_colossus", group = "logos", registry = UIScenario.REGISTRY,
         environment = RegistrationEnvironment.DEV_ONLY)
@@ -89,12 +90,24 @@ public class ColossusScenario implements UIScenario {
                 .ticks(45)
                 .screenshot("cannon_gathering")
                 .ticks(40)
+                .step("its arm points at the husk", ctx -> {
+                    if (!(Minecraft.getInstance().level.getEntity(colossus.getId()) instanceof AlchemicalColossus c)) throw new AssertionError("no colossus on the client");
+                    Vec3 shoulder = c.drawnBone("right_upper_arm"), palm = c.drawnBone("attachment_muzzle_right");
+                    Vec3 husk = Vec3.atBottomCenterOf(ORIGIN.offset(9, 1, 14)).add(0, 1, 0);
+                    double off = Math.toDegrees(Math.acos(palm.subtract(shoulder).normalize().dot(husk.subtract(shoulder).normalize())));
+                    System.out.printf("[logos] cannon arm is %.1f degrees off the husk%n", off);
+                    if (off > 8) throw new AssertionError("the cannon arm points " + off + " degrees away from its target");
+                    // The server fires from where it reckons the turned palm is: that must be the drawn palm.
+                    double miss = c.palm().distanceTo(palm);
+                    System.out.printf("[logos] reckoned palm is %.2f blocks from the drawn one%n", miss);
+                    if (miss > 0.3) throw new AssertionError("the reckoned palm is " + miss + " blocks from the drawn one");
+                })
                 .screenshot("cannon_firing")
                 .step("its palm stayed raised", ctx -> {
                     watchedId = -1;
                     System.out.printf("[logos] lowest palm while charging and firing: %.2f%n", lowestPalm);
-                    // Raised it is about 2.75 above its feet; hanging at rest, about 1.1.
-                    if (lowestPalm < 2.4) throw new AssertionError("the raised palm dropped to " + lowestPalm + " between cannon acts");
+                    // Raised it is about 2.75 above its feet (a little lower aimed down at the husk); hanging at rest, about 1.1.
+                    if (lowestPalm < 2.0) throw new AssertionError("the raised palm dropped to " + lowestPalm + " between cannon acts");
                 });
     }
 }

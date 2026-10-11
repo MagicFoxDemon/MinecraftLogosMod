@@ -3,6 +3,8 @@ package dev.logos.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 import org.jspecify.annotations.Nullable;
 
 import com.geckolib.animatable.GeoEntity;
@@ -138,6 +140,16 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private static final EntityDataAccessor<Integer> GRIP = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SEAT_LEFT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> SEAT_RIGHT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
+    /** What its cannon arm points at, relative to its feet; zero while it is not aiming. */
+    private static final EntityDataAccessor<Vector3fc> AIM = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.VECTOR3);
+
+    /**
+     * Its cannon arm, in its own frame (right, up, forward), as the model draws it while firing: the
+     * shoulder it turns at, and the palm with the arm held straight ahead.
+     */
+    static final Vec3 SHOULDER = new Vec3(-0.76, 2.69, 0.04), PALM = new Vec3(-0.86, 2.76, 1.83);
+    /** How far the arm may turn from straight ahead toward its aim, sideways and up or down. */
+    static final float AIM_YAW = 30 * Mth.DEG_TO_RAD, AIM_PITCH = 45 * Mth.DEG_TO_RAD;
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.alchemical_colossus.idle");
     private static final RawAnimation WALK = RawAnimation.begin().thenPlay("animation.alchemical_colossus.walk_start").thenLoop("animation.alchemical_colossus.walk");
@@ -166,6 +178,8 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private RawAnimation lastLoco = IDLE;
     /** Client only: how fast the run cycle plays, so its planted feet keep pace with the ground. */
     private float runPace = 1;
+    /** Client only: how its cannon arm is turned toward its aim (radians), and how far that turn has blended in. */
+    private float armYaw, armPitch, armWeight, armYawO, armPitchO, armWeightO;
 
     public AlchemicalColossus(EntityType<? extends AlchemicalColossus> type, Level level) {
         super(type, level);
@@ -201,6 +215,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         b.define(GRIP, -1);
         b.define(SEAT_LEFT, -1);
         b.define(SEAT_RIGHT, -1);
+        b.define(AIM, new Vector3f());
     }
 
     public boolean isBerserk() {
@@ -444,6 +459,17 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         if (level().isClientSide()) {
             double moved = Math.sqrt(Mth.square(getX() - xo) + Mth.square(getZ() - zo));
             runPace = (float) Mth.lerp(0.3, runPace, Mth.clamp(moved / RUN_STRIDE, 0.5, 2.0));
+            // The arm eases onto its aim as the cannon is raised, follows it smoothly, and eases off after.
+            armYawO = armYaw;
+            armPitchO = armPitch;
+            armWeightO = armWeight;
+            Vec3 aim = aimPoint();
+            if (aim != null) {
+                float[] turn = armTurn(aim);
+                armYaw = Mth.lerp(0.35f, armYaw, turn[0]);
+                armPitch = Mth.lerp(0.35f, armPitch, turn[1]);
+            }
+            armWeight = Mth.approach(armWeight, aim != null ? 1 : 0, 0.1f);
         }
         if (level() instanceof ServerLevel level) {
             // Driven, vanilla leaves its movement to the rider's client and skips its AI on the server
@@ -595,6 +621,55 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     /** Where a bone was last drawn, if recently (client), else null. */
     public @Nullable Vec3 drawnBone(String bone) {
         return level().isClientSide() && tickCount - bonesAt < 5 ? bones.get(bone) : null;
+    }
+
+    // ---- aiming its cannon arm --------------------------------------------------------------------
+
+    /** Points its cannon arm at {@code p}, or lets it go back to the animation's own pose (null). */
+    void aimAt(@Nullable Vec3 p) {
+        Vector3f rel = p == null ? new Vector3f() : p.subtract(position()).toVector3f();
+        if (!rel.equals(entityData.get(AIM))) entityData.set(AIM, rel);
+    }
+
+    /** What its cannon arm points at, or null. */
+    public @Nullable Vec3 aimPoint() {
+        Vector3fc rel = entityData.get(AIM);
+        return rel.lengthSquared() == 0 ? null : position().add(rel.x(), rel.y(), rel.z());
+    }
+
+    /** How its cannon arm turns from straight ahead to point its palm at {@code p}: {to its right, upward}, in radians, within its reach. */
+    public float[] armTurn(Vec3 p) {
+        float yaw = yBodyRot * Mth.DEG_TO_RAD;
+        Vec3 f = new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw));
+        Vec3 r = new Vec3(-f.z, 0, f.x);
+        Vec3 d = p.subtract(local(SHOULDER.x, SHOULDER.y, SHOULDER.z));
+        double right = d.dot(r), ahead = d.dot(f);
+        Vec3 arm = PALM.subtract(SHOULDER);
+        double turnYaw = Math.atan2(right, ahead) - Math.atan2(arm.x, arm.z);
+        double turnPitch = Math.atan2(d.y, Math.hypot(right, ahead)) - Math.atan2(arm.y, Math.hypot(arm.x, arm.z));
+        return new float[] {Mth.clamp((float) Mth.wrapDegrees(turnYaw * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD, -AIM_YAW, AIM_YAW),
+                Mth.clamp((float) turnPitch, -AIM_PITCH, AIM_PITCH)};
+    }
+
+    /** Where its palm is with its cannon arm turned toward its aim (straight ahead when it has none). */
+    public Vec3 palm() {
+        Vec3 aim = aimPoint();
+        return aim == null ? local(PALM.x, PALM.y, PALM.z) : palmToward(aim);
+    }
+
+    /** Where its palm would be with its cannon arm turned toward {@code p}. */
+    public Vec3 palmToward(Vec3 p) {
+        float[] turn = armTurn(p);
+        Vec3 arm = PALM.subtract(SHOULDER);
+        double len = arm.length();
+        double yaw = Math.atan2(arm.x, arm.z) + turn[0], pitch = Math.atan2(arm.y, Math.hypot(arm.x, arm.z)) + turn[1];
+        return local(SHOULDER.x + len * Math.cos(pitch) * Math.sin(yaw), SHOULDER.y + len * Math.sin(pitch), SHOULDER.z + len * Math.cos(pitch) * Math.cos(yaw));
+    }
+
+    /** Client: the cannon arm's turn to draw this frame, {to its right, upward}, already scaled by how far it has blended in. */
+    public float[] drawnArmTurn(float partialTick) {
+        float w = Mth.lerp(partialTick, armWeightO, armWeight);
+        return new float[] {Mth.lerp(partialTick, armYawO, armYaw) * w, Mth.lerp(partialTick, armPitchO, armPitch) * w};
     }
 
     /** A point given in its own frame: {@code right} to its right, {@code up}, {@code forward} ahead. */
