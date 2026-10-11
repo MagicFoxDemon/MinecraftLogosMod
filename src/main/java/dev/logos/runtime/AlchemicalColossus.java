@@ -148,7 +148,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private static final EntityDataAccessor<Integer> SEAT_RIGHT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
     /** What its cannon arm points at, relative to its feet; zero while it is not aiming. */
     private static final EntityDataAccessor<Vector3fc> AIM = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.VECTOR3);
-    /** What its grabbing hand reaches for (an entity id), or -1. */
+    /** What its hand reaches for (an entity id: to grab, or to strike), or -1. */
     private static final EntityDataAccessor<Integer> REACH = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
 
     /**
@@ -517,13 +517,16 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             armWeight = Mth.approach(armWeight, aim != null ? 1 : 0, 0.1f);
             stepSounds();
             reachWeightO = reachWeight;
-            Vec3 reaching = act() == Act.GRAB_REACH ? reachPoint() : null;
+            Act a = act();
+            Vec3 reaching = a == Act.GRAB_REACH || a == Act.PUNCH ? reachPoint() : null;
             if (reaching != null) {
-                // The hand follows the animation down at first, and is drawn onto the point as the reach goes on.
                 reachGoal = reaching;
-                float progress = (tickCount - actStartedAt) / (float) Act.GRAB_REACH.ticks;
-                float t = Mth.clamp((progress - 0.15f) / 0.5f, 0, 1);
-                reachWeight = t * t * (3 - 2 * t);
+                float progress = (tickCount - actStartedAt) / (float) a.ticks;
+                reachWeight = a == Act.GRAB_REACH
+                        // The hand follows the animation down at first, and is drawn onto the point as the reach goes on.
+                        ? smooth((progress - 0.15f) / 0.5f)
+                        // The wind-up is the animation's own; the thrust is drawn onto the foe, and the recovery is its own again.
+                        : Math.min(smooth((progress - 0.33f) / 0.15f), 1 - smooth((progress - 0.6f) / 0.2f));
             } else {
                 // Caught (or given up): the arm eases back to the animation over half a second.
                 reachWeight = Math.max(0, reachWeight - 0.1f);
@@ -742,22 +745,28 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
 
     // ---- reaching with its hand ---------------------------------------------------------------------
 
-    /** Its grabbing hand reaches for {@code e} (null: for nothing). */
+    private static float smooth(float t) {
+        t = Mth.clamp(t, 0, 1);
+        return t * t * (3 - 2 * t);
+    }
+
+    /** Its hand reaches for {@code e} — to grab it, or its fist to strike it (null: for nothing). */
     void reachFor(@Nullable Entity e) {
         int id = e == null ? -1 : e.getId();
         if (entityData.get(REACH) != id) entityData.set(REACH, id);
     }
 
     /**
-     * Where its palm should close on what it reaches for: the middle of anything a block or more tall;
-     * a small creature is taken from above, just under its top. Null when it reaches for nothing.
+     * Where its palm should meet what it reaches for: a blow lands on the middle; a grab closes on the
+     * middle of anything a block or more tall, and takes a small creature from above, just under its
+     * top. Null when it reaches for nothing.
      */
     public @Nullable Vec3 reachPoint() {
         int id = entityData.get(REACH);
         Entity e = id < 0 ? null : level().getEntity(id);
         if (e == null) return null;
         Vec3 mid = e.getBoundingBox().getCenter();
-        return e.getBbHeight() >= 1 ? mid : new Vec3(mid.x, e.getBoundingBox().maxY - 0.15, mid.z);
+        return act() == Act.PUNCH || e.getBbHeight() >= 1 ? mid : new Vec3(mid.x, e.getBoundingBox().maxY - 0.15, mid.z);
     }
 
     /** Client: what its hand is reaching for (held a moment after the catch, while the arm eases back), or null. */

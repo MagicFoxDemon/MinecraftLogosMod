@@ -17,7 +17,8 @@ import com.geckolib.renderer.base.BoneSnapshots;
 import net.minecraft.util.Mth;
 
 /**
- * Two-bone IK for the colossus's right arm, so its palm closes on what it grabs whatever its size.
+ * Two-bone IK for the colossus's right arm, so its palm closes on what it grabs, and its fist lands on
+ * what it strikes, whatever their size.
  * Solved in the model's own space after the animation has posed the bones, by replaying GeckoLib's
  * bone transforms (translate, to the pivot, rotate Z·Y·X, scale, back): the torso bows only as far as
  * it must for the point to come within the arm's length, the elbow is bent until the shoulder-to-palm
