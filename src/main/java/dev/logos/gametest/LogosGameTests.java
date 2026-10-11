@@ -50,7 +50,7 @@ public final class LogosGameTests {
             "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role",
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
-            "colossus_grabs_big", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered", "colossus_jumps_off");
+            "colossus_grabs_big", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_cannon_strikes_at_once", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered", "colossus_jumps_off");
 
     private LogosGameTests() {}
 
@@ -112,6 +112,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("colossus_punches_dragon", () -> ColossusGameTests::punchesDragon);
         FUNCTIONS.register("colossus_cannon", () -> ColossusGameTests::cannonAtRange);
         FUNCTIONS.register("colossus_cannon_unbroken", () -> ColossusGameTests::cannonActsUnbroken);
+        FUNCTIONS.register("colossus_cannon_strikes_at_once", () -> ColossusGameTests::cannonStrikesAtOnce);
         FUNCTIONS.register("colossus_frenzy", () -> ColossusGameTests::frenzyAndBurnout);
         FUNCTIONS.register("colossus_board", () -> ColossusGameTests::boardAndPutDown);
         FUNCTIONS.register("colossus_drive_controls", () -> ColossusGameTests::driveControls);
