@@ -72,6 +72,7 @@ public final class FamiliarRiding {
     }
 
     public static float riddenSpeed(LivingEntity mount) {
+        if (mount instanceof AlchemicalColossus) return AlchemicalColossus.DRIVE_SPEED;
         return (float) mount.getAttributeValue(Attributes.MOVEMENT_SPEED);
     }
 
