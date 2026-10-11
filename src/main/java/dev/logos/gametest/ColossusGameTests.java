@@ -204,6 +204,54 @@ final class ColossusGameTests {
         });
     }
 
+    /** Something that strikes it but has no quarrel with its master (a husk here) is fought back. */
+    static void defendsItself(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(4.5, 2, 3.5));
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 7.5));
+        husk.setNoAi(true);
+        husk.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
+        husk.setHealth(200);
+        boolean[] struck = {false};
+        h.succeedWhen(() -> {
+            if (!struck[0]) {
+                h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
+                c.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(husk), 8);
+                struck[0] = true;
+            }
+            h.assertTrue(husk.getHealth() < 200, "it should strike back at the husk");
+        });
+    }
+
+    /** Its master's order comes first: the ordered foe is dealt with before what struck it, and then that too. */
+    static void ordersBeforeSelfDefense(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(4.5, 2, 3.5));
+        Husk ordered = h.spawn(EntityType.HUSK, new Vec3(3.5, 2, 6.5));
+        Husk striker = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        ordered.setNoAi(true);
+        striker.setNoAi(true);
+        striker.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
+        striker.setHealth(200);
+        boolean[] started = {false}, strikerFirst = {false};
+        h.succeedWhen(() -> {
+            if (!started[0]) {
+                h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
+                c.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(striker), 8);
+                Familiars.order(c, ordered);
+                started[0] = true;
+            }
+            if (striker.getHealth() < 200 && ordered.isAlive() && ordered.getHealth() >= ordered.getMaxHealth()) strikerFirst[0] = true;
+            h.assertTrue(!strikerFirst[0], "it answered its own assailant before its master's order");
+            h.assertTrue(!ordered.isAlive(), "the ordered husk first");
+            h.assertTrue(striker.getHealth() < 200, "then what struck it");
+        });
+    }
+
     /** A big foe is picked up too: a warden, too sturdy to finish, is slammed for 80. */
     static void grabsBig(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
