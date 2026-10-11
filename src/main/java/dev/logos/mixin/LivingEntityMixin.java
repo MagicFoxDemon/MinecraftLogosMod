@@ -25,7 +25,7 @@ abstract class LivingEntityMixin {
 
     @Inject(method = "getRiddenInput", at = @At("HEAD"), cancellable = true)
     private void logos$riddenInput(Player controller, Vec3 selfInput, CallbackInfoReturnable<Vec3> cir) {
-        if (logos$riddenBy(controller)) cir.setReturnValue(FamiliarRiding.riddenInput(controller));
+        if (logos$riddenBy(controller)) cir.setReturnValue(FamiliarRiding.riddenInput((LivingEntity) (Object) this, controller));
     }
 
     @Inject(method = "getRiddenSpeed", at = @At("HEAD"), cancellable = true)
