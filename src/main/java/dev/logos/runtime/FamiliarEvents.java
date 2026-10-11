@@ -52,7 +52,8 @@ final class FamiliarEvents {
     @SubscribeEvent
     static void onDamage(LivingIncomingDamageEvent event) {
         LivingEntity victim = event.getEntity();
-        Entity attacker = event.getSource().getEntity();
+        // A colossus's blows are its master's (see AlchemicalColossus.deal), but the colossus dealt them.
+        Entity attacker = event.getSource().getDirectEntity() instanceof AlchemicalColossus c ? c : event.getSource().getEntity();
         UUID attackerMaster = Familiars.masterOf(attacker);
         // A frenzied colossus spares no one, its master included, and earns them nothing.
         if (attacker instanceof AlchemicalColossus c && c.isBerserk()) attackerMaster = null;
