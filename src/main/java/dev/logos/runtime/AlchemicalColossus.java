@@ -506,6 +506,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             // Driven, vanilla leaves its movement to the rider's client and skips its AI on the server
             // altogether; its mind must still run the blows and the cannon its rider asks for.
             if (isClientAuthoritative() && mind != null && mind.canUse()) mind.tick();
+            if (!isDormant() && mind != null) mind.stomp();
             actTicks++;
             Act a = act();
             if (a.ticks > 0 && actTicks >= a.ticks && a != Act.POWER_DOWN && (mind == null || !mind.busy())) {
