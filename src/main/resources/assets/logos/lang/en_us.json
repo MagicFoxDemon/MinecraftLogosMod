@@ -79,6 +79,8 @@
   "logos.alchemy_table.card_count": "%s / %s laid",
   "logos.alchemy_table.card_hint": "Drag onto the canvas; drag a title to move, × to take back. Drag a made product to another card or the products to wire it; right-click to unwire",
   "logos.alchemy_table.products_node": "Products",
+  "logos.alchemy_table.tab_storage": "Storage",
+  "logos.alchemy_table.tab_process": "Processes",
   "logos.alchemy_table.clear_designations": "Clear",
   "logos.alchemy_table.designate": "Designate from storage…",
   "logos.alchemy_table.route_keep": "Keep in card",
