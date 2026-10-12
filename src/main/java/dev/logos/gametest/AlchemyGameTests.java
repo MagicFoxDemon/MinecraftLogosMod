@@ -65,6 +65,19 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
+    /** Glass, a brewing stand and a bottle over copper and a cauldron, on a crafting table, make the alchemy table. */
+    static void craftsAlchemyTable(GameTestHelper h) {
+        List<ItemStack> grid = List.of(
+                new ItemStack(Items.GLASS), new ItemStack(Items.BREWING_STAND), new ItemStack(Items.GLASS_BOTTLE),
+                new ItemStack(Items.COPPER_INGOT), new ItemStack(Items.CAULDRON), new ItemStack(Items.COPPER_INGOT),
+                ItemStack.EMPTY, new ItemStack(Items.CRAFTING_TABLE), ItemStack.EMPTY);
+        CraftingInput input = CraftingInput.of(3, 3, grid);
+        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
+                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+        h.assertTrue(out.is(LogosMod.ALCHEMY_TABLE_ITEM.get()) && out.getCount() == 1, "the recipe made " + out);
+        h.succeed();
+    }
+
     // ---- the alchemy table ----------------------------------------------------------------------
 
     /** The main half, relative to the test; the table faces south, so its side half is to the east. */
