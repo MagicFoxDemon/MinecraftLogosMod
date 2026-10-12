@@ -133,6 +133,18 @@ public class LogosMod {
     public static final DeferredItem<net.minecraft.world.item.Item> TAINTED_MANA_SHARD = ITEMS.registerSimpleItem("tainted_mana_shard",
             p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
 
+    // Alchemy materials: the fermentation line. The alchemy table's processes make most of them.
+    /** 酵种: ferments; turns water into raw mash. */
+    public static final DeferredItem<net.minecraft.world.item.Item> STARTER_CULTURE = ITEMS.registerSimpleItem("starter_culture");
+    /** 初醪: the base of Logos potions, as the awkward potion is of vanilla ones. Its own item so it keeps its look; the brewing stand takes it. */
+    public static final DeferredItem<net.minecraft.world.item.Item> RAW_MASH = ITEMS.registerSimpleItem("raw_mash", p -> p.stacksTo(16));
+    /** 臭卤: fermented meat, settled into sulfur and saltpeter. */
+    public static final DeferredItem<net.minecraft.world.item.Item> FOUL_BRINE = ITEMS.registerSimpleItem("foul_brine", p -> p.stacksTo(16));
+    public static final DeferredItem<net.minecraft.world.item.Item> SULFUR_POWDER = ITEMS.registerSimpleItem("sulfur_powder");
+    public static final DeferredItem<net.minecraft.world.item.Item> SALTPETER = ITEMS.registerSimpleItem("saltpeter");
+    /** 粘合剂: dissolved clay and raw mash. */
+    public static final DeferredItem<net.minecraft.world.item.Item> ADHESIVE = ITEMS.registerSimpleItem("adhesive");
+
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.InscriptionTableBlock> INSCRIPTION_TABLE = BLOCKS.registerBlock(
             "inscription_table", dev.logos.block.InscriptionTableBlock::new,
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.WOOD).strength(2.5f).noOcclusion()
@@ -222,6 +234,12 @@ public class LogosMod {
                 out.accept(DISORDER_CRYSTAL.get());
                 out.accept(MAINTENANCE_KIT.get());
                 out.accept(TAINTED_MANA_SHARD.get());
+                out.accept(STARTER_CULTURE.get());
+                out.accept(RAW_MASH.get());
+                out.accept(FOUL_BRINE.get());
+                out.accept(SULFUR_POWDER.get());
+                out.accept(SALTPETER.get());
+                out.accept(ADHESIVE.get());
                 out.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) out.accept(egg.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
@@ -327,6 +345,28 @@ public class LogosMod {
     @SubscribeEvent
     public void onCommands(RegisterCommandsEvent event) {
         LogosCommands.register(event.getDispatcher());
+    }
+
+    /** A water bottle and starter culture brew into raw mash. */
+    @SubscribeEvent
+    public void onBrewing(net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent event) {
+        event.getBuilder().addRecipe(new net.neoforged.neoforge.common.brewing.IBrewingRecipe() {
+            @Override
+            public boolean isInput(ItemStack input) {
+                return input.is(net.minecraft.world.item.Items.POTION) && input.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
+                        net.minecraft.world.item.alchemy.PotionContents.EMPTY).is(net.minecraft.world.item.alchemy.Potions.WATER);
+            }
+
+            @Override
+            public boolean isIngredient(ItemStack ingredient) {
+                return ingredient.is(STARTER_CULTURE.get());
+            }
+
+            @Override
+            public ItemStack getOutput(ItemStack input, ItemStack ingredient) {
+                return isInput(input) && isIngredient(ingredient) ? new ItemStack(RAW_MASH.get()) : ItemStack.EMPTY;
+            }
+        });
     }
 
     @SubscribeEvent
