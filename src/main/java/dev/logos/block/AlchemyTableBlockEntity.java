@@ -3,6 +3,9 @@ package dev.logos.block;
 import com.geckolib.animatable.GeoBlockEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
@@ -61,6 +64,9 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     public static final int MAX_CARDS = 4;
     /** Changes reach watching clients at most this often, for the hourglass and the tank. */
     private static final int SYNC_INTERVAL = 5;
+    private static final RawAnimation FERMENT = RawAnimation.begin().thenLoop("animation.alchemy_table.ferment");
+    /** A lever's controller is this and its process's ordinal; the selectors are modelled in process order. */
+    private static final String LEVER = "lever_";
 
     private final ItemStacksResourceHandler items = new ItemStacksResourceHandler(SLOTS) {
         @Override
@@ -95,6 +101,8 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     private final List<ProcessCard> cards = new ArrayList<>();
 
     private double mana;
+    /** The processes some card is working, a bit each by ordinal: what the table animates. Not saved, worked out every tick. */
+    private int working;
     private boolean dirty;
 
     public AlchemyTableBlockEntity(BlockPos pos, BlockState state) {
@@ -162,6 +170,11 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         changed();
     }
 
+    /** Whether some card of {@code process} is mid-craft; known on clients too, a moment late. */
+    public boolean isWorking(Process process) {
+        return (working & 1 << process.ordinal()) != 0;
+    }
+
     public FluidStack fluid() {
         return tank.getResource(0).toStack(tank.getAmountAsInt(0));
     }
@@ -208,7 +221,15 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
             table.fuel.set(0, table.fuel.getResource(0), f.getCount() - 1);
             table.setMana(table.mana + value);
         }
-        for (ProcessCard card : table.cards) card.tick(table);
+        int working = 0;
+        for (ProcessCard card : table.cards) {
+            if (card.tick(table)) table.triggerAnim(LEVER + card.process.ordinal(), "press");
+            if (card.working()) working |= 1 << card.process.ordinal();
+        }
+        if (working != table.working) {
+            table.working = working;
+            table.dirty = true;
+        }
         if (level.getGameTime() % 10 == 0 && table.mana < MAX_MANA) {
             for (FreeManaEntity orb : level.getEntitiesOfClass(FreeManaEntity.class, table.reach())) {
                 orb.drainInto(table, FREE_MANA_EFFICIENCY);
@@ -250,6 +271,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         input.child("fuel").ifPresent(fuel::deserialize);
         input.child("tank").ifPresent(tank::deserialize);
         mana = input.getDoubleOr("mana", 0);
+        working = input.getIntOr("working", 0);
         cards.clear();
         for (ValueInput c : input.childrenListOrEmpty("cards")) {
             ProcessCard card = ProcessCard.load(c);
@@ -259,10 +281,12 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         }
     }
 
-    /** Clients draw the hourglass and the tank, so they get the pool and the tank (and, simply, the rest). */
+    /** Clients draw the hourglass and the tank, so they get the pool and the tank (and, simply, the rest), and which processes are working. */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveCustomOnly(registries);
+        CompoundTag tag = saveCustomOnly(registries);
+        tag.putInt("working", working);
+        return tag;
     }
 
     @Override
@@ -284,9 +308,20 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         }
     }
 
+    /**
+     * The airlock bubbles while something ferments. Each process has a selector lever, pressed (a
+     * triggered animation, sent from the server) when a card of that process finishes a craft. The
+     * levers have no state of their own, so a press ending on the rest pose needs no hand-back.
+     * The still's flame is the renderer's, from {@link #isWorking}.
+     */
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        // The process animations (fermenting bubbles, the selector levers) come with the processes.
+        controllers.add(new AnimationController<AlchemyTableBlockEntity>("ferment", 4,
+                test -> isWorking(Process.FERMENT) ? test.setAndContinue(FERMENT) : PlayState.STOP));
+        for (Process p : Process.values()) {
+            controllers.add(new AnimationController<AlchemyTableBlockEntity>(LEVER + p.ordinal(), 0, test -> PlayState.STOP)
+                    .triggerableAnim("press", RawAnimation.begin().thenPlay("animation.alchemy_table.select_" + p.ordinal())));
+        }
     }
 
     @Override

@@ -9,6 +9,7 @@ import com.geckolib.renderer.base.RenderPassInfo;
 import com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer;
 
 import dev.logos.LogosMod;
+import dev.logos.alchemy.Process;
 import dev.logos.block.AlchemyTableBlock;
 import dev.logos.block.AlchemyTableBlockEntity;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -21,11 +22,13 @@ import net.minecraft.world.phys.AABB;
 /**
  * The alchemy table (assets/logos/geckolib/…/alchemy_table), drawn from its main half and centred on
  * the seam between the two halves. The hourglass shows the mana pool: sand above is mana left, sand
- * below is mana spent. The water tank under the table shows how full the fluid tank is.
+ * below is mana spent. The water tank under the table shows how full the fluid tank is. The
+ * still's flame burns only while a card distils.
  */
 public class AlchemyTableRenderer<R extends BlockEntityRenderState & GeoRenderState> extends GeoBlockRenderer<AlchemyTableBlockEntity, R> {
     private static final DataTicket<Float> MANA = DataTicket.create("logos_alchemy_table_mana", Float.class);
     private static final DataTicket<Float> FLUID = DataTicket.create("logos_alchemy_table_fluid", Float.class);
+    private static final DataTicket<Boolean> DISTILLING = DataTicket.create("logos_alchemy_table_distilling", Boolean.class);
     /**
      * The sand of each half of the hourglass, bottom tier first, with each tier's volume (from the
      * art's render manifest). Both halves hold the same total; each tier is pivoted at its own floor
@@ -51,6 +54,7 @@ public class AlchemyTableRenderer<R extends BlockEntityRenderState & GeoRenderSt
         super.addRenderData(table, unused, state, partialTick);
         state.addGeckolibData(MANA, (float) (table.mana() / AlchemyTableBlockEntity.MAX_MANA));
         state.addGeckolibData(FLUID, (float) table.fluid().getAmount() / AlchemyTableBlockEntity.TANK_CAPACITY);
+        state.addGeckolibData(DISTILLING, table.isWorking(Process.DISTILL));
     }
 
     /** Centred on the seam: half a block over towards the side half. */
@@ -71,6 +75,8 @@ public class AlchemyTableRenderer<R extends BlockEntityRenderState & GeoRenderSt
             if (fluid <= 0.001f) s.skipRender(true);
             else s.setScaleY(WATER_FULL * fluid / WATER_MODELLED);
         });
+        boolean distilling = info.getOrDefaultGeckolibData(DISTILLING, false);
+        snapshots.ifPresent("flame_outer", s -> s.skipRender(!distilling));
     }
 
     /** Fills the tiers of one half bottom-up with {@code volume} of sand; an empty tier is hidden. */

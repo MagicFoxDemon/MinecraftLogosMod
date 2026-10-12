@@ -350,6 +350,30 @@ final class AlchemyGameTests {
         });
     }
 
+    /** While a card ferments the table says so, and tells clients, so the airlock bubbles; an idle card does not count, and it stops once the materials are gone. */
+    static void processShowsWorking(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.FERMENT);
+        // Nothing to distil: the still stays cold.
+        table.addCard(Process.DISTILL);
+        put(card.inputs(), new ItemStack(Items.SUGAR));
+        put(card.inputs(), new ItemStack(Items.RED_MUSHROOM));
+        put(card.inputs(), new ItemStack(Items.WHEAT));
+        boolean[] sawWorking = {false};
+        h.succeedWhen(() -> {
+            if (table.isWorking(Process.FERMENT)) {
+                sawWorking[0] = true;
+                h.assertTrue(!table.isWorking(Process.DISTILL), "an idle distilling card counts as working");
+                int sent = table.getUpdateTag(h.getLevel().registryAccess()).getIntOr("working", 0);
+                h.assertTrue(sent == 1 << Process.FERMENT.ordinal(), "clients are told " + sent + " is working");
+            }
+            h.assertTrue(sawWorking[0], "the table never showed the card fermenting");
+            h.assertTrue(count(card.outputs(), LogosMod.STARTER_CULTURE.get()) == 3, "the card has not finished its craft");
+            h.assertTrue(!table.isWorking(Process.FERMENT), "the table still ferments with nothing left");
+        });
+    }
+
     /** At most four cards; cards, designations and routes are saved; a removed card's contents go back to storage and routes to it are undone. */
     static void processCardsKeepAndRemove(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);

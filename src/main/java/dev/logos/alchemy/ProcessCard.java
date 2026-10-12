@@ -81,6 +81,7 @@ public final class ProcessCard {
     private final Map<Item, Integer> routes = new HashMap<>();
     private int defaultRoute = KEEP;
     private int progress;
+    private boolean working;
     /** Where the card lies on the table screen's canvas, in screen units from its top left. */
     private int x, y;
     private Runnable changed = () -> {};
@@ -165,15 +166,24 @@ public final class ProcessCard {
 
     // ---- working ----------------------------------------------------------------------------------
 
-    /** One tick: work on the craft if it can be made (else stop), then pass outputs along. */
-    public void tick(AlchemyTableBlockEntity table) {
-        if (table.mana() < MANA_PER_CRAFT || craft(table, false) == null) {
+    /** Whether the card worked on a craft last tick: it had the mana and the materials for one. */
+    public boolean working() {
+        return working;
+    }
+
+    /** One tick: work on the craft if it can be made (else stop), then pass outputs along. True when a craft was finished. */
+    public boolean tick(AlchemyTableBlockEntity table) {
+        boolean finished = false;
+        working = table.mana() >= MANA_PER_CRAFT && craft(table, false) != null;
+        if (!working) {
             progress = 0;
         } else if (++progress >= CRAFT_TICKS) {
-            if (craft(table, true) != null) table.setMana(table.mana() - MANA_PER_CRAFT);
+            finished = craft(table, true) != null;
+            if (finished) table.setMana(table.mana() - MANA_PER_CRAFT);
             progress = 0;
         }
         deliver(table);
+        return finished;
     }
 
     /**
