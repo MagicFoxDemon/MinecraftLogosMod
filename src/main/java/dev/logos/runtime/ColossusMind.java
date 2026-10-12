@@ -56,11 +56,6 @@ public final class ColossusMind extends Goal {
     /** Reach of its hands, measured from its edge to the target's. */
     static final double MELEE = 2.6;
     /**
-     * Its hands reach only about this far past its edge (its arm is under two blocks long): it steps in
-     * this close before it grabs or strikes, so its hand or fist truly meets the foe.
-     */
-    static final double HAND_GAP = 0.2;
-    /**
      * Choosing between a sweeping blow and a grab: a blow is worth one for each lesser foe it would
      * catch (a strong one barely feels it); a grab is worth this much for a lesser foe and more for a
      * strong one. So it swings into a crowd of three lesser foes, and takes a strong foe in hand unless
@@ -352,14 +347,10 @@ public final class ColossusMind extends Goal {
     private void fight(LivingEntity f) {
         face(f);
         if (gap(f) <= MELEE) {
-            Sequence move = melee(f);
-            if (gap(f) > HAND_GAP && f.getVehicle() != c) {
-                // Close, but not yet within an arm's length (and not already on it): a step closer first.
-                walkTo(f.position(), true);
-                return;
-            }
+            // In reach, it acts at once. Its arm (under two blocks long) reaches toward the foe as far as
+            // it goes (ColossusArmIk), but whether the grab or the blow lands does not hang on it.
             halt();
-            runSeq(move);
+            runSeq(melee(f));
             return;
         }
         if (cannonReady() && ColossusCannon.canSee(c, f)) {

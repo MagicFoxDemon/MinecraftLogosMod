@@ -22,9 +22,10 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Real-client check that the colossus's fist lands on what it strikes: three husks crowd before it,
- * so it swings at the one it was set on, and its fist must come to that husk's middle as the blow
- * lands (where the world is held still for a picture).
+ * Real-client check that the colossus's fist lands on what it strikes when it is within an arm's
+ * length: three husks crowd close before it, so it swings at the one it was set on, and its fist must
+ * come to that husk's middle as the blow lands (where the world is held still for a picture). Farther
+ * off (it strikes from up to 2.6 blocks), the fist only reaches toward the foe.
  * Run: {@code gradlew runClient -PldTest=logos_colossus_punch}.
  */
 @LDLRegisterClient(name = "logos_colossus_punch", group = "logos", registry = UIScenario.REGISTRY,
@@ -81,7 +82,8 @@ public class ColossusPunchScenario implements UIScenario {
                     Husk target = null;
                     for (double x : new double[] {-0.8, 0.5, 1.8}) {
                         Husk h = EntityType.HUSK.create(sc.level(), EntitySpawnReason.COMMAND);
-                        h.snapTo(ORIGIN.getX() + x, ORIGIN.getY() + 1, ORIGIN.getZ() + 4.3, 180, 0);
+                        // Within an arm's length: their edges 0.15 from the colossus's.
+                        h.snapTo(ORIGIN.getX() + x, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5 + 0.95 + h.getBbWidth() / 2 + 0.15, 180, 0);
                         h.setNoAi(true);
                         sc.level().addFreshEntity(h);
                         if (x == 0.5) target = h;
