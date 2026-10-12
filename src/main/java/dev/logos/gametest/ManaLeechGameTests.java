@@ -6,7 +6,10 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
+
+import com.mojang.authlib.GameProfile;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.AlchemicalColossus;
@@ -23,8 +26,11 @@ import net.minecraft.gametest.framework.GameTestInfo;
 import net.minecraft.gametest.framework.GameTestListener;
 import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Difficulty;
@@ -46,6 +52,7 @@ import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import io.netty.channel.embedded.EmbeddedChannel;
 
 /** Isolated predator encounters, exact feeding boundaries, and conservation of stored mana. */
 final class ManaLeechGameTests {
@@ -76,12 +83,21 @@ final class ManaLeechGameTests {
 
         Vec3 at(double x, double z) { return origin.add(x, 0, z); }
 
-        @SuppressWarnings("removal")
         ServerPlayer player(double x, double z, double mana) {
-            ServerPlayer p = h.makeMockServerPlayerInLevel();
+            // The vanilla GameTest mock overrides gameMode() to CREATIVE, even after setGameMode.
+            CommonListenerCookie cookie = CommonListenerCookie.createInitial(
+                    new GameProfile(UUID.randomUUID(), "leech-test-player"), false);
+            ServerPlayer p = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation());
+            Connection connection = new Connection(PacketFlow.SERVERBOUND);
+            new EmbeddedChannel(connection);
+            level.getServer().getPlayerList().placeNewPlayer(connection, p, cookie);
             Vec3 pos = at(x, z);
             p.snapTo(pos.x, pos.y, pos.z, 0, 0);
             p.setGameMode(GameType.SURVIVAL);
+            p.getAbilities().instabuild = false;
+            p.getAbilities().invulnerable = false;
+            p.getAbilities().flying = false;
+            p.getAbilities().mayfly = false;
             p.connection.markClientLoaded();
             p.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
             p.setHealth(200);
@@ -136,7 +152,7 @@ final class ManaLeechGameTests {
         @Override public void close() {
             for (Entity e : entities) if (!e.isRemoved()) e.discard();
             for (Entity e : level.getEntitiesOfClass(Entity.class, bounds(), e -> e instanceof ManaLeech
-                    || e instanceof FreeManaEntity || e instanceof ItemEntity)) e.discard();
+                    || e instanceof FreeManaEntity || e instanceof ItemEntity || e instanceof ServerPlayer)) e.discard();
             for (BlockPos chunk : forced) level.setChunkForced(chunk.getX() >> 4, chunk.getZ() >> 4, false);
             level.getServer().setDifficulty(previousDifficulty, true);
         }
@@ -179,12 +195,10 @@ final class ManaLeechGameTests {
         h.assertTrue(Math.abs(actual - expected) < .001, message + ": expected " + expected + ", got " + actual);
     }
 
-    /** Tick the prey too, so vanilla damage immunity expires between one-second feeding pulses. */
+    /** Advance immunity without unrelated mana upkeep or food healing; real entity ticks have their own test. */
     private static void step(ManaLeech leech) {
         LivingEntity prey = leech.attachedTarget() != null ? leech.attachedTarget() : leech.getTarget();
-        if (prey instanceof ServerPlayer player) {
-            player.tick();
-        } else if (prey != null && prey.isAlive()) prey.tick();
+        if (prey != null && prey.invulnerableTime > 0) --prey.invulnerableTime;
         leech.tick();
     }
 
@@ -198,7 +212,11 @@ final class ManaLeechGameTests {
         leech.setTarget(prey);
         step(leech);
         f.h.assertTrue(leech.state() == ManaLeech.State.CHARGE && leech.stateTicks() == 0,
-                "prey in reach should start a fresh charge: " + leech.state() + "/" + leech.stateTicks());
+                "prey in reach should start a fresh charge: " + leech.state() + "/" + leech.stateTicks()
+                + ", available=" + ManaLeech.availableMana(prey) + ", found=" + leech.findPrey()
+                + ", sameLevel=" + (prey.level() == f.level) + ", visible=" + leech.hasLineOfSight(prey)
+                + ", queried=" + f.level.getEntitiesOfClass(LivingEntity.class, f.bounds()).contains(prey)
+                + (prey instanceof ServerPlayer p ? ", instabuild=" + p.getAbilities().instabuild + ", spectator=" + p.isSpectator() : ""));
     }
 
     private static void attach(Fixture f, ManaLeech leech, LivingEntity prey) {
@@ -423,10 +441,10 @@ final class ManaLeechGameTests {
             ServerPlayer owner = f.player(0, 8, 0);
             owner.setGameMode(GameType.CREATIVE);
             var familiar = f.mob(EntityType.HUSK, 0, 2);
-            familiar.setInvulnerable(true);
             Familiars.bindForTest(familiar, owner);
             ManaLeech leech = f.leech(0, 0);
             attach(f, leech, familiar);
+            familiar.setInvulnerable(true);
             steps(leech, 60);
             near(h, familiar.getHealth(), 20, "an invulnerable ordinary familiar loses no health");
             near(h, leech.mana(), 0, "rejected damage never creates absorbed mana");
