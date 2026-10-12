@@ -164,6 +164,16 @@ public class LogosMod {
             BLOCK_ENTITIES.register("copy_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.CopyTableBlockEntity::new, COPY_TABLE.get()));
 
+    /** 炼金术桌: a two-block table holding materials, products, mana and a fluid tank for the alchemical processes. */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.AlchemyTableBlock> ALCHEMY_TABLE = BLOCKS.registerBlock(
+            "alchemy_table", dev.logos.block.AlchemyTableBlock::new,
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.WOOD).strength(2.5f).noOcclusion()
+                    .sound(net.minecraft.world.level.block.SoundType.WOOD).pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> ALCHEMY_TABLE_ITEM = ITEMS.registerSimpleBlockItem("alchemy_table", ALCHEMY_TABLE);
+    public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.AlchemyTableBlockEntity>> ALCHEMY_TABLE_BE =
+            BLOCK_ENTITIES.register("alchemy_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
+                    dev.logos.block.AlchemyTableBlockEntity::new, ALCHEMY_TABLE.get()));
+
     /** 游离魔力: mana a finished spell leaves in the world, gathered like experience. */
     public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.FreeManaEntity>> FREE_MANA =
             ENTITY_TYPES.register("free_mana", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.FreeManaEntity>of(
@@ -244,6 +254,7 @@ public class LogosMod {
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) out.accept(egg.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
+                out.accept(ALCHEMY_TABLE_ITEM.get());
                 for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
             }).build());
 
@@ -284,6 +295,17 @@ public class LogosMod {
             e.put(ALCHEMICAL_COLOSSUS.get(), dev.logos.runtime.AlchemicalColossus.createAttributes().build());
         });
         modBus.addListener((net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent e) -> e.register(MANA_FUEL));
+        // Either half of an alchemy table answers hoppers, pipes and tanks for the whole table.
+        modBus.addListener((net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent e) -> {
+            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) -> {
+                var table = dev.logos.block.AlchemyTableBlock.table(level, pos, state);
+                return table == null ? null : table.automation();
+            }, ALCHEMY_TABLE.get());
+            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Fluid.BLOCK, (level, pos, state, be, side) -> {
+                var table = dev.logos.block.AlchemyTableBlock.table(level, pos, state);
+                return table == null ? null : table.tank();
+            }, ALCHEMY_TABLE.get());
+        });
         dev.logos.runtime.Lifeforms.registerUI();
         dev.logos.runtime.Colossi.registerUI();
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent e) -> {
