@@ -255,7 +255,7 @@ public final class ProcessCard {
         for (RecipeHolder<AlchemyRecipe> h : level.recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get())) {
             if (h.value().process() == process) recipes.add(h.value());
         }
-        recipes.addAll(SpecialRecipes.forThings(process, sources.stream().map(Source::resource).toList()));
+        recipes.addAll(SpecialRecipes.forThings(process, sources.stream().map(Source::resource).toList(), level.potionBrewing()));
         recipes.sort(Comparator.comparingInt(AlchemyRecipe::kinds).reversed());
         return recipes;
     }
