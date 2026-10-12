@@ -46,7 +46,24 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
-/** A mana predator: seek the richest prey, charge, latch for three seconds, then fall and repeat. */
+/**
+ * A mana predator that chooses the richest player or player familiar within the configured radius.
+ * Ordinary familiars store mana as health; players and made familiars use their existing mana pools.
+ * Inside three blocks it charges for 30 ticks, physically lunges to the face, and latches for 60 ticks.
+ * Three one-second pulses take at most ten actual mana each; ordinary familiars receive only that
+ * health drain, while players and made familiars also take difficulty-scaled magic damage.
+ * Attack grows from two by two per ten mana actually absorbed, even if stored mana is later expelled.
+ *
+ * <p>Only a naturally spawned mother can split after collecting 60 mana. Both ends of the 40-tick
+ * split check that fewer than five living leeches, including the mother, are within sixteen blocks.
+ * The two zero-mana children cannot split again; they drop two or three existing tainted shards
+ * instead of free mana on death. An original drops one shard and 80% of its remaining stored mana.
+ * Bane of Arthropods keeps its vanilla bonus and expels 20% at level one, then ten percentage points
+ * per additional level. An effective melee hit from a Knockback-enchanted sword releases the latch.
+ *
+ * <p>The client uses nine runtime clips and fullbright texture masks. The searchable
+ * {@code TODO_MANA_LEECH_DEATH_BURST} hook remains empty for the maintainer's death effect.
+ */
 public final class ManaLeech extends Monster implements GeoEntity {
     public enum State { SEEK, CHARGE, POUNCE, ATTACHED, FALL, SPLIT }
 
