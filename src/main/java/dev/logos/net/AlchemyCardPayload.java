@@ -55,8 +55,9 @@ public record AlchemyCardPayload(BlockPos table, Action action, int card, int x,
         return new AlchemyCardPayload(table, Action.CLEAR, card, 0, 0, "", ItemResource.EMPTY);
     }
 
-    public static AlchemyCardPayload route(BlockPos table, int card, Item item, int target) {
-        return new AlchemyCardPayload(table, Action.ROUTE, card, target, 0, BuiltInRegistries.ITEM.getKey(item).toString(), ItemResource.EMPTY);
+    /** Wires card {@code card}'s product {@code product} (exactly that kind) to {@code target}. */
+    public static AlchemyCardPayload route(BlockPos table, int card, ItemResource product, int target) {
+        return new AlchemyCardPayload(table, Action.ROUTE, card, target, 0, "", product);
     }
 
     @Override
@@ -89,7 +90,7 @@ public record AlchemyCardPayload(BlockPos table, Action action, int card, int x,
             }
             case ROUTE -> {
                 boolean valid = p.x == ProcessCard.KEEP || p.x == ProcessCard.PRODUCTS || p.x >= 0 && p.x < table.cards().size() && p.x != p.card;
-                if (item != null && valid) card.setRoute(item, p.x);
+                if (!p.what.isEmpty() && valid) card.setRoute(p.what, p.x);
             }
             default -> {}
         }

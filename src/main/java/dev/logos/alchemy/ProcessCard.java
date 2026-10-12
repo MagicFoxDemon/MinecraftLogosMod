@@ -83,8 +83,9 @@ public final class ProcessCard {
             changed.run();
         }
     };
-    private final Map<Item, Integer> routes = new HashMap<>();
-    private final Set<Item> made = new java.util.LinkedHashSet<>();
+    /** Where each product goes, by its exact kind (a potion of healing and an awkward potion are wired apart). */
+    private final Map<ItemResource, Integer> routes = new HashMap<>();
+    private final Set<ItemResource> made = new java.util.LinkedHashSet<>();
     private int defaultRoute = KEEP;
     private int progress;
     private boolean working;
@@ -130,13 +131,22 @@ public final class ProcessCard {
         return designate(slot, item == null ? ItemResource.EMPTY : ItemResource.of(item));
     }
 
-    /** Where {@code item} goes once made: {@link #KEEP}, {@link #PRODUCTS} or another card's index. */
+    /** Where {@code product} goes once made: {@link #KEEP}, {@link #PRODUCTS} or another card's index. */
+    public int route(ItemResource product) {
+        return routes.getOrDefault(product, defaultRoute);
+    }
+
+    /** Where {@code item}, as it plainly comes (no data), goes once made. */
     public int route(Item item) {
-        return routes.getOrDefault(item, defaultRoute);
+        return route(ItemResource.of(item));
     }
 
     public void setRoute(Item item, int target) {
-        routes.put(item, target);
+        setRoute(ItemResource.of(item), target);
+    }
+
+    public void setRoute(ItemResource product, int target) {
+        routes.put(product, target);
         changed.run();
     }
 
@@ -246,14 +256,14 @@ public final class ProcessCard {
     private void remember(AlchemyRecipe recipe) {
         boolean added = false;
         for (ItemStackTemplate result : recipe.results()) {
-            Item item = result.item().value();
-            if (!isContainer(ItemResource.of(item))) added |= made.add(item);
+            ItemResource product = ItemResource.of(result);
+            if (!isContainer(product)) added |= made.add(product);
         }
         if (added) changed.run();
     }
 
     /** What the card has made so far, in the order first made: the products its panel lists and that can be wired on. */
-    public List<Item> made() {
+    public List<ItemResource> made() {
         return List.copyOf(made);
     }
 
@@ -398,7 +408,7 @@ public final class ProcessCard {
         for (int i = 0; i < SLOTS; i++) {
             ItemResource r = outputs.getResource(i);
             if (r.isEmpty()) continue;
-            int route = isContainer(r) ? GIVE_BACK : route(r.getItem());
+            int route = isContainer(r) ? GIVE_BACK : route(r);
             ProcessCard next = route >= 0 && route < table.cards().size() && table.cards().get(route) != this ? table.cards().get(route) : null;
             if (route == KEEP || route >= 0 && next == null) continue;
             try (Transaction tx = Transaction.openRoot()) {
@@ -432,7 +442,13 @@ public final class ProcessCard {
 
     // ---- saving -----------------------------------------------------------------------------------
 
-    private static final Codec<Map<Item, Integer>> ROUTES = Codec.unboundedMap(BuiltInRegistries.ITEM.byNameCodec(), Codec.INT);
+    /** Routes as saved before products were told apart exactly: item id to target. */
+    private static final Codec<Map<Item, Integer>> OLD_ROUTES = Codec.unboundedMap(BuiltInRegistries.ITEM.byNameCodec(), Codec.INT);
+
+    private record Route(ItemResource product, int target) {
+        static final Codec<Route> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.create(i -> i.group(
+                ItemResource.CODEC.fieldOf("product").forGetter(Route::product), Codec.INT.fieldOf("target").forGetter(Route::target)).apply(i, Route::new));
+    }
 
     public void save(ValueOutput out) {
         out.store("process", Process.CODEC, process);
@@ -441,8 +457,8 @@ public final class ProcessCard {
         }
         inputs.serialize(out.child("inputs"));
         outputs.serialize(out.child("outputs"));
-        out.store("routes", ROUTES, routes);
-        out.store("made", BuiltInRegistries.ITEM.byNameCodec().listOf(), List.copyOf(made));
+        out.store("wires", Route.CODEC.listOf(), routes.entrySet().stream().map(e -> new Route(e.getKey(), e.getValue())).toList());
+        out.store("products", ItemResource.CODEC.listOf(), List.copyOf(made));
         out.putInt("default_route", defaultRoute);
         out.putInt("progress", progress);
         out.store("status", ComponentSerialization.CODEC, status);
@@ -463,8 +479,11 @@ public final class ProcessCard {
         }
         in.child("inputs").ifPresent(card.inputs::deserialize);
         in.child("outputs").ifPresent(card.outputs::deserialize);
-        in.read("routes", ROUTES).ifPresent(card.routes::putAll);
-        in.read("made", BuiltInRegistries.ITEM.byNameCodec().listOf()).ifPresent(card.made::addAll);
+        // Tables saved before products were told apart exactly kept them by item id.
+        in.read("wires", Route.CODEC.listOf()).ifPresentOrElse(list -> list.forEach(r -> card.routes.put(r.product(), r.target())),
+                () -> in.read("routes", OLD_ROUTES).ifPresent(m -> m.forEach((item, target) -> card.routes.put(ItemResource.of(item), target))));
+        in.read("products", ItemResource.CODEC.listOf()).ifPresentOrElse(card.made::addAll,
+                () -> in.read("made", BuiltInRegistries.ITEM.byNameCodec().listOf()).ifPresent(list -> list.forEach(item -> card.made.add(ItemResource.of(item)))));
         card.defaultRoute = in.getIntOr("default_route", KEEP);
         card.progress = in.getIntOr("progress", 0);
         card.status = in.read("status", ComponentSerialization.CODEC).orElse(Component.empty());

@@ -159,6 +159,18 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .waitUntilServer("the second card is taken off", sc -> table.cards().size() == 1)
                 .ticks(5)
                 .checkHidden("#card1")
+                // Two kinds of the same item made: each listed apart, with its own colour.
+                .server("settle a swiftness and a poison potion", sc -> {
+                    ProcessCard settle = table.addCard(Process.SETTLE, 150, 0);
+                    try (Transaction tx = Transaction.openRoot()) {
+                        settle.inputs().insert(ItemResource.of(net.minecraft.world.item.alchemy.PotionContents.createItemStack(Items.POTION, net.minecraft.world.item.alchemy.Potions.SWIFTNESS)), 1, tx);
+                        settle.inputs().insert(ItemResource.of(net.minecraft.world.item.alchemy.PotionContents.createItemStack(Items.POTION, net.minecraft.world.item.alchemy.Potions.POISON)), 1, tx);
+                        tx.commit();
+                    }
+                })
+                .waitUntilServer("both powders are made", sc -> table.cards().get(1).made().size() == 2)
+                .waitUntil("the card lists both powders", ctx -> ctx.exists("#card1_product_potion_powder") && ctx.exists("#card1_product_potion_powder_2"))
+                .screenshot("canvas_two_powders")
                 .step("the screen has every slot it should", ctx -> {
                     if (!ctx.exists("#card0_in8") || !ctx.exists("#card3_out8")) throw new AssertionError("card slots are missing");
                     ItemStack held = ctx.player().containerMenu.getCarried();
