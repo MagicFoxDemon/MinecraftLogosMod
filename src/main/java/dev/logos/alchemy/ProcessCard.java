@@ -43,7 +43,8 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 /**
  * A process card laid on an alchemy table: one process, nine input slots and nine output slots.
  * An input slot designates an item (putting something in designates it too); the card then works
- * with what lies in its own slots and with the designated items in the table's storage. Like a
+ * with what lies in its own slots and with the designated items in the table's storage. A
+ * designation is exact: a potion of swiftness, not just any potion. Like a
  * furnace it starts by itself whenever some recipe of its process can be made, taking two seconds
  * and one mana per craft and the fewest materials. What it makes lands in its outputs and is passed
  * on along its routes: kept, put in the product area, or handed to another card's inputs. Empty
@@ -60,18 +61,19 @@ public final class ProcessCard {
     private static final int GIVE_BACK = -3;
 
     public final Process process;
-    private final Item[] designated = new Item[SLOTS];
+    /** What each input slot is set aside for, exactly (item and data, so one potion is not another); empty for nothing. */
+    private final ItemResource[] designated = new ItemResource[SLOTS];
     private final ItemStacksResourceHandler inputs = new ItemStacksResourceHandler(SLOTS) {
         @Override
         public boolean isValid(int index, ItemResource resource) {
-            return designated[index] == null || resource.is(designated[index]);
+            return designated[index].isEmpty() || resource.equals(designated[index]);
         }
 
         @Override
         protected void onContentsChanged(int index, ItemStack previous) {
             // Putting something in an undesignated slot designates it.
             ItemResource now = getResource(index);
-            if (!now.isEmpty() && designated[index] == null) designated[index] = now.getItem();
+            if (!now.isEmpty() && designated[index].isEmpty()) designated[index] = now;
             changed.run();
         }
     };
@@ -93,6 +95,7 @@ public final class ProcessCard {
 
     public ProcessCard(Process process) {
         this.process = process;
+        java.util.Arrays.fill(designated, ItemResource.EMPTY);
     }
 
     /** Called whenever what the card holds or how it is set up changes, so the table is saved. */
@@ -108,17 +111,23 @@ public final class ProcessCard {
         return outputs;
     }
 
-    public @Nullable Item designated(int slot) {
+    /** What input slot {@code slot} is set aside for; empty if nothing. */
+    public ItemResource designated(int slot) {
         return designated[slot];
     }
 
-    /** Designates {@code item} for an input slot (null clears it); refused while the slot holds something else. */
-    public boolean designate(int slot, @Nullable Item item) {
+    /** Designates exactly {@code what} for an input slot (empty clears it); refused while the slot holds something else. */
+    public boolean designate(int slot, ItemResource what) {
         ItemResource held = inputs.getResource(slot);
-        if (!held.isEmpty() && (item == null || !held.is(item))) return false;
-        designated[slot] = item;
+        if (!held.isEmpty() && !held.equals(what)) return false;
+        designated[slot] = what;
         changed.run();
         return true;
+    }
+
+    /** Designates {@code item} as it plainly comes (no data) for an input slot; null clears it. */
+    public boolean designate(int slot, @Nullable Item item) {
+        return designate(slot, item == null ? ItemResource.EMPTY : ItemResource.of(item));
     }
 
     /** Where {@code item} goes once made: {@link #KEEP}, {@link #PRODUCTS} or another card's index. */
@@ -269,14 +278,14 @@ public final class ProcessCard {
 
     private List<Source> sources(AlchemyTableBlockEntity table) {
         List<Source> out = new ArrayList<>();
-        Set<Item> wanted = new HashSet<>();
+        Set<ItemResource> wanted = new HashSet<>();
         for (int i = 0; i < SLOTS; i++) {
             out.add(new Source(inputs, i));
-            if (designated[i] != null) wanted.add(designated[i]);
+            if (!designated[i].isEmpty()) wanted.add(designated[i]);
         }
         for (int i = 0; i < table.items().size(); i++) {
             ItemResource r = table.items().getResource(i);
-            if (!r.isEmpty() && wanted.contains(r.getItem())) out.add(new Source(table.items(), i));
+            if (!r.isEmpty() && wanted.contains(r)) out.add(new Source(table.items(), i));
         }
         return out;
     }
@@ -363,7 +372,7 @@ public final class ProcessCard {
     private Component diagnose(AlchemyTableBlockEntity table) {
         if (table.mana() < MANA_PER_CRAFT) return Component.translatable("logos.alchemy_card.no_mana");
         boolean anything = false;
-        for (int i = 0; i < SLOTS; i++) anything |= designated[i] != null;
+        for (int i = 0; i < SLOTS; i++) anything |= !designated[i].isEmpty();
         if (!anything) return Component.translatable("logos.alchemy_card.idle");
         List<Component> best = null;
         List<Source> sources = sources(table);
@@ -405,8 +414,8 @@ public final class ProcessCard {
     /** Takes {@code amount} of {@code r} into the inputs: slots designating it first, then free undesignated ones. */
     int receive(ItemResource r, int amount, TransactionContext tx) {
         int in = 0;
-        for (int i = 0; i < SLOTS && in < amount; i++) if (designated[i] != null && r.is(designated[i])) in += inputs.insert(i, r, amount - in, tx);
-        for (int i = 0; i < SLOTS && in < amount; i++) if (designated[i] == null) in += inputs.insert(i, r, amount - in, tx);
+        for (int i = 0; i < SLOTS && in < amount; i++) if (r.equals(designated[i])) in += inputs.insert(i, r, amount - in, tx);
+        for (int i = 0; i < SLOTS && in < amount; i++) if (designated[i].isEmpty()) in += inputs.insert(i, r, amount - in, tx);
         return in;
     }
 
@@ -428,7 +437,7 @@ public final class ProcessCard {
     public void save(ValueOutput out) {
         out.store("process", Process.CODEC, process);
         for (int i = 0; i < SLOTS; i++) {
-            if (designated[i] != null) out.putString("designated" + i, BuiltInRegistries.ITEM.getKey(designated[i]).toString());
+            if (!designated[i].isEmpty()) out.store("designation" + i, ItemResource.CODEC, designated[i]);
         }
         inputs.serialize(out.child("inputs"));
         outputs.serialize(out.child("outputs"));
@@ -447,8 +456,10 @@ public final class ProcessCard {
         ProcessCard card = new ProcessCard(process);
         for (int i = 0; i < SLOTS; i++) {
             int slot = i;
-            in.getString("designated" + i).flatMap(id -> BuiltInRegistries.ITEM.getOptional(net.minecraft.resources.Identifier.tryParse(id)))
-                    .ifPresent(item -> card.designated[slot] = item);
+            // Tables saved before designations were exact kept just the item's id.
+            in.read("designation" + i, ItemResource.CODEC).or(() -> in.getString("designated" + slot)
+                            .flatMap(id -> BuiltInRegistries.ITEM.getOptional(net.minecraft.resources.Identifier.tryParse(id))).map(ItemResource::of))
+                    .ifPresent(what -> card.designated[slot] = what);
         }
         in.child("inputs").ifPresent(card.inputs::deserialize);
         in.child("outputs").ifPresent(card.outputs::deserialize);

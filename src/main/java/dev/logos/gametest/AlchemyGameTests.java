@@ -397,7 +397,7 @@ final class AlchemyGameTests {
         copy.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, registries, table.saveCustomOnly(registries)));
         h.assertTrue(copy.cards().size() == 4 && copy.cards().get(3).process == Process.SETTLE, "the cards were not saved");
         h.assertTrue(copy.cards().get(0).route(Items.SUGAR) == 2 && copy.cards().get(0).defaultRoute() == 3, "the routes were not saved");
-        h.assertTrue(copy.cards().get(1).designated(4) == Items.CLAY_BALL, "the designation was not saved");
+        h.assertTrue(copy.cards().get(1).designated(4).is(Items.CLAY_BALL), "the designation was not saved");
         h.assertTrue(copy.cards().get(0).made().equals(List.of(LogosMod.STARTER_CULTURE.get())), "what the card made was not saved: " + copy.cards().get(0).made());
         h.assertTrue(copy.cards().get(0).x() == 10 && copy.cards().get(0).y() == 20, "the card's place on the canvas was not saved");
         h.assertTrue(count(copy.cards().get(2).inputs(), Items.SUGAR) == 7, "the card's contents were not saved");
@@ -588,6 +588,33 @@ final class AlchemyGameTests {
             h.assertTrue(countPotion(card.outputs(), Potions.AWKWARD) == 3, "brewing made " + countPotion(card.outputs(), Potions.AWKWARD) + " of 3 awkward");
             h.assertTrue(table.fluid().isEmpty(), "the tank still holds " + table.fluid().getAmount() + " mB");
             h.assertTrue(count(card.inputs(), Items.GLASS_BOTTLE) == 0, "bottles are left");
+        });
+    }
+
+    /**
+     * Designations are exact: a card set aside for potions of swiftness takes those from storage and
+     * leaves a poison potion be. A card saved when designations were only an item id still loads.
+     */
+    static void processDesignatesExactly(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.SETTLE);
+        ItemStack swiftness = PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS);
+        card.designate(0, ItemResource.of(swiftness));
+        put(table.rawArea(), swiftness.copy());
+        put(table.rawArea(), PotionContents.createItemStack(Items.POTION, Potions.POISON));
+
+        CompoundTag old = new CompoundTag();
+        old.putString("process", "settle");
+        old.putString("designated3", "minecraft:sugar");
+        ProcessCard loaded = ProcessCard.load(TagValueInput.create(ProblemReporter.DISCARDING, h.getLevel().registryAccess(), old));
+        h.assertTrue(loaded != null && loaded.designated(3).is(Items.SUGAR), "an old item-id designation did not load");
+
+        h.succeedWhen(() -> {
+            int powders = 0;
+            for (int i = 0; i < card.outputs().size(); i++) if (card.outputs().getResource(i).is(LogosMod.POTION_POWDER.get())) powders += card.outputs().getAmountAsInt(i);
+            h.assertTrue(powders == 1, "the card settled " + powders + " potions, not just the swiftness one");
+            h.assertTrue(countPotion(table.rawArea(), Potions.POISON) == 1, "the undesignated poison potion was taken");
         });
     }
 }

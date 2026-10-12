@@ -48,14 +48,14 @@ public class AlchemyCanvasScenario implements UIScenario {
     /** Picks {@code item} in card 0's "designate from storage" list, as clicking it would. */
     @SuppressWarnings("unchecked")
     private static void designate(TestContext ctx, Item item) {
-        Selector<Item> s = ctx.el("#card0_designate").as(Selector.class);
-        if (!s.getCandidates().contains(item)) {
+        Selector<ItemResource> s = ctx.el("#card0_designate").as(Selector.class);
+        if (!s.getCandidates().contains(ItemResource.of(item))) {
             var t = ctx.clientBlockEntity(MAIN, AlchemyTableBlockEntity.class);
             StringBuilder held = new StringBuilder();
             for (int i = 0; i < t.items().size(); i++) held.append(t.items().getResource(i).getItem()).append(" x").append(t.items().getAmountAsInt(i)).append(", ");
             throw new AssertionError("the designate list lacks " + item + ": " + s.getCandidates() + "; client table holds " + held + " cards " + t.cards().size());
         }
-        s.setValue(item, true);
+        s.setValue(ItemResource.of(item), true);
     }
 
     private static int stored(AlchemyTableBlockEntity t, Item item) {
@@ -80,6 +80,7 @@ public class AlchemyCanvasScenario implements UIScenario {
                     table.setMana(100);
                     try (Transaction tx = Transaction.openRoot()) {
                         for (Item item : new Item[] {Items.SUGAR, Items.RED_MUSHROOM, Items.WHEAT}) table.rawArea().insert(ItemResource.of(item), 2, tx);
+                        table.rawArea().insert(ItemResource.of(net.minecraft.world.item.alchemy.PotionContents.createItemStack(Items.POTION, net.minecraft.world.item.alchemy.Potions.SWIFTNESS)), 1, tx);
                         tx.commit();
                     }
                 })
@@ -105,14 +106,24 @@ public class AlchemyCanvasScenario implements UIScenario {
                 // Nothing designated yet: the card says so (it looks once a second, so wait for it).
                 .waitUntil("the idle card says why", ctx -> ctx.el("#card0_status").isVisible())
                 .screenshot("canvas_idle_card")
+                .step("the designate list names potions exactly", ctx -> {
+                    @SuppressWarnings("unchecked")
+                    Selector<ItemResource> list = ctx.el("#card0_designate").as(Selector.class);
+                    ItemResource swiftness = ItemResource.of(net.minecraft.world.item.alchemy.PotionContents.createItemStack(Items.POTION, net.minecraft.world.item.alchemy.Potions.SWIFTNESS));
+                    if (!list.getCandidates().contains(swiftness)) throw new AssertionError("the list lacks the potion of swiftness: " + list.getCandidates());
+                })
+                .step("open the list", ctx -> ctx.el("#card0_designate").as(Selector.class).show())
+                .ticks(3)
+                .screenshot("canvas_designate_list")
+                .step("close the list", ctx -> ctx.el("#card0_designate").as(Selector.class).hide())
                 .step("designate sugar, a mushroom and wheat", ctx -> designate(ctx, Items.SUGAR))
-                .waitUntilServer("sugar designated", sc -> table.cards().get(0).designated(0) == Items.SUGAR)
+                .waitUntilServer("sugar designated", sc -> table.cards().get(0).designated(0).is(Items.SUGAR))
                 .ticks(3)
                 .step("designate a mushroom", ctx -> designate(ctx, Items.RED_MUSHROOM))
-                .waitUntilServer("mushroom designated", sc -> table.cards().get(0).designated(1) == Items.RED_MUSHROOM)
+                .waitUntilServer("mushroom designated", sc -> table.cards().get(0).designated(1).is(Items.RED_MUSHROOM))
                 .ticks(3)
                 .step("designate wheat", ctx -> designate(ctx, Items.WHEAT))
-                .waitUntilServer("wheat designated", sc -> table.cards().get(0).designated(2) == Items.WHEAT)
+                .waitUntilServer("wheat designated", sc -> table.cards().get(0).designated(2).is(Items.WHEAT))
                 .ticks(5)
                 .screenshot("canvas_designated")
                 // The first craft shows the product; it stays in the card until wired.
