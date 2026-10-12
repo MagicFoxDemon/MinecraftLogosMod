@@ -51,6 +51,14 @@ public final class LogosGameTests {
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
             "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role",
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
+            "mana_leech_richest_prey", "mana_leech_familiar_pools", "mana_leech_charge_interrupted", "mana_leech_precise_feeding",
+            "mana_leech_difficulty_damage", "mana_leech_limited_balance", "mana_leech_ordinary_familiar_drain",
+            "mana_leech_made_familiar_drain", "mana_leech_resisted_familiar_drain", "mana_leech_rejected_bane_hit",
+            "mana_leech_split_timing_offspring", "mana_leech_split_population_limit", "mana_leech_unnatural_never_splits",
+            "mana_leech_full_attachment_before_split", "mana_leech_knockback_sword_detaches",
+            "mana_leech_ordinary_weapon_keeps_latch", "mana_leech_invulnerable_sword_keeps_latch",
+            "mana_leech_death_drops", "mana_leech_offspring_death_drops", "mana_leech_reload_no_duplicate",
+            "mana_leech_bane_dispersal", "mana_leech_arthropod_health", "mana_leech_automatic_repeated_encounter",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
             "colossus_grabs_big", "colossus_grabs_from_reach", "colossus_defends_itself", "colossus_orders_before_self_defense", "colossus_stomps_small_foes", "colossus_grabs_rider", "colossus_lets_go_when_killed", "colossus_punches_crowd", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_cannon_strikes_at_once", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered", "colossus_jumps_off");
 
@@ -110,6 +118,29 @@ public final class LogosGameTests {
         FUNCTIONS.register("lifeform_heals_master", () -> LifeformGameTests::healsMaster);
         FUNCTIONS.register("lifeform_forages", () -> LifeformGameTests::foragesFreeMana);
         FUNCTIONS.register("lifeform_role", () -> LifeformGameTests::roleByStance);
+        FUNCTIONS.register("mana_leech_richest_prey", () -> ManaLeechGameTests::richestPrey);
+        FUNCTIONS.register("mana_leech_familiar_pools", () -> ManaLeechGameTests::familiarPools);
+        FUNCTIONS.register("mana_leech_charge_interrupted", () -> ManaLeechGameTests::chargeInterrupted);
+        FUNCTIONS.register("mana_leech_precise_feeding", () -> ManaLeechGameTests::preciseFeeding);
+        FUNCTIONS.register("mana_leech_difficulty_damage", () -> ManaLeechGameTests::difficultyDamage);
+        FUNCTIONS.register("mana_leech_limited_balance", () -> ManaLeechGameTests::limitedBalance);
+        FUNCTIONS.register("mana_leech_ordinary_familiar_drain", () -> ManaLeechGameTests::ordinaryFamiliarDrain);
+        FUNCTIONS.register("mana_leech_made_familiar_drain", () -> ManaLeechGameTests::madeFamiliarDrain);
+        FUNCTIONS.register("mana_leech_resisted_familiar_drain", () -> ManaLeechGameTests::resistedFamiliarDrain);
+        FUNCTIONS.register("mana_leech_rejected_bane_hit", () -> ManaLeechGameTests::rejectedBaneHit);
+        FUNCTIONS.register("mana_leech_split_timing_offspring", () -> ManaLeechGameTests::splitTimingAndOffspring);
+        FUNCTIONS.register("mana_leech_split_population_limit", () -> ManaLeechGameTests::splitPopulationLimit);
+        FUNCTIONS.register("mana_leech_full_attachment_before_split", () -> ManaLeechGameTests::fullAttachmentBeforeSplit);
+        FUNCTIONS.register("mana_leech_knockback_sword_detaches", () -> ManaLeechGameTests::knockbackSwordDetaches);
+        FUNCTIONS.register("mana_leech_ordinary_weapon_keeps_latch", () -> ManaLeechGameTests::ordinaryWeaponKeepsLatch);
+        FUNCTIONS.register("mana_leech_invulnerable_sword_keeps_latch", () -> ManaLeechGameTests::invulnerableSwordKeepsLatch);
+        FUNCTIONS.register("mana_leech_unnatural_never_splits", () -> ManaLeechGameTests::unnaturalNeverSplits);
+        FUNCTIONS.register("mana_leech_death_drops", () -> ManaLeechGameTests::deathDrops);
+        FUNCTIONS.register("mana_leech_offspring_death_drops", () -> ManaLeechGameTests::offspringDeathDrops);
+        FUNCTIONS.register("mana_leech_reload_no_duplicate", () -> ManaLeechGameTests::reloadStopsDuplicateFeeding);
+        FUNCTIONS.register("mana_leech_bane_dispersal", () -> ManaLeechGameTests::baneDispersal);
+        FUNCTIONS.register("mana_leech_arthropod_health", () -> ManaLeechGameTests::arthropodAndHealth);
+        FUNCTIONS.register("mana_leech_automatic_repeated_encounter", () -> ManaLeechGameTests::automaticRepeatedEncounter);
         FUNCTIONS.register("colossus_armour", () -> ColossusGameTests::armour);
         FUNCTIONS.register("colossus_spawn_egg_player", () -> ColossusSpawnEggGameTests::player);
         FUNCTIONS.register("colossus_spawn_egg_dispenser", () -> ColossusSpawnEggGameTests::dispenser);

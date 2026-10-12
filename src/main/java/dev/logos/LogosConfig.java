@@ -106,9 +106,37 @@ public final class LogosConfig {
         BUILDER.pop();
     }
 
+    static {
+        BUILDER.comment("Mana leeches").push("manaLeech");
+    }
+
+    public static final ModConfigSpec.DoubleValue MANA_LEECH_SEARCH_RADIUS = BUILDER
+            .comment("Radius in blocks in which a mana leech chooses the player or familiar holding the most mana.")
+            .translation("logos.configuration.manaLeechSearchRadius")
+            .defineInRange("searchRadius", 24.0, 3.0, 128.0);
+
+    public static final ModConfigSpec.DoubleValue MANA_LEECH_HEALTH = BUILDER
+            .comment("Maximum health of a newly spawned mana leech.")
+            .translation("logos.configuration.manaLeechHealth")
+            .defineInRange("health", 20.0, 1.0, 1024.0);
+
+    static {
+        BUILDER.pop();
+    }
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private LogosConfig() {}
+
+    public static double manaLeechSearchRadius() {
+        try { return MANA_LEECH_SEARCH_RADIUS.getAsDouble(); }
+        catch (IllegalStateException e) { return 24; }
+    }
+
+    public static double manaLeechHealth() {
+        try { return MANA_LEECH_HEALTH.getAsDouble(); }
+        catch (IllegalStateException e) { return 20; }
+    }
 
     public static int maxInjectedMana() {
         return read(MAX_INJECTED_MANA::getAsInt, Integer.MAX_VALUE);

@@ -57,6 +57,7 @@ public final class LogosClient {
         event.registerEntityRenderer(LogosMod.CONSTRUCT.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
         event.registerEntityRenderer(LogosMod.FREE_MANA.get(), FreeManaRenderer::new);
         event.registerEntityRenderer(LogosMod.MANA_LIFEFORM.get(), ManaLifeformRenderer::new);
+        event.registerEntityRenderer(LogosMod.MANA_LEECH.get(), ManaLeechRenderer::new);
         event.registerEntityRenderer(LogosMod.ALCHEMICAL_COLOSSUS.get(), ColossusRenderer::new);
     }
 
