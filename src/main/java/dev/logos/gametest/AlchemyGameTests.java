@@ -550,4 +550,44 @@ final class AlchemyGameTests {
             h.assertTrue(table.fluid().isEmpty(), "the tank still holds " + table.fluid().getAmount() + " mB");
         });
     }
+
+    // ---- brewing in dissolution -----------------------------------------------------------------
+
+    private static int countPotion(ResourceHandler<ItemResource> handler, net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> potion) {
+        int n = 0;
+        for (int i = 0; i < handler.size(); i++) {
+            ItemStack s = handler.getResource(i).toStack(handler.getAmountAsInt(i));
+            if (s.is(Items.POTION) && s.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).is(potion)) n += s.getCount();
+        }
+        return n;
+    }
+
+    /** Sugar and three awkward potions dissolve into three potions of swiftness, as in a brewing stand. */
+    static void brewsFromBase(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(Items.SUGAR, 2));
+        for (int i = 0; i < 3; i++) put(card.inputs(), PotionContents.createItemStack(Items.POTION, Potions.AWKWARD));
+        h.succeedWhen(() -> {
+            h.assertTrue(countPotion(card.outputs(), Potions.SWIFTNESS) == 3, "brewing made " + countPotion(card.outputs(), Potions.SWIFTNESS) + " of 3 swiftness");
+            h.assertTrue(count(card.inputs(), Items.SUGAR) == 1, "more than one sugar was used");
+            h.assertTrue(countPotion(card.inputs(), Potions.AWKWARD) == 0, "awkward potions are left");
+        });
+    }
+
+    /** Nether wart, three empty bottles and 750 mB from the tank dissolve into three awkward potions. */
+    static void brewsFromWater(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), 750);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(Items.NETHER_WART));
+        put(card.inputs(), new ItemStack(Items.GLASS_BOTTLE, 3));
+        h.succeedWhen(() -> {
+            h.assertTrue(countPotion(card.outputs(), Potions.AWKWARD) == 3, "brewing made " + countPotion(card.outputs(), Potions.AWKWARD) + " of 3 awkward");
+            h.assertTrue(table.fluid().isEmpty(), "the tank still holds " + table.fluid().getAmount() + " mB");
+            h.assertTrue(count(card.inputs(), Items.GLASS_BOTTLE) == 0, "bottles are left");
+        });
+    }
 }
