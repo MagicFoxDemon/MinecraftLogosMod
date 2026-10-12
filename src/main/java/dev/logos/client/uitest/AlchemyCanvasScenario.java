@@ -93,6 +93,9 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .ticks(5)
                 .checkVisible("#card0")
                 .checkHidden("#card1")
+                // Nothing designated yet: the card says so.
+                .checkVisible("#card0_status")
+                .screenshot("canvas_idle_card")
                 .step("designate sugar, a mushroom and wheat", ctx -> designate(ctx, Items.SUGAR))
                 .waitUntilServer("sugar designated", sc -> table.cards().get(0).designated(0) == Items.SUGAR)
                 .ticks(3)
