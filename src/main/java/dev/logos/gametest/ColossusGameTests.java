@@ -252,6 +252,29 @@ final class ColossusGameTests {
         });
     }
 
+    /** A foe within its reach (here a warden two blocks off) is grabbed from there, without first stepping in to touch it; its hand need not meet it. */
+    static void grabsFromReach(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        p.setGameMode(GameType.CREATIVE);
+        FamiliarGameTests.forceAround(h, 1);
+        AlchemicalColossus c = raise(h, p, new Vec3(4.5, 2, 3.5));
+        Warden w = h.spawn(EntityType.WARDEN, new Vec3(4.5, 2, 7.0));
+        w.setNoAi(true);
+        boolean[] ordered = {false}, held = {false};
+        double[] gapAtReach = {-1};
+        h.succeedWhen(() -> {
+            if (!ordered[0]) {
+                h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
+                Familiars.order(c, w);
+                ordered[0] = true;
+            }
+            if (gapAtReach[0] < 0 && c.act() == AlchemicalColossus.Act.GRAB_REACH) gapAtReach[0] = c.distanceTo(w) - (c.getBbWidth() + w.getBbWidth()) / 2;
+            h.assertTrue(gapAtReach[0] < 0 || gapAtReach[0] > 1, "it stepped in to " + gapAtReach[0] + " before reaching");
+            if (c.holdOf(w) == AlchemicalColossus.Hold.GRIP) held[0] = true;
+            h.assertTrue(held[0], "it should take the warden in hand: " + c.act());
+        });
+    }
+
     /** A big foe is picked up too: a warden, too sturdy to finish, is slammed for 80. */
     static void grabsBig(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
