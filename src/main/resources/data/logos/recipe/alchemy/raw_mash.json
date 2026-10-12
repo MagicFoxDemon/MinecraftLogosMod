@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "dissolve",
+  "ingredients": [
+    { "ingredient": "logos:starter_culture" },
+    { "ingredient": "minecraft:glass_bottle", "count": 3 }
+  ],
+  "fluid": { "ingredient": "minecraft:water", "amount": 750 },
+  "results": [
+    { "id": "logos:raw_mash", "count": 3 }
+  ]
+}

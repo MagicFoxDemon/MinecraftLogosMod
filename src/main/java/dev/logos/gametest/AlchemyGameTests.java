@@ -3,6 +3,8 @@ package dev.logos.gametest;
 import java.util.List;
 
 import dev.logos.LogosMod;
+import dev.logos.alchemy.Process;
+import dev.logos.alchemy.ProcessCard;
 import dev.logos.block.AlchemyTableBlock;
 import dev.logos.block.AlchemyTableBlockEntity;
 import dev.logos.runtime.FreeManaEntity;
@@ -32,6 +34,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
@@ -222,5 +225,154 @@ final class AlchemyGameTests {
             h.assertTrue(Math.abs(table.mana() - 50 * 0.8) < 0.01, "the table gathered " + table.mana() + " of 40");
             h.assertFalse(orb.isAlive(), "the gathered orb is still there");
         });
+    }
+
+    // ---- process cards ---------------------------------------------------------------------------
+
+    private static ItemStack waterBottle() {
+        return PotionContents.createItemStack(Items.POTION, Potions.WATER);
+    }
+
+    /** How many of {@code item} lie in {@code handler}. */
+    private static int count(ResourceHandler<ItemResource> handler, net.minecraft.world.item.Item item) {
+        int n = 0;
+        for (int i = 0; i < handler.size(); i++) if (handler.getResource(i).is(item)) n += handler.getAmountAsInt(i);
+        return n;
+    }
+
+    private static void put(ResourceHandler<ItemResource> handler, ItemStack stack) {
+        try (Transaction tx = Transaction.openRoot()) {
+            handler.insert(ItemResource.of(stack), stack.getCount(), tx);
+            tx.commit();
+        }
+    }
+
+    /** Sugar, a mushroom and wheat laid in a fermentation card become three starter cultures in two seconds, for one mana. */
+    static void processFerments(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.FERMENT);
+        put(card.inputs(), new ItemStack(Items.SUGAR));
+        put(card.inputs(), new ItemStack(Items.RED_MUSHROOM));
+        put(card.inputs(), new ItemStack(Items.WHEAT));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.STARTER_CULTURE.get()) == 3, "the card made " + count(card.outputs(), LogosMod.STARTER_CULTURE.get()) + " starter cultures");
+            h.assertTrue(count(card.inputs(), Items.SUGAR) + count(card.inputs(), Items.WHEAT) + count(card.inputs(), Items.RED_MUSHROOM) == 0, "the materials were not used up");
+            h.assertTrue(table.mana() == 9, "the craft left " + table.mana() + " mana");
+        });
+    }
+
+    /** A card takes designated items from storage (and nothing else), and sends its products to the product area. */
+    static void processDesignatesAndRoutes(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.FERMENT);
+        card.designate(0, Items.SUGAR);
+        card.designate(1, Items.BROWN_MUSHROOM);
+        card.designate(2, Items.WHEAT);
+        card.setRoute(LogosMod.STARTER_CULTURE.get(), ProcessCard.PRODUCTS);
+        put(table.rawArea(), new ItemStack(Items.SUGAR, 2));
+        put(table.rawArea(), new ItemStack(Items.BROWN_MUSHROOM, 2));
+        put(table.rawArea(), new ItemStack(Items.WHEAT, 2));
+        // Not designated: the starter-and-wheat recipe must not touch these.
+        put(table.rawArea(), new ItemStack(LogosMod.STARTER_CULTURE.get(), 5));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(table.productArea(), LogosMod.STARTER_CULTURE.get()) == 6, "the product area holds "
+                    + count(table.productArea(), LogosMod.STARTER_CULTURE.get()) + " of 6 starter cultures");
+            h.assertTrue(count(table.rawArea(), LogosMod.STARTER_CULTURE.get()) == 5, "undesignated starter culture was used");
+            h.assertTrue(table.mana() == 8, "two crafts left " + table.mana() + " mana");
+        });
+    }
+
+    /** Three water bottles pour 750 mB and their bottles hold the three raw mash: no bottle is gained or lost. */
+    static void processDissolvesWaterBottles(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(LogosMod.STARTER_CULTURE.get()));
+        for (int i = 0; i < 3; i++) put(card.inputs(), waterBottle());
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.RAW_MASH.get()) == 3, "the card made " + count(card.outputs(), LogosMod.RAW_MASH.get()) + " raw mash");
+            h.assertTrue(count(card.inputs(), Items.POTION) == 0, "water bottles are left");
+            h.assertTrue(count(table.items(), Items.GLASS_BOTTLE) + count(card.outputs(), Items.GLASS_BOTTLE) == 0, "bottles were left over");
+            h.assertTrue(table.fluid().isEmpty(), "the tank holds " + table.fluid().getAmount() + " mB");
+        });
+    }
+
+    /** With water in the tank, a card fills empty bottles from storage instead. */
+    static void processDissolvesFromTank(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(LogosMod.STARTER_CULTURE.get()));
+        card.designate(1, Items.GLASS_BOTTLE);
+        put(table.rawArea(), new ItemStack(Items.GLASS_BOTTLE, 3));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.RAW_MASH.get()) == 3, "the card made " + count(card.outputs(), LogosMod.RAW_MASH.get()) + " raw mash");
+            h.assertTrue(count(table.rawArea(), Items.GLASS_BOTTLE) == 0, "the bottles in storage were not used");
+            h.assertTrue(table.fluid().getAmount() == 250, "the tank holds " + table.fluid().getAmount() + " of 250 mB");
+        });
+    }
+
+    /**
+     * A chain: distilling foul brine sends its niter mother liquor to a settling card and its sulfur
+     * to the products; settling makes saltpeter and the empty bottle goes back to the raw area.
+     */
+    static void processChains(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard distill = table.addCard(Process.DISTILL);
+        ProcessCard settle = table.addCard(Process.SETTLE);
+        distill.setRoute(LogosMod.NITER_MOTHER_LIQUOR.get(), 1);
+        distill.setRoute(LogosMod.SULFUR_POWDER.get(), ProcessCard.PRODUCTS);
+        put(distill.inputs(), new ItemStack(LogosMod.FOUL_BRINE.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(table.productArea(), LogosMod.SULFUR_POWDER.get()) == 2, "the products hold " + count(table.productArea(), LogosMod.SULFUR_POWDER.get()) + " of 2 sulfur");
+            h.assertTrue(count(settle.outputs(), LogosMod.SALTPETER.get()) == 2, "settling made " + count(settle.outputs(), LogosMod.SALTPETER.get()) + " of 2 saltpeter");
+            h.assertTrue(count(table.rawArea(), Items.GLASS_BOTTLE) == 1, "the empty bottle did not come back to the raw area");
+            h.assertTrue(table.mana() == 8, "two crafts left " + table.mana() + " mana");
+        });
+    }
+
+    /** Without mana nothing is made; with one mana, one craft is. */
+    static void processNeedsMana(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        ProcessCard card = table.addCard(Process.SETTLE);
+        put(card.inputs(), new ItemStack(LogosMod.NITER_MOTHER_LIQUOR.get(), 2));
+        h.runAfterDelay(ProcessCard.CRAFT_TICKS + 20, () -> {
+            h.assertTrue(count(card.outputs(), LogosMod.SALTPETER.get()) == 0 && card.progress() == 0, "the card worked without mana");
+            table.setMana(1);
+            h.succeedWhen(() -> {
+                h.assertTrue(count(card.outputs(), LogosMod.SALTPETER.get()) == 2, "one mana did not buy one craft");
+                h.assertTrue(table.mana() == 0 && count(card.inputs(), LogosMod.NITER_MOTHER_LIQUOR.get()) == 1, "more than one craft was made");
+            });
+        });
+    }
+
+    /** At most four cards; cards, designations and routes are saved; a removed card's contents go back to storage and routes to it are undone. */
+    static void processCardsKeepAndRemove(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        for (Process p : Process.values()) h.assertTrue(table.addCard(p) != null, "the table refused card " + p);
+        h.assertTrue(table.addCard(Process.FERMENT) == null, "the table took a fifth card");
+        table.cards().get(0).setRoute(Items.SUGAR, 2);
+        table.cards().get(0).setDefaultRoute(3);
+        table.cards().get(1).designate(4, Items.CLAY_BALL);
+        put(table.cards().get(2).inputs(), new ItemStack(Items.SUGAR, 7));
+
+        var registries = h.getLevel().registryAccess();
+        AlchemyTableBlockEntity copy = new AlchemyTableBlockEntity(table.getBlockPos(), table.getBlockState());
+        copy.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, registries, table.saveCustomOnly(registries)));
+        h.assertTrue(copy.cards().size() == 4 && copy.cards().get(3).process == Process.SETTLE, "the cards were not saved");
+        h.assertTrue(copy.cards().get(0).route(Items.SUGAR) == 2 && copy.cards().get(0).defaultRoute() == 3, "the routes were not saved");
+        h.assertTrue(copy.cards().get(1).designated(4) == Items.CLAY_BALL, "the designation was not saved");
+        h.assertTrue(count(copy.cards().get(2).inputs(), Items.SUGAR) == 7, "the card's contents were not saved");
+
+        table.removeCard(2);
+        h.assertTrue(table.cards().size() == 3, "the card was not removed");
+        h.assertTrue(count(table.rawArea(), Items.SUGAR) == 7, "the removed card's sugar did not go to storage");
+        h.assertTrue(table.cards().get(0).route(Items.SUGAR) == ProcessCard.KEEP, "a route to the removed card was kept");
+        h.assertTrue(table.cards().get(0).defaultRoute() == 2, "a route past the removed card did not move down");
+        h.succeed();
     }
 }

@@ -176,6 +176,20 @@ public class LogosMod {
             BLOCK_ENTITIES.register("alchemy_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.AlchemyTableBlockEntity::new, ALCHEMY_TABLE.get()));
 
+    public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeType<?>> RECIPE_TYPES =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.RECIPE_TYPE, MODID);
+    public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeSerializer<?>> RECIPE_SERIALIZERS =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.RECIPE_SERIALIZER, MODID);
+    public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeBookCategory> RECIPE_BOOK_CATEGORIES =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.RECIPE_BOOK_CATEGORY, MODID);
+    /** What an alchemy table's process cards make (data/…/recipe, type logos:alchemy). */
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeType<?>, net.minecraft.world.item.crafting.RecipeType<dev.logos.alchemy.AlchemyRecipe>> ALCHEMY_RECIPE =
+            RECIPE_TYPES.register("alchemy", net.minecraft.world.item.crafting.RecipeType::simple);
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.alchemy.AlchemyRecipe>> ALCHEMY_SERIALIZER =
+            RECIPE_SERIALIZERS.register("alchemy", () -> dev.logos.alchemy.AlchemyRecipe.SERIALIZER);
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeBookCategory, net.minecraft.world.item.crafting.RecipeBookCategory> ALCHEMY_BOOK_CATEGORY =
+            RECIPE_BOOK_CATEGORIES.register("alchemy", net.minecraft.world.item.crafting.RecipeBookCategory::new);
+
     /** 游离魔力: mana a finished spell leaves in the world, gathered like experience. */
     public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.FreeManaEntity>> FREE_MANA =
             ENTITY_TYPES.register("free_mana", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.FreeManaEntity>of(
@@ -281,6 +295,9 @@ public class LogosMod {
         ITEMS.register(modBus);
         BLOCKS.register(modBus);
         BLOCK_ENTITIES.register(modBus);
+        RECIPE_TYPES.register(modBus);
+        RECIPE_SERIALIZERS.register(modBus);
+        RECIPE_BOOK_CATEGORIES.register(modBus);
         ENTITY_TYPES.register(modBus);
         TABS.register(modBus);
         COMPONENTS.register(modBus);

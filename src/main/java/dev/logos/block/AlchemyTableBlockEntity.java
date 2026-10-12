@@ -5,7 +5,15 @@ import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.util.GeckoLibUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.jspecify.annotations.Nullable;
+
 import dev.logos.LogosMod;
+import dev.logos.alchemy.Process;
+import dev.logos.alchemy.ProcessCard;
 import dev.logos.runtime.FreeManaEntity;
 import dev.logos.runtime.Lifeforms;
 import dev.logos.runtime.ManaVessel;
@@ -31,6 +39,7 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
@@ -48,6 +57,8 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     static final double FREE_MANA_EFFICIENCY = 0.8;
     /** How much a wand hands over per use. */
     public static final int WAND_CHARGE = 100;
+    /** Process cards a table can hold at once. */
+    public static final int MAX_CARDS = 4;
     /** Changes reach watching clients at most this often, for the hourglass and the tank. */
     private static final int SYNC_INTERVAL = 5;
 
@@ -77,7 +88,11 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     /** What hoppers and pipes see: fuel and raw materials in, products out. Fuel first, so fuel finds its slot. */
     private final ResourceHandler<ItemResource> automation = new CombinedResourceHandler<>(
             OneWay.in(fuel, 0, 1), OneWay.in(items, 0, RAW_SLOTS), OneWay.out(items, RAW_SLOTS, SLOTS));
+    private final ResourceHandler<ItemResource> rawArea = RangedResourceHandler.of(items, 0, RAW_SLOTS);
+    private final ResourceHandler<ItemResource> productArea = RangedResourceHandler.of(items, RAW_SLOTS, SLOTS);
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+    /** The process cards laid on the table, in order; routes name a card by its place here. */
+    private final List<ProcessCard> cards = new ArrayList<>();
 
     private double mana;
     private boolean dirty;
@@ -100,6 +115,45 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
 
     public ResourceHandler<ItemResource> automation() {
         return automation;
+    }
+
+    /** The raw-material area: where pipes put things and where empty bottles come back. */
+    public ResourceHandler<ItemResource> rawArea() {
+        return rawArea;
+    }
+
+    public ResourceHandler<ItemResource> productArea() {
+        return productArea;
+    }
+
+    public List<ProcessCard> cards() {
+        return Collections.unmodifiableList(cards);
+    }
+
+    /** Lays a card of {@code process} on the table; null when it already holds {@link #MAX_CARDS}. */
+    public @Nullable ProcessCard addCard(Process process) {
+        if (cards.size() >= MAX_CARDS) return null;
+        ProcessCard card = new ProcessCard(process);
+        card.onChange(this::setChanged);
+        cards.add(card);
+        setChanged();
+        return card;
+    }
+
+    /** Takes card {@code index} off: what it holds goes into storage (or drops if there is no room), and routes to it are undone. */
+    public void removeCard(int index) {
+        ProcessCard card = cards.remove(index);
+        for (ItemStack s : card.contents()) {
+            int left = s.getCount();
+            try (Transaction tx = Transaction.openRoot()) {
+                left -= rawArea.insert(ItemResource.of(s), left, tx);
+                if (left > 0) left -= productArea.insert(ItemResource.of(s), left, tx);
+                tx.commit();
+            }
+            if (left > 0 && level != null) Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY() + 1, worldPosition.getZ(), s.copyWithCount(left));
+        }
+        for (ProcessCard other : cards) other.cardRemoved(index);
+        setChanged();
     }
 
     public FluidStack fluid() {
@@ -139,7 +193,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         return f == null || f.unstable() ? 0 : (int) f.mana();
     }
 
-    /** Every tick on the server: burn fuel that fits, take in free mana on the table, and tell clients what changed. */
+    /** Every tick on the server: burn fuel that fits, work the process cards, take in free mana on the table, and tell clients what changed. */
     public static void serverTick(Level level, BlockPos pos, BlockState state, AlchemyTableBlockEntity table) {
         ItemStack f = table.fuel.getResource(0).toStack(table.fuel.getAmountAsInt(0));
         int value = fuelValue(f);
@@ -148,6 +202,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
             table.fuel.set(0, table.fuel.getResource(0), f.getCount() - 1);
             table.setMana(table.mana + value);
         }
+        for (ProcessCard card : table.cards) card.tick(table);
         if (level.getGameTime() % 10 == 0 && table.mana < MAX_MANA) {
             for (FreeManaEntity orb : level.getEntitiesOfClass(FreeManaEntity.class, table.reach())) {
                 orb.drainInto(table, FREE_MANA_EFFICIENCY);
@@ -178,6 +233,8 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         fuel.serialize(output.child("fuel"));
         tank.serialize(output.child("tank"));
         output.putDouble("mana", mana);
+        ValueOutput.ValueOutputList list = output.childrenList("cards");
+        for (ProcessCard card : cards) card.save(list.addChild());
     }
 
     @Override
@@ -187,6 +244,13 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         input.child("fuel").ifPresent(fuel::deserialize);
         input.child("tank").ifPresent(tank::deserialize);
         mana = input.getDoubleOr("mana", 0);
+        cards.clear();
+        for (ValueInput c : input.childrenListOrEmpty("cards")) {
+            ProcessCard card = ProcessCard.load(c);
+            if (card == null) continue;
+            card.onChange(this::setChanged);
+            cards.add(card);
+        }
     }
 
     /** Clients draw the hourglass and the tank, so they get the pool and the tank (and, simply, the rest). */
@@ -208,6 +272,9 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
                 ItemStack s = handler.getResource(i).toStack(handler.getAmountAsInt(i));
                 if (!s.isEmpty()) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), s);
             }
+        }
+        for (ProcessCard card : cards) {
+            for (ItemStack s : card.contents()) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), s);
         }
     }
 
