@@ -81,6 +81,8 @@ public final class ProcessCard {
     private final Map<Item, Integer> routes = new HashMap<>();
     private int defaultRoute = KEEP;
     private int progress;
+    /** Where the card lies on the table screen's canvas, in screen units from its top left. */
+    private int x, y;
     private Runnable changed = () -> {};
 
     public ProcessCard(Process process) {
@@ -129,6 +131,20 @@ public final class ProcessCard {
 
     public void setDefaultRoute(int target) {
         defaultRoute = target;
+        changed.run();
+    }
+
+    public int x() {
+        return x;
+    }
+
+    public int y() {
+        return y;
+    }
+
+    public void moveTo(int x, int y) {
+        this.x = x;
+        this.y = y;
         changed.run();
     }
 
@@ -261,7 +277,7 @@ public final class ProcessCard {
         return true;
     }
 
-    private static boolean isContainer(ItemResource r) {
+    static boolean isContainer(ItemResource r) {
         return r.is(Items.GLASS_BOTTLE) || r.is(Items.BUCKET);
     }
 
@@ -316,6 +332,8 @@ public final class ProcessCard {
         out.store("routes", ROUTES, routes);
         out.putInt("default_route", defaultRoute);
         out.putInt("progress", progress);
+        out.putInt("x", x);
+        out.putInt("y", y);
     }
 
     public static @Nullable ProcessCard load(ValueInput in) {
@@ -332,6 +350,8 @@ public final class ProcessCard {
         in.read("routes", ROUTES).ifPresent(card.routes::putAll);
         card.defaultRoute = in.getIntOr("default_route", KEEP);
         card.progress = in.getIntOr("progress", 0);
+        card.x = in.getIntOr("x", 0);
+        card.y = in.getIntOr("y", 0);
         return card;
     }
 }

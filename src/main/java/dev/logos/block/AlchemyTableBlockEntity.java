@@ -130,13 +130,19 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         return Collections.unmodifiableList(cards);
     }
 
-    /** Lays a card of {@code process} on the table; null when it already holds {@link #MAX_CARDS}. */
+    /** Lays a card of {@code process} on the table, in the next free place on the canvas; null when it already holds {@link #MAX_CARDS}. */
     public @Nullable ProcessCard addCard(Process process) {
+        return addCard(process, AlchemyTableUI.defaultX(cards.size()), AlchemyTableUI.defaultY(cards.size()));
+    }
+
+    /** Lays a card of {@code process} on the table at ({@code x}, {@code y}) on its canvas; null when it already holds {@link #MAX_CARDS}. */
+    public @Nullable ProcessCard addCard(Process process, int x, int y) {
         if (cards.size() >= MAX_CARDS) return null;
         ProcessCard card = new ProcessCard(process);
-        card.onChange(this::setChanged);
+        card.moveTo(x, y);
+        card.onChange(this::changed);
         cards.add(card);
-        setChanged();
+        changed();
         return card;
     }
 
@@ -153,7 +159,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
             if (left > 0 && level != null) Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY() + 1, worldPosition.getZ(), s.copyWithCount(left));
         }
         for (ProcessCard other : cards) other.cardRemoved(index);
-        setChanged();
+        changed();
     }
 
     public FluidStack fluid() {
@@ -248,7 +254,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         for (ValueInput c : input.childrenListOrEmpty("cards")) {
             ProcessCard card = ProcessCard.load(c);
             if (card == null) continue;
-            card.onChange(this::setChanged);
+            card.onChange(this::changed);
             cards.add(card);
         }
     }

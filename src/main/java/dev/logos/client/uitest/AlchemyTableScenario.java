@@ -1,11 +1,8 @@
 package dev.logos.client.uitest;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
-import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen;
-import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
 import com.lowdragmc.lowdraglib2.registry.RegistrationEnvironment;
 import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegisterClient;
@@ -16,7 +13,6 @@ import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 import dev.logos.LogosMod;
 import dev.logos.block.AlchemyTableBlock;
 import dev.logos.block.AlchemyTableBlockEntity;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -50,11 +46,6 @@ public class AlchemyTableScenario implements UIScenario {
         table.setMana(mana);
         table.clearTank();
         if (water > 0) table.tank().set(0, FluidResource.of(Fluids.WATER), water);
-    }
-
-    private static void collect(UIElement e, List<ProgressBar> out) {
-        if (e instanceof ProgressBar b) out.add(b);
-        for (UIElement c : e.getChildren()) collect(c, out);
     }
 
     /** 640 set, plus five amethyst shards burnt (25 each); 3250 mB poured. */
@@ -103,10 +94,8 @@ public class AlchemyTableScenario implements UIScenario {
                 })
                 .ticks(15)
                 .step("gauges show the pool and the tank", ctx -> {
-                    List<ProgressBar> bars = new ArrayList<>();
-                    if (Minecraft.getInstance().screen instanceof ModularUIContainerScreen screen) collect(screen.getMenu().getModularUI().ui.getRootElement(), bars);
+                    List<ProgressBar> bars = List.of(ctx.el("#mana_gauge").as(ProgressBar.class), ctx.el("#fluid_gauge").as(ProgressBar.class));
                     for (ProgressBar b : bars) System.out.printf("[logos] gauge %.0f of %.0f, fill %.0fx%.0f of %.0fx%.0f px%n", b.getValue(), b.getMaxValue(), b.bar.getSizeWidth(), b.bar.getSizeHeight(), b.barContainer.getSizeWidth(), b.barContainer.getSizeHeight());
-                    if (bars.size() != 2) throw new AssertionError("expected the mana and the fluid gauge, found " + bars.size());
                     expect(bars.get(0), 765);
                     expect(bars.get(1), 3250);
                 })

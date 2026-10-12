@@ -5,24 +5,12 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
-import com.lowdragmc.lowdraglib2.gui.sync.bindings.impl.DataBindingBuilder;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
-import com.lowdragmc.lowdraglib2.gui.ui.UI;
-import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.FluidSlot;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
-import com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots;
-import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.mojang.serialization.MapCodec;
 
 import dev.logos.LogosMod;
 import dev.logos.item.WandItem;
 import dev.logos.runtime.PlayerMagic;
-import dev.vfyjxf.taffy.style.AlignItems;
-import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -65,7 +53,6 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidUtil;
-import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
@@ -92,8 +79,6 @@ public class AlchemyTableBlock extends HorizontalDirectionalBlock implements Ent
     /** The table top; what stands above it (the hourglass, the still) does not block movement. */
     private static final VoxelShape BODY = Block.box(0, 0, 0, 16, 12, 16);
     private static final Map<Direction, VoxelShape> OUTLINE = Shapes.rotateHorizontal(Block.box(0, 0, 0, 16, 16, 16));
-    /** The gauges: the pale blue of the hourglass sand, and water blue. */
-    private static final int MANA_COLOUR = 0xFF9FD3EE, FLUID_COLOUR = 0xFF3F76E4;
 
     public AlchemyTableBlock(Properties properties) {
         super(properties);
@@ -253,77 +238,9 @@ public class AlchemyTableBlock extends HorizontalDirectionalBlock implements Ent
         return InteractionResult.SUCCESS;
     }
 
-    /** The storage, the fuel slot, the mana gauge and the tank. The process canvas comes with the processes. */
+    /** The storage, mana and tank, and the canvas of process cards: see {@link AlchemyTableUI}. */
     @Override
     public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
-        Player player = holder.player;
-        if (!(player.level().getBlockEntity(holder.pos) instanceof AlchemyTableBlockEntity table)) {
-            return ModularUI.of(UI.of(new UIElement()), player);
-        }
-        UIElement raw = new UIElement().layout(l -> l.gapAll(0));
-        for (int row = 0; row < AlchemyTableBlockEntity.RAW_SLOTS / 9; row++) raw.addChild(slotRow(table, row * 9, true));
-        UIElement products = slotRow(table, AlchemyTableBlockEntity.RAW_SLOTS, false);
-
-        // Fuel slot beside the mana gauge.
-        ItemSlot fuel = new ItemSlot();
-        fuel.bind(new ResourceHandlerSlot(table.fuel(), table.fuel()::set, 0, 0, 0));
-        Label manaText = new Label();
-        manaText.bind(DataBindingBuilder.componentS2C(() -> Component.translatable("logos.alchemy_table.mana",
-                (int) table.mana(), AlchemyTableBlockEntity.MAX_MANA)).build());
-        UIElement manaRow = row(fuel, column(manaText, gauge(() -> (float) table.mana(), AlchemyTableBlockEntity.MAX_MANA, 9 * 18 - 26, MANA_COLOUR)));
-
-        // The tank slot (buckets and bottles can be clicked on it) beside the fluid gauge and the button that empties it.
-        FluidSlot tank = new FluidSlot().bind(table.tank(), 0).setCapacity(AlchemyTableBlockEntity.TANK_CAPACITY);
-        tank.setAllowClickFilled(true).setAllowClickDrained(true);
-        Label fluidText = new Label();
-        fluidText.bind(DataBindingBuilder.componentS2C(() -> {
-            var f = table.fluid();
-            return Component.translatable("logos.alchemy_table.fluid", f.isEmpty() ? Component.translatable("logos.alchemy_table.empty") : f.getHoverName(),
-                    f.getAmount(), AlchemyTableBlockEntity.TANK_CAPACITY);
-        }).build());
-        Button clear = new Button().setText(Component.translatable("logos.alchemy_table.clear_tank"));
-        clear.setOnServerClick(e -> table.clearTank());
-        UIElement tankRow = row(tank, column(fluidText, row(gauge(() -> (float) table.fluid().getAmount(), AlchemyTableBlockEntity.TANK_CAPACITY, 9 * 18 - 66, FLUID_COLOUR), clear)));
-
-        UIElement root = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(7).gapAll(4));
-        root.addChildren(new Label().setText(Component.translatable("block.logos.alchemy_table")),
-                new Label().setText(Component.translatable("logos.alchemy_table.raw")), raw,
-                new Label().setText(Component.translatable("logos.alchemy_table.products")), products,
-                manaRow, tankRow, new InventorySlots());
-        return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
-    }
-
-    /** Nine storage slots from {@code start}; product slots can only be taken from. */
-    private static UIElement slotRow(AlchemyTableBlockEntity table, int start, boolean raw) {
-        UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW));
-        for (int i = start; i < start + 9; i++) {
-            ItemSlot slot = new ItemSlot();
-            slot.bind(raw ? new ResourceHandlerSlot(table.items(), table.items()::set, i, 0, 0) : new ResourceHandlerSlot(table.items(), table.items()::set, i, 0, 0) {
-                @Override
-                public boolean mayPlace(ItemStack stack) {
-                    return false;
-                }
-            });
-            row.addChild(slot);
-        }
-        return row;
-    }
-
-    /** A bar following a server-side value from 0 to {@code max}. */
-    private static ProgressBar gauge(java.util.function.Supplier<Float> value, float max, int width, int colour) {
-        ProgressBar bar = new ProgressBar().setRange(0, max);
-        bar.label(l -> l.setText(Component.empty()));
-        bar.bar(b -> b.style(s -> s.background(new com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture(colour))));
-        bar.bind(DataBindingBuilder.floatValS2C(value).build());
-        bar.layout(l -> l.width(width).height(12));
-        return bar;
-    }
-
-    private static UIElement column(UIElement... children) {
-        return new UIElement().layout(l -> l.gapAll(2)).addChildren(children);
-    }
-
-    private static UIElement row(UIElement... children) {
-        return new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(6).alignItems(AlignItems.CENTER)).addChildren(children);
+        return AlchemyTableUI.create(holder);
     }
 }
