@@ -41,7 +41,8 @@ public class AlchemyCanvasScenario implements UIScenario {
 
     @Override
     public void configure(ScenarioOptions o) {
-        o.tags("logos", "alchemy").guiScale(2);
+        // GUI scale 4 on the test window: the 480×270 a 16:9 1080p screen gets at the usual setting.
+        o.tags("logos", "alchemy").guiScale(4);
     }
 
     /** Picks {@code item} in card 0's "designate from storage" list, as clicking it would. */
@@ -87,9 +88,15 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .server("open it", sc -> BlockUIMenuType.openUI((ServerPlayer) sc.player(), MAIN))
                 .awaitModularUI()
                 .ticks(5)
+                .click("#tab_process")
+                .ticks(5)
+                .checkVisible("#process_page")
+                .checkHidden("#storage_page")
                 .checkHidden("#card0")
-                .drag("#palette_ferment", "#canvas")
+                .drag("#palette_ferment", "#canvas_view")
                 .waitUntilServer("a fermentation card is laid", sc -> table.cards().size() == 1 && table.cards().get(0).process == Process.FERMENT)
+                // Dropped where the mouse was; put it at the board's corner so all of it is in view.
+                .server("put the card in the corner", sc -> table.cards().get(0).moveTo(0, 0))
                 .ticks(5)
                 .checkVisible("#card0")
                 .checkHidden("#card1")
@@ -117,18 +124,18 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .ticks(5)
                 .screenshot("canvas_made")
                 .serverGet("card position", "before", sc -> table.cards().get(0).x() + "," + table.cards().get(0).y())
-                .drag("#card0_title", "#canvas")
+                .drag("#card0_title", "#canvas_view")
                 .waitUntil("dragging the title moves the card", ctx -> {
                     var c = ctx.clientBlockEntity(MAIN, AlchemyTableBlockEntity.class).cards().get(0);
                     return !(c.x() + "," + c.y()).equals(ctx.get("before"));
                 })
-                .drag("#palette_distill", "#canvas")
+                .drag("#palette_distill", "#canvas_view")
                 .waitUntilServer("a second card is laid", sc -> table.cards().size() == 2 && table.cards().get(1).process == Process.DISTILL)
                 .ticks(5)
                 .checkVisible("#card1")
                 .server("set the two cards side by side", sc -> {
                     table.cards().get(0).moveTo(0, 0);
-                    table.cards().get(1).moveTo(160, 110);
+                    table.cards().get(1).moveTo(160, 20);
                 })
                 .ticks(10)
                 .drag("#card0_product_starter_culture", "#card1")

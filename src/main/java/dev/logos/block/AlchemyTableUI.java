@@ -23,6 +23,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.ItemSlot;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
@@ -48,9 +49,10 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * The alchemy table's screen. On the left the storage (raw-material and product areas), the fuel
- * slot and mana gauge, the tank, and the player's inventory. In the middle the canvas, where process
- * cards lie; on the right the four kinds of card, to be dragged onto the canvas. A card on the canvas
+ * The alchemy table's screen, in two tabs so it fits a 16:9 window at the usual GUI scale. 存储:
+ * the storage (raw-material and product areas), the switch, the fuel slot and mana gauge, the tank,
+ * and the player's inventory, about a chest's size. 工艺: the four kinds of card above the board where
+ * process cards lie, the product node beside it and the hotbar below, filling most of the window. A card on the canvas
  * shows its inputs (designated but empty slots show their item faded), its outputs and its progress,
  * lets one designate an item from storage, and lists the products it has made. A product is wired on
  * by dragging it onto another card or onto the product-area node at the canvas's right; unwired, it
@@ -59,9 +61,10 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * {@link AlchemyCardPayload}s; the screen follows the table's state as the client sees it.
  */
 public final class AlchemyTableUI {
-    public static final int CANVAS_W = 340, CANVAS_H = 280, CARD_W = 140, CARD_H = 136;
+    /** The board cards lie on; the screen shows as much of it as fits, and it scrolls and pans. */
+    public static final int CANVAS_W = 600, CANVAS_H = 400, CARD_W = 140, CARD_H = 136;
     /** The product-area node on the canvas's right edge, which products can be wired to. */
-    private static final int NODE_W = 44, NODE_H = 64;
+    private static final int NODE_W = 52, NODE_H = 64;
     /** The gauges: the pale blue of the hourglass sand, and water blue. */
     private static final int MANA_COLOUR = 0xFF9FD3EE, FLUID_COLOUR = 0xFF3F76E4;
     /** A card's note on why it is not working. */
@@ -89,7 +92,7 @@ public final class AlchemyTableUI {
     }
 
     public static int clampX(int x) {
-        return Math.clamp(x, 0, CANVAS_W - NODE_W - 6 - CARD_W);
+        return Math.clamp(x, 0, CANVAS_W - CARD_W);
     }
 
     public static int clampY(int y) {
@@ -109,11 +112,76 @@ public final class AlchemyTableUI {
         if (!(player.level().getBlockEntity(holder.pos) instanceof AlchemyTableBlockEntity table)) {
             return ModularUI.of(UI.of(new UIElement()), player);
         }
-        Canvas canvas = new Canvas(table, holder.pos);
+        // The 工艺 page: the palette above, the board (scrolling, with the product node beside it), the hotbar below.
+        UIElement productsNode = productsNode();
+        Canvas canvas = new Canvas(table, holder.pos, productsNode);
+        ScrollerView view = new ScrollerView();
+        view.setId("canvas_view");
+        view.layout(l -> l.flex(1).heightPercent(100));
+        view.addScrollViewChild(canvas);
+        canvas.pansIn(view);
+        UIElement work = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flex(1).gapAll(4).alignItems(AlignItems.CENTER).widthPercent(100));
+        work.addChildren(view, productsNode);
+        UIElement processPage = new UIElement().layout(l -> l.flex(1).gapAll(4).widthPercent(100));
+        processPage.setId("process_page");
+        processPage.addChildren(palette(table), work, hotbar(player));
+        canvas.takesDropsOn(processPage);
 
-        UIElement root = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(7).gapAll(8).flexDirection(FlexDirection.ROW));
-        root.addChildren(storage(table), canvas, palette(table));
+        // The 存储 page: storage, mana, the tank and the inventory, about a chest's size.
+        UIElement storagePage = storage(table);
+        storagePage.setId("storage_page");
+
+        UIElement panel = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(6).gapAll(4));
+        Button storageTab = new Button().setText(Component.translatable("logos.alchemy_table.tab_storage"));
+        storageTab.setId("tab_storage");
+        Button processTab = new Button().setText(Component.translatable("logos.alchemy_table.tab_process"));
+        processTab.setId("tab_process");
+        Runnable showStorage = () -> {
+            storagePage.setDisplay(true);
+            processPage.setDisplay(false);
+            panel.layout(l -> l.widthAuto().heightAuto());
+        };
+        storageTab.setOnClick(e -> showStorage.run());
+        // The process page takes most of the window, whatever its size.
+        processTab.setOnClick(e -> {
+            storagePage.setDisplay(false);
+            processPage.setDisplay(true);
+            panel.layout(l -> l.widthPercent(96).heightPercent(94));
+        });
+        UIElement tabs = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3));
+        tabs.addChildren(storageTab, processTab);
+        panel.addChildren(tabs, storagePage, processPage);
+        showStorage.run();
+
+        UIElement root = new UIElement().layout(l -> l.widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
+        root.addChild(panel);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
+    }
+
+    /** The hotbar, on the process page, for putting things into cards straight from one's hand. */
+    private static UIElement hotbar(Player player) {
+        UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW));
+        for (int i = 0; i < 9; i++) {
+            ItemSlot slot = new ItemSlot();
+            slot.bind(new net.minecraft.world.inventory.Slot(player.getInventory(), i, 0, 0));
+            row.addChild(slot);
+        }
+        return row;
+    }
+
+    /** The product area's node, beside the board; wiring a product to it sends that product to the product area. */
+    private static UIElement productsNode() {
+        UIElement node = new UIElement();
+        node.setId("products_node");
+        node.layout(l -> l.width(NODE_W).height(NODE_H).paddingAll(2).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
+        node.style(s -> s.background(new ColorRectTexture(0x60D9A441)));
+        Label name = new Label();
+        name.setText(Component.translatable("logos.alchemy_table.products_node"));
+        name.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
+        name.layout(l -> l.width(NODE_W - 4));
+        name.setAllowHitTest(false);
+        node.addChild(name);
+        return node;
     }
 
     private static void send(AlchemyCardPayload payload) {
@@ -186,12 +254,11 @@ public final class AlchemyTableUI {
 
     // ---- the palette -----------------------------------------------------------------------------
 
-    /** The right column: one card of each process, to drag onto the canvas, and how many are laid. */
+    /** A strip above the board: one card of each process, to drag onto it, and how many are laid. */
     private static UIElement palette(AlchemyTableBlockEntity table) {
-        UIElement column = new UIElement().layout(l -> l.gapAll(4).width(64));
-        column.addChild(new Label().setText(Component.translatable("logos.alchemy_table.cards")));
+        UIElement column = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(4).alignItems(AlignItems.CENTER));
         for (Process p : Process.values()) {
-            UIElement chip = new UIElement().layout(l -> l.width(64).height(18).paddingAll(3));
+            UIElement chip = new UIElement().layout(l -> l.width(76).height(16).paddingAll(3));
             chip.setId("palette_" + p.getSerializedName());
             chip.style(s -> s.background(new ColorRectTexture(0x40FFFFFF)));
             Label name = new Label();
@@ -208,57 +275,62 @@ public final class AlchemyTableUI {
         Label count = new Label();
         count.addEventListener(UIEvents.TICK, e -> count.setText(Component.translatable("logos.alchemy_table.card_count",
                 table.cards().size(), AlchemyTableBlockEntity.MAX_CARDS)));
-        Label hint = new Label();
-        hint.setText(Component.translatable("logos.alchemy_table.card_hint"));
-        hint.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
-        hint.layout(l -> l.width(64));
-        column.addChildren(count, hint);
+        column.addChild(count);
         return column;
     }
 
     // ---- the canvas ------------------------------------------------------------------------------
 
     /**
-     * Where cards lie and wires run. It takes what is dropped on it (a new card, a moved card, a
-     * wire's end) and draws the wires behind the cards, each with arrows running from its product to
-     * where it goes, plus the wire being drawn while one is dragged.
+     * Where cards lie and wires run: a board larger than the screen shows, scrolled with the wheel
+     * and the scrollbars or panned by dragging an empty spot. It takes what is dropped on the process
+     * page (a new card, a moved card, a wire's end) and draws the wires behind the cards, each with
+     * arrows running from its product to where it goes, plus the wire being drawn while one is dragged.
+     * While no card is laid it says how to lay one.
      */
     private static final class Canvas extends UIElement {
         private final AlchemyTableBlockEntity table;
         private final List<CardPanel> panels = new ArrayList<>();
-        private final UIElement productsNode = new UIElement();
+        private final BlockPos pos;
+        private final UIElement productsNode;
+        private final Label hint = new Label();
         private float mouseX, mouseY;
         private @Nullable WireDrag drawing;
+        /** Where the mouse was while an empty spot of the board is dragged to pan it; null otherwise. */
+        private float @Nullable [] panFrom;
 
-        Canvas(AlchemyTableBlockEntity table, BlockPos pos) {
+        Canvas(AlchemyTableBlockEntity table, BlockPos pos, UIElement productsNode) {
             this.table = table;
+            this.pos = pos;
+            this.productsNode = productsNode;
             setId("canvas");
             layout(l -> l.width(CANVAS_W).height(CANVAS_H));
             style(s -> s.background(new ColorRectTexture(0x30000000)));
 
-            productsNode.setId("products_node");
-            productsNode.layout(l -> l.positionType(TaffyPosition.ABSOLUTE).left(CANVAS_W - NODE_W).top((CANVAS_H - NODE_H) / 2f)
-                    .width(NODE_W).height(NODE_H).paddingAll(2).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
-            productsNode.style(s -> s.background(new ColorRectTexture(0x60D9A441)));
-            Label nodeName = new Label();
-            nodeName.setText(Component.translatable("logos.alchemy_table.products_node"));
-            nodeName.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
-            nodeName.layout(l -> l.width(NODE_W - 4));
-            nodeName.setAllowHitTest(false);
-            productsNode.addChild(nodeName);
-            addChild(productsNode);
+            hint.setText(Component.translatable("logos.alchemy_table.card_hint"));
+            hint.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
+            hint.layout(l -> l.positionType(TaffyPosition.ABSOLUTE).left(8).top(8).width(220));
+            hint.setAllowHitTest(false);
+            addChild(hint);
 
             for (int i = 0; i < AlchemyTableBlockEntity.MAX_CARDS; i++) panels.add(new CardPanel(table, pos, i));
             panels.forEach(this::addChild);
             // Hidden elements are not ticked, so the always-shown canvas keeps the panels up to date.
-            addEventListener(UIEvents.TICK, e -> panels.forEach(CardPanel::refresh));
-            addEventListener(UIEvents.DRAG_UPDATE, e -> {
+            addEventListener(UIEvents.TICK, e -> {
+                panels.forEach(CardPanel::refresh);
+                hint.setDisplay(table.cards().isEmpty());
+            });
+        }
+
+        /** Drops anywhere on {@code page} (the board, the product node) land here. */
+        void takesDropsOn(UIElement page) {
+            page.addEventListener(UIEvents.DRAG_UPDATE, e -> {
                 mouseX = e.x;
                 mouseY = e.y;
                 drawing = e.dragHandler != null && e.dragHandler.draggingObject instanceof WireDrag w ? w : null;
             }, true);
-            addEventListener(UIEvents.DRAG_END, e -> drawing = null, true);
-            addEventListener(UIEvents.DRAG_PERFORM, e -> {
+            page.addEventListener(UIEvents.DRAG_END, e -> drawing = null, true);
+            page.addEventListener(UIEvents.DRAG_PERFORM, e -> {
                 drawing = null;
                 Object dragged = e.dragHandler == null ? null : e.dragHandler.draggingObject;
                 int x = (int) (e.x - getPositionX()), y = (int) (e.y - getPositionY());
@@ -266,6 +338,21 @@ public final class AlchemyTableUI {
                 else if (dragged instanceof MovedCard m) send(AlchemyCardPayload.move(pos, m.index, (int) (x - m.dx), (int) (y - m.dy)));
                 else if (dragged instanceof WireDrag w) send(AlchemyCardPayload.route(pos, w.card, w.item, wireTarget(w.card, e.x, e.y)));
             }, true);
+        }
+
+        /** Dragging an empty spot of the board pans {@code view}. */
+        void pansIn(ScrollerView view) {
+            addEventListener(UIEvents.MOUSE_DOWN, e -> {
+                if (e.target == this && e.button == 0) panFrom = new float[] {e.x, e.y};
+            });
+            view.addEventListener(UIEvents.MOUSE_MOVE, e -> {
+                if (panFrom == null) return;
+                view.horizontalScroller.scrollValue(panFrom[0] - e.x);
+                view.verticalScroller.scrollValue(panFrom[1] - e.y);
+                panFrom = new float[] {e.x, e.y};
+            }, true);
+            view.addEventListener(UIEvents.MOUSE_UP, e -> panFrom = null, true);
+            view.addEventListener(UIEvents.MOUSE_LEAVE, e -> panFrom = null);
         }
 
         /** What a wire dropped at ({@code x}, {@code y}) connects to: the product node, another card, or nothing (the product stays). */
