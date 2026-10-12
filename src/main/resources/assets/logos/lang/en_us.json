@@ -130,6 +130,8 @@
   "item.logos.sulfur_powder": "Sulfur Powder",
   "item.logos.saltpeter": "Saltpeter",
   "item.logos.adhesive": "Adhesive",
+  "item.logos.potion_powder": "Potion Powder",
+  "item.logos.potion_powder.of": "%s (Powder)",
   "key.logos.colossus_mode": "Colossus: Ride / Drive",
   "advancements.logos.colossus_frenzy.title": "This Colossus Has Gone Rogue",
   "advancements.logos.colossus_frenzy.description": "Witness an alchemical colossus fall into a mana frenzy",
