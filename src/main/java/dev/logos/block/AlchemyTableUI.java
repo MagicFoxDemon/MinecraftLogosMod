@@ -441,14 +441,14 @@ public final class AlchemyTableUI {
         /** Why the card is not working, when it is not. */
         private final Label status = new Label();
         private final ItemSlot[] inputs = new ItemSlot[ProcessCard.SLOTS];
-        private final Selector<Item> designate = new Selector<>();
+        private final Selector<ItemResource> designate = new Selector<>();
         /** One row per product the card has made, each with a port to wire it on from. */
         private final UIElement products = new UIElement().layout(l -> l.gapAll(2));
         private final java.util.Map<Item, UIElement> ports = new java.util.HashMap<>();
         /** What the product rows were built for, so they are rebuilt only when that changes. */
         private @Nullable Object productsFor;
         private final IGuiTexture[] ghosts = new IGuiTexture[ProcessCard.SLOTS];
-        private final Item[] ghostItems = new Item[ProcessCard.SLOTS];
+        private final ItemResource[] ghostItems = new ItemResource[ProcessCard.SLOTS];
 
         CardPanel(AlchemyTableBlockEntity table, BlockPos pos, int index) {
             this.table = table;
@@ -489,11 +489,11 @@ public final class AlchemyTableUI {
 
             // Designate an item that lies in storage; clear the designations of empty slots.
             designate.setId("card" + index + "_designate");
-            designate.setCandidateUIProvider(UIElementProvider.text(item -> item == null
-                    ? Component.translatable("logos.alchemy_table.designate") : new ItemStack(item).getHoverName()));
+            designate.setCandidateUIProvider(UIElementProvider.text(what -> what == null
+                    ? Component.translatable("logos.alchemy_table.designate") : what.getHoverName()));
             designate.layout(l -> l.flex(1));
-            designate.setOnValueChanged(item -> {
-                if (item != null) send(AlchemyCardPayload.designate(pos, index, item));
+            designate.setOnValueChanged(what -> {
+                if (what != null) send(AlchemyCardPayload.designate(pos, index, what));
             });
             Button clear = new Button().setText(Component.translatable("logos.alchemy_table.clear_designations"));
             clear.setOnClick(e -> send(AlchemyCardPayload.clear(pos, index)));
@@ -538,17 +538,18 @@ public final class AlchemyTableUI {
             status.setText(card.status());
             status.setDisplay(!card.status().getString().isEmpty());
             for (int i = 0; i < ProcessCard.SLOTS; i++) {
-                Item item = card.designated(i);
-                if (item == ghostItems[i]) continue;
-                ghostItems[i] = item;
-                ghosts[i] = item == null ? IGuiTexture.EMPTY : new GuiTextureGroup(new ItemStackTexture(item), new ColorRectTexture(GHOST));
+                ItemResource what = card.designated(i);
+                if (what.equals(ghostItems[i])) continue;
+                ghostItems[i] = what;
+                ghosts[i] = what.isEmpty() ? IGuiTexture.EMPTY : new GuiTextureGroup(new ItemStackTexture(what.toStack()), new ColorRectTexture(GHOST));
                 IGuiTexture ghost = ghosts[i];
                 inputs[i].slotStyle(s -> s.slotOverlay(ghost).showSlotOverlayOnlyEmpty(true));
             }
-            List<Item> stored = new ArrayList<>();
+            // Each distinct thing in storage, by its exact kind: every potion by name.
+            List<ItemResource> stored = new ArrayList<>();
             for (int i = 0; i < table.items().size(); i++) {
                 ItemResource r = table.items().getResource(i);
-                if (!r.isEmpty() && !stored.contains(r.getItem())) stored.add(r.getItem());
+                if (!r.isEmpty() && !stored.contains(r)) stored.add(r);
             }
             if (!stored.equals(designate.getCandidates())) designate.setCandidates(stored);
             refreshProducts(card);
