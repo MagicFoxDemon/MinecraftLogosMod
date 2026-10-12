@@ -241,6 +241,15 @@ public class LogosMod {
             ITEMS.registerItem("alchemical_colossus_spawn_egg", dev.logos.item.ColossusSpawnEggItem::new,
                     p -> p.spawnEgg(ALCHEMICAL_COLOSSUS.get()));
 
+    /** 汲魔蛭: a hostile arthropod that leaps onto the face of whoever holds the most mana and drinks it. Not yet spawned naturally. */
+    public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.ManaLeech>> MANA_LEECH =
+            ENTITY_TYPES.register("mana_leech", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ManaLeech>of(
+                            dev.logos.runtime.ManaLeech::new, net.minecraft.world.entity.MobCategory.MONSTER)
+                    .sized(0.8f, 0.45f).clientTrackingRange(8)
+                    .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+    public static final DeferredItem<net.minecraft.world.item.SpawnEggItem> MANA_LEECH_SPAWN_EGG =
+            ITEMS.registerItem("mana_leech_spawn_egg", net.minecraft.world.item.SpawnEggItem::new, p -> p.spawnEgg(MANA_LEECH.get()));
+
     /** Items that give a mana lifeform mana when it is fed with them (data/logos/data_maps/item/mana_fuel.json). */
     public static final net.neoforged.neoforge.registries.datamaps.DataMapType<net.minecraft.world.item.Item, dev.logos.runtime.Lifeforms.ManaFuel> MANA_FUEL =
             net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "mana_fuel"),
@@ -286,6 +295,7 @@ public class LogosMod {
                 out.accept(SALTPETER.get());
                 out.accept(ADHESIVE.get());
                 out.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
+                out.accept(MANA_LEECH_SPAWN_EGG.get());
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) out.accept(egg.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
@@ -325,12 +335,14 @@ public class LogosMod {
         modBus.addListener((BuildCreativeModeTabContentsEvent e) -> {
             if (e.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
                 e.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
+                e.accept(MANA_LEECH_SPAWN_EGG.get());
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) e.accept(egg.get());
             }
         });
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) -> {
             e.put(MANA_LIFEFORM.get(), dev.logos.runtime.ManaLifeform.createAttributes().build());
             e.put(ALCHEMICAL_COLOSSUS.get(), dev.logos.runtime.AlchemicalColossus.createAttributes().build());
+            e.put(MANA_LEECH.get(), dev.logos.runtime.ManaLeech.createAttributes().build());
         });
         modBus.addListener((net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent e) -> e.register(MANA_FUEL));
         // Either half of an alchemy table answers hoppers, pipes and tanks for the whole table.

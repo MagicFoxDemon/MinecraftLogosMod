@@ -84,6 +84,17 @@ public final class FreeManaEntity extends Entity {
             level = home;
             spot = scatter(home, caster);
         }
+        merge(level, spot, amount);
+    }
+
+    /** Sets {@code amount} free at {@code pos} (or the first open spot above it): what a creature carried spills out where it was struck or died. */
+    public static void release(ServerLevel level, Vec3 pos, double amount) {
+        if (amount < MIN_RELEASE) return;
+        merge(level, open(level, pos), amount);
+    }
+
+    /** Adds {@code amount} to free mana already hovering by {@code spot}, or makes new free mana there. */
+    private static void merge(ServerLevel level, Vec3 spot, double amount) {
         for (FreeManaEntity e : level.getEntitiesOfClass(FreeManaEntity.class, new AABB(spot, spot).inflate(MERGE_RADIUS), Entity::isAlive)) {
             e.setAmount(e.amount() + amount);
             e.age = 0;
