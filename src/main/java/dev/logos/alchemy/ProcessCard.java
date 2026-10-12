@@ -82,6 +82,7 @@ public final class ProcessCard {
         }
     };
     private final Map<Item, Integer> routes = new HashMap<>();
+    private final Set<Item> made = new java.util.LinkedHashSet<>();
     private int defaultRoute = KEEP;
     private int progress;
     private boolean working;
@@ -222,11 +223,29 @@ public final class ProcessCard {
                     if (!make(recipe, table, sources, attempt, null)) continue;
                     attempt.commit();
                 }
-                if (commit) tx.commit();
+                if (commit) {
+                    tx.commit();
+                    remember(recipe);
+                }
                 return recipe;
             }
         }
         return null;
+    }
+
+    /** Notes the products {@code recipe} made, so the card can show them (and they can be wired). Given-back bottles are not products. */
+    private void remember(AlchemyRecipe recipe) {
+        boolean added = false;
+        for (ItemStackTemplate result : recipe.results()) {
+            Item item = result.item().value();
+            if (!isContainer(ItemResource.of(item))) added |= made.add(item);
+        }
+        if (added) changed.run();
+    }
+
+    /** What the card has made so far, in the order first made: the products its panel lists and that can be wired on. */
+    public List<Item> made() {
+        return List.copyOf(made);
     }
 
     /** This process's recipes, richest first. */
@@ -320,8 +339,8 @@ public final class ProcessCard {
         }
         if (!ok) return false;
         for (ItemStackTemplate result : recipe.results()) {
-            ItemStack made = result.create();
-            if (outputs.insert(ItemResource.of(made), made.getCount(), tx) != made.getCount()) {
+            ItemStack product = result.create();
+            if (outputs.insert(ItemResource.of(product), product.getCount(), tx) != product.getCount()) {
                 if (missing != null) missing.add(Component.translatable("logos.alchemy_card.output_full"));
                 return false;
             }
@@ -413,6 +432,7 @@ public final class ProcessCard {
         inputs.serialize(out.child("inputs"));
         outputs.serialize(out.child("outputs"));
         out.store("routes", ROUTES, routes);
+        out.store("made", BuiltInRegistries.ITEM.byNameCodec().listOf(), List.copyOf(made));
         out.putInt("default_route", defaultRoute);
         out.putInt("progress", progress);
         out.store("status", ComponentSerialization.CODEC, status);
@@ -432,6 +452,7 @@ public final class ProcessCard {
         in.child("inputs").ifPresent(card.inputs::deserialize);
         in.child("outputs").ifPresent(card.outputs::deserialize);
         in.read("routes", ROUTES).ifPresent(card.routes::putAll);
+        in.read("made", BuiltInRegistries.ITEM.byNameCodec().listOf()).ifPresent(card.made::addAll);
         card.defaultRoute = in.getIntOr("default_route", KEEP);
         card.progress = in.getIntOr("progress", 0);
         card.status = in.read("status", ComponentSerialization.CODEC).orElse(Component.empty());
