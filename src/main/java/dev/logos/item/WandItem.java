@@ -9,15 +9,21 @@ import dev.logos.lang.Node;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.Level;
 
 /**
@@ -34,6 +40,16 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     public WandItem(Properties properties, int slots) {
         super(properties);
         this.slots = slots;
+    }
+
+    /** Reuses the sword swing and recovery timer for the basic wand's melee handling. */
+    public static Properties swordHandling(Properties properties) {
+        return properties.component(DataComponents.SWING_ANIMATION, SwingAnimation.DEFAULT)
+                .attributes(ItemAttributeModifiers.builder()
+                        .add(Attributes.ATTACK_SPEED,
+                                new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, -2.4F, AttributeModifier.Operation.ADD_VALUE),
+                                EquipmentSlotGroup.MAINHAND)
+                        .build());
     }
 
     public int slots() {

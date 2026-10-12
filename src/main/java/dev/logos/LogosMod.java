@@ -92,7 +92,7 @@ public class LogosMod {
                             .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
     /** Wand tiers differ only in how many spell pages they can hold. */
-    public static final DeferredItem<WandItem> WAND = ITEMS.registerItem("wand", p -> new WandItem(p, 3), p -> p.stacksTo(1));
+    public static final DeferredItem<WandItem> WAND = ITEMS.registerItem("wand", p -> new WandItem(p, 3), p -> WandItem.swordHandling(p.stacksTo(1)));
     public static final DeferredItem<WandItem> ADEPT_WAND = ITEMS.registerItem("adept_wand", p -> new WandItem(p, 6), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE));
     public static final DeferredItem<WandItem> MASTER_WAND = ITEMS.registerItem("master_wand",
             p -> new WandItem(p, 9), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC));
