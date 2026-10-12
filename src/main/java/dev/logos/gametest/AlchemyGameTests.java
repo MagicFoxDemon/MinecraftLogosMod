@@ -259,6 +259,7 @@ final class AlchemyGameTests {
             h.assertTrue(count(card.outputs(), LogosMod.STARTER_CULTURE.get()) == 3, "the card made " + count(card.outputs(), LogosMod.STARTER_CULTURE.get()) + " starter cultures");
             h.assertTrue(count(card.inputs(), Items.SUGAR) + count(card.inputs(), Items.WHEAT) + count(card.inputs(), Items.RED_MUSHROOM) == 0, "the materials were not used up");
             h.assertTrue(table.mana() == 9, "the craft left " + table.mana() + " mana");
+            h.assertTrue(card.made().equals(List.of(LogosMod.STARTER_CULTURE.get())), "the card lists " + card.made() + " as made");
         });
     }
 
@@ -384,6 +385,12 @@ final class AlchemyGameTests {
         table.cards().get(0).moveTo(10, 20);
         table.cards().get(1).designate(4, Items.CLAY_BALL);
         put(table.cards().get(2).inputs(), new ItemStack(Items.SUGAR, 7));
+        // Made products are remembered: craft once on card 0 the long way, by hand.
+        table.setMana(1);
+        put(table.cards().get(0).inputs(), new ItemStack(Items.SUGAR));
+        put(table.cards().get(0).inputs(), new ItemStack(Items.RED_MUSHROOM));
+        put(table.cards().get(0).inputs(), new ItemStack(Items.WHEAT));
+        h.assertTrue(table.cards().get(0).craft(table, true) != null, "card 0 could not craft");
 
         var registries = h.getLevel().registryAccess();
         AlchemyTableBlockEntity copy = new AlchemyTableBlockEntity(table.getBlockPos(), table.getBlockState());
@@ -391,6 +398,7 @@ final class AlchemyGameTests {
         h.assertTrue(copy.cards().size() == 4 && copy.cards().get(3).process == Process.SETTLE, "the cards were not saved");
         h.assertTrue(copy.cards().get(0).route(Items.SUGAR) == 2 && copy.cards().get(0).defaultRoute() == 3, "the routes were not saved");
         h.assertTrue(copy.cards().get(1).designated(4) == Items.CLAY_BALL, "the designation was not saved");
+        h.assertTrue(copy.cards().get(0).made().equals(List.of(LogosMod.STARTER_CULTURE.get())), "what the card made was not saved: " + copy.cards().get(0).made());
         h.assertTrue(copy.cards().get(0).x() == 10 && copy.cards().get(0).y() == 20, "the card's place on the canvas was not saved");
         h.assertTrue(count(copy.cards().get(2).inputs(), Items.SUGAR) == 7, "the card's contents were not saved");
 

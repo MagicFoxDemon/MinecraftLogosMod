@@ -25,15 +25,16 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.gui.ui.utils.UIElementProvider;
 
-import dev.logos.alchemy.AlchemyRecipes;
 import dev.logos.alchemy.Process;
 import dev.logos.alchemy.ProcessCard;
 import dev.logos.net.AlchemyCardPayload;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
+import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -51,18 +52,30 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * slot and mana gauge, the tank, and the player's inventory. In the middle the canvas, where process
  * cards lie; on the right the four kinds of card, to be dragged onto the canvas. A card on the canvas
  * shows its inputs (designated but empty slots show their item faded), its outputs and its progress,
- * lets one designate an item from storage, and picks a route for each of its process's products. Its
- * title bar drags it about; × takes it off. What a card does is sent to the server as
+ * lets one designate an item from storage, and lists the products it has made. A product is wired on
+ * by dragging it onto another card or onto the product-area node at the canvas's right; unwired, it
+ * stays in the card. Wires are drawn with arrows running along them. A card's title bar drags it
+ * about; × takes it off. What a card does is sent to the server as
  * {@link AlchemyCardPayload}s; the screen follows the table's state as the client sees it.
  */
 public final class AlchemyTableUI {
-    public static final int CANVAS_W = 300, CANVAS_H = 280, CARD_W = 140, CARD_H = 136;
+    public static final int CANVAS_W = 340, CANVAS_H = 280, CARD_W = 140, CARD_H = 136;
+    /** The product-area node on the canvas's right edge, which products can be wired to. */
+    private static final int NODE_W = 44, NODE_H = 64;
     /** The gauges: the pale blue of the hourglass sand, and water blue. */
     private static final int MANA_COLOUR = 0xFF9FD3EE, FLUID_COLOUR = 0xFF3F76E4;
-    /** A designated, empty input slot shows its item under this veil of slot grey. */
     /** A card's note on why it is not working. */
     private static final int STATUS_COLOUR = 0xFFFFB060;
+    /** A designated, empty input slot shows its item under this veil of slot grey. */
     private static final int GHOST = 0xA08B8B8B;
+    /**
+     * Wires: to another card in mana blue, to the product area in brass; the arrows running along
+     * them in white. Plain shapes for now; the look comes with the screen's art (issue #64).
+     */
+    private static final ColorRectTexture WIRE_TO_CARD = new ColorRectTexture(0xFF6FB6E8), WIRE_TO_PRODUCTS = new ColorRectTexture(0xFFD9A441),
+            ARROW = new ColorRectTexture(0xFFFFFFFF), PORT = new ColorRectTexture(0xFFE0E0E0);
+    /** How long an arrow takes to run the length of a wire. */
+    private static final long ARROW_MS = 1400;
 
     private AlchemyTableUI() {}
 
@@ -76,7 +89,7 @@ public final class AlchemyTableUI {
     }
 
     public static int clampX(int x) {
-        return Math.clamp(x, 0, CANVAS_W - CARD_W);
+        return Math.clamp(x, 0, CANVAS_W - NODE_W - 6 - CARD_W);
     }
 
     public static int clampY(int y) {
@@ -88,25 +101,15 @@ public final class AlchemyTableUI {
 
     private record MovedCard(int index, float dx, float dy) {}
 
+    /** A wire being drawn from card {@code card}'s product {@code item}. */
+    private record WireDrag(int card, Item item) {}
+
     static ModularUI create(BlockUIMenuType.BlockUIHolder holder) {
         Player player = holder.player;
         if (!(player.level().getBlockEntity(holder.pos) instanceof AlchemyTableBlockEntity table)) {
             return ModularUI.of(UI.of(new UIElement()), player);
         }
-        UIElement canvas = new UIElement().layout(l -> l.width(CANVAS_W).height(CANVAS_H));
-        canvas.setId("canvas");
-        canvas.style(s -> s.background(new ColorRectTexture(0x30000000)));
-        canvas.addEventListener(UIEvents.DRAG_PERFORM, e -> {
-            Object dragged = e.dragHandler == null ? null : e.dragHandler.draggingObject;
-            int x = (int) (e.x - canvas.getPositionX()), y = (int) (e.y - canvas.getPositionY());
-            if (dragged instanceof NewCard n) send(AlchemyCardPayload.add(holder.pos, n.process, x - 20, y - 6));
-            else if (dragged instanceof MovedCard m) send(AlchemyCardPayload.move(holder.pos, m.index, (int) (x - m.dx), (int) (y - m.dy)));
-        });
-        List<CardPanel> panels = new ArrayList<>();
-        for (int i = 0; i < AlchemyTableBlockEntity.MAX_CARDS; i++) panels.add(new CardPanel(table, holder.pos, i));
-        panels.forEach(canvas::addChild);
-        // Hidden elements are not ticked, so the always-shown canvas keeps the panels up to date.
-        canvas.addEventListener(UIEvents.TICK, e -> panels.forEach(CardPanel::refresh));
+        Canvas canvas = new Canvas(table, holder.pos);
 
         UIElement root = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(7).gapAll(8).flexDirection(FlexDirection.ROW));
         root.addChildren(storage(table), canvas, palette(table));
@@ -213,6 +216,129 @@ public final class AlchemyTableUI {
         return column;
     }
 
+    // ---- the canvas ------------------------------------------------------------------------------
+
+    /**
+     * Where cards lie and wires run. It takes what is dropped on it (a new card, a moved card, a
+     * wire's end) and draws the wires behind the cards, each with arrows running from its product to
+     * where it goes, plus the wire being drawn while one is dragged.
+     */
+    private static final class Canvas extends UIElement {
+        private final AlchemyTableBlockEntity table;
+        private final List<CardPanel> panels = new ArrayList<>();
+        private final UIElement productsNode = new UIElement();
+        private float mouseX, mouseY;
+        private @Nullable WireDrag drawing;
+
+        Canvas(AlchemyTableBlockEntity table, BlockPos pos) {
+            this.table = table;
+            setId("canvas");
+            layout(l -> l.width(CANVAS_W).height(CANVAS_H));
+            style(s -> s.background(new ColorRectTexture(0x30000000)));
+
+            productsNode.setId("products_node");
+            productsNode.layout(l -> l.positionType(TaffyPosition.ABSOLUTE).left(CANVAS_W - NODE_W).top((CANVAS_H - NODE_H) / 2f)
+                    .width(NODE_W).height(NODE_H).paddingAll(2).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
+            productsNode.style(s -> s.background(new ColorRectTexture(0x60D9A441)));
+            Label nodeName = new Label();
+            nodeName.setText(Component.translatable("logos.alchemy_table.products_node"));
+            nodeName.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
+            nodeName.layout(l -> l.width(NODE_W - 4));
+            nodeName.setAllowHitTest(false);
+            productsNode.addChild(nodeName);
+            addChild(productsNode);
+
+            for (int i = 0; i < AlchemyTableBlockEntity.MAX_CARDS; i++) panels.add(new CardPanel(table, pos, i));
+            panels.forEach(this::addChild);
+            // Hidden elements are not ticked, so the always-shown canvas keeps the panels up to date.
+            addEventListener(UIEvents.TICK, e -> panels.forEach(CardPanel::refresh));
+            addEventListener(UIEvents.DRAG_UPDATE, e -> {
+                mouseX = e.x;
+                mouseY = e.y;
+                drawing = e.dragHandler != null && e.dragHandler.draggingObject instanceof WireDrag w ? w : null;
+            }, true);
+            addEventListener(UIEvents.DRAG_END, e -> drawing = null, true);
+            addEventListener(UIEvents.DRAG_PERFORM, e -> {
+                drawing = null;
+                Object dragged = e.dragHandler == null ? null : e.dragHandler.draggingObject;
+                int x = (int) (e.x - getPositionX()), y = (int) (e.y - getPositionY());
+                if (dragged instanceof NewCard n) send(AlchemyCardPayload.add(pos, n.process, x - 20, y - 6));
+                else if (dragged instanceof MovedCard m) send(AlchemyCardPayload.move(pos, m.index, (int) (x - m.dx), (int) (y - m.dy)));
+                else if (dragged instanceof WireDrag w) send(AlchemyCardPayload.route(pos, w.card, w.item, wireTarget(w.card, e.x, e.y)));
+            }, true);
+        }
+
+        /** What a wire dropped at ({@code x}, {@code y}) connects to: the product node, another card, or nothing (the product stays). */
+        private int wireTarget(int from, float x, float y) {
+            if (inside(productsNode, x, y)) return ProcessCard.PRODUCTS;
+            for (int j = 0; j < panels.size(); j++) {
+                if (j != from && j < table.cards().size() && inside(panels.get(j), x, y)) return j;
+            }
+            return ProcessCard.KEEP;
+        }
+
+        private static boolean inside(UIElement e, float x, float y) {
+            return x >= e.getPositionX() && x <= e.getPositionX() + e.getSizeWidth() && y >= e.getPositionY() && y <= e.getPositionY() + e.getSizeHeight();
+        }
+
+        @Override
+        protected void drawBackgroundAdditional(IGUIContext ctx) {
+            super.drawBackgroundAdditional(ctx);
+            long now = System.currentTimeMillis();
+            for (int i = 0; i < Math.min(panels.size(), table.cards().size()); i++) {
+                ProcessCard card = table.cards().get(i);
+                CardPanel from = panels.get(i);
+                for (Item item : card.made()) {
+                    int target = card.route(item);
+                    UIElement port = from.port(item);
+                    if (port == null || target == ProcessCard.KEEP) continue;
+                    float sx = port.getPositionX() + port.getSizeWidth(), sy = port.getPositionY() + port.getSizeHeight() / 2;
+                    if (target == ProcessCard.PRODUCTS) {
+                        wire(ctx, sx, sy, productsNode.getPositionX(), productsNode.getPositionY() + NODE_H / 2f, WIRE_TO_PRODUCTS, now);
+                    } else if (target >= 0 && target < table.cards().size() && target != i) {
+                        CardPanel to = panels.get(target);
+                        float tx = to.getPositionX(), ty = to.getPositionY() + 10;
+                        wire(ctx, sx, sy, tx, ty, WIRE_TO_CARD, now);
+                        ctx.drawTexture(PORT, tx - 3, ty - 3, 3, 6);
+                    }
+                }
+            }
+            if (drawing != null && drawing.card < panels.size()) {
+                UIElement port = panels.get(drawing.card).port(drawing.item);
+                if (port != null) wire(ctx, port.getPositionX() + port.getSizeWidth(), port.getPositionY() + port.getSizeHeight() / 2, mouseX, mouseY, ARROW, -1);
+            }
+        }
+
+        /** A curve from (sx, sy) out to the right and into (tx, ty) from the left, with two arrows running along it ({@code now} below 0: none). */
+        private static void wire(IGUIContext ctx, float sx, float sy, float tx, float ty, ColorRectTexture colour, long now) {
+            float bend = Math.max(30, Math.abs(tx - sx) / 2);
+            int steps = (int) Math.max(12, (Math.abs(tx - sx) + Math.abs(ty - sy)) / 1.5f);
+            for (int k = 0; k <= steps; k++) {
+                float[] p = curve(sx, sy, tx, ty, bend, k / (float) steps);
+                ctx.drawTexture(colour, p[0] - 1, p[1] - 1, 2, 2);
+            }
+            if (now < 0) return;
+            for (float offset : new float[] {0, 0.5f}) {
+                float t = ((now % ARROW_MS) / (float) ARROW_MS + offset) % 1f;
+                float[] p = curve(sx, sy, tx, ty, bend, t), q = curve(sx, sy, tx, ty, bend, Math.min(1, t + 0.01f));
+                float dx = q[0] - p[0], dy = q[1] - p[1], len = (float) Math.max(1e-3, Math.hypot(dx, dy));
+                dx /= len;
+                dy /= len;
+                // An arrowhead pointing along the wire: two short strokes back from its tip.
+                for (int k = 0; k <= 3; k++) {
+                    ctx.drawTexture(ARROW, p[0] - dx * k - dy * k - 1, p[1] - dy * k + dx * k - 1, 2, 2);
+                    ctx.drawTexture(ARROW, p[0] - dx * k + dy * k - 1, p[1] - dy * k - dx * k - 1, 2, 2);
+                }
+            }
+        }
+
+        /** The point at {@code t} on the cubic curve leaving (sx, sy) rightwards and entering (tx, ty) from the left. */
+        private static float[] curve(float sx, float sy, float tx, float ty, float bend, float t) {
+            float u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
+            return new float[] {a * sx + b * (sx + bend) + c * (tx - bend) + d * tx, a * sy + b * sy + c * ty + d * ty};
+        }
+    }
+
     // ---- a card on the canvas --------------------------------------------------------------------
 
     /**
@@ -229,9 +355,11 @@ public final class AlchemyTableUI {
         private final Label status = new Label();
         private final ItemSlot[] inputs = new ItemSlot[ProcessCard.SLOTS];
         private final Selector<Item> designate = new Selector<>();
-        private final UIElement routes = new UIElement().layout(l -> l.gapAll(2));
-        /** What the route rows were built for, so they are rebuilt only when that changes. */
-        private @Nullable Object routesFor;
+        /** One row per product the card has made, each with a port to wire it on from. */
+        private final UIElement products = new UIElement().layout(l -> l.gapAll(2));
+        private final java.util.Map<Item, UIElement> ports = new java.util.HashMap<>();
+        /** What the product rows were built for, so they are rebuilt only when that changes. */
+        private @Nullable Object productsFor;
         private final IGuiTexture[] ghosts = new IGuiTexture[ProcessCard.SLOTS];
         private final Item[] ghostItems = new Item[ProcessCard.SLOTS];
 
@@ -288,7 +416,7 @@ public final class AlchemyTableUI {
             status.setId("card" + index + "_status");
             status.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true).textColor(STATUS_COLOUR));
             status.layout(l -> l.width(CARD_W - 8));
-            addChildren(header, status, body, designateRow, routes);
+            addChildren(header, status, body, designateRow, products);
             setDisplay(false);
         }
 
@@ -336,34 +464,47 @@ public final class AlchemyTableUI {
                 if (!r.isEmpty() && !stored.contains(r.getItem())) stored.add(r.getItem());
             }
             if (!stored.equals(designate.getCandidates())) designate.setCandidates(stored);
-            refreshRoutes(card);
+            refreshProducts(card);
         }
 
-        /** One row per product of the card's process: the product, and where it goes. */
-        private void refreshRoutes(ProcessCard card) {
-            List<Item> products = AlchemyRecipes.products(card.process);
-            List<Integer> targets = new ArrayList<>(List.of(ProcessCard.KEEP, ProcessCard.PRODUCTS));
-            for (int j = 0; j < table.cards().size(); j++) if (j != index) targets.add(j);
-            List<Object> key = new ArrayList<>(List.of(card.process, products, targets));
-            for (Item p : products) key.add(card.route(p));
-            for (int j : targets) if (j >= 0) key.add(table.cards().get(j).process);
-            if (Objects.equals(key, routesFor)) return;
-            routesFor = key;
-            for (UIElement child : new ArrayList<>(routes.getChildren())) routes.removeChild(child);
-            for (Item product : products) {
+        /** Where {@code item}'s wire starts, if the card lists it. */
+        @Nullable UIElement port(Item item) {
+            return ports.get(item);
+        }
+
+        /**
+         * One row per product the card has made: the product, where it goes, and its port. Drag the
+         * row onto a card or the product node to wire it there; right-click it to unwire it.
+         */
+        private void refreshProducts(ProcessCard card) {
+            List<Item> made = card.made();
+            List<Object> key = new ArrayList<>(List.of(made, table.cards().size()));
+            for (Item p : made) key.add(card.route(p));
+            for (ProcessCard c : table.cards()) key.add(c.process);
+            if (Objects.equals(key, productsFor)) return;
+            productsFor = key;
+            for (UIElement child : new ArrayList<>(products.getChildren())) products.removeChild(child);
+            ports.clear();
+            for (Item product : made) {
                 UIElement icon = new UIElement().layout(l -> l.width(16).height(16));
                 icon.style(s -> s.background(new ItemStackTexture(product)));
-                Selector<Integer> where = new Selector<>();
-                where.setId("card" + index + "_route_" + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(product).getPath());
-                where.setCandidateUIProvider(UIElementProvider.text(this::targetName));
-                where.setCandidates(targets);
-                where.setSelected(card.route(product), false);
+                icon.setAllowHitTest(false);
+                Label where = new Label();
+                where.setText(targetName(card.route(product)));
                 where.layout(l -> l.flex(1));
-                where.setOnValueChanged(target -> {
-                    if (target != null) send(AlchemyCardPayload.route(pos, index, product, target));
+                where.setAllowHitTest(false);
+                UIElement port = new UIElement().layout(l -> l.width(6).height(6));
+                port.style(s -> s.background(PORT));
+                port.setAllowHitTest(false);
+                ports.put(product, port);
+                UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER).widthPercent(100));
+                row.setId("card" + index + "_product_" + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(product).getPath());
+                row.addChildren(icon, where, port);
+                row.addEventListener(UIEvents.MOUSE_DOWN, e -> {
+                    if (e.button == 1) send(AlchemyCardPayload.route(pos, index, product, ProcessCard.KEEP));
+                    else row.startDrag(new WireDrag(index, product), new ItemStackTexture(product));
                 });
-                routes.addChild(new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER))
-                        .addChildren(icon, where));
+                products.addChild(row);
             }
         }
 

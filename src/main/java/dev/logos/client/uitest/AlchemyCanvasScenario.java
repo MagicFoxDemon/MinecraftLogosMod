@@ -93,6 +93,8 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .ticks(5)
                 .checkVisible("#card0")
                 .checkHidden("#card1")
+                // Nothing made yet, so no product to wire.
+                .checkNotExists("#card0_product_starter_culture")
                 // Nothing designated yet: the card says so (it looks once a second, so wait for it).
                 .waitUntil("the idle card says why", ctx -> ctx.el("#card0_status").isVisible())
                 .screenshot("canvas_idle_card")
@@ -106,12 +108,11 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .waitUntilServer("wheat designated", sc -> table.cards().get(0).designated(2) == Items.WHEAT)
                 .ticks(5)
                 .screenshot("canvas_designated")
-                .step("route starter culture to the products", ctx -> {
-                    @SuppressWarnings("unchecked")
-                    Selector<Integer> route = ctx.el("#card0_route_starter_culture").as(Selector.class);
-                    route.setValue(ProcessCard.PRODUCTS, true);
-                })
-                .waitUntilServer("the route is set", sc -> table.cards().get(0).route(LogosMod.STARTER_CULTURE.get()) == ProcessCard.PRODUCTS)
+                // The first craft shows the product; it stays in the card until wired.
+                .waitUntil("the card lists the starter culture it made", ctx -> ctx.exists("#card0_product_starter_culture"))
+                .checkServer("unwired, it stays in the card", sc -> table.cards().get(0).route(LogosMod.STARTER_CULTURE.get()) == ProcessCard.KEEP)
+                .drag("#card0_product_starter_culture", "#products_node")
+                .waitUntilServer("the product is wired to the products", sc -> table.cards().get(0).route(LogosMod.STARTER_CULTURE.get()) == ProcessCard.PRODUCTS)
                 .waitUntilServer("starter culture reaches the products", sc -> stored(table, LogosMod.STARTER_CULTURE.get()) >= 3)
                 .ticks(5)
                 .screenshot("canvas_made")
@@ -125,7 +126,17 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .waitUntilServer("a second card is laid", sc -> table.cards().size() == 2 && table.cards().get(1).process == Process.DISTILL)
                 .ticks(5)
                 .checkVisible("#card1")
+                .server("set the two cards side by side", sc -> {
+                    table.cards().get(0).moveTo(0, 0);
+                    table.cards().get(1).moveTo(160, 110);
+                })
+                .ticks(10)
+                .drag("#card0_product_starter_culture", "#card1")
+                .waitUntilServer("the product is wired to the second card", sc -> table.cards().get(0).route(LogosMod.STARTER_CULTURE.get()) == 1)
+                .ticks(10)
                 .screenshot("canvas_two_cards")
+                .rightClick("#card0_product_starter_culture")
+                .waitUntilServer("right-clicking unwires it", sc -> table.cards().get(0).route(LogosMod.STARTER_CULTURE.get()) == ProcessCard.KEEP)
                 .click("#card1_remove")
                 .waitUntilServer("the second card is taken off", sc -> table.cards().size() == 1)
                 .ticks(5)

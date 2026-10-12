@@ -62,11 +62,6 @@ public final class LogosClient {
     }
 
     @SubscribeEvent
-    static void onRecipes(net.neoforged.neoforge.client.event.RecipesReceivedEvent event) {
-        if (event.getRecipeTypes().contains(LogosMod.ALCHEMY_RECIPE.get())) dev.logos.alchemy.AlchemyRecipes.learn(event.getRecipeMap());
-    }
-
-    @SubscribeEvent
     static void onUse(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         ConstructPlacement.onUse(event);
         if (!event.isCanceled()) ColossusInput.onInteraction(event);

@@ -371,8 +371,6 @@ public class LogosMod {
             var key = net.minecraft.resources.Identifier.tryParse(id);
             return key != null && net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.containsKey(key);
         };
-        // Clients get the alchemy recipes, so the table screen knows each process's products.
-        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.OnDatapackSyncEvent e) -> e.sendRecipes(ALCHEMY_RECIPE.get()));
         dev.logos.gametest.LogosGameTests.register(modBus);
         NeoForge.EVENT_BUS.register(this);
     }
