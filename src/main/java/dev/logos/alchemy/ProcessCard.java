@@ -218,7 +218,7 @@ public final class ProcessCard {
     public @Nullable AlchemyRecipe craft(AlchemyTableBlockEntity table, boolean commit) {
         List<Source> sources = sources(table);
         try (Transaction tx = Transaction.openRoot()) {
-            for (AlchemyRecipe recipe : recipes(table)) {
+            for (AlchemyRecipe recipe : recipes(table, sources)) {
                 try (Transaction attempt = Transaction.open(tx)) {
                     if (!make(recipe, table, sources, attempt, null)) continue;
                     attempt.commit();
@@ -248,13 +248,14 @@ public final class ProcessCard {
         return List.copyOf(made);
     }
 
-    /** This process's recipes, richest first. */
-    private List<AlchemyRecipe> recipes(AlchemyTableBlockEntity table) {
+    /** This process's recipes, richest first: the data-written ones and those made up for what {@code sources} hold ({@link SpecialRecipes}). */
+    private List<AlchemyRecipe> recipes(AlchemyTableBlockEntity table, List<Source> sources) {
         List<AlchemyRecipe> recipes = new ArrayList<>();
         if (!(table.getLevel() instanceof ServerLevel level)) return recipes;
         for (RecipeHolder<AlchemyRecipe> h : level.recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get())) {
             if (h.value().process() == process) recipes.add(h.value());
         }
+        recipes.addAll(SpecialRecipes.forThings(process, sources.stream().map(Source::resource).toList()));
         recipes.sort(Comparator.comparingInt(AlchemyRecipe::kinds).reversed());
         return recipes;
     }
@@ -366,7 +367,7 @@ public final class ProcessCard {
         if (!anything) return Component.translatable("logos.alchemy_card.idle");
         List<Component> best = null;
         List<Source> sources = sources(table);
-        for (AlchemyRecipe recipe : recipes(table)) {
+        for (AlchemyRecipe recipe : recipes(table, sources)) {
             List<Component> missing = new ArrayList<>();
             try (Transaction tx = Transaction.openRoot()) {
                 make(recipe, table, sources, tx, missing);

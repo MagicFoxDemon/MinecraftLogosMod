@@ -492,4 +492,62 @@ final class AlchemyGameTests {
             });
         });
     }
+
+    // ---- potion powder ---------------------------------------------------------------------------
+
+    private static boolean holdsSwiftness(ItemStack stack) {
+        return stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).is(Potions.SWIFTNESS);
+    }
+
+    /** Settling a potion, drunk or splash, gives a powder of it and the bottle back; a tipped arrow is no potion to settle. */
+    static void powderSettles(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.SETTLE);
+        put(card.inputs(), PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS));
+        put(card.inputs(), PotionContents.createItemStack(Items.SPLASH_POTION, Potions.SWIFTNESS));
+        put(card.inputs(), PotionContents.createItemStack(Items.TIPPED_ARROW, Potions.SWIFTNESS));
+        h.succeedWhen(() -> {
+            int powders = 0;
+            for (int i = 0; i < card.outputs().size(); i++) {
+                ItemStack s = card.outputs().getResource(i).toStack(card.outputs().getAmountAsInt(i));
+                if (s.is(LogosMod.POTION_POWDER.get())) {
+                    h.assertTrue(holdsSwiftness(s), "the powder does not hold swiftness: " + s);
+                    powders += s.getCount();
+                }
+            }
+            h.assertTrue(powders == 2, "settling made " + powders + " of 2 powders");
+            h.assertTrue(count(table.rawArea(), Items.GLASS_BOTTLE) == 2, "the bottles did not come back");
+            h.assertTrue(count(card.inputs(), Items.TIPPED_ARROW) == 1, "the tipped arrow was settled");
+        });
+    }
+
+    /** A powder is eaten for its potion's effects. */
+    static void powderIsEaten(GameTestHelper h) {
+        @SuppressWarnings("removal")
+        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        ItemStack powder = dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(), new PotionContents(Potions.SWIFTNESS), 2);
+        h.assertTrue(powder.getUseAnimation() == net.minecraft.world.item.ItemUseAnimation.EAT, "the powder is not eaten");
+        p.setItemInHand(InteractionHand.MAIN_HAND, powder);
+        ItemStack left = powder.finishUsingItem(h.getLevel(), p);
+        h.assertTrue(p.hasEffect(net.minecraft.world.effect.MobEffects.SPEED), "eating swiftness powder gave no speed");
+        h.assertTrue(left.is(LogosMod.POTION_POWDER.get()) && left.getCount() == 1, "eating left " + left);
+        h.succeed();
+    }
+
+    /** Dissolving a powder with a bottle of water and an empty bottle gives its potion back. */
+    static void powderDissolvesBack(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), AlchemyTableBlock.BOTTLE);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(), new PotionContents(Potions.SWIFTNESS), 1));
+        put(card.inputs(), new ItemStack(Items.GLASS_BOTTLE));
+        h.succeedWhen(() -> {
+            ItemStack out = card.outputs().getResource(0).toStack(card.outputs().getAmountAsInt(0));
+            h.assertTrue(out.is(Items.POTION) && holdsSwiftness(out), "dissolving gave " + out);
+            h.assertTrue(table.fluid().isEmpty(), "the tank still holds " + table.fluid().getAmount() + " mB");
+        });
+    }
 }

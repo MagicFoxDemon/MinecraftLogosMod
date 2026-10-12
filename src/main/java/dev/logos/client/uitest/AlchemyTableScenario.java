@@ -88,6 +88,13 @@ public class AlchemyTableScenario implements UIScenario {
                     fill(640, 3250);
                     table.items().set(0, ItemResource.of(Items.SUGAR), 12);
                     table.items().set(1, ItemResource.of(Items.WHEAT), 20);
+                    // Powders of three potions, to see their tint and glint.
+                    table.items().set(2, ItemResource.of(dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(),
+                            new net.minecraft.world.item.alchemy.PotionContents(net.minecraft.world.item.alchemy.Potions.SWIFTNESS), 1)), 5);
+                    table.items().set(3, ItemResource.of(dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(),
+                            new net.minecraft.world.item.alchemy.PotionContents(net.minecraft.world.item.alchemy.Potions.POISON), 1)), 5);
+                    table.items().set(4, ItemResource.of(dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(),
+                            new net.minecraft.world.item.alchemy.PotionContents(net.minecraft.world.item.alchemy.Potions.HEALING), 1)), 5);
                     table.items().set(AlchemyTableBlockEntity.RAW_SLOTS, ItemResource.of(LogosMod.STARTER_CULTURE.get()), 3);
                     table.fuel().set(0, ItemResource.of(Items.AMETHYST_SHARD), 5);
                     BlockUIMenuType.openUI((ServerPlayer) sc.player(), MAIN);

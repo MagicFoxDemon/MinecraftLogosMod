@@ -127,6 +127,8 @@
   "item.logos.sulfur_powder": "硫粉",
   "item.logos.saltpeter": "硝石",
   "item.logos.adhesive": "粘合剂",
+  "item.logos.potion_powder": "药粉",
+  "item.logos.potion_powder.of": "药粉（%s）",
   "key.logos.colossus_mode": "巨像：切换乘坐/驾驶",
   "advancements.logos.colossus_frenzy.title": "这巨像魔了，是个魔像",
   "advancements.logos.colossus_frenzy.description": "亲眼目睹一座炼金术巨像陷入魔力暴走",

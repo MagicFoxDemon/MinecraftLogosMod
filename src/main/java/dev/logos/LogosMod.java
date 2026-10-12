@@ -164,6 +164,11 @@ public class LogosMod {
     public static final DeferredItem<net.minecraft.world.item.Item> SALTPETER = ITEMS.registerSimpleItem("saltpeter");
     /** 粘合剂: dissolved clay and raw mash. */
     public static final DeferredItem<net.minecraft.world.item.Item> ADHESIVE = ITEMS.registerSimpleItem("adhesive");
+    /** 药粉: a potion settled into powder; eaten for the potion's effects, and dissolved back into it. */
+    public static final DeferredItem<dev.logos.item.PotionPowderItem> POTION_POWDER = ITEMS.registerItem("potion_powder", dev.logos.item.PotionPowderItem::new,
+            p -> p.component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
+                    .component(net.minecraft.core.component.DataComponents.CONSUMABLE, net.minecraft.world.item.component.Consumable.builder().consumeSeconds(1.6f)
+                            .animation(net.minecraft.world.item.ItemUseAnimation.EAT).sound(net.minecraft.sounds.SoundEvents.GENERIC_EAT).build()));
 
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.InscriptionTableBlock> INSCRIPTION_TABLE = BLOCKS.registerBlock(
             "inscription_table", dev.logos.block.InscriptionTableBlock::new,
