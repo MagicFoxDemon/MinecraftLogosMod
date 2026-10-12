@@ -43,7 +43,9 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
          */
         BEAM_HOLD,
         /** That beam ceased to exist. */
-        BEAM_END;
+        BEAM_END,
+        /** An actual projectile collision; aux is the outward direction, size the projectile radius. */
+        PROJECTILE_IMPACT;
 
         public static final Kind[] VALUES = values();
     }

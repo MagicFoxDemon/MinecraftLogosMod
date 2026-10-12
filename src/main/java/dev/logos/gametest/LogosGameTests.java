@@ -35,6 +35,7 @@ public final class LogosGameTests {
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS = DeferredRegister.create(Registries.TEST_FUNCTION, LogosMod.MODID);
 
     private static final List<String> TESTS = List.of(
+            "projectile_impact_expiry", "projectile_impact_wall", "projectile_impact_piercing",
             "fireball_hits_and_bursts", "chain_lightning_bounces", "execute_with_proof_is_cheap", "execute_without_proof_starves",
             "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "config_limits_apply",
             "world_toggle_state", "world_grow_and_decay", "world_players_flag", "world_items_magnet", "world_nether_step",
@@ -56,6 +57,9 @@ public final class LogosGameTests {
     private LogosGameTests() {}
 
     public static void register(IEventBus modBus) {
+        FUNCTIONS.register("projectile_impact_expiry", () -> ProjectileImpactGameTests::expiry);
+        FUNCTIONS.register("projectile_impact_wall", () -> ProjectileImpactGameTests::block);
+        FUNCTIONS.register("projectile_impact_piercing", () -> ProjectileImpactGameTests::piercing);
         FUNCTIONS.register("fireball_hits_and_bursts", () -> LogosGameTests::fireball);
         FUNCTIONS.register("beam_follows_gaze", () -> LogosGameTests::beamFollowsGaze);
         FUNCTIONS.register("chain_lightning_bounces", () -> LogosGameTests::chainLightning);

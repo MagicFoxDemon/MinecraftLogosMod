@@ -106,6 +106,15 @@ public final class Vfx {
         send(level, Kind.TRAIL_END, e, 0, pos, Vec3.ZERO, 1, id);
     }
 
+    /** Collision termination is distinct from expiry; this does not alter spell event semantics. */
+    public static void trailEnd(ServerLevel level, int id, Vec3 pos, Element e, boolean impact) {
+        send(level, Kind.TRAIL_END, e, impact ? 1 : 0, pos, Vec3.ZERO, 1, id);
+    }
+
+    public static void projectileImpact(ServerLevel level, int id, Vec3 pos, Vec3 outward, Element e, double size) {
+        send(level, Kind.PROJECTILE_IMPACT, e, 0, pos, outward, (float) size, id);
+    }
+
     public static void line(ServerLevel level, Vec3 from, Vec3 to, Element e) {
         send(level, Kind.BEAM, e, 0, from, to, 1, 0);
     }

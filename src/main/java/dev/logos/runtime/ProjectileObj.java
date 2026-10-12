@@ -28,6 +28,7 @@ public final class ProjectileObj extends SpellObject {
     private int pierceLeft;
     private Vec3 vel;
     private double orbitAngle;
+    private boolean impactEnd;
     private final Map<UUID, Integer> hits = new HashMap<>();
 
     public ProjectileObj(Node node, Ctx ctx, Vec3 from, Vec3 dir, double speed, int life, Motion motion, int pierce, double size,
@@ -45,7 +46,7 @@ public final class ProjectileObj extends SpellObject {
 
     @Override
     protected void onEnded() {
-        Vfx.trailEnd(level, id, pos, node.element);
+        Vfx.trailEnd(level, id, pos, node.element, impactEnd);
     }
 
     @Override
@@ -93,12 +94,14 @@ public final class ProjectileObj extends SpellObject {
         }
 
         Vec3 blockHit = null;
+        Vec3 outward = heading().scale(-1);
         net.minecraft.core.BlockPos impactBlock = null;
         if (motion != Motion.ORBIT) {
             BlockHitResult bh = level.clip(new ClipContext(prev, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, inst.caster));
             if (bh.getType() != HitResult.Type.MISS) {
                 blockHit = bh.getLocation();
                 impactBlock = bh.getBlockPos();
+                outward = Vec3.atLowerCornerOf(bh.getDirection().getUnitVec3i());
             }
         }
         // Another spell's construct stops it like a wall of its own.
@@ -106,6 +109,7 @@ public final class ProjectileObj extends SpellObject {
         if (wall != null) {
             blockHit = wall;
             impactBlock = null;
+            outward = heading().scale(-1);
         }
         Vec3 segEnd = blockHit != null ? blockHit : next;
 
@@ -118,6 +122,8 @@ public final class ProjectileObj extends SpellObject {
             if (hit.isEmpty()) continue;
             hits.put(e.getUUID(), age);
             pos = hit.get();
+            impactEnd = pierceLeft <= 0;
+            Vfx.projectileImpact(level, id, pos, heading().scale(-1), node.element, size);
             Interp.fire(node, "on-hit", ctx.on(e, pos).aiming(heading()));
             if (inst.dead) return;
             if (pierceLeft-- <= 0) {
@@ -129,9 +135,13 @@ public final class ProjectileObj extends SpellObject {
         Interp.fire(node, "on-tick", ctx.at(pos).aiming(heading()));
         Vfx.trail(level, id, pos, heading(), node.element, motion, size, guise);
         if (impactBlock != null) {
+            impactEnd = true;
+            Vfx.projectileImpact(level, id, pos, outward, node.element, size);
             Interp.fire(node, "on-impact", ctx.at(Place.center(level, impactBlock)).aiming(heading()));
             end();
         } else if (wall != null) {
+            impactEnd = true;
+            Vfx.projectileImpact(level, id, pos, outward, node.element, size);
             end();
         }
     }
