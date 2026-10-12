@@ -22,6 +22,7 @@ import dev.logos.runtime.Lifeforms;
 import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.network.chat.Component;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -101,6 +102,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     private final List<ProcessCard> cards = new ArrayList<>();
 
     private double mana;
+    private boolean enabled = true;
     /** The processes some card is working, a bit each by ordinal: what the table animates. Not saved, worked out every tick. */
     private int working;
     private boolean dirty;
@@ -222,7 +224,14 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
             table.setMana(table.mana + value);
         }
         int working = 0;
+        // Switched off, or held by a redstone signal: the cards wait where they are.
+        Component halt = !table.enabled ? Component.translatable("logos.alchemy_card.switched_off")
+                : table.powered() ? Component.translatable("logos.alchemy_card.redstone") : null;
         for (ProcessCard card : table.cards) {
+            if (halt != null) {
+                card.pause(halt);
+                continue;
+            }
             if (card.tick(table)) table.triggerAnim(LEVER + card.process.ordinal(), "press");
             if (card.working()) working |= 1 << card.process.ordinal();
         }
@@ -239,6 +248,21 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
             table.dirty = false;
             level.sendBlockUpdated(pos, state, state, 3);
         }
+    }
+
+    /** Whether the processes may run: the table's own switch (redstone can still hold it). */
+    public boolean enabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        changed();
+    }
+
+    /** A redstone signal into either half stops the processes. */
+    public boolean powered() {
+        return level != null && (level.hasNeighborSignal(worldPosition) || level.hasNeighborSignal(AlchemyTableBlock.otherHalf(worldPosition, getBlockState())));
     }
 
     /** Both halves of the table and a little above them. */
@@ -260,6 +284,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         fuel.serialize(output.child("fuel"));
         tank.serialize(output.child("tank"));
         output.putDouble("mana", mana);
+        output.putBoolean("enabled", enabled);
         ValueOutput.ValueOutputList list = output.childrenList("cards");
         for (ProcessCard card : cards) card.save(list.addChild());
     }
@@ -271,6 +296,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         input.child("fuel").ifPresent(fuel::deserialize);
         input.child("tank").ifPresent(tank::deserialize);
         mana = input.getDoubleOr("mana", 0);
+        enabled = input.getBooleanOr("enabled", true);
         working = input.getIntOr("working", 0);
         cards.clear();
         for (ValueInput c : input.childrenListOrEmpty("cards")) {

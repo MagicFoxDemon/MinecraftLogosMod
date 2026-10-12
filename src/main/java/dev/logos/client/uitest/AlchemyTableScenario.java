@@ -99,6 +99,12 @@ public class AlchemyTableScenario implements UIScenario {
                     expect(bars.get(0), 765);
                     expect(bars.get(1), 3250);
                 })
-                .screenshot("table_screen");
+                .screenshot("table_screen")
+                .click("#run_switch")
+                .waitUntilServer("the switch stops the table", sc -> !table.enabled())
+                .ticks(5)
+                .checkTextContains("#run_state", "○")
+                .click("#run_switch")
+                .waitUntilServer("the switch starts it again", sc -> table.enabled());
     }
 }
