@@ -437,4 +437,26 @@ final class AlchemyGameTests {
             });
         });
     }
+
+    /** Raw mash, foul brine and niter mother liquor are drunk like potions: their effects, and the bottle back. */
+    static void bottlesAreDrinkable(GameTestHelper h) {
+        record Drink(net.minecraft.world.item.Item item, List<net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>> effects) {}
+        List<Drink> drinks = List.of(
+                new Drink(LogosMod.RAW_MASH.get(), List.of(net.minecraft.world.effect.MobEffects.STRENGTH, net.minecraft.world.effect.MobEffects.NAUSEA)),
+                new Drink(LogosMod.FOUL_BRINE.get(), List.of(net.minecraft.world.effect.MobEffects.POISON, net.minecraft.world.effect.MobEffects.NAUSEA,
+                        net.minecraft.world.effect.MobEffects.WEAKNESS)),
+                new Drink(LogosMod.NITER_MOTHER_LIQUOR.get(), List.of(net.minecraft.world.effect.MobEffects.POISON)));
+        for (Drink d : drinks) {
+            @SuppressWarnings("removal")
+            ServerPlayer p = h.makeMockServerPlayerInLevel();
+            p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+            ItemStack bottle = new ItemStack(d.item());
+            h.assertTrue(bottle.getUseAnimation() == net.minecraft.world.item.ItemUseAnimation.DRINK, d.item() + " is not drunk");
+            p.setItemInHand(InteractionHand.MAIN_HAND, bottle);
+            ItemStack left = bottle.finishUsingItem(h.getLevel(), p);
+            for (var effect : d.effects()) h.assertTrue(p.hasEffect(effect), d.item() + " did not give " + effect.getRegisteredName());
+            h.assertTrue(left.is(Items.GLASS_BOTTLE), d.item() + " left " + left + " instead of a glass bottle");
+        }
+        h.succeed();
+    }
 }

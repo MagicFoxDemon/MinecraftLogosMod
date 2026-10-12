@@ -134,14 +134,32 @@ public class LogosMod {
             p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
 
     // Alchemy materials: the fermentation line. The alchemy table's processes make most of them.
+    /**
+     * A bottled alchemy liquid one can drink like a potion (same animation and sound): it stacks to 16
+     * like a honey bottle, applies {@code effects} and leaves the glass bottle.
+     */
+    private static net.minecraft.world.item.Item.Properties drinkable(net.minecraft.world.item.Item.Properties p,
+            net.minecraft.world.effect.MobEffectInstance... effects) {
+        return p.stacksTo(16).usingConvertsTo(net.minecraft.world.item.Items.GLASS_BOTTLE).component(net.minecraft.core.component.DataComponents.CONSUMABLE,
+                net.minecraft.world.item.component.Consumables.defaultDrink()
+                        .onConsume(new net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect(List.of(effects))).build());
+    }
+
     /** 酵种: ferments; turns water into raw mash. */
     public static final DeferredItem<net.minecraft.world.item.Item> STARTER_CULTURE = ITEMS.registerSimpleItem("starter_culture");
     /** 初醪: the base of Logos potions, as the awkward potion is of vanilla ones. Its own item so it keeps its look; the brewing stand takes it. */
-    public static final DeferredItem<net.minecraft.world.item.Item> RAW_MASH = ITEMS.registerSimpleItem("raw_mash", p -> p.stacksTo(16));
+    public static final DeferredItem<net.minecraft.world.item.Item> RAW_MASH = ITEMS.registerSimpleItem("raw_mash", p -> drinkable(p,
+            // Sour, a little like ale: a brief surge of strength, and a queasy stomach.
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.STRENGTH, 30 * 20),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 10 * 20)));
     /** 臭卤: fermented meat, distilled into sulfur and niter mother liquor. */
-    public static final DeferredItem<net.minecraft.world.item.Item> FOUL_BRINE = ITEMS.registerSimpleItem("foul_brine", p -> p.stacksTo(16));
+    public static final DeferredItem<net.minecraft.world.item.Item> FOUL_BRINE = ITEMS.registerSimpleItem("foul_brine", p -> drinkable(p,
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 30 * 20, 2),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 30 * 20),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 90 * 20, 1)));
     /** 硝母: what is left of foul brine once distilled; it settles into saltpeter. */
-    public static final DeferredItem<net.minecraft.world.item.Item> NITER_MOTHER_LIQUOR = ITEMS.registerSimpleItem("niter_mother_liquor", p -> p.stacksTo(16));
+    public static final DeferredItem<net.minecraft.world.item.Item> NITER_MOTHER_LIQUOR = ITEMS.registerSimpleItem("niter_mother_liquor", p -> drinkable(p,
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 20 * 20)));
     public static final DeferredItem<net.minecraft.world.item.Item> SULFUR_POWDER = ITEMS.registerSimpleItem("sulfur_powder");
     public static final DeferredItem<net.minecraft.world.item.Item> SALTPETER = ITEMS.registerSimpleItem("saltpeter");
     /** 粘合剂: dissolved clay and raw mash. */
