@@ -138,8 +138,10 @@ public class LogosMod {
     public static final DeferredItem<net.minecraft.world.item.Item> STARTER_CULTURE = ITEMS.registerSimpleItem("starter_culture");
     /** 初醪: the base of Logos potions, as the awkward potion is of vanilla ones. Its own item so it keeps its look; the brewing stand takes it. */
     public static final DeferredItem<net.minecraft.world.item.Item> RAW_MASH = ITEMS.registerSimpleItem("raw_mash", p -> p.stacksTo(16));
-    /** 臭卤: fermented meat, settled into sulfur and saltpeter. */
+    /** 臭卤: fermented meat, distilled into sulfur and niter mother liquor. */
     public static final DeferredItem<net.minecraft.world.item.Item> FOUL_BRINE = ITEMS.registerSimpleItem("foul_brine", p -> p.stacksTo(16));
+    /** 硝母: what is left of foul brine once distilled; it settles into saltpeter. */
+    public static final DeferredItem<net.minecraft.world.item.Item> NITER_MOTHER_LIQUOR = ITEMS.registerSimpleItem("niter_mother_liquor", p -> p.stacksTo(16));
     public static final DeferredItem<net.minecraft.world.item.Item> SULFUR_POWDER = ITEMS.registerSimpleItem("sulfur_powder");
     public static final DeferredItem<net.minecraft.world.item.Item> SALTPETER = ITEMS.registerSimpleItem("saltpeter");
     /** 粘合剂: dissolved clay and raw mash. */
@@ -247,6 +249,7 @@ public class LogosMod {
                 out.accept(STARTER_CULTURE.get());
                 out.accept(RAW_MASH.get());
                 out.accept(FOUL_BRINE.get());
+                out.accept(NITER_MOTHER_LIQUOR.get());
                 out.accept(SULFUR_POWDER.get());
                 out.accept(SALTPETER.get());
                 out.accept(ADHESIVE.get());
