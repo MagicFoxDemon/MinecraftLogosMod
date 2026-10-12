@@ -45,7 +45,7 @@ public final class LogosGameTests {
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
             "familiar_dragon_circles", "familiar_dragon_throne",
             "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects",
-            "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies",
+            "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies", "alchemy_brews_raw_mash", "alchemy_crafts_gunpowder",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
@@ -158,6 +158,8 @@ public final class LogosGameTests {
         FUNCTIONS.register("free_mana_from_leftovers", () -> PageGameTests::freeManaFromLeftovers);
         FUNCTIONS.register("free_mana_gathered", () -> PageGameTests::freeManaGathered);
         FUNCTIONS.register("copy_table_copies", () -> PageGameTests::copyTableCopies);
+        FUNCTIONS.register("alchemy_brews_raw_mash", () -> AlchemyGameTests::brewsRawMash);
+        FUNCTIONS.register("alchemy_crafts_gunpowder", () -> AlchemyGameTests::craftsGunpowder);
         FUNCTIONS.register(modBus);
         modBus.addListener(LogosGameTests::onRegisterTests);
     }
