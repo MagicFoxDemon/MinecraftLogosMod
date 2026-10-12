@@ -1,0 +1,140 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.alchemy_table.ferment": {
+      "loop": true,
+      "animation_length": 2,
+      "bones": {
+        "bubbles": {
+          "scale": {
+            "0": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "0.5": [
+              0.7,
+              1.4,
+              0.7
+            ],
+            "1": [
+              1.15,
+              0.8,
+              1.15
+            ],
+            "1.5": [
+              0.8,
+              1.2,
+              0.8
+            ],
+            "2": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        }
+      }
+    },
+    "animation.alchemy_table.select_0": {
+      "loop": false,
+      "animation_length": 0.3,
+      "bones": {
+        "selector_0": {
+          "rotation": {
+            "0": [
+              -0.0,
+              -0.0,
+              0.0
+            ],
+            "0.12": [
+              24.0,
+              -0.0,
+              0.0
+            ],
+            "0.3": [
+              -0.0,
+              -0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "animation.alchemy_table.select_1": {
+      "loop": false,
+      "animation_length": 0.3,
+      "bones": {
+        "selector_1": {
+          "rotation": {
+            "0": [
+              -0.0,
+              -0.0,
+              0.0
+            ],
+            "0.12": [
+              24.0,
+              -0.0,
+              0.0
+            ],
+            "0.3": [
+              -0.0,
+              -0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "animation.alchemy_table.select_2": {
+      "loop": false,
+      "animation_length": 0.3,
+      "bones": {
+        "selector_2": {
+          "rotation": {
+            "0": [
+              -0.0,
+              -0.0,
+              0.0
+            ],
+            "0.12": [
+              24.0,
+              -0.0,
+              0.0
+            ],
+            "0.3": [
+              -0.0,
+              -0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "animation.alchemy_table.select_3": {
+      "loop": false,
+      "animation_length": 0.3,
+      "bones": {
+        "selector_3": {
+          "rotation": {
+            "0": [
+              -0.0,
+              -0.0,
+              0.0
+            ],
+            "0.12": [
+              24.0,
+              -0.0,
+              0.0
+            ],
+            "0.3": [
+              -0.0,
+              -0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    }
+  }
+}
