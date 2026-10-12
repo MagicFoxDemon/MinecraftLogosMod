@@ -1,4 +1,5 @@
 {
+  "entity.logos.mana_leech": "Mana Leech",
   "item.logos.wand": "Novice Wand",
   "dev.logos.lang.Element.PHYSICAL": "🜃 Physical",
   "dev.logos.lang.Element.FIRE": "🜂 Fire",
@@ -268,5 +269,10 @@
   "logos.example.held-shield": "Held Shield",
   "logos.example.recall": "Recall",
   "logos.example.return-path": "Return Path",
-  "logos.example.ender-gale": "Ender Gale"
+  "logos.example.ender-gale": "Ender Gale",
+  "logos.configuration.manaLeech": "Mana Leeches",
+  "logos.configuration.manaLeechSearchRadius": "Leech Search Radius",
+  "logos.configuration.manaLeechHealth": "Leech Starting Health",
+  "death.attack.mana_leech": "%1$s had their mana drained by %2$s",
+  "death.attack.mana_leech.item": "%1$s had their mana drained by %2$s"
 }

@@ -1,4 +1,5 @@
 {
+  "entity.logos.mana_leech": "魔力水蛭",
   "item.logos.wand": "学徒法杖",
   "dev.logos.lang.Element.PHYSICAL": "🜃 物理",
   "dev.logos.lang.Element.FIRE": "🜂 火焰",
@@ -268,5 +269,10 @@
   "logos.example.held-shield": "随身圆盾",
   "logos.example.recall": "归家",
   "logos.example.return-path": "循途而返",
-  "logos.example.ender-gale": "末影疾风"
+  "logos.example.ender-gale": "末影疾风",
+  "logos.configuration.manaLeech": "魔力水蛭",
+  "logos.configuration.manaLeechSearchRadius": "水蛭搜索半径",
+  "logos.configuration.manaLeechHealth": "水蛭初始生命值",
+  "death.attack.mana_leech": "%1$s 被 %2$s 吸干了魔力",
+  "death.attack.mana_leech.item": "%1$s 被 %2$s 吸干了魔力"
 }

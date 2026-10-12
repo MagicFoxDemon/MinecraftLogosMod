@@ -159,6 +159,13 @@ public class LogosMod {
                     .sized(0.5f, 0.5f).clientTrackingRange(6).updateInterval(2)
                     .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
+    /** 魔力水蛭: a hostile mana predator whose naturally spawned generation can split once. */
+    public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.ManaLeech>> MANA_LEECH =
+            ENTITY_TYPES.register("mana_leech", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ManaLeech>of(
+                            dev.logos.runtime.ManaLeech::new, net.minecraft.world.entity.MobCategory.MONSTER)
+                    .sized(0.57f, 0.45f).clientTrackingRange(10).updateInterval(1)
+                    .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+
     /** 魔力生命体: the most basic alchemical life, summoned from mana alone; its size grows with its level. */
     public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.ManaLifeform>> MANA_LIFEFORM =
             ENTITY_TYPES.register("mana_lifeform", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ManaLifeform>of(
@@ -262,9 +269,15 @@ public class LogosMod {
             }
         });
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) -> {
+            e.put(MANA_LEECH.get(), dev.logos.runtime.ManaLeech.createAttributes().build());
             e.put(MANA_LIFEFORM.get(), dev.logos.runtime.ManaLifeform.createAttributes().build());
             e.put(ALCHEMICAL_COLOSSUS.get(), dev.logos.runtime.AlchemicalColossus.createAttributes().build());
         });
+        modBus.addListener((net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent e) -> e.register(
+                MANA_LEECH.get(), net.minecraft.world.entity.SpawnPlacementTypes.ON_GROUND,
+                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                dev.logos.runtime.ManaLeech::checkMonsterSpawnRules,
+                net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent.Operation.REPLACE));
         modBus.addListener((net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent e) -> e.register(MANA_FUEL));
         dev.logos.runtime.Lifeforms.registerUI();
         dev.logos.runtime.Colossi.registerUI();

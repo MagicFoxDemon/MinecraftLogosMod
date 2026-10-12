@@ -84,6 +84,13 @@ public final class FreeManaEntity extends Entity {
             level = home;
             spot = scatter(home, caster);
         }
+        releaseAt(level, spot, amount);
+    }
+
+    /** Releases a creature's mana at its death or where a weapon expelled it, preserving small fractions. */
+    public static void releaseAt(ServerLevel level, Vec3 pos, double amount) {
+        if (!(amount > 0) || !Double.isFinite(amount)) return;
+        Vec3 spot = open(level, pos);
         for (FreeManaEntity e : level.getEntitiesOfClass(FreeManaEntity.class, new AABB(spot, spot).inflate(MERGE_RADIUS), Entity::isAlive)) {
             e.setAmount(e.amount() + amount);
             e.age = 0;
