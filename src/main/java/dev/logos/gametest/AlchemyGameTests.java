@@ -401,4 +401,40 @@ final class AlchemyGameTests {
         h.assertTrue(table.cards().get(0).defaultRoute() == 2, "a route past the removed card did not move down");
         h.succeed();
     }
+
+    /**
+     * Water bottles laid in the card are poured before the tank is touched, so their bottles hold
+     * the product: starter culture and three water bottles make three raw mash even with water in the tank.
+     */
+    static void processPoursBottlesFirst(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), 500);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(LogosMod.STARTER_CULTURE.get()));
+        for (int i = 0; i < 3; i++) put(card.inputs(), waterBottle());
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.RAW_MASH.get()) == 3, "the card made " + count(card.outputs(), LogosMod.RAW_MASH.get()) + " raw mash");
+            h.assertTrue(table.fluid().getAmount() == 500, "the tank was drawn on: " + table.fluid().getAmount() + " mB left");
+            h.assertTrue(count(table.items(), Items.GLASS_BOTTLE) + count(card.outputs(), Items.GLASS_BOTTLE) == 0, "bottles were left over");
+        });
+    }
+
+    /** A card that cannot work says why: no mana, then (with mana) the three bottles its raw mash needs. */
+    static void processSaysWhatIsMissing(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(LogosMod.STARTER_CULTURE.get()));
+        h.runAfterDelay(25, () -> {
+            h.assertTrue(card.status().toString().contains("logos.alchemy_card.no_mana"), "without mana the card says " + card.status());
+            table.setMana(10);
+            h.succeedWhen(() -> {
+                String said = card.status().toString();
+                h.assertTrue(said.contains("logos.alchemy_card.missing") && said.contains("missing_item") && said.contains("3"),
+                        "the card does not say it lacks three bottles: " + said);
+                h.assertFalse(said.contains("missing_fluid"), "the card thinks it lacks water: " + said);
+            });
+        });
+    }
 }

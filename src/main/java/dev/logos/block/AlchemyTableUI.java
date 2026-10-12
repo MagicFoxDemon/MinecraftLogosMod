@@ -60,6 +60,8 @@ public final class AlchemyTableUI {
     /** The gauges: the pale blue of the hourglass sand, and water blue. */
     private static final int MANA_COLOUR = 0xFF9FD3EE, FLUID_COLOUR = 0xFF3F76E4;
     /** A designated, empty input slot shows its item under this veil of slot grey. */
+    /** A card's note on why it is not working. */
+    private static final int STATUS_COLOUR = 0xFFFFB060;
     private static final int GHOST = 0xA08B8B8B;
 
     private AlchemyTableUI() {}
@@ -214,6 +216,8 @@ public final class AlchemyTableUI {
         private final BlockPos pos;
         private final int index;
         private final Label title = new Label();
+        /** Why the card is not working, when it is not. */
+        private final Label status = new Label();
         private final ItemSlot[] inputs = new ItemSlot[ProcessCard.SLOTS];
         private final Selector<Item> designate = new Selector<>();
         private final UIElement routes = new UIElement().layout(l -> l.gapAll(2));
@@ -272,7 +276,10 @@ public final class AlchemyTableUI {
             UIElement designateRow = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER));
             designateRow.addChildren(designate, clear);
 
-            addChildren(header, body, designateRow, routes);
+            status.setId("card" + index + "_status");
+            status.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true).textColor(STATUS_COLOUR));
+            status.layout(l -> l.width(CARD_W - 8));
+            addChildren(header, status, body, designateRow, routes);
             setDisplay(false);
         }
 
@@ -304,6 +311,8 @@ public final class AlchemyTableUI {
             if (card == null) return;
             layout(l -> l.left(card.x()).top(card.y()));
             title.setText(Component.literal(card.process.symbol + " ").append(card.process.displayName()));
+            status.setText(card.status());
+            status.setDisplay(!card.status().getString().isEmpty());
             for (int i = 0; i < ProcessCard.SLOTS; i++) {
                 Item item = card.designated(i);
                 if (item == ghostItems[i]) continue;

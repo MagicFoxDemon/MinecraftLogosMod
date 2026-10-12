@@ -17,6 +17,9 @@ import dev.logos.block.AlchemyTableBlock;
 import dev.logos.block.AlchemyTableBlockEntity;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -82,6 +85,7 @@ public final class ProcessCard {
     private int defaultRoute = KEEP;
     private int progress;
     private boolean working;
+    private Component status = Component.empty();
     /** Where the card lies on the table screen's canvas, in screen units from its top left. */
     private int x, y;
     private Runnable changed = () -> {};
@@ -166,6 +170,11 @@ public final class ProcessCard {
 
     // ---- working ----------------------------------------------------------------------------------
 
+    /** Why the card is not working, for its panel; empty while it works. */
+    public Component status() {
+        return status;
+    }
+
     /** Whether the card worked on a craft last tick: it had the mana and the materials for one. */
     public boolean working() {
         return working;
@@ -175,6 +184,12 @@ public final class ProcessCard {
     public boolean tick(AlchemyTableBlockEntity table) {
         boolean finished = false;
         working = table.mana() >= MANA_PER_CRAFT && craft(table, false) != null;
+        // While it cannot work, say why (looked into once a second; it is not needed every tick).
+        Component why = working ? Component.empty() : table.getLevel().getGameTime() % 20 == 0 ? diagnose(table) : status;
+        if (!why.equals(status)) {
+            status = why;
+            changed.run();
+        }
         if (!working) {
             progress = 0;
         } else if (++progress >= CRAFT_TICKS) {
@@ -191,17 +206,11 @@ public final class ProcessCard {
      * with {@code commit} false nothing changes and this only tells whether one could be made.
      */
     public @Nullable AlchemyRecipe craft(AlchemyTableBlockEntity table, boolean commit) {
-        if (!(table.getLevel() instanceof ServerLevel level)) return null;
-        List<AlchemyRecipe> recipes = new ArrayList<>();
-        for (RecipeHolder<AlchemyRecipe> h : level.recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get())) {
-            if (h.value().process() == process) recipes.add(h.value());
-        }
-        recipes.sort(Comparator.comparingInt(AlchemyRecipe::kinds).reversed());
         List<Source> sources = sources(table);
         try (Transaction tx = Transaction.openRoot()) {
-            for (AlchemyRecipe recipe : recipes) {
+            for (AlchemyRecipe recipe : recipes(table)) {
                 try (Transaction attempt = Transaction.open(tx)) {
-                    if (!make(recipe, table, sources, attempt)) continue;
+                    if (!make(recipe, table, sources, attempt, null)) continue;
                     attempt.commit();
                 }
                 if (commit) tx.commit();
@@ -209,6 +218,17 @@ public final class ProcessCard {
             }
         }
         return null;
+    }
+
+    /** This process's recipes, richest first. */
+    private List<AlchemyRecipe> recipes(AlchemyTableBlockEntity table) {
+        List<AlchemyRecipe> recipes = new ArrayList<>();
+        if (!(table.getLevel() instanceof ServerLevel level)) return recipes;
+        for (RecipeHolder<AlchemyRecipe> h : level.recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get())) {
+            if (h.value().process() == process) recipes.add(h.value());
+        }
+        recipes.sort(Comparator.comparingInt(AlchemyRecipe::kinds).reversed());
+        return recipes;
     }
 
     /** A slot the card may take from: its own inputs first, then the table's storage holding designated items. */
@@ -237,21 +257,19 @@ public final class ProcessCard {
     }
 
     /**
-     * Takes one craft's materials and puts its results in the outputs, inside {@code tx}. The fluid
-     * comes from the tank, or else from water bottles, which pour a bottle each (any excess goes into
-     * the tank) and free their glass bottles for the recipe's own bottles; freed bottles it does not
-     * need go back to the raw-material area.
+     * Takes one craft's materials and puts its results in the outputs, inside {@code tx}. A fluid is
+     * poured from water bottles first, a bottle each (any excess goes into the tank), so the glass
+     * bottles they free can hold the product; the tank makes up the rest. Freed bottles the recipe
+     * does not need go back to the raw-material area. With {@code missing} given, it does not stop at
+     * the first shortfall but notes each one there (for the card's status) and fails at the end.
      */
-    private boolean make(AlchemyRecipe recipe, AlchemyTableBlockEntity table, List<Source> sources, TransactionContext tx) {
+    private boolean make(AlchemyRecipe recipe, AlchemyTableBlockEntity table, List<Source> sources, TransactionContext tx, @Nullable List<Component> missing) {
         int freed = 0;
+        boolean ok = true;
         if (recipe.fluid().isPresent()) {
             var need = recipe.fluid().get();
             int left = need.amount();
-            FluidStack inTank = table.fluid();
-            if (!inTank.isEmpty() && need.ingredient().test(inTank)) {
-                left -= table.tank().extract(0, table.tank().getResource(0), Math.min(left, inTank.getAmount()), tx);
-            }
-            if (left > 0 && need.ingredient().test(new FluidStack(Fluids.WATER, AlchemyTableBlock.BOTTLE))) {
+            if (need.ingredient().test(new FluidStack(Fluids.WATER, AlchemyTableBlock.BOTTLE))) {
                 for (Source s : sources) {
                     while (left > 0 && isWaterBottle(s.resource()) && s.handler().extract(s.index(), s.resource(), 1, tx) == 1) {
                         freed++;
@@ -260,7 +278,17 @@ public final class ProcessCard {
                 }
                 if (left < 0 && table.tank().insert(FluidResource.of(Fluids.WATER), -left, tx) != -left) return false;
             }
-            if (left > 0) return false;
+            FluidStack inTank = table.fluid();
+            if (left > 0 && !inTank.isEmpty() && need.ingredient().test(inTank)) {
+                left -= table.tank().extract(0, table.tank().getResource(0), Math.min(left, inTank.getAmount()), tx);
+            }
+            if (left > 0) {
+                if (missing == null) return false;
+                ok = false;
+                var fluid = need.ingredient().fluids().stream().findFirst();
+                Component name = fluid.isPresent() ? new FluidStack(fluid.get(), 1).getHoverName() : Component.translatable("logos.alchemy_card.fluid");
+                missing.add(Component.translatable("logos.alchemy_card.missing_fluid", name, left));
+            }
         }
         for (SizedIngredient need : recipe.ingredients()) {
             int left = need.count();
@@ -274,17 +302,53 @@ public final class ProcessCard {
                 ItemResource r = s.resource();
                 if (!r.isEmpty() && need.ingredient().test(r.toStack())) left -= s.handler().extract(s.index(), r, left, tx);
             }
-            if (left > 0) return false;
+            if (left > 0) {
+                if (missing == null) return false;
+                ok = false;
+                Component name = need.ingredient().items().findFirst().map(i -> new ItemStack(i).getHoverName()).orElse(Component.literal("?"));
+                missing.add(Component.translatable("logos.alchemy_card.missing_item", name, left));
+            }
         }
+        if (!ok) return false;
         for (ItemStackTemplate result : recipe.results()) {
             ItemStack made = result.create();
-            if (outputs.insert(ItemResource.of(made), made.getCount(), tx) != made.getCount()) return false;
+            if (outputs.insert(ItemResource.of(made), made.getCount(), tx) != made.getCount()) {
+                if (missing != null) missing.add(Component.translatable("logos.alchemy_card.output_full"));
+                return false;
+            }
         }
         if (freed > 0) {
             freed -= table.rawArea().insert(ItemResource.of(Items.GLASS_BOTTLE), freed, tx);
-            if (freed > 0 && outputs.insert(ItemResource.of(Items.GLASS_BOTTLE), freed, tx) != freed) return false;
+            if (freed > 0 && outputs.insert(ItemResource.of(Items.GLASS_BOTTLE), freed, tx) != freed) {
+                if (missing != null) missing.add(Component.translatable("logos.alchemy_card.output_full"));
+                return false;
+            }
         }
         return true;
+    }
+
+    /**
+     * Why the card cannot work now: no mana, nothing to work with, or, for the recipe it is closest
+     * to making (the fewest shortfalls; the richest among equals), what it lacks.
+     */
+    private Component diagnose(AlchemyTableBlockEntity table) {
+        if (table.mana() < MANA_PER_CRAFT) return Component.translatable("logos.alchemy_card.no_mana");
+        boolean anything = false;
+        for (int i = 0; i < SLOTS; i++) anything |= designated[i] != null;
+        if (!anything) return Component.translatable("logos.alchemy_card.idle");
+        List<Component> best = null;
+        List<Source> sources = sources(table);
+        for (AlchemyRecipe recipe : recipes(table)) {
+            List<Component> missing = new ArrayList<>();
+            try (Transaction tx = Transaction.openRoot()) {
+                make(recipe, table, sources, tx, missing);
+            }
+            if (best == null || missing.size() < best.size()) best = missing;
+        }
+        if (best == null || best.isEmpty()) return Component.empty();
+        MutableComponent out = Component.translatable("logos.alchemy_card.missing");
+        for (int i = 0; i < best.size(); i++) out.append(i == 0 ? Component.empty() : Component.literal("、")).append(best.get(i));
+        return out;
     }
 
     static boolean isContainer(ItemResource r) {
@@ -342,6 +406,7 @@ public final class ProcessCard {
         out.store("routes", ROUTES, routes);
         out.putInt("default_route", defaultRoute);
         out.putInt("progress", progress);
+        out.store("status", ComponentSerialization.CODEC, status);
         out.putInt("x", x);
         out.putInt("y", y);
     }
@@ -360,6 +425,7 @@ public final class ProcessCard {
         in.read("routes", ROUTES).ifPresent(card.routes::putAll);
         card.defaultRoute = in.getIntOr("default_route", KEEP);
         card.progress = in.getIntOr("progress", 0);
+        card.status = in.read("status", ComponentSerialization.CODEC).orElse(Component.empty());
         card.x = in.getIntOr("x", 0);
         card.y = in.getIntOr("y", 0);
         return card;
