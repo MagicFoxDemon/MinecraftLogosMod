@@ -233,12 +233,28 @@ public final class LogosFx {
             case TRAIL_END -> {
                 Trail t = TRAILS.remove(p.id());
                 if (t != null) t.destroy(false);
+                ProjectileImpactVisual impact = ProjectileImpactVisual.create(el);
+                List<ParticleEmitter> expiry = impact.expiry();
                 if (t != null && t.particle != null) {
                     // A custom trail ends in a puff of its own particle rather than the element's burst.
                     scatter(level, t.particle, pos, 10, 0.4);
+                } else if (!expiry.isEmpty()) {
+                    if (p.variant() == 0) play(level, fx("projectile_expiry", el, 0, () -> expiry), pos, 1);
                 } else {
                     play(level, fx("burst", el, 0, () -> burst(el)), pos, 1);
                     accents(level, el, pos, 10, 0.25, 0.12);
+                }
+            }
+            case PROJECTILE_IMPACT -> {
+                ProjectileImpactVisual visual = ProjectileImpactVisual.create(el);
+                List<ParticleEmitter> layers = visual.impact();
+                if (!layers.isEmpty()) {
+                    Vec3 outward = new Vec3(p.ax(), p.ay(), p.az());
+                    if (outward.lengthSqr() < 1e-6) outward = new Vec3(0, 1, 0);
+                    FXRuntime runtime = play(level, fx("projectile_impact", el, 0, () -> layers),
+                            pos.add(outward.normalize().scale(.03)), visual.scale(p.size()));
+                    runtime.getRoot().updateRotation(new Quaternionf().rotationTo(new Vector3f(0, 1, 0),
+                            new Vector3f((float)outward.x, (float)outward.y, (float)outward.z).normalize()));
                 }
             }
             case PHANTASM -> {
