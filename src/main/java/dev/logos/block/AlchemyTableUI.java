@@ -150,7 +150,16 @@ public final class AlchemyTableUI {
         fluidGauge.setId("fluid_gauge");
         UIElement tankRow = row(tank, column(fluidText, row(fluidGauge, clear)));
 
-        return new UIElement().layout(l -> l.gapAll(4)).addChildren(new Label().setText(Component.translatable("block.logos.alchemy_table")),
+        // The switch that runs or stops all the processes; a redstone signal stops them too.
+        Button power = new Button().setText(Component.translatable("logos.alchemy_table.toggle"));
+        power.setId("run_switch");
+        power.setOnServerClick(e -> table.setEnabled(!table.enabled()));
+        Label running = new Label();
+        running.setId("run_state");
+        running.bind(DataBindingBuilder.componentS2C(() -> Component.translatable(!table.enabled() ? "logos.alchemy_table.stopped"
+                : table.powered() ? "logos.alchemy_table.redstone_stopped" : "logos.alchemy_table.running")).build());
+
+        return new UIElement().layout(l -> l.gapAll(4)).addChildren(new Label().setText(Component.translatable("block.logos.alchemy_table")), row(power, running),
                 new Label().setText(Component.translatable("logos.alchemy_table.raw")), raw,
                 new Label().setText(Component.translatable("logos.alchemy_table.products")), products,
                 manaRow, tankRow, new InventorySlots());

@@ -459,4 +459,29 @@ final class AlchemyGameTests {
         }
         h.succeed();
     }
+
+    /** The switch pauses the cards (keeping a craft's progress), a redstone signal stops them too, and both resume. */
+    static void tableSwitchAndRedstone(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.SETTLE);
+        put(card.inputs(), new ItemStack(LogosMod.NITER_MOTHER_LIQUOR.get(), 2));
+        h.runAfterDelay(20, () -> {
+            int progress = card.progress();
+            h.assertTrue(progress > 0, "the card had not started");
+            table.setEnabled(false);
+            h.runAfterDelay(ProcessCard.CRAFT_TICKS, () -> {
+                h.assertTrue(card.progress() == progress && count(card.outputs(), LogosMod.SALTPETER.get()) == 0, "the card worked while switched off");
+                h.assertTrue(card.status().toString().contains("switched_off"), "a switched-off card says " + card.status());
+                table.setEnabled(true);
+                h.setBlock(SIDE.east(), Blocks.REDSTONE_BLOCK);
+                h.runAfterDelay(ProcessCard.CRAFT_TICKS, () -> {
+                    h.assertTrue(count(card.outputs(), LogosMod.SALTPETER.get()) == 0, "the card worked under a redstone signal");
+                    h.assertTrue(card.status().toString().contains("logos.alchemy_card.redstone"), "a powered card says " + card.status());
+                    h.setBlock(SIDE.east(), Blocks.AIR);
+                    h.succeedWhen(() -> h.assertTrue(count(card.outputs(), LogosMod.SALTPETER.get()) >= 2, "the card did not resume"));
+                });
+            });
+        });
+    }
 }

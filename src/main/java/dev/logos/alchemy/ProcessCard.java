@@ -180,6 +180,15 @@ public final class ProcessCard {
         return working;
     }
 
+    /** A tick the table holds its cards still: no work, the craft so far kept, and {@code why} shown. */
+    public void pause(Component why) {
+        working = false;
+        if (!why.equals(status)) {
+            status = why;
+            changed.run();
+        }
+    }
+
     /** One tick: work on the craft if it can be made (else stop), then pass outputs along. True when a craft was finished. */
     public boolean tick(AlchemyTableBlockEntity table) {
         boolean finished = false;
