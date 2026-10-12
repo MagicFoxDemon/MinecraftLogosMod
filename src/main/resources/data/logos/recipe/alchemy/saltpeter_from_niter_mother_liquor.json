@@ -1,0 +1,11 @@
+{
+  "type": "logos:alchemy",
+  "process": "settle",
+  "ingredients": [
+    { "ingredient": "logos:niter_mother_liquor" }
+  ],
+  "results": [
+    { "id": "logos:saltpeter", "count": 2 },
+    { "id": "minecraft:glass_bottle" }
+  ]
+}

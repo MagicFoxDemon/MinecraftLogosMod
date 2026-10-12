@@ -1,0 +1,14 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "#minecraft:meat" },
+    { "ingredient": "#c:eggs" },
+    { "ingredient": "logos:starter_culture" },
+    { "ingredient": "minecraft:sugar" },
+    { "ingredient": "minecraft:glass_bottle" }
+  ],
+  "results": [
+    { "id": "logos:foul_brine" }
+  ]
+}

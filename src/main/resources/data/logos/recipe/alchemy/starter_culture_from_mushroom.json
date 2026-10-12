@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "minecraft:sugar" },
+    { "ingredient": "#c:mushrooms" },
+    { "ingredient": "minecraft:wheat" }
+  ],
+  "results": [
+    { "id": "logos:starter_culture", "count": 3 }
+  ]
+}

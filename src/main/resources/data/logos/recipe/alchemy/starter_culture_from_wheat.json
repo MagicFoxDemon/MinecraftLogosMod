@@ -1,0 +1,11 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:starter_culture" },
+    { "ingredient": "minecraft:wheat" }
+  ],
+  "results": [
+    { "id": "logos:starter_culture", "count": 3 }
+  ]
+}
