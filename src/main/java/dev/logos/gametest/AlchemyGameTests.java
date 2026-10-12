@@ -357,6 +357,7 @@ final class AlchemyGameTests {
         h.assertTrue(table.addCard(Process.FERMENT) == null, "the table took a fifth card");
         table.cards().get(0).setRoute(Items.SUGAR, 2);
         table.cards().get(0).setDefaultRoute(3);
+        table.cards().get(0).moveTo(10, 20);
         table.cards().get(1).designate(4, Items.CLAY_BALL);
         put(table.cards().get(2).inputs(), new ItemStack(Items.SUGAR, 7));
 
@@ -366,6 +367,7 @@ final class AlchemyGameTests {
         h.assertTrue(copy.cards().size() == 4 && copy.cards().get(3).process == Process.SETTLE, "the cards were not saved");
         h.assertTrue(copy.cards().get(0).route(Items.SUGAR) == 2 && copy.cards().get(0).defaultRoute() == 3, "the routes were not saved");
         h.assertTrue(copy.cards().get(1).designated(4) == Items.CLAY_BALL, "the designation was not saved");
+        h.assertTrue(copy.cards().get(0).x() == 10 && copy.cards().get(0).y() == 20, "the card's place on the canvas was not saved");
         h.assertTrue(count(copy.cards().get(2).inputs(), Items.SUGAR) == 7, "the card's contents were not saved");
 
         table.removeCard(2);

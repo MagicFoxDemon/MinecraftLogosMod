@@ -18,4 +18,8 @@ public final class ClientHooks {
     public static void openAnchorList() {
         net.minecraft.client.Minecraft.getInstance().setScreen(new AnchorScreens.List());
     }
+
+    public static void sendToServer(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
+        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(payload);
+    }
 }
