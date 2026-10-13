@@ -195,6 +195,22 @@ final class LifeformGameTests {
         healFormHitsMaster(h, "beam");
     }
 
+    /** A damaging projectile declared a heal still passes through its master: what it does on hit decides, not :intent. */
+    static void declaredHealStillSparesMaster(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
+        lf.setNoAi(true);
+        lf.snapTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0);
+        lf.core.setItem(0, page("(spell :name \"伪愈\" :intent heal :players true :mana 30 (projectile :dir (toward here (pos-of (master))) (on-hit (mark target #struck) (damage target 2))))"));
+        h.assertTrue(lf.castSlot(0, p), "it should cast the page");
+        // The projectile lives 3 seconds; by then it has long flown past.
+        h.runAfterDelay(70, () -> {
+            h.assertFalse(StatusData.has(p, Status.parse("#struck")), "a damaging page declared a heal should not strike its master");
+            h.succeed();
+        });
+    }
+
     private static void healFormHitsMaster(GameTestHelper h, String form) {
         ServerPlayer p = FamiliarGameTests.master(h);
         FamiliarGameTests.forceAround(h, 1);
