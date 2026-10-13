@@ -521,6 +521,13 @@ public final class Compiler {
         return counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(Element.ARCANE);
     }
 
+    /** A whole spell's look, by the same rules a form's is inferred by (a wand charge is drawn in it). */
+    public static Element inferElement(List<Node> body) {
+        Map<Element, Integer> counts = new EnumMap<>(Element.class);
+        body.forEach(n -> walk(n, counts, false));
+        return counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(Element.ARCANE);
+    }
+
     private static void walk(Node n, Map<Element, Integer> counts, boolean root) {
         if (n.kind != Node.Kind.CALL) return;
         if (!root) {

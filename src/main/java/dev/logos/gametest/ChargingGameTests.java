@@ -149,16 +149,18 @@ final class ChargingGameTests {
         h.succeed();
     }
 
-    /** A charge takes the colour of the element its spell names most, life for a heal naming none, arcane otherwise; tiers go by injection. */
+    /** A charge looks like its spell by the rules forms are drawn by (ignite is fire, heal is life, nothing is arcane); tiers go by injection. */
     static void chargeLooks(GameTestHelper h) {
-        h.assertTrue(Charging.element(dev.logos.runtime.Casting.compile(
-                "(spell :mana 50 (damage (enemies :radius 4) standard fire) (damage (enemies :radius 4) minor fire) (damage (enemies :radius 4) minor frost))"))
-                == dev.logos.lang.Element.FIRE, "two fires and a frost should look fiery");
-        h.assertTrue(Charging.element(dev.logos.runtime.Casting.compile("(spell :mana 50 :players true (heal (players :radius 8) 6))")) == dev.logos.lang.Element.LIFE,
-                "a heal should look like life");
-        h.assertTrue(Charging.element(dev.logos.runtime.Casting.compile(MARK)) == dev.logos.lang.Element.ARCANE, "a mark should look arcane");
+        h.assertTrue(look("(spell :mana 50 (ignite (enemies :radius 4) 3) (damage (enemies :radius 4) minor fire) (damage (enemies :radius 4) minor frost))")
+                == dev.logos.lang.Element.FIRE, "an ignite and a fire hit outweigh a frost hit");
+        h.assertTrue(look("(spell :mana 50 :players true (heal (players :radius 8) 6))") == dev.logos.lang.Element.LIFE, "a heal should look like life");
+        h.assertTrue(look(MARK) == dev.logos.lang.Element.ARCANE, "a mark should look arcane");
         h.assertTrue(Charging.tier(99) == 0 && Charging.tier(100) == 1 && Charging.tier(799) == 1 && Charging.tier(800) == 2
                 && Charging.tier(3199) == 2 && Charging.tier(3200) == 3, "tiers break at 100, 800 and 3200");
         h.succeed();
+    }
+
+    private static dev.logos.lang.Element look(String src) {
+        return dev.logos.lang.Compiler.inferElement(dev.logos.runtime.Casting.compile(src).body());
     }
 }

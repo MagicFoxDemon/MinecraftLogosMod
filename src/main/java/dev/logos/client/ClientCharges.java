@@ -91,16 +91,8 @@ public final class ClientCharges {
         CHARGES.entrySet().removeIf(e -> ticks - e.getValue().updated > STALE_TICKS || level.getEntity(e.getKey()) == null);
     }
 
-    /** Each element's charging colour (opaque RGB). */
+    /** The element's colour (opaque RGB): the same palette its projectiles, rays and impacts are drawn in. */
     public static int color(Element e) {
-        return switch (e) {
-            case PHYSICAL -> 0xF2E6B8;
-            case FIRE -> 0xFF7A2A;
-            case FROST -> 0x8FE3FF;
-            case LIGHTNING -> 0xFFF27A;
-            case VOID -> 0x9B5CFF;
-            case ARCANE -> 0xD27BFF;
-            case LIFE -> 0x6BFF8A;
-        };
+        return LogosFx.coreColor(e);
     }
 }

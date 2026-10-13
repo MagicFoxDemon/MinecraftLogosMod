@@ -7,7 +7,6 @@ import dev.logos.LogosMod;
 import dev.logos.item.SpellBag;
 import dev.logos.lang.Element;
 import dev.logos.lang.Node;
-import dev.logos.lang.Spell;
 import dev.logos.net.ChargePayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -57,7 +56,7 @@ public final class Charging {
             this.flow = flow;
             this.surge = surge;
             this.ticks = ticks(in.mana(), flow, surge);
-            this.element = element(entry.spell());
+            this.element = dev.logos.lang.Compiler.inferElement(entry.spell().body());
             this.tier = tier(in.mana());
         }
 
@@ -80,27 +79,6 @@ public final class Charging {
     /** Charge looks by injection: ordinary under 100, elaborate under 800, grand under 3200, colossal beyond. */
     public static int tier(double mana) {
         return mana < 100 ? 0 : mana < 800 ? 1 : mana < 3200 ? 2 : 3;
-    }
-
-    /**
-     * The element a spell is mostly written in: the one its runes name most often. A spell naming none
-     * is arcane, or life if it is meant to heal.
-     */
-    public static Element element(Spell spell) {
-        int[] counts = new int[Element.values().length];
-        for (Node n : spell.body()) count(n, counts);
-        int best = -1;
-        for (int i = 0; i < counts.length; i++) if (counts[i] > 0 && (best < 0 || counts[i] > counts[best])) best = i;
-        if (best >= 0) return Element.values()[best];
-        return spell.profile().primary() == dev.logos.lang.Intent.HEAL ? Element.LIFE : Element.ARCANE;
-    }
-
-    private static void count(Node n, int[] counts) {
-        if (n.value instanceof Element e) counts[e.ordinal()]++;
-        for (Node a : n.args) count(a, counts);
-        for (Node a : n.kw.values()) count(a, counts);
-        for (Node a : n.body) count(a, counts);
-        for (var handlers : n.events.values()) for (Node a : handlers) count(a, counts);
     }
 
     /** Seconds to inject {@code mana} at {@code flow + surge·t} per second, before the minimum length applies. */
