@@ -91,6 +91,29 @@ final class RuneGameTests {
         h.succeed();
     }
 
+    /**
+     * damage-all pays 3× the single price up to radius 5, then × (r / 5)^1.5 for the radius of the
+     * selector that gathered its group — through a variable too; a radius past 64 searches and costs as 64.
+     */
+    static void groupRadiusCost(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        PlayerMagic.of(p).maxMana = PlayerMagic.of(p).mana = 1e6;
+        mob(h, EntityType.HUSK);
+        // enemies 2, then 1 physical point (0.8) × 3 × max(1, (r/5)^1.5).
+        java.util.function.DoubleUnaryOperator expected = r -> 2 + 0.8 * 3 * Math.max(1, Math.pow(r / 5, 1.5));
+        java.util.function.BiConsumer<String, Double> check = (targets, r) -> {
+            var inst = Casting.cast(p, Casting.compile("(spell :mana 200 " + targets.replace("$G", "(damage-all $g 1)") + ")"), null, null);
+            h.assertTrue(inst != null && !inst.dead, "cast failed: " + targets + (inst == null ? "" : " — " + inst.endReason()));
+            double spent = inst.injected - inst.mana;
+            h.assertTrue(Math.abs(spent - expected.applyAsDouble(r)) < 1e-6, targets + " should cost " + expected.applyAsDouble(r) + ", cost " + spent);
+        };
+        check.accept("(let $g (enemies :radius 3) $G)", 3.0);
+        check.accept("(let $g (enemies) $G)", 5.0);
+        check.accept("(let $g (enemies :radius 20) $G)", 20.0);
+        check.accept("(let $g (enemies :radius 200) $G)", 64.0);
+        h.succeed();
+    }
+
     /** potion applies any registered effect by id, at the given level and duration; unknown ids do not compile. */
     static void potionEffects(GameTestHelper h) {
         ServerPlayer p = caster(h);

@@ -6,7 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import dev.logos.LogosConfig;
+import dev.logos.runtime.Group;
 
 /**
  * A spell's intent file: what it is for, how far it reaches, and roughly what it costs. Read off the
@@ -80,6 +80,15 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
             Node a = n.arg(i);
             if (a != null && a.kind != Node.Kind.LIT) assumptions.add("算式算出的数值按默认值估算");
             return lit(a, fallback);
+        }
+
+        /** A group effect's price multiple, from the radius of the selector written into it; anything else at the reference radius. */
+        private double groupMultiplier(Node targets) {
+            if (targets != null && targets.kind == Node.Kind.CALL && targets.rune != null && targets.kw.containsKey("radius")) {
+                return Group.costMultiplier(Group.clampRadius(kwNum(targets, "radius", Group.REFERENCE_RADIUS)));
+            }
+            assumptions.add("群体效果的群不是直接写的选择器时，按半径 " + (int) Group.REFERENCE_RADIUS + " 估算");
+            return Group.costMultiplier(Group.REFERENCE_RADIUS);
         }
 
         /** How many things a target argument stands for. */
@@ -196,15 +205,15 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                 }
                 case "damage-all" -> {
                     double factor = n.arg(2) != null && n.arg(2).value instanceof Element el ? el.costFactor : Element.PHYSICAL.costFactor;
-                    own = argNum(n, 1, 5) * factor * LogosConfig.groupCostMultiplier() + events(n, "on-kill", true);
+                    own = argNum(n, 1, 5) * factor * groupMultiplier(n.arg(0)) + events(n, "on-kill", true);
                     found.add(Intent.AREA);
                 }
                 case "ignite-all" -> {
-                    own = argNum(n, 1, 3) * 0.6 * LogosConfig.groupCostMultiplier();
+                    own = argNum(n, 1, 3) * 0.6 * groupMultiplier(n.arg(0));
                     found.add(Intent.AREA);
                 }
                 case "freeze-all" -> {
-                    own = argNum(n, 1, 3) * 1.2 * LogosConfig.groupCostMultiplier();
+                    own = argNum(n, 1, 3) * 1.2 * groupMultiplier(n.arg(0));
                     found.add(Intent.CONTROL);
                 }
                 case "disarm" -> {

@@ -41,6 +41,15 @@ class CompilerTest {
     }
 
     @Test
+    void groupEstimateGrowsWithRadius() {
+        // enemies 2 + 1 physical (0.8) × 3 × max(1, (r/5)^1.5); past 64 counts as 64
+        assertEquals(4.4, Compiler.compile("(spell :mana 200 (damage-all (enemies) 1))").profile().estimate(), 1e-6);
+        assertEquals(21.2, Compiler.compile("(spell :mana 200 (damage-all (enemies :radius 20) 1))").profile().estimate(), 1e-6);
+        assertEquals(2 + 2.4 * Math.pow(64 / 5.0, 1.5),
+                Compiler.compile("(spell :mana 200 (damage-all (enemies :radius 300) 1))").profile().estimate(), 0.05); // shown to one decimal
+    }
+
+    @Test
     void elementInferredForVisuals() {
         Spell s = Compiler.compile(Examples.ALL.get("fireball"));
         assertEquals(Element.FIRE, s.body().getFirst().element);

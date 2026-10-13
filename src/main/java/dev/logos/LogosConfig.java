@@ -75,6 +75,17 @@ public final class LogosConfig {
             .translation("logos.configuration.groupCostMultiplier")
             .defineInRange("groupCostMultiplier", 3.0, 0.0, 1000.0);
 
+    public static final ModConfigSpec.DoubleValue GROUP_RADIUS_EXPONENT = BUILDER
+            .comment("Beyond radius 5, a group effect's multiplier grows by (radius / 5) to this power, the radius being",
+                    "that of the selector which gathered the group: 1.5 makes radius 10 cost 2.8 times radius 5, radius 64 about 46 times.")
+            .translation("logos.configuration.groupRadiusExponent")
+            .defineInRange("groupRadiusExponent", 1.5, 0.0, 4.0);
+
+    public static final ModConfigSpec.IntValue MAX_GROUP_RADIUS = BUILDER
+            .comment("The largest :radius a group selector (enemies, entities, players, items, marked) searches.")
+            .translation("logos.configuration.maxGroupRadius")
+            .defineInRange("maxGroupRadius", 64, 1, 256);
+
     public static final ModConfigSpec.IntValue CHARGE_MIN_TICKS = BUILDER
             .comment("The shortest a wand cast may charge, in ticks, however little it injects.")
             .translation("logos.configuration.chargeMinTicks")
@@ -180,6 +191,18 @@ public final class LogosConfig {
         } catch (IllegalStateException e) {
             return 3.0;
         }
+    }
+
+    public static double groupRadiusExponent() {
+        try {
+            return GROUP_RADIUS_EXPONENT.getAsDouble();
+        } catch (IllegalStateException e) {
+            return 1.5;
+        }
+    }
+
+    public static int maxGroupRadius() {
+        return read(MAX_GROUP_RADIUS::getAsInt, 64);
     }
 
     public static int chargeMinTicks() {
