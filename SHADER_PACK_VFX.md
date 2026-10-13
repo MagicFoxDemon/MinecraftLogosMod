@@ -6,7 +6,7 @@ Iris + Sodium 几乎是玩家必装的模组。本模组的特效在不开光影
 
 - 自己写的几何（自定义 `RenderType`、自定义着色器）：**每个顶点写全所有元素（含法线）**，并且**通过 `ShaderPackOverlay.collector(...)` 提交**，由它在光影合成之后用我们自己的着色器叠加上去。
 - **不要**把管线登记给 Iris 的程序（`IrisApi.assignPipeline`），也不要去猜用哪个程序。
-- Photon 粒子目前**还没有**解决：开光影时偏暗或看不见。在公共修复合并之前，用 Photon 做的效果在光影下验收不通过是已知问题，不要各自在元素分支里修。
+- Photon 粒子**用 Photon 自带的材质**（`TextureMaterial`、`SpriteMaterial`、`CustomShaderMaterial` 等）：Photon 自己处理光影，不需要也不要走我们的叠加。**不要让材质返回自己构造的 `RenderType`**，那样会绕过 Photon 的光影处理，开光影时看不见。
 
 ## 开了光影以后发生了什么
 
@@ -29,7 +29,10 @@ Iris + Sodium 几乎是玩家必装的模组。本模组的特效在不开光影
 2. **自定义几何走叠加收集器。** 魔弹飞行外观的 `submit(...)` 拿到的 `out` 已经是叠加收集器，元素分支照常调用 `out.submitCustomGeometry(...)` 即可，不需要碰 Iris。新增别的特效入口（不是魔弹飞行）时，在公共入口里同样用 `ShaderPackOverlay.collector(...)` 包一层；这属于公共改动，单独提 PR。
 3. **只有 `submitCustomGeometry` 会被叠加。** 通过同一个收集器提交的物品模型、方块等其他内容照常交给光影处理。
 4. **不要做的事：** 调用 `IrisApi.assignPipeline`；为了「看起来更亮」改颜色或混合方式去迁就某一个光影包；在元素分支里直接引用 Iris 的类。
-5. **Photon 效果（命中特效、拖尾粒子层）：** 目前不在叠加范围内。实测命中特效在 photon 光影下，奥秘只剩很淡的一团，物理（自定义 `PhysicalProjectileImpactMaterial`）完全看不见；不开光影时都正常。Photon 自己的 `photon:pipeline/hdr_particle_*`、`bloom_*` 同样没有 Iris 程序。这需要一次公共修复；在它合并之前，美术替换照常做，验收时如实写明「光影下未通过（已知问题）」。
+5. **Photon 效果（命中特效、拖尾粒子层）：** Photon 26.1 自带一套 Iris 兼容（`com.lowdragmc.photon.client.compat.iris`）：它会识别光影包的类型，必要时把整层特效放到光影合成之后再叠加（配置 `photon-client.toml` 的 `iris_composite_mode`，默认 `AUTO`；游戏内可用 `/photon_iris` 查看状态，日志里有 `[Iris compat]` 提示）。实测 photon 光影下 Photon 自己的层都可见，只是没有泛光、在明亮的天空前对比度低一些。
+   - **会出问题的是自己构造 `RenderType` 的材质。** `PhysicalProjectileImpactMaterial`、`VoidProjectileImpactMaterial` 重写了 `getRenderType` 返回自己的管线，绕过了 Photon 的光影处理：物理命中的螺旋在 photon 光影下完全看不见，而同一次命中里 Photon 自己的闪光层正常。新材质用 Photon 的 `CustomShaderMaterial` 等现成材质承载自定义着色器，不要自建 `RenderType`；这两个旧材质待公共修复。
+   - Photon 的 `photon:pipeline/hdr_particle_*`、`bloom_*` 在日志里报 `Missing program` 是 Photon 自己的事，它的兼容层会处理，不要替它登记程序。
+   - Photon 本身有问题时，向上游提 issue 或 PR（许可证 CC BY-NC-SA 4.0；移植到 1.21.x 以外版本的公开发布需原作者书面同意），不要自己 fork 一份随模组发布：模组 id 冲突、其他依赖 Photon 的模组会出问题，也要自己追上游更新。
 6. **原版粒子**（`level.addParticle` 之类）由光影包正常处理，开光影时可见。
 
 ## 在开发环境里测光影
