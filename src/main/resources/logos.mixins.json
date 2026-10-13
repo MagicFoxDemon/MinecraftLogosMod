@@ -12,7 +12,12 @@
     "LivingEntityMixin",
     "WardenMixin"
   ],
-  "client": [],
+  "client": [
+    "ItemInHandLayerMixin",
+    "ItemInHandRendererMixin",
+    "ItemStackRenderStateAccessor",
+    "LayerRenderStateAccessor"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

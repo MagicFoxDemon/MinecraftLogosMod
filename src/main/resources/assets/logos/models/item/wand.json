@@ -2,5 +2,16 @@
   "parent": "minecraft:item/handheld",
   "textures": {
     "layer0": "logos:item/wand"
-  }
+  },
+  "groups": [
+    {
+      "name": "wand_tip",
+      "origin": [
+        14,
+        14.25,
+        8
+      ],
+      "children": []
+    }
+  ]
 }

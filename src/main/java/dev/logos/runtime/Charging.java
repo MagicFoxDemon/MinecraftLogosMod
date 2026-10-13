@@ -10,7 +10,6 @@ import dev.logos.lang.Node;
 import dev.logos.net.ChargePayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -167,17 +166,10 @@ public final class Charging {
                     sync(player, c);
                     Vfx.sound(level, tip, SoundEvents.AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
                     Vfx.sound(level, tip, SoundEvents.PLAYER_LEVELUP, 0.4f, 1.8f);
-                    level.sendParticles(ParticleTypes.END_ROD, tip.x, tip.y, tip.z, 12, 0.15, 0.15, 0.15, 0.05);
                 } else if (c.done % 5 == 0) {
                     Vfx.sound(level, tip, SoundEvents.AMETHYST_BLOCK_CHIME, 0.5f, 0.6f + 1.0f * c.done / c.ticks);
                 }
             }
-        }
-        // Placeholder look until the element-and-tier charging effects exist: motes drawn in while charging, a steady glow once full.
-        if (c.full()) {
-            if (level.getGameTime() % 3 == 0) level.sendParticles(ParticleTypes.END_ROD, tip.x, tip.y, tip.z, 1, 0.05, 0.05, 0.05, 0.005);
-        } else {
-            level.sendParticles(ParticleTypes.ENCHANT, tip.x, tip.y, tip.z, 3, 0.4, 0.4, 0.4, 0.6);
         }
         if (level.getGameTime() % 2 == 0) sync(player, c);
     }
@@ -212,7 +204,7 @@ public final class Charging {
         cancel(player);
     }
 
-    /** About where the wand's tip is: ahead, below the eyes and to the right, clear of the player's view. */
+    /** About where the wand's tip is, for sounds: ahead, below the eyes and to the right. Clients draw the effects at the real tip. */
     private static Vec3 tip(ServerPlayer player) {
         Vec3 look = player.getLookAngle();
         Vec3 right = look.cross(new Vec3(0, 1, 0));

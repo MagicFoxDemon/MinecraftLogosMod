@@ -7172,6 +7172,16 @@
       "children": [
         156
       ]
+    },
+    {
+      "name": "wand_tip",
+      "origin": [
+        8,
+        15.148,
+        8
+      ],
+      "color": 0,
+      "children": []
     }
   ]
 }
