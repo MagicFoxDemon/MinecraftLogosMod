@@ -83,6 +83,11 @@ public final class Vfx {
         send(level, Kind.TRAIL, e, m.ordinal(), pos, heading, (float) size, id, g);
     }
 
+    /** Spell body {@code id} sets out from {@code caster}'s eyes at {@code eye}: clients start drawing it at the caster's cast point. */
+    public static void trailFrom(ServerLevel level, int id, Vec3 eye, int caster) {
+        send(level, Kind.TRAIL_FROM, Element.ARCANE, 0, eye, Vec3.ZERO, 0, id, new Guise(caster, 0, NONE));
+    }
+
     /**
      * A lasting beam from {@code from} to {@code to}, re-sent every tick under a stable id.
      * {@code anchor} is the network id of the entity whose eye and gaze it follows (or -1); clients

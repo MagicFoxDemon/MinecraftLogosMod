@@ -92,6 +92,11 @@ public final class LogosFx {
 
     private static final Map<String, FX> CACHE = new HashMap<>();
     private static final Map<Integer, Trail> TRAILS = new HashMap<>();
+    /** A body set out from its caster's eyes is drawn from the caster's cast point and joins its path over these ticks. */
+    private static final int CONVERGE_TICKS = 6;
+    /** Bodies announced by {@code TRAIL_FROM} and not yet seen: their caster and the eye they left. */
+    private record SetOut(int caster, Vec3 eye, long at) {}
+    private static final Map<Integer, SetOut> SET_OUT = new HashMap<>();
     private static final Map<Integer, Beam> BEAMS = new HashMap<>();
 
     /** A lasting {@code beam} as last reported; drawn every frame as a beacon-style tube. */
@@ -121,12 +126,23 @@ public final class LogosFx {
         final @Nullable Look look;
         long lastSeen;
         Vec3 last;
+        /** From the caster's cast point to where it really set out; drawn shifted by this, easing to nothing. */
+        Vec3 offset = Vec3.ZERO;
+        long born;
 
         Trail(@Nullable ParticleOptions particle, @Nullable Look look, Vec3 pos, long now) {
             this.particle = particle;
             this.look = look;
             this.last = pos;
             this.lastSeen = now;
+            this.born = now;
+        }
+
+        /** Where to draw it when it is really at {@code pos}: shifted toward the cast point at first, onto its path by {@value #CONVERGE_TICKS} ticks. */
+        Vec3 shown(Vec3 pos, long now) {
+            if (offset == Vec3.ZERO) return pos;
+            float s = Math.min(1, (now - born) / (float) CONVERGE_TICKS);
+            return pos.add(offset.scale(1 - s * s * (3 - 2 * s)));
         }
 
         void destroy(boolean force) {
@@ -186,15 +202,23 @@ public final class LogosFx {
         Element el = Element.values()[Math.floorMod(p.element(), Element.values().length)];
         Vec3 pos = new Vec3(p.x(), p.y(), p.z());
         switch (p.kindEnum()) {
+            case TRAIL_FROM -> SET_OUT.put(p.id(), new SetOut(p.look(), pos, level.getGameTime()));
             case TRAIL -> {
                 Trail t = TRAILS.get(p.id());
+                Vec3 real = pos;
                 if (t == null) {
-                    // A body cast from the eye starts inside the camera; begin drawing once it is a little way out.
-                    if (nearCamera(pos)) return;
+                    SetOut from = SET_OUT.remove(p.id());
+                    Entity caster = from != null ? level.getEntity(from.caster()) : null;
+                    // A body cast from the eye starts inside the camera: drawn from the cast point instead, or not until it is a little way out.
+                    if (caster == null && nearCamera(pos)) return;
+                    Vec3 offset = caster != null ? CastPoints.of(caster, 1).subtract(from.eye()) : Vec3.ZERO;
+                    pos = real.add(offset);
                     t = new Trail(particle(p.particle()), Look.of(p, pos, level.getGameTime()), pos, level.getGameTime());
+                    t.offset = offset;
                     TRAILS.put(p.id(), t);
-                } else if (t.look != null) {
-                    t.look.moveTo(pos, p);
+                } else {
+                    pos = t.shown(real, level.getGameTime());
+                    if (t.look != null) t.look.moveTo(pos, p);
                 }
                 t.lastSeen = level.getGameTime();
                 if (t.particle == null || t.look == null) {
@@ -219,7 +243,7 @@ public final class LogosFx {
                         t.runtime = play(level, fx("projectile", el, m.ordinal(), () -> visual.particles(m)),
                                 pos, visual.particleScale(p.size(), t.look != null));
                     } else {
-                        t.runtime.getRoot().updatePos(new Vector3f(p.x(), p.y(), p.z()));
+                        t.runtime.getRoot().updatePos(new Vector3f((float) pos.x, (float) pos.y, (float) pos.z));
                     }
                     if (!t.visual.legacyAccents()) {
                         Vector3f heading = new Vector3f(p.ax(), p.ay(), p.az());
@@ -337,9 +361,15 @@ public final class LogosFx {
         }
     }
 
+    /** Where each spell body in flight was last drawn (the client scenes check it). */
+    public static List<Vec3> drawnTrails() {
+        return TRAILS.values().stream().map(t -> t.last).toList();
+    }
+
     /** Drops trails whose spell body stopped reporting (e.g. it left tracking range). */
     public static void tick() {
         Level level = Minecraft.getInstance().level;
+        if (level != null) SET_OUT.values().removeIf(o -> level.getGameTime() - o.at() > 40);
         if (level == null) {
             TRAILS.values().forEach(t -> t.destroy(true));
             TRAILS.clear();

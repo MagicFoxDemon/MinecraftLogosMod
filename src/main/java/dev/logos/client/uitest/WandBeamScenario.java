@@ -25,8 +25,9 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
 /**
- * A beam and a ray cast from an oak wand leave from its head, not the eyes: the wand head is known
- * after the charge has gone off, the beam starts there, first person and third.
+ * A beam, a ray and a projectile cast from an oak wand leave from its head, not the eyes: the wand
+ * head is known after the charge has gone off, the beam starts there, first person and third, and the
+ * projectile is drawn from the head at first and onto its real path a few ticks later.
  */
 @LDLRegisterClient(name = "logos_wand_beam", group = "logos", registry = UIScenario.REGISTRY,
         environment = RegistrationEnvironment.DEV_ONLY)
@@ -73,7 +74,8 @@ public class WandBeamScenario implements UIScenario {
                     ItemStack wand = new ItemStack(LogosMod.WOOD_WANDS.getFirst().get());
                     wand.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(
                             SpellPages.inscribed(PageTier.CRYSTAL, "(spell :name \"光柱\" :mana 120 (beam :radius 0.3 :life 4 :every 0.5 (on-hit (mark target #lit))))", null),
-                            SpellPages.inscribed(PageTier.CRYSTAL, "(spell :name \"射线\" :mana 20 (ray :range 24))", null))));
+                            SpellPages.inscribed(PageTier.CRYSTAL, "(spell :name \"射线\" :mana 20 (ray :range 24))", null),
+                            SpellPages.inscribed(PageTier.CRYSTAL, "(spell :name \"弹\" :mana 20 (projectile :speed 0.4 :life 30))", null))));
                     sc.player().setItemInHand(InteractionHand.MAIN_HAND, wand);
                 })
                 .step("show the HUD", ctx -> Minecraft.getInstance().options.hideGui = false)
@@ -94,6 +96,32 @@ public class WandBeamScenario implements UIScenario {
                 .step("let it go", ctx -> Minecraft.getInstance().options.keyUse.setDown(false))
                 .ticks(2)
                 .screenshot("ray_third_person")
-                .step("back to first person", ctx -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
+                .step("back to first person", ctx -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON))
+                .ticks(20)
+                .step("charge the projectile", ctx -> selectAndHold(2))
+                .ticks(15)
+                .step("let it go", ctx -> Minecraft.getInstance().options.keyUse.setDown(false))
+                .ticks(2)
+                .step("it starts at the wand head", ctx -> projectileOffPath(true))
+                .screenshot("projectile_leaving")
+                .ticks(12)
+                .step("and joins its real path", ctx -> projectileOffPath(false))
+                .screenshot("projectile_on_path");
+    }
+
+    /**
+     * How far the flying body is drawn from the line it really flies (the gaze from the eyes): off it
+     * toward the wand head just after leaving, on it once it has joined.
+     */
+    private static void projectileOffPath(boolean leaving) {
+        var player = Minecraft.getInstance().player;
+        var trails = dev.logos.client.LogosFx.drawnTrails();
+        if (trails.size() != 1) throw new AssertionError("expected one body in flight, got " + trails.size());
+        var at = trails.getFirst().subtract(player.getEyePosition());
+        var gaze = player.getLookAngle();
+        double off = at.subtract(gaze.scale(at.dot(gaze))).length();
+        LogosMod.LOGGER.info("[projectile] {}: {} off its path, {} along it", leaving ? "leaving" : "later", off, at.dot(gaze));
+        if (leaving && off < 0.2) throw new AssertionError("just after leaving it should be drawn off its path, at the wand head; it is " + off + " off");
+        if (!leaving && off > 0.05) throw new AssertionError("by now it should be drawn on its path; it is " + off + " off");
     }
 }
