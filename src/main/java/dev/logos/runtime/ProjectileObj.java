@@ -44,6 +44,8 @@ public final class ProjectileObj extends SpellObject {
         Vec3 d = dir.lengthSqr() < 1e-6 ? new Vec3(0, 0, 1) : dir.normalize();
         this.vel = d.scale(speed);
         this.orbitAngle = Math.atan2(d.z, d.x);
+        // Set out from the caster's eyes, it is drawn from their cast point (a wand's head) at first; only the picture moves.
+        if (inst.caster.level() == level && from.distanceToSqr(inst.caster.getEyePosition()) < 1e-4) Vfx.trailFrom(level, id, from, inst.caster.getId());
     }
 
     @Override

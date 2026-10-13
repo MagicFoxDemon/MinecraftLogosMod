@@ -45,7 +45,12 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
         /** That beam ceased to exist. */
         BEAM_END,
         /** An actual projectile collision; aux is the outward direction, size the projectile radius. */
-        PROJECTILE_IMPACT;
+        PROJECTILE_IMPACT,
+        /**
+         * Sent once as a spell body {@code id} sets out from its caster's eyes (x,y,z): {@code look} is the
+         * caster's network id, so clients draw the body from the caster's cast point at first.
+         */
+        TRAIL_FROM;
 
         public static final Kind[] VALUES = values();
     }
