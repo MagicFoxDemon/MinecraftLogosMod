@@ -6,7 +6,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
+import org.joml.Quaternionfc;
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 
@@ -65,22 +67,35 @@ public final class WandTips {
         return s == null || ClientCharges.ticks() - s.tick > FRESH_TICKS ? null : s.pos;
     }
 
-    /** First person: {@code pose} is camera-relative world space (26.1 draws the hands so), before the item's display transform. */
+    /**
+     * The pose first-person hand rendering starts from. Vanilla starts it already turned to world axes,
+     * a shader pack (Iris) in view space; taking the hand's pose relative to it works for both.
+     */
+    private static final Matrix4f HAND_BASE = new Matrix4f();
+
+    public static void beginHands(Matrix4fc pose) {
+        HAND_BASE.set(pose);
+    }
+
+    /** First person: {@code pose} is the item's pose before its display transform, under {@link #beginHands}. */
     public static void captureFirstPerson(LivingEntity holder, ItemStack stack, ItemDisplayContext context, Matrix4fc pose) {
         if (!(stack.getItem() instanceof WandItem) || ClientCharges.of(holder) == null) return;
         Minecraft mc = Minecraft.getInstance();
         ItemStackRenderState state = new ItemStackRenderState();
         mc.getItemModelResolver().updateForTopItem(state, stack, context, holder.level(), holder, 0);
-        capture(holder.getId(), stack, state, context.leftHand(), pose);
+        Matrix4f inView = new Matrix4f(HAND_BASE).invert().mul(pose);
+        capture(holder.getId(), stack, state, context.leftHand(), inView, mc.gameRenderer.getMainCamera().rotation());
     }
 
     /** Third person: {@code pose} is camera-relative world space, before the item's display transform. */
     public static void captureThirdPerson(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, Matrix4fc pose) {
         if (!(stack.getItem() instanceof WandItem) || !ClientCharges.all().containsKey(entityId)) return;
-        capture(entityId, stack, state, leftHand, pose);
+        capture(entityId, stack, state, leftHand, pose, null);
     }
 
-    private static void capture(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, Matrix4fc pose) {
+    /** {@code viewToWorld}: turns {@code pose}'s space to world axes, or null if it already has them. */
+    private static void capture(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, Matrix4fc pose,
+            @Nullable Quaternionfc viewToWorld) {
         var access = (ItemStackRenderStateAccessor) state;
         if (access.logos$activeLayerCount() <= 0) return;
         var layer = (LayerRenderStateAccessor) access.logos$layers()[0];
@@ -90,6 +105,7 @@ public final class WandTips {
         p.mulPose(layer.logos$localTransform());
         Vector3f at = new Vector3f(tip(stack.getItem())).div(16);
         p.pose().transformPosition(at);
+        if (viewToWorld != null) viewToWorld.transform(at);
         Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().position();
         SAMPLES.put(entityId, new Sample(camera.add(at.x, at.y, at.z), ClientCharges.ticks()));
     }
