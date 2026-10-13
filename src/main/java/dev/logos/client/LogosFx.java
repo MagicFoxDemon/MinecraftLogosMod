@@ -108,12 +108,15 @@ public final class LogosFx {
         float radius;
         long lastSeen;
 
+        @Nullable FireBeamVisual fire;
+
         Beam(Element element, int anchor, @Nullable ParticleOptions particle, Vec3 from, Vec3 to) {
             this.element = element;
             this.anchor = anchor;
             this.particle = particle;
             this.prevFrom = this.from = from;
             this.prevTo = this.to = to;
+            if (element == Element.FIRE) fire = new FireBeamVisual();
         }
     }
 
@@ -307,12 +310,17 @@ public final class LogosFx {
                     double s = p.size();
                     at = at.add((r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * s);
                     if (b.particle != null) level.addParticle(b.particle, at.x, at.y, at.z, 0, 0, 0);
-                    else accents(level, el, at, 1, 0.05, 0.02);
+                    else if (b.fire == null) accents(level, el, at, 1, 0.05, 0.02);
                 }
-                if (r.nextInt(3) == 0) accents(level, el, to, 2, 0.15, 0.08);
+                if (b.fire == null && r.nextInt(3) == 0) accents(level, el, to, 2, 0.15, 0.08);
             }
             case BEAM_END -> {
                 Beam b = BEAMS.remove(p.id());
+                if (b != null && b.fire != null) {
+                    b.fire.end();
+                    if (b.particle != null) scatter(level, b.particle, pos, 10, 0.4);
+                    break;
+                }
                 Element e = b != null ? b.element : el;
                 if (b != null && b.particle != null) scatter(level, b.particle, pos, 10, 0.4);
                 else play(level, fx("burst", e, 0, () -> burst(e)), pos, 0.8f);
@@ -373,10 +381,15 @@ public final class LogosFx {
         if (level == null) {
             TRAILS.values().forEach(t -> t.destroy(true));
             TRAILS.clear();
+            BEAMS.values().forEach(b -> { if (b.fire != null) b.fire.end(); });
             BEAMS.clear();
             return;
         }
-        BEAMS.values().removeIf(b -> level.getGameTime() - b.lastSeen > 10);
+        BEAMS.values().removeIf(b -> {
+            if (level.getGameTime() - b.lastSeen <= 10) return false;
+            if (b.fire != null) b.fire.end();
+            return true;
+        });
         for (Iterator<Trail> it = TRAILS.values().iterator(); it.hasNext(); ) {
             Trail t = it.next();
             if (level.getGameTime() - t.lastSeen > 20) {
@@ -414,7 +427,8 @@ public final class LogosFx {
         float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         PoseStack pose = event.getPoseStack();
         SubmitNodeCollector vfx = ShaderPackOverlay.collector(event.getSubmitNodeCollector());
-        for (Beam b : BEAMS.values()) submitBeam(mc, level, b, cam, pt, pose, event.getSubmitNodeCollector());
+        for (Beam b : BEAMS.values()) submitBeam(mc, level, b, cam, pt, pose,
+                b.fire != null ? vfx : event.getSubmitNodeCollector());
         ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector());
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
@@ -441,12 +455,10 @@ public final class LogosFx {
     }
 
     /**
-     * One beam: a bright core inside a translucent glow, textured with the beacon beam and flowing
-     * outward. An anchored beam starts from its entity's interpolated eye along its interpolated
-     * gaze — for the caster that is the camera itself, so turning never lags behind the server; only
-     * the length comes from the server (where blocks stop it). It leaves the hand thin and swells to
-     * its full radius over the first blocks, so a thick beam does not fill the caster's whole view.
-     * It leaves from the caster's cast point ({@link CastPoints}): a wand's head, a colossus's palm.
+     * A beam follows the interpolated gaze, keeping the server's blocked length, but leaves the
+     * same cast point as charging effects. Fire uses its dedicated visual; the remaining
+     * elements keep the beacon-style core/glow, swelling from a thin outlet to their full radius.
+     * A colossus's beam leaves its palm, where the model's muzzle bone was drawn this frame.
      */
     private static void submitBeam(Minecraft mc, Level level, Beam b, CameraRenderState cam, float pt, PoseStack pose, SubmitNodeCollector out) {
         Vec3 from = b.prevFrom.lerp(b.from, pt);
@@ -461,6 +473,10 @@ public final class LogosFx {
             to = anchor.getEyePosition(pt).add(anchor.getViewVector(pt).scale(len));
             firstPerson = anchor == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson();
             from = CastPoints.of(anchor, pt);
+        }
+        if (b.fire != null) {
+            b.fire.submit(level, from, to, b.radius, cam, pose, out);
+            return;
         }
         Vec3 d = to.subtract(from);
         float len = (float) d.length();
