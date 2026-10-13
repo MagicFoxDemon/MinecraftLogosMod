@@ -80,6 +80,12 @@ public class LifeformChargeScenario implements UIScenario {
                     var c = ClientCharges.of(client);
                     if (c == null || c.tier != 2 || c.element != Element.FIRE) throw new AssertionError("expected a grand fire charge on the lifeform, got " + c);
                 })
+                .step("where its spells leave from", ctx -> {
+                    var client = Minecraft.getInstance().level.getEntity(lf.getId());
+                    // Drawn from its model's cast_point bone once the model has one; estimated until then.
+                    LogosMod.LOGGER.info("[cast point] lifeform: drawn {}, used {}, body at {}", dev.logos.client.CastPoints.drawn(client),
+                            dev.logos.client.CastPoints.of(client, 1), client.position());
+                })
                 .screenshot("lifeform_charging")
                 .ticks(60)
                 .server("let go", sc -> {

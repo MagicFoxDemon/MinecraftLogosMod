@@ -1,5 +1,8 @@
 package dev.logos.client;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.runtime.AlchemicalColossus;
@@ -9,17 +12,36 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Where a caster's spells visibly leave from: a colossus's muzzle bone, the head of a wand as it was
- * drawn this frame ({@link WandTips}), or failing those a point estimated from the body. Only the
+ * Where a caster's spells visibly leave from: a colossus's muzzle bone, a creature's {@value #BONE}
+ * bone (a mana lifeform's), the head of a wand as it was drawn this frame ({@link WandTips}), or
+ * failing those a point estimated from the body. Only the
  * picture starts here; spells still aim and hit from the caster's eyes, so a beam or ray drawn from
  * the cast point meets the line it really travels at whatever it strikes.
  */
 public final class CastPoints {
+    /** The bone a casting creature's model marks its cast point with (see CONTRIBUTING, 6.3). */
+    public static final String BONE = "cast_point";
+    /** A bone drawn this many client ticks ago or less still counts. */
+    private static final int FRESH_TICKS = 2;
+
+    private record Drawn(Vec3 pos, long tick) {}
+
+    private static final Map<Integer, Drawn> BONES = new HashMap<>();
+
     private CastPoints() {}
+
+    /** A renderer drew {@code entityId}'s {@value #BONE} bone at {@code world} this frame. */
+    public static void report(int entityId, Vec3 world) {
+        long now = ClientCharges.ticks();
+        if (now % 20 == 0) BONES.values().removeIf(d -> now - d.tick > 20);
+        BONES.put(entityId, new Drawn(world, now));
+    }
 
     /** The cast point as last drawn, or null if nothing marks one on this caster just now. */
     public static @Nullable Vec3 drawn(Entity caster) {
         if (caster instanceof AlchemicalColossus colossus) return colossus.drawnBone("attachment_muzzle_right");
+        Drawn bone = BONES.get(caster.getId());
+        if (bone != null && ClientCharges.ticks() - bone.tick <= FRESH_TICKS) return bone.pos;
         return WandTips.sample(caster.getId());
     }
 
