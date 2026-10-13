@@ -97,6 +97,10 @@ public final class WandTips {
     /** Third person: {@code pose} is camera-relative world space, before the item's display transform; only a main hand counts. */
     public static void captureThirdPerson(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, boolean mainHand, Matrix4fc pose) {
         if (!(stack.getItem() instanceof WandItem) || !mainHand) return;
+        // A shader-pack shadow pass must not replace the local first-person hand sample.
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.getCameraEntity() != null && entityId == mc.getCameraEntity().getId()
+                && mc.options.getCameraType().isFirstPerson()) return;
         capture(entityId, stack, state, leftHand, pose, null);
     }
 
