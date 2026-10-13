@@ -31,6 +31,8 @@ public final class PlayerMagic {
     public final Map<String, Long> cooldowns = new HashMap<>();
     /** Not persisted: the mana HUD stays quiet until this tick so alerts remain readable. */
     public long hudQuietUntil;
+    /** Not persisted: the wand cast being charged, if any (see {@link Charging}). */
+    public Charging.@org.jspecify.annotations.Nullable Charge charge;
 
     public PlayerMagic() {
         this(Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_STABILITY, true);

@@ -75,6 +75,16 @@ public final class LogosConfig {
             .translation("logos.configuration.groupCostMultiplier")
             .defineInRange("groupCostMultiplier", 3.0, 0.0, 1000.0);
 
+    public static final ModConfigSpec.IntValue CHARGE_MIN_TICKS = BUILDER
+            .comment("The shortest a wand cast may charge, in ticks, however little it injects.")
+            .translation("logos.configuration.chargeMinTicks")
+            .defineInRange("chargeMinTicks", 5, 0, 200);
+
+    public static final ModConfigSpec.DoubleValue CHARGE_MANA_SCALE = BUILDER
+            .comment("A wand's channel surge grows by 1 + max mana / this: a deeper pool gathers faster.")
+            .translation("logos.configuration.chargeManaScale")
+            .defineInRange("chargeManaScale", 1000.0, 1.0, 1e9);
+
     /** Formula Immolation I, II, III: how many times a page's capacity a burning cast may inject. */
     public static final List<ModConfigSpec.DoubleValue> IMMOLATION_MULTIPLIERS = List.of(
             immolation(1, 2), immolation(2, 3), immolation(3, 5));
@@ -169,6 +179,18 @@ public final class LogosConfig {
             return GROUP_COST_MULTIPLIER.getAsDouble();
         } catch (IllegalStateException e) {
             return 3.0;
+        }
+    }
+
+    public static int chargeMinTicks() {
+        return read(CHARGE_MIN_TICKS::getAsInt, 5);
+    }
+
+    public static double chargeManaScale() {
+        try {
+            return CHARGE_MANA_SCALE.getAsDouble();
+        } catch (IllegalStateException e) {
+            return 1000.0;
         }
     }
 

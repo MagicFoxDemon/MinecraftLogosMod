@@ -91,14 +91,17 @@ public class LogosMod {
                             .sized(1, 1).noSave().noSummon().fireImmune().clientTrackingRange(10).updateInterval(1)
                             .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
-    /** Wand tiers differ only in how many spell pages they can hold. */
-    public static final DeferredItem<WandItem> WAND = ITEMS.registerItem("wand", p -> new WandItem(p, 3), p -> p.stacksTo(1));
-    public static final DeferredItem<WandItem> ADEPT_WAND = ITEMS.registerItem("adept_wand", p -> new WandItem(p, 6), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE));
+    /**
+     * Wand tiers differ in how many spell pages they hold and how fast they charge (channel flow, then surge).
+     * These three are stand-in art for now, placed at tiers 2, 4 and 6.
+     */
+    public static final DeferredItem<WandItem> WAND = ITEMS.registerItem("wand", p -> new WandItem(p, 3, 55, 60), p -> p.stacksTo(1));
+    public static final DeferredItem<WandItem> ADEPT_WAND = ITEMS.registerItem("adept_wand", p -> new WandItem(p, 6, 90, 184), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE));
     public static final DeferredItem<WandItem> MASTER_WAND = ITEMS.registerItem("master_wand",
-            p -> new WandItem(p, 9), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC));
+            p -> new WandItem(p, 9, 135, 445), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC));
     /** The first-tier wands, one per wood (log, planks and a gold nugget); each holds three pages like the novice wand. */
     public static final List<DeferredItem<WandItem>> WOOD_WANDS = java.util.stream.Stream.of("oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "cherry")
-            .map(wood -> ITEMS.registerItem(wood + "_wand", p -> new WandItem(p, 3), p -> p.stacksTo(1))).toList();
+            .map(wood -> ITEMS.registerItem(wood + "_wand", p -> new WandItem(p, 3, 40, 20), p -> p.stacksTo(1))).toList();
     /** Every grade of 术式载页: an empty and a written item each. */
     public static final Map<PageTier, PageTier.Items> PAGES = new EnumMap<>(PageTier.class);
 
@@ -274,6 +277,14 @@ public class LogosMod {
     public static final DeferredHolder<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.Attribute> MANA_ABSORPTION =
             ATTRIBUTES.register("free_mana_efficiency", () -> new net.minecraft.world.entity.ai.attributes.RangedAttribute(
                     "attribute.logos.free_mana_efficiency", 0.5, 0, 16).setSyncable(true));
+    /** Mana per second a charging wand starts injecting at. The wand in the main hand gives it; gear can add to it. */
+    public static final DeferredHolder<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.Attribute> CHANNEL_FLOW =
+            ATTRIBUTES.register("channel_flow", () -> new net.minecraft.world.entity.ai.attributes.RangedAttribute(
+                    "attribute.logos.channel_flow", 0, 0, 1e6).setSyncable(true));
+    /** How much faster, per second, a charging wand's injection grows. The wand in the main hand gives it; gear can add to it. */
+    public static final DeferredHolder<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.Attribute> CHANNEL_SURGE =
+            ATTRIBUTES.register("channel_surge", () -> new net.minecraft.world.entity.ai.attributes.RangedAttribute(
+                    "attribute.logos.channel_surge", 0, 0, 1e6).setSyncable(true));
 
     /** 焚式: a data-driven enchantment (data/logos/enchantment/formula_immolation.json). */
     public static final net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> FORMULA_IMMOLATION =
@@ -370,6 +381,8 @@ public class LogosMod {
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent e) -> {
             e.add(net.minecraft.world.entity.EntityType.PLAYER, MANA_ATTRACTION);
             e.add(net.minecraft.world.entity.EntityType.PLAYER, MANA_ABSORPTION);
+            e.add(net.minecraft.world.entity.EntityType.PLAYER, CHANNEL_FLOW);
+            e.add(net.minecraft.world.entity.EntityType.PLAYER, CHANNEL_SURGE);
         });
         // ❖ looks (&mace…) must name an item the game actually has, modded items included.
         dev.logos.lang.Compiler.itemExists = id -> {
@@ -421,7 +434,15 @@ public class LogosMod {
 
     @SubscribeEvent
     public void onChangeDimension(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) dev.logos.runtime.Anchors.sync(sp);
+        if (event.getEntity() instanceof ServerPlayer sp) {
+            dev.logos.runtime.Anchors.sync(sp);
+            dev.logos.runtime.Charging.interrupt(sp);
+        }
+    }
+
+    @SubscribeEvent
+    public void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer sp) dev.logos.runtime.Charging.interrupt(sp);
     }
 
     @SubscribeEvent
@@ -517,6 +538,7 @@ public class LogosMod {
     @SubscribeEvent
     public void onDeath(LivingDeathEvent event) {
         LivingEntity dead = event.getEntity();
+        if (dead instanceof ServerPlayer sp) dev.logos.runtime.Charging.interrupt(sp);
         if (Effects.inSpell() || dead.level().isClientSide()) return;
         if (event.getSource().getEntity() instanceof ServerPlayer p && p != dead) {
             var at = Targeting.center(dead);
