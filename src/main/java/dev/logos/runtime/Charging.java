@@ -5,7 +5,10 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.item.SpellBag;
+import dev.logos.lang.Element;
 import dev.logos.lang.Node;
+import dev.logos.lang.Spell;
+import dev.logos.net.ChargePayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
@@ -19,6 +22,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * 蓄力: a wand cast is charged before it goes off. While right-click is held, mana flows from the
@@ -42,6 +46,9 @@ public final class Charging {
         /** Ticks paid for so far: a tick the pool cannot pay holds the charge back. */
         int done;
         public double injected;
+        /** How it looks: the spell's main element, and a grade by how much it injects. */
+        public final Element element;
+        public final int tier;
 
         Charge(SpellBag.Entry entry, int selected, Casting.Injection in, double flow, double surge) {
             this.entry = entry;
@@ -50,6 +57,12 @@ public final class Charging {
             this.flow = flow;
             this.surge = surge;
             this.ticks = ticks(in.mana(), flow, surge);
+            this.element = element(entry.spell());
+            this.tier = tier(in.mana());
+        }
+
+        public float progress() {
+            return in.mana() <= 0 ? 1 : (float) Math.min(1, injected / in.mana());
         }
 
         public boolean full() {
@@ -62,6 +75,32 @@ public final class Charging {
             double t = k / 20.0 * Math.min(1, seconds(in.mana(), flow, surge) * 20 / ticks);
             return Math.min(in.mana(), flow * t + surge * t * t / 2);
         }
+    }
+
+    /** Charge looks by injection: ordinary under 100, elaborate under 800, grand under 3200, colossal beyond. */
+    public static int tier(double mana) {
+        return mana < 100 ? 0 : mana < 800 ? 1 : mana < 3200 ? 2 : 3;
+    }
+
+    /**
+     * The element a spell is mostly written in: the one its runes name most often. A spell naming none
+     * is arcane, or life if it is meant to heal.
+     */
+    public static Element element(Spell spell) {
+        int[] counts = new int[Element.values().length];
+        for (Node n : spell.body()) count(n, counts);
+        int best = -1;
+        for (int i = 0; i < counts.length; i++) if (counts[i] > 0 && (best < 0 || counts[i] > counts[best])) best = i;
+        if (best >= 0) return Element.values()[best];
+        return spell.profile().primary() == dev.logos.lang.Intent.HEAL ? Element.LIFE : Element.ARCANE;
+    }
+
+    private static void count(Node n, int[] counts) {
+        if (n.value instanceof Element e) counts[e.ordinal()]++;
+        for (Node a : n.args) count(a, counts);
+        for (Node a : n.kw.values()) count(a, counts);
+        for (Node a : n.body) count(a, counts);
+        for (var handlers : n.events.values()) for (Node a : handlers) count(a, counts);
     }
 
     /** Seconds to inject {@code mana} at {@code flow + surge·t} per second, before the minimum length applies. */
@@ -122,6 +161,7 @@ public final class Charging {
             return false;
         }
         m.charge = new Charge(entry, wand.getOrDefault(LogosMod.SELECTED.get(), 0), in, flow, surge);
+        sync(player, m.charge);
         Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
         return true;
     }
@@ -146,6 +186,7 @@ public final class Charging {
                 c.injected += share;
                 c.done++;
                 if (c.full()) {
+                    sync(player, c);
                     Vfx.sound(level, tip, SoundEvents.AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
                     Vfx.sound(level, tip, SoundEvents.PLAYER_LEVELUP, 0.4f, 1.8f);
                     level.sendParticles(ParticleTypes.END_ROD, tip.x, tip.y, tip.z, 12, 0.15, 0.15, 0.15, 0.05);
@@ -160,7 +201,7 @@ public final class Charging {
         } else {
             level.sendParticles(ParticleTypes.ENCHANT, tip.x, tip.y, tip.z, 3, 0.4, 0.4, 0.4, 0.6);
         }
-        if (level.getGameTime() % 2 == 0) progress(player, c);
+        if (level.getGameTime() % 2 == 0) sync(player, c);
     }
 
     /** Let go: casts if the charge is full and returns true; otherwise leaves it for {@link #cancel}. */
@@ -169,6 +210,7 @@ public final class Charging {
         Charge c = m.charge;
         if (c == null || !c.full()) return false;
         m.charge = null;
+        send(player, ChargePayload.ended(player.getId()));
         Casting.launch(player, c.entry, c.in, null, null);
         return true;
     }
@@ -179,6 +221,7 @@ public final class Charging {
         Charge c = m.charge;
         if (c == null) return;
         m.charge = null;
+        send(player, ChargePayload.ended(player.getId()));
         if (c.injected <= 0) return;
         FreeManaEntity.release(player.level(), player.getEyePosition().add(player.getLookAngle().scale(0.8)), c.injected);
         Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.FIRE_EXTINGUISH, 0.4f, 1.6f);
@@ -199,15 +242,15 @@ public final class Charging {
         return player.getEyePosition().add(look.scale(0.9)).add(right.scale(0.4)).add(0, -0.45, 0);
     }
 
-    /** Placeholder progress readout on the action bar, until the HUD ring exists. */
-    private static void progress(ServerPlayer player, Charge c) {
-        int filled = (int) Math.floor(20 * c.injected / Math.max(1e-9, c.in.mana()));
-        Component bar = Component.literal("《" + c.entry.spell().name() + "》 ").withStyle(ChatFormatting.LIGHT_PURPLE)
-                .append(Component.literal("▮".repeat(filled)).withStyle(c.full() ? ChatFormatting.GOLD : ChatFormatting.AQUA))
-                .append(Component.literal("▮".repeat(20 - filled)).withStyle(ChatFormatting.DARK_GRAY))
-                .append(Component.literal(c.full() ? " 蓄力完成 · 松开施放" : " " + Node.fmt(c.injected) + "/" + Node.fmt(c.in.mana()))
-                        .withStyle(c.full() ? ChatFormatting.GOLD : ChatFormatting.GRAY));
-        PlayerMagic.of(player).hudQuietUntil = player.level().getGameTime() + 10;
-        player.sendOverlayMessage(bar);
+    /** Tells the player and everyone tracking them how the charge stands (the crosshair ring, the charging effects). */
+    private static void sync(ServerPlayer player, Charge c) {
+        send(player, new ChargePayload(player.getId(), c.element.ordinal(), c.tier, c.progress(), c.full()));
+    }
+
+    /** To players near enough to see it whose connection knows the channel (fake players and modless clients do not). */
+    private static void send(ServerPlayer player, ChargePayload payload) {
+        for (ServerPlayer p : player.level().players()) {
+            if (p.distanceToSqr(player) <= 128 * 128 && p.connection.hasChannel(ChargePayload.TYPE)) PacketDistributor.sendToPlayer(p, payload);
+        }
     }
 }
