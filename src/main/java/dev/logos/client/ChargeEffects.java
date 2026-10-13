@@ -63,7 +63,11 @@ public final class ChargeEffects {
                     Vec3 to = tip.add(randomUnit(r).scale(0.6 + 0.2 * s.tier));
                     level.addParticle(new TrailParticleOption(to, rgb, 5 + r.nextInt(4)), tip.x, tip.y, tip.z, 0, 0, 0);
                 }
-                level.addParticle(net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.FLASH, 0xFF000000 | rgb), tip.x, tip.y, tip.z, 0, 0, 0);
+                // A bright knot at the head itself; the vanilla flash particle is screen-sized up close.
+                for (int i = 0; i < 4; i++) {
+                    Vec3 at = tip.add(randomUnit(r).scale(0.06));
+                    level.addParticle(new DustParticleOptions(rgb, 1.6f), at.x, at.y, at.z, 0, 0, 0);
+                }
             }
         }
         if (now % 2 != 0) return;
