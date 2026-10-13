@@ -1,0 +1,8 @@
+{
+    "vertex": "photon:particle",
+    "fragment": "logos:void_impact_starfield",
+    "samplers": [
+        { "name": "CloudMask" },
+        { "name": "StarTexture" }
+    ]
+}
