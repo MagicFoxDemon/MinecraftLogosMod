@@ -18,6 +18,7 @@ import dev.logos.runtime.ConstructObj;
 import dev.logos.runtime.Ctx;
 import dev.logos.runtime.Effects;
 import dev.logos.runtime.FieldObj;
+import dev.logos.runtime.Group;
 import dev.logos.runtime.Filter;
 import dev.logos.runtime.Limits;
 import dev.logos.runtime.Place;
@@ -92,8 +93,12 @@ public final class Runes {
 
     /** Living targets the spell may touch (other players only if the spell allows players). */
     private static List<LivingEntity> living(Node n, Ctx c) {
+        return living(entities(n, c), c);
+    }
+
+    private static List<LivingEntity> living(List<Entity> es, Ctx c) {
         List<LivingEntity> out = new ArrayList<>();
-        for (Entity e : entities(n, c)) {
+        for (Entity e : es) {
             if (e instanceof LivingEntity le && le.isAlive() && Targeting.mayAffect(c.inst(), e)) out.add(le);
         }
         return out;
@@ -101,8 +106,12 @@ public final class Runes {
 
     /** Any targets the spell may touch, including non-living ones such as dropped items. */
     private static List<Entity> anyEntities(Node n, Ctx c) {
+        return anyEntities(entities(n, c), c);
+    }
+
+    private static List<Entity> anyEntities(List<Entity> es, Ctx c) {
         List<Entity> out = new ArrayList<>();
-        for (Entity e : entities(n, c)) if (e.isAlive() && Targeting.mayAffect(c.inst(), e)) out.add(e);
+        for (Entity e : es) if (e.isAlive() && Targeting.mayAffect(c.inst(), e)) out.add(e);
         return out;
     }
 
@@ -119,9 +128,17 @@ public final class Runes {
         return null;
     }
 
-    /** Group effects pay once, a multiple of the single-target price, however many targets there are. */
-    private static boolean spendGroup(Ctx c, int targets, double singleCost, String what) {
-        return targets > 0 && c.inst().spend(singleCost * LogosConfig.groupCostMultiplier(), what);
+    /**
+     * Group effects pay once, however many targets there are: a multiple of the single-target price
+     * that grows with the radius {@code group} was gathered in (see {@link Group#costMultiplier}).
+     */
+    private static boolean spendGroup(Ctx c, List<Entity> group, int targets, double singleCost, String what) {
+        return targets > 0 && c.inst().spend(singleCost * Group.costMultiplier(Group.radiusOf(group)), what);
+    }
+
+    /** A group selector's {@code :radius}, held to {@code maxGroupRadius}. */
+    private static double groupRadius(Node n, Ctx c) {
+        return Group.clampRadius(num(kw(n, "radius"), c));
     }
 
     private static ServerLevel lv(Entity e) {
@@ -340,7 +357,8 @@ public final class Runes {
                     if (!c.inst().spend(2, "enemies")) return List.of();
                     Place at = place(kw(n, "at"), c);
                     Filter f = filter(kw(n, "filter"), c);
-                    return new ArrayList<Entity>(Targeting.enemiesNear(c.inst(), at.level(), at.pos(), num(kw(n, "radius"), c), n.flags.contains("fresh"))
+                    double r = groupRadius(n, c);
+                    return new Group(r, Targeting.enemiesNear(c.inst(), at.level(), at.pos(), r, n.flags.contains("fresh"))
                             .stream().filter(e -> f.test(c.inst(), e)).toList());
                 });
         def("players", BINDING, ENTITIES).kw("at", POS, "here").kw("radius", NUM, "8")
@@ -348,7 +366,8 @@ public final class Runes {
                 .exec((n, c) -> {
                     if (!c.inst().spend(1, "players")) return List.of();
                     Place at = place(kw(n, "at"), c);
-                    return new ArrayList<>(Targeting.near(c.inst(), at.level(), at.pos(), num(kw(n, "radius"), c), false,
+                    double r = groupRadius(n, c);
+                    return new Group(r, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
                             e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()));
                 });
         def("master", BINDING, ENTITY)
@@ -371,7 +390,8 @@ public final class Runes {
                     if (!c.inst().spend(2, "entities")) return List.of();
                     Place at = place(kw(n, "at"), c);
                     Filter f = filter(kw(n, "filter"), c);
-                    return new ArrayList<>(Targeting.near(c.inst(), at.level(), at.pos(), num(kw(n, "radius"), c), false,
+                    double r = groupRadius(n, c);
+                    return new Group(r, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
                             e -> e.isAlive() && !e.isSpectator() && Targeting.mayAffect(c.inst(), e) && f.test(c.inst(), e)));
                 });
         def("kind", BINDING, FILTER).p("kind", KIND)
@@ -390,7 +410,8 @@ public final class Runes {
                     if (!c.inst().spend(1, "items")) return List.of();
                     Place at = place(kw(n, "at"), c);
                     Filter f = filter(kw(n, "filter"), c);
-                    return new ArrayList<>(Targeting.near(c.inst(), at.level(), at.pos(), num(kw(n, "radius"), c), false,
+                    double r = groupRadius(n, c);
+                    return new Group(r, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
                             e -> e instanceof ItemEntity ie && ie.isAlive() && f.test(c.inst(), ie)));
                 });
         def("blocks", BINDING, BLOCKS).kw("at", POS, "here").kw("radius", NUM, "2").kw("filter", FILTER, null)
@@ -422,7 +443,8 @@ public final class Runes {
                     if (!c.inst().spend(1, "marked")) return List.of();
                     Status s = status(n.arg(0), c);
                     Place at = place(kw(n, "at"), c);
-                    return new ArrayList<Entity>(Targeting.enemiesNear(c.inst(), at.level(), at.pos(), num(kw(n, "radius"), c), false)
+                    double r = groupRadius(n, c);
+                    return new Group(r, Targeting.enemiesNear(c.inst(), at.level(), at.pos(), r, false)
                             .stream().filter(e -> StatusData.has(e, s)).toList());
                 });
         def("pos-of", BINDING, POS).p("entity", ENTITY).doc("实体的中心位置")
@@ -569,23 +591,27 @@ public final class Runes {
         def("damage-all", EFFECT, ACTION).p("targets", ENTITIES).p("amount", NUM).opt("element", ELEMENT, "physical")
                 .on("on-kill", true, "每个因此死亡的目标").stab(3)
                 .doc("群体伤害：一次付费，同时伤害群中每个目标，不会因魔力耗尽只打到一部分。"
-                        + "消耗为单体的 3 倍（可配置），与目标数无关：每点物理2.4 火/冰3.0 雷3.3 虚空4.5；群为空时不消耗")
+                        + "消耗与目标数无关：半径 5 以内为单体的 3 倍（每点物理2.4 火/冰3.0 雷3.3 虚空4.5），"
+                        + "选出这个群的范围越大越贵，再乘 (半径 ÷ 5)^1.5（倍率与指数可配置）；群为空时不消耗")
                 .exec((n, c) -> {
                     double amt = Math.max(0, num(n.arg(1), c));
                     Element el = element(n.arg(2), c);
-                    List<LivingEntity> ts = living(n.arg(0), c);
-                    if (!spendGroup(c, ts.size(), amt * el.costFactor, "damage-all")) return null;
+                    List<Entity> group = entities(n.arg(0), c);
+                    List<LivingEntity> ts = living(group, c);
+                    if (!spendGroup(c, group, ts.size(), amt * el.costFactor, "damage-all")) return null;
                     for (LivingEntity t : ts) {
                         if (Effects.damage(c.inst(), t, amt, el)) fire(n, "on-kill", c.on(t, Targeting.center(t)));
                     }
                     return null;
                 });
         def("ignite-all", EFFECT, ACTION).p("targets", ENTITIES).p("seconds", NUM).stab(2)
-                .doc("群体点燃：一次付费点燃群中每个目标（含飞行中的箭矢）。每秒 1.8 魔力（单体 3 倍，可配置），与目标数无关")
+                .doc("群体点燃：一次付费点燃群中每个目标（含飞行中的箭矢）。每秒 1.8 魔力（单体 3 倍），与目标数无关；"
+                        + "群的半径超过 5 时再乘 (半径 ÷ 5)^1.5（均可配置）")
                 .exec((n, c) -> {
                     double s = clamp(num(n.arg(1), c), 0, 60);
-                    List<Entity> ts = anyEntities(n.arg(0), c);
-                    if (!spendGroup(c, ts.size(), s * 0.6, "ignite-all")) return null;
+                    List<Entity> group = entities(n.arg(0), c);
+                    List<Entity> ts = anyEntities(group, c);
+                    if (!spendGroup(c, group, ts.size(), s * 0.6, "ignite-all")) return null;
                     for (Entity t : ts) {
                         t.igniteForSeconds((float) s);
                         c.inst().affected.add(t.getUUID());
@@ -593,11 +619,13 @@ public final class Runes {
                     return null;
                 });
         def("freeze-all", EFFECT, ACTION).p("targets", ENTITIES).p("seconds", NUM).stab(2)
-                .doc("群体冻结：一次付费冻结群中每个目标。每秒 3.6 魔力（单体 3 倍，可配置），与目标数无关")
+                .doc("群体冻结：一次付费冻结群中每个目标。每秒 3.6 魔力（单体 3 倍），与目标数无关；"
+                        + "群的半径超过 5 时再乘 (半径 ÷ 5)^1.5（均可配置）")
                 .exec((n, c) -> {
                     double s = clamp(num(n.arg(1), c), 0, 30);
-                    List<LivingEntity> ts = living(n.arg(0), c);
-                    if (!spendGroup(c, ts.size(), s * 1.2, "freeze-all")) return null;
+                    List<Entity> group = entities(n.arg(0), c);
+                    List<LivingEntity> ts = living(group, c);
+                    if (!spendGroup(c, group, ts.size(), s * 1.2, "freeze-all")) return null;
                     for (LivingEntity t : ts) {
                         StatusData.freeze(t, s);
                         c.inst().affected.add(t.getUUID());
