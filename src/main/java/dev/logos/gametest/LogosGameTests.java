@@ -39,7 +39,7 @@ public final class LogosGameTests {
             "fireball_hits_and_bursts", "chain_lightning_bounces", "execute_with_proof_is_cheap", "execute_without_proof_starves",
             "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "config_limits_apply",
             "world_toggle_state", "world_grow_and_decay", "world_players_flag", "world_items_magnet", "world_nether_step",
-            "world_wand_casts_selected_page", "world_table_inscribes", "beam_follows_gaze", "world_filter_kinds",
+            "world_wand_casts_selected_page", "world_wood_wands_craft", "world_table_inscribes", "beam_follows_gaze", "world_filter_kinds",
             "construct_stops_movement", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells",
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
@@ -164,6 +164,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("construct_follow_turns", () -> ConstructGameTests::followWallTurns);
         FUNCTIONS.register("world_nether_step", () -> WorldGameTests::netherStep);
         FUNCTIONS.register("world_wand_casts_selected_page", () -> WorldGameTests::wandCastsSelectedPage);
+        FUNCTIONS.register("world_wood_wands_craft", () -> WorldGameTests::woodWandsCraft);
         FUNCTIONS.register("world_table_inscribes", () -> WorldGameTests::tableInscribes);
         FUNCTIONS.register("passive_codex_without_wand", () -> RuneGameTests::codexPassiveWithoutWand);
         FUNCTIONS.register("rune_disarm_order", () -> RuneGameTests::disarmOrder);

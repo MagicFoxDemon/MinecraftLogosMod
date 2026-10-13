@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "G": "minecraft:gold_nugget",
+    "L": "#minecraft:cherry_logs",
+    "P": "minecraft:cherry_planks"
+  },
+  "pattern": [
+    "  G",
+    " P ",
+    "L  "
+  ],
+  "result": {
+    "id": "logos:cherry_wand"
+  }
+}

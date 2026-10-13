@@ -200,6 +200,24 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /** Each wood's log, planks and a gold nugget, laid diagonally, craft that wood's three-page wand. */
+    static void woodWandsCraft(GameTestHelper h) {
+        for (var wand : LogosMod.WOOD_WANDS) {
+            String wood = wand.getId().getPath().replace("_wand", "");
+            var log = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.withDefaultNamespace(wood + "_log"));
+            var planks = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.withDefaultNamespace(wood + "_planks"));
+            var input = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, List.of(
+                    ItemStack.EMPTY, ItemStack.EMPTY, new ItemStack(Items.GOLD_NUGGET),
+                    ItemStack.EMPTY, new ItemStack(planks), ItemStack.EMPTY,
+                    new ItemStack(log), ItemStack.EMPTY, ItemStack.EMPTY));
+            ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
+                    .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+            h.assertTrue(out.is(wand.get()), wood + " log and planks made " + out);
+            h.assertTrue(wand.get().slots() == 3, wood + " wand holds " + wand.get().slots() + " pages");
+        }
+        h.succeed();
+    }
+
     /** The inscription table writes a spell (and its drawing) onto the page lying on it. */
     static void tableInscribes(GameTestHelper h) {
         ServerPlayer p = caster(h);

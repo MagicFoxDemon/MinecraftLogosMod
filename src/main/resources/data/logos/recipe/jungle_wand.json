@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "G": "minecraft:gold_nugget",
+    "L": "#minecraft:jungle_logs",
+    "P": "minecraft:jungle_planks"
+  },
+  "pattern": [
+    "  G",
+    " P ",
+    "L  "
+  ],
+  "result": {
+    "id": "logos:jungle_wand"
+  }
+}
