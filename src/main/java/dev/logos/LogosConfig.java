@@ -64,6 +64,12 @@ public final class LogosConfig {
             .translation("logos.configuration.maxAnchors")
             .defineInRange("maxAnchors", 16, 0, 1024);
 
+    public static final ModConfigSpec.BooleanValue TRAVEL_UNVISITED_DIMENSIONS = BUILDER
+            .comment("Whether (in-dimension …) may name a dimension the caster has never been to.",
+                    "When false, a player must first travel there in person; visits are recorded either way.")
+            .translation("logos.configuration.travelUnvisitedDimensions")
+            .define("travelUnvisitedDimensions", false);
+
     static {
         BUILDER.pop();
         BUILDER.comment("Mana balance").push("balance");
@@ -150,6 +156,14 @@ public final class LogosConfig {
 
     public static int maxAnchors() {
         return read(MAX_ANCHORS::getAsInt, 16);
+    }
+
+    public static boolean travelUnvisitedDimensions() {
+        try {
+            return TRAVEL_UNVISITED_DIMENSIONS.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return false;
+        }
     }
 
     public static int pageCapacity(PageTier t) {

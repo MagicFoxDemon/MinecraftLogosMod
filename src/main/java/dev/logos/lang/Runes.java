@@ -455,9 +455,9 @@ public final class Runes {
                     return bh.getType() == HitResult.Type.MISS ? new Place(lv(caster), bh.getLocation()) : Place.center(lv(caster), bh.getBlockPos());
                 });
         def("in-dimension", BINDING, POS).p("dimension", DIMENSION).opt("pos", POS, "here").stab(2)
-                .doc("另一个维度中的对应位置：水平坐标按两个维度的坐标比例换算（主世界 8 格 = 下界 1 格），高度限制在目标维度范围内。2 魔力")
+                .doc("另一个维度中的对应位置：水平坐标按两个维度的坐标比例换算（主世界 8 格 = 下界 1 格），高度限制在目标维度范围内。"
+                        + "只能指向施法者亲身到过的维度（使魔看主人）。2 魔力")
                 .exec((n, c) -> {
-                    if (!c.inst().spend(2, "in-dimension")) return c.place();
                     String id = (String) eval(n.arg(0), c);
                     Place from = place(n.arg(1), c);
                     ServerLevel target = dimension(c, id);
@@ -465,6 +465,11 @@ public final class Runes {
                         c.inst().terminate("不存在的维度 @" + id);
                         return from;
                     }
+                    if (!dev.logos.runtime.Attunement.reaches(c.inst().caster, target)) {
+                        c.inst().terminate("还没有到过维度 @" + id + "，无法与之共鸣");
+                        return from;
+                    }
+                    if (!c.inst().spend(2, "in-dimension")) return c.place();
                     double scale = from.level().dimensionType().coordinateScale() / target.dimensionType().coordinateScale();
                     Vec3 p = from.pos();
                     double y = Math.max(target.getMinY(), Math.min(target.getMaxY(), p.y));
