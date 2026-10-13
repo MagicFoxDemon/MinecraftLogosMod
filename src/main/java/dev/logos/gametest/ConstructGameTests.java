@@ -211,6 +211,59 @@ final class ConstructGameTests {
         h.succeedWhen(() -> h.assertTrue(husk.isOnFire(), "the husk inside the fire wall is not burning"));
     }
 
+    private static dev.logos.runtime.ConstructObj wallAt(GameTestHelper h) {
+        var walls = dev.logos.runtime.ConstructEntity.near(h.getLevel(), new net.minecraft.world.phys.AABB(h.absolutePos(new BlockPos(4, 3, 6))).inflate(3));
+        h.assertTrue(walls.size() == 1 && walls.getFirst().owner() != null, "expected one construct, got " + walls.size());
+        return walls.getFirst().owner();
+    }
+
+    private static void shoot(GameTestHelper h, ServerPlayer p, String onHit) {
+        SpellInstance shot = Casting.cast(p, Casting.compile("(projectile :speed 1 (on-hit " + onHit + "))"), null, null);
+        h.assertTrue(shot != null && !shot.dead, "the shot was refused");
+    }
+
+    /**
+     * A wall holds twice its raising mana (5×3: 4 + 0.3×15 = 8.5 → 17) and loses what each stopped shot
+     * would have dealt: 10 leaves 7, the next 10 is still stopped but shatters it, and the third gets through.
+     */
+    static void wallWearsDownAndBreaks(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        castAt(h, p, WALL + ")", new BlockPos(4, 3, 6));
+        var wall = wallAt(h);
+        h.assertTrue(Math.abs(wall.health() - 17) < 1e-6, "a 5×3 wall should hold 17, holds " + wall.health());
+        Husk husk = husk(h, 4.5, 2, 10.5);
+        shoot(h, p, "(damage target 10)");
+        h.runAfterDelay(15, () -> {
+            h.assertTrue(Math.abs(wall.health() - 7) < 1e-6, "the first shot should leave 7, left " + wall.health());
+            h.assertTrue(husk.getHealth() == husk.getMaxHealth(), "the first shot went through the wall");
+            shoot(h, p, "(damage target 10)");
+            h.runAfterDelay(15, () -> {
+                h.assertTrue(husk.getHealth() == husk.getMaxHealth(), "the shot that breaks the wall is still stopped");
+                h.assertTrue(wall.health() <= 0, "the wall should have shattered, holds " + wall.health());
+                shoot(h, p, "(damage target 3)");
+                h.succeedWhen(() -> h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "with the wall gone, the shot should hit"));
+            });
+        });
+    }
+
+    /** A void shot weaker than the wall is stopped and wears it; one stronger than what is left passes straight through, untaken. */
+    static void voidPiercesWeakWall(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        castAt(h, p, WALL + ")", new BlockPos(4, 3, 6));
+        var wall = wallAt(h);
+        Husk husk = husk(h, 4.5, 2, 10.5);
+        shoot(h, p, "(damage target 5 void)");
+        h.runAfterDelay(15, () -> {
+            h.assertTrue(Math.abs(wall.health() - 12) < 1e-6, "the weak void shot should be stopped and leave 12, left " + wall.health());
+            h.assertTrue(husk.getHealth() == husk.getMaxHealth(), "the weak void shot went through");
+            shoot(h, p, "(damage target 13 void)");
+            h.succeedWhen(() -> {
+                h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "the strong void shot should pass the wall and hit");
+                h.assertTrue(Math.abs(wall.health() - 12) < 1e-6, "passing through takes nothing from the wall, left " + wall.health());
+            });
+        });
+    }
+
     /** Another spell's projectile dies at the wall; the husk behind it is untouched. */
     static void wallStopsOtherSpells(GameTestHelper h) {
         ServerPlayer p = caster(h);

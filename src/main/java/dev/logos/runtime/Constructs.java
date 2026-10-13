@@ -1,15 +1,23 @@
 package dev.logos.runtime;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
+import dev.logos.lang.Category;
+import dev.logos.lang.Element;
+import dev.logos.lang.Node;
+import dev.logos.mixin.AbstractArrowAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -48,15 +56,55 @@ public final class Constructs {
         return false;
     }
 
-    /** The first point where a construct stops a body of {@code inst} flying {@code from → to}, or null; the construct pays {@code cost}. */
-    public static @Nullable Vec3 stopSpell(ServerLevel level, SpellInstance inst, Vec3 from, Vec3 to, double cost) {
-        Vec3 best = null;
+    /**
+     * The first point where a construct stops a body of {@code inst} flying {@code from → to}, or null.
+     * Only that construct pays {@code cost}, and takes {@code damage} when {@code strikes} (a beam holds
+     * against it every tick but strikes once a pulse). A void body stronger than a construct's health
+     * passes it by, so {@code damage} is also what decides that, struck or not.
+     */
+    public static @Nullable Vec3 stopSpell(ServerLevel level, @Nullable SpellInstance inst, Vec3 from, Vec3 to, double cost,
+                                           Element element, double damage, boolean strikes) {
+        ConstructObj best = null;
+        Vec3 bestAt = null;
         for (ConstructEntity c : ConstructEntity.near(level, new AABB(from, to))) {
             if (c.owner == null) continue;
-            Vec3 at = c.owner.stopSpell(inst, from, to, cost);
-            if (at != null && (best == null || at.distanceToSqr(from) < best.distanceToSqr(from))) best = at;
+            Vec3 at = c.owner.wouldStop(inst, from, to, element, damage);
+            if (at != null && (bestAt == null || at.distanceToSqr(from) < bestAt.distanceToSqr(from))) {
+                best = c.owner;
+                bestAt = at;
+            }
         }
-        return best;
+        return best != null && best.stop(bestAt, cost, strikes ? damage : 0) ? bestAt : null;
+    }
+
+    /** The damage a vanilla projectile would deal on hitting: an arrow's speed times its base damage, a blaze's fireball 5; 0 for the rest. */
+    static double damageOf(Projectile p) {
+        if (p instanceof AbstractArrow a) return Math.ceil(a.getDeltaMovement().length() * ((AbstractArrowAccessor) a).logos$baseDamage());
+        if (p instanceof SmallFireball) return 5;
+        return 0;
+    }
+
+    /**
+     * The damage a spell body's {@code on-hit} deals to one target: the written amounts of its
+     * damage, drain and damage-all, not counting forms it launches in turn. Computed amounts are
+     * not known before the hit and count as 0.
+     */
+    public static double hitDamage(Node form) {
+        double sum = 0;
+        for (Node n : form.events.getOrDefault("on-hit", List.of())) sum += writtenDamage(n);
+        return sum;
+    }
+
+    private static double writtenDamage(Node n) {
+        if (n == null || n.kind != Node.Kind.CALL || n.rune == null || n.rune.category == Category.FORM) return 0;
+        double sum = switch (n.rune.name) {
+            case "damage", "drain", "damage-all" -> n.arg(1) != null && n.arg(1).value instanceof Number v ? Math.max(0, v.doubleValue()) : 0;
+            default -> 0;
+        };
+        for (Node a : n.args) sum += writtenDamage(a);
+        for (Node k : n.kw.values()) sum += writtenDamage(k);
+        for (Node b : n.body) sum += writtenDamage(b);
+        return sum;
     }
 
     /** Checks each vanilla projectile's next step before it moves, so even fast arrows cannot skip a thin wall. */
@@ -76,28 +124,45 @@ public final class Constructs {
         }
     }
 
-    /** Nothing behind a construct (as seen from the blast) is hurt or broken. */
+    /**
+     * Nothing behind a construct (as seen from the blast) is hurt or broken. Each construct that shields
+     * something takes the blast as a creature would at its nearest shielding point (vanilla's formula, in full view).
+     */
     @SubscribeEvent
     static void onDetonate(ExplosionEvent.Detonate event) {
         if (!ConstructEntity.any()) return;
         Vec3 center = event.getExplosion().center();
         List<ConstructEntity> near = ConstructEntity.near(event.getLevel(), new AABB(center, center).inflate(16));
         if (near.isEmpty()) return;
+        Map<ConstructEntity, Double> struck = new HashMap<>();
         for (Iterator<BlockPos> it = event.getAffectedBlocks().iterator(); it.hasNext(); ) {
-            if (shields(near, center, Vec3.atCenterOf(it.next()))) it.remove();
+            if (shields(near, center, Vec3.atCenterOf(it.next()), struck)) it.remove();
         }
         for (Iterator<Entity> it = event.getAffectedEntities().iterator(); it.hasNext(); ) {
-            if (shields(near, center, it.next().getBoundingBox().getCenter())) it.remove();
+            if (shields(near, center, it.next().getBoundingBox().getCenter(), struck)) it.remove();
         }
+        double diameter = event.getExplosion().radius() * 2;
+        struck.forEach((c, dist) -> {
+            double pow = Math.max(0, 1 - dist / diameter);
+            if (c.owner != null && pow > 0) c.owner.absorb((pow * pow + pow) / 2 * 7 * diameter + 1);
+        });
     }
 
-    private static boolean shields(List<ConstructEntity> near, Vec3 blast, Vec3 target) {
+    /** Whether the first construct between {@code blast} and {@code target} shields it; notes that construct's nearest shielding point. */
+    private static boolean shields(List<ConstructEntity> near, Vec3 blast, Vec3 target, Map<ConstructEntity, Double> struck) {
+        ConstructEntity first = null;
+        double nearest = Double.MAX_VALUE;
         for (ConstructEntity c : near) {
             ConstructGeometry g = c.geometry();
-            if (c.oneWay() && !g.inFront(blast)) continue;
+            if (c.owner != null && c.owner.broken() || c.oneWay() && !g.inFront(blast)) continue;
             BlockHitResult hit = g.clip(blast, target);
-            if (hit != null) return true;
+            if (hit != null && hit.getLocation().distanceTo(blast) < nearest) {
+                first = c;
+                nearest = hit.getLocation().distanceTo(blast);
+            }
         }
-        return false;
+        if (first == null) return false;
+        struck.merge(first, nearest, Math::min);
+        return true;
     }
 }

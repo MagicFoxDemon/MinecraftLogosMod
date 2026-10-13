@@ -32,6 +32,8 @@ public final class ProjectileObj extends SpellObject {
     private final Map<UUID, Integer> hits = new HashMap<>();
     /** Whether its hits only heal or ward, so it may land on its own side. */
     private final boolean helps = Targeting.helpsOnHit(node);
+    /** What one on-hit deals, so a construct that stops it takes as much (and a void one may pass it). */
+    private final double hitDamage = Constructs.hitDamage(node);
 
     public ProjectileObj(Node node, Ctx ctx, Vec3 from, Vec3 dir, double speed, int life, Motion motion, int pierce, double size,
             Vfx.Guise guise) {
@@ -109,7 +111,7 @@ public final class ProjectileObj extends SpellObject {
             }
         }
         // Another spell's construct stops it like a wall of its own.
-        Vec3 wall = Constructs.stopSpell(level, inst, prev, blockHit != null ? blockHit : next, ConstructObj.BLOCK_COST);
+        Vec3 wall = Constructs.stopSpell(level, inst, prev, blockHit != null ? blockHit : next, ConstructObj.BLOCK_COST, node.element, hitDamage, true);
         if (wall != null) {
             blockHit = wall;
             impactBlock = null;

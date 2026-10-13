@@ -117,7 +117,9 @@ public final class ColossusCannon {
         // Stopped by the first full block, then by any construct before that.
         BlockHitResult wall = level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, c));
         Vec3 end = wall.getType() == HitResult.Type.MISS ? to : wall.getLocation();
-        Vec3 shield = Constructs.stopSpell(level, null, from, end, 0.05);
+        int second = Math.min(4, p / 20);
+        Element tone = second < 3 ? Element.FIRE : Element.VOID;
+        Vec3 shield = Constructs.stopSpell(level, null, from, end, 0.05, tone, strikeDamage(second), p % 10 == 0);
         if (shield != null) end = shield;
         LivingEntity hit = struck(level, from, end);
         if (target != null) {
@@ -125,8 +127,6 @@ public final class ColossusCannon {
             else blocked = 0;
             if (blocked >= GIVE_UP_BLOCKED) return false;
         }
-        int second = Math.min(4, p / 20);
-        Element tone = second < 3 ? Element.FIRE : Element.VOID;
         Vfx.beam(level, c.getId() * 31 + 7, from, end, tone, 0.3 + 0.1 * second, c.getId(), 0);
         if (p % 10 == 0) {
             if (!c.spend(MANA_PER_SECOND[second] / 2)) return false;
@@ -144,6 +144,11 @@ public final class ColossusCannon {
         EntityHitResult hit = ProjectileUtil.getEntityHitResult(level, c, from, end, span, e -> e instanceof LivingEntity && e.isAlive()
                 && e != c && e.getVehicle() != c && (c.isBerserk() || master == null || !Familiars.friendly(master, e)), 0.3f);
         return hit != null && hit.getEntity() instanceof LivingEntity le ? le : null;
+    }
+
+    /** All of one {@link #strike}, as a construct in the way takes it. */
+    private static double strikeDamage(int second) {
+        return second < 3 ? 15 * (second + 1) : 50;
     }
 
     /** Half a second's worth: physical then fire for the first three seconds (no knockback), void after. */

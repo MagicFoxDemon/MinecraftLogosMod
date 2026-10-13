@@ -199,7 +199,9 @@ public final class Runes {
                         + ":deflect 把弹射物反弹回去，:snap 对齐方块网格，:look &方块 显现为那种方块。"
                         + ":follow 跟着施法者（墙和圆盾随视线转动，其余随身平移）；:to 位置 以 :speed 格/刻 移过去，站在上面的会被一起带走，到达时 on-arrive；"
                         + "事件里 self 就是这个炼成体，可以 (move self 位置) 再走、(halt self) 停下。"
-                        + "展开 4 + 0.3×面积（方块按体积），每秒维持 0.2 + 0.02×面积，每挡下一次 0.5")
+                        + "展开 4 + 0.3×面积（方块按体积），每秒维持 0.2 + 0.02×面积，每挡下一次 0.5。"
+                        + "生命值是展开魔力的 2 倍：挡下的弹射物、法术与爆炸按它们本会造成的伤害扣除，扣完即碎；生物推挤不扣。"
+                        + "虚空法术的伤害超过剩余生命值时不被挡下，直接穿过")
                 .exec((n, c) -> {
                     Place at = place(kw(n, "at"), c);
                     ConstructShape shape = eval(kw(n, "shape"), c) instanceof ConstructShape s ? s : ConstructShape.WALL;

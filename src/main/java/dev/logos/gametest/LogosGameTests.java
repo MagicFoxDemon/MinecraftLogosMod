@@ -41,7 +41,7 @@ public final class LogosGameTests {
             "world_toggle_state", "world_grow_and_decay", "world_players_flag", "world_items_magnet", "world_nether_step",
             "world_wand_casts_selected_page", "world_wood_wands_craft",
             "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "world_table_inscribes", "beam_follows_gaze", "world_filter_kinds",
-            "construct_stops_movement", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells",
+            "construct_stops_movement", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall",
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
             "familiar_dragon_circles", "familiar_dragon_throne",
@@ -161,6 +161,8 @@ public final class LogosGameTests {
         FUNCTIONS.register("construct_shields_explosion", () -> ConstructGameTests::wallShieldsExplosion);
         FUNCTIONS.register("construct_platform_stands", () -> ConstructGameTests::platformHoldsAndStands);
         FUNCTIONS.register("construct_stops_other_spells", () -> ConstructGameTests::wallStopsOtherSpells);
+        FUNCTIONS.register("construct_wears_down_and_breaks", () -> ConstructGameTests::wallWearsDownAndBreaks);
+        FUNCTIONS.register("construct_void_pierces_weak_wall", () -> ConstructGameTests::voidPiercesWeakWall);
         FUNCTIONS.register("construct_pass_ignites_copies", () -> ConstructGameTests::passIgnitesAndCopies);
         FUNCTIONS.register("construct_fire_wall", () -> ConstructGameTests::fireWallIgnitesWalkers);
         FUNCTIONS.register("construct_carries_rider", () -> ConstructGameTests::platformCarriesRider);

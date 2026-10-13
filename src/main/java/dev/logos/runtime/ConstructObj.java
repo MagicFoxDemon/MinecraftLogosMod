@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import dev.logos.lang.Element;
 import dev.logos.lang.Node;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -23,10 +24,15 @@ import net.minecraft.world.phys.Vec3;
  * It stops what its ⊙ {@code :solid} filter admits — creatures walking into it, projectiles, spell
  * bodies, explosions — and can be stood on, or built against. One-way constructs only stop what
  * comes from the front (from above, for a platform; from outside, for a dome).
+ * <p>It holds twice the mana raised into it as health: every hit it stops takes the damage that hit
+ * would have dealt, and at zero it shatters. Creatures pushing against it cost nothing. A void body
+ * that would deal more than the health left is not stopped at all: it passes straight through.
  */
 public final class ConstructObj extends SpellObject {
     /** Mana each time it stops a projectile or a spell body. */
     public static final double BLOCK_COST = 0.5;
+    /** Health per mana raised into it. */
+    public static final double HEALTH_PER_MANA = 2;
     private static final int BUMP_COOLDOWN = 20;
 
     private final ConstructEntity entity;
@@ -34,6 +40,8 @@ public final class ConstructObj extends SpellObject {
     private final boolean deflect;
     private final int every;
     private final double upkeep;
+    /** What it can still take before it shatters. */
+    private double health;
     private final Set<UUID> standing = new HashSet<>();
     private final Map<UUID, Integer> bumped = new HashMap<>();
     /** Creatures inside it now (on-pass fires on the way in), and projectiles that already passed. */
@@ -52,6 +60,7 @@ public final class ConstructObj extends SpellObject {
         this.deflect = deflect;
         this.every = Math.max(1, every);
         this.upkeep = 0.2 + 0.02 * entity.geometry().measure();
+        this.health = HEALTH_PER_MANA * cost(entity.geometry());
         entity.owner = this;
         judgePlayers();
     }
@@ -65,6 +74,19 @@ public final class ConstructObj extends SpellObject {
         return solid.test(inst, e);
     }
 
+    public double health() {
+        return health;
+    }
+
+    /** Takes {@code damage} from something it stopped. At zero it stops nothing more and shatters on its next tick, outside whatever struck it. */
+    void absorb(double damage) {
+        if (damage > 0) health -= damage;
+    }
+
+    boolean broken() {
+        return health <= 0 || isEnded();
+    }
+
     @Override
     protected void onEnded() {
         entity.discard();
@@ -74,7 +96,7 @@ public final class ConstructObj extends SpellObject {
 
     @Override
     public void tick() {
-        if (++age > life || entity.isRemoved()) {
+        if (++age > life || entity.isRemoved() || health <= 0) {
             end();
             return;
         }
@@ -210,7 +232,7 @@ public final class ConstructObj extends SpellObject {
      * cell it would cross, if this construct stops it. Returns whether it was stopped.
      */
     boolean intercept(Projectile p, Vec3 from, Vec3 to) {
-        if (isEnded() || !admits(p)) return false;
+        if (broken() || !admits(p)) return false;
         ConstructGeometry g = entity.geometry();
         if (entity.oneWay() && !g.inFront(from)) return false;
         BlockHitResult hit = g.clip(from, to);
@@ -233,22 +255,30 @@ public final class ConstructObj extends SpellObject {
         Vfx.burst(level, at, node.element, 6);
         Vfx.sound(level, at, SoundEvents.AMETHYST_BLOCK_HIT, 0.8f, 1.4f);
         if (!inst.spend(BLOCK_COST, "炼成体拦截")) return true;
+        absorb(Constructs.damageOf(p));
         Interp.fire(node, "on-block", ctx.on(p, at).aiming(n));
         return true;
     }
 
     /**
-     * A spell body of another spell crossing {@code from → to}: where it is stopped, or null.
-     * A construct never stops bodies of the spell that raised it, so a caster can shoot out of their own shield.
+     * Where it would stop a body of another spell crossing {@code from → to}, or null. A construct
+     * never stops bodies of the spell that raised it, so a caster can shoot out of their own shield;
+     * nor a void body dealing more than the health it has left.
      */
-    Vec3 stopSpell(SpellInstance other, Vec3 from, Vec3 to, double cost) {
-        if (isEnded() || other == inst) return null;
+    @org.jspecify.annotations.Nullable Vec3 wouldStop(@org.jspecify.annotations.Nullable SpellInstance other, Vec3 from, Vec3 to, Element element, double damage) {
+        if (broken() || other == inst) return null;
+        if (element == Element.VOID && damage > health) return null;
         ConstructGeometry g = entity.geometry();
         if (entity.oneWay() && !g.inFront(from)) return null;
         BlockHitResult hit = g.clip(from, to);
-        if (hit == null) return null;
-        if (!inst.spend(cost, "炼成体拦截")) return null;
-        if (cost >= BLOCK_COST) Vfx.burst(level, hit.getLocation(), node.element, 6);
-        return hit.getLocation();
+        return hit == null ? null : hit.getLocation();
+    }
+
+    /** Stops a spell body at {@code at}: pays {@code cost} and takes {@code damage}. False if it could not pay. */
+    boolean stop(Vec3 at, double cost, double damage) {
+        if (!inst.spend(cost, "炼成体拦截")) return false;
+        if (cost >= BLOCK_COST) Vfx.burst(level, at, node.element, 6);
+        absorb(damage);
+        return true;
     }
 }

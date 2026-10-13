@@ -34,6 +34,8 @@ public final class BeamObj extends SpellObject {
     private final Set<UUID> inside = new HashSet<>();
     /** Whether its hits only heal or ward, so it may touch its own side. */
     private final boolean helps = Targeting.helpsOnHit(node);
+    /** What one on-hit deals, so a construct that stops it takes as much (and a void one may pass it). */
+    private final double hitDamage = Constructs.hitDamage(node);
     private Vec3 dir;
 
     public BeamObj(Node node, Ctx ctx, double radius, double range, int life, int every, @Nullable Node fromNode, @Nullable Node dirNode, int trail) {
@@ -85,7 +87,7 @@ public final class BeamObj extends SpellObject {
             blocked = bh.getBlockPos();
         }
         // Another spell's construct cuts the beam short, like a shield held into it.
-        Vec3 wall = Constructs.stopSpell(level, inst, from, end, ConstructObj.BLOCK_COST / 10);
+        Vec3 wall = Constructs.stopSpell(level, inst, from, end, ConstructObj.BLOCK_COST / 10, node.element, hitDamage, age % every == 0);
         if (wall != null) {
             end = wall;
             blocked = null;
