@@ -51,7 +51,7 @@ public final class LogosGameTests {
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
-            "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_forages", "lifeform_role",
+            "lifeform_hovers", "lifeform_combo", "lifeform_heals_master", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_forages", "lifeform_role",
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
             "colossus_grabs_big", "colossus_grabs_from_reach", "colossus_defends_itself", "colossus_orders_before_self_defense", "colossus_stomps_small_foes", "colossus_grabs_rider", "colossus_lets_go_when_killed", "colossus_punches_crowd", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_cannon_strikes_at_once", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered", "colossus_jumps_off",
@@ -111,6 +111,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("lifeform_hovers", () -> LifeformGameTests::hoversAtMaster);
         FUNCTIONS.register("lifeform_combo", () -> LifeformGameTests::comboWhenRich);
         FUNCTIONS.register("lifeform_heals_master", () -> LifeformGameTests::healsMaster);
+        FUNCTIONS.register("lifeform_heal_projectile_hits_master", () -> LifeformGameTests::healProjectileHitsMaster);
+        FUNCTIONS.register("lifeform_heal_ray_hits_master", () -> LifeformGameTests::healRayHitsMaster);
+        FUNCTIONS.register("lifeform_heal_beam_hits_master", () -> LifeformGameTests::healBeamHitsMaster);
         FUNCTIONS.register("lifeform_forages", () -> LifeformGameTests::foragesFreeMana);
         FUNCTIONS.register("lifeform_role", () -> LifeformGameTests::roleByStance);
         FUNCTIONS.register("leech_hunts_richest", () -> LeechGameTests::huntsRichest);

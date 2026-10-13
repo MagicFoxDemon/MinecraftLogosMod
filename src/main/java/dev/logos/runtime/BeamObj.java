@@ -91,7 +91,7 @@ public final class BeamObj extends SpellObject {
         pos = end;
         Vec3 a = from, b = end;
         List<Entity> touching = new ArrayList<>(level.getEntities(inst.caster, new AABB(a, b).inflate(radius + 1), e -> {
-            if (!Targeting.isEnemy(inst, e)) return false;
+            if (!Targeting.mayHit(inst, e)) return false;
             AABB box = e.getBoundingBox().inflate(radius);
             return box.contains(a) || box.clip(a, b).isPresent();
         }));

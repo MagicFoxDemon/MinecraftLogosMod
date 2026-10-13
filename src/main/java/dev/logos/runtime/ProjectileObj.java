@@ -114,7 +114,7 @@ public final class ProjectileObj extends SpellObject {
         Vec3 segEnd = blockHit != null ? blockHit : next;
 
         List<Entity> candidates = level.getEntities(inst.caster, new AABB(prev, segEnd).inflate(size + 1),
-                e -> Targeting.isEnemy(inst, e) && canHit(e));
+                e -> Targeting.mayHit(inst, e) && canHit(e));
         candidates.sort(Comparator.comparingDouble(e -> e.distanceToSqr(prev)));
         for (Entity e : candidates) {
             AABB box = e.getBoundingBox().inflate(size);

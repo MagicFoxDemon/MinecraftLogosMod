@@ -292,7 +292,7 @@ public final class Runes {
             }
             Vec3 a = from, b = end;
             int pierce = (int) clamp(num(kw(n, "pierce"), c), 0, 99);
-            List<Entity> along = level.getEntities(inst.caster, new AABB(a, b).inflate(1), e -> Targeting.isEnemy(inst, e)
+            List<Entity> along = level.getEntities(inst.caster, new AABB(a, b).inflate(1), e -> Targeting.mayHit(inst, e)
                     && e.getBoundingBox().inflate(0.3).clip(a, b).isPresent());
             along.sort((x, y) -> Double.compare(x.distanceToSqr(a), y.distanceToSqr(a)));
             for (Entity e : along) {

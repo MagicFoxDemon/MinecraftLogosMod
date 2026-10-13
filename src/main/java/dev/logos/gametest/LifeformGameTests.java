@@ -182,6 +182,33 @@ final class LifeformGameTests {
         h.succeedWhen(() -> h.assertTrue(StatusData.has(p, Status.parse("#healed")), "it should cast its heal page on its master"));
     }
 
+    /** A healing projectile, ray or beam it aims at its master lands on them instead of passing through. */
+    static void healProjectileHitsMaster(GameTestHelper h) {
+        healFormHitsMaster(h, "projectile");
+    }
+
+    static void healRayHitsMaster(GameTestHelper h) {
+        healFormHitsMaster(h, "ray");
+    }
+
+    static void healBeamHitsMaster(GameTestHelper h) {
+        healFormHitsMaster(h, "beam");
+    }
+
+    private static void healFormHitsMaster(GameTestHelper h, String form) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
+        lf.setNoAi(true);
+        lf.snapTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0);
+        lf.core.setItem(0, page("(spell :name \"愈\" :players true :mana 30 (" + form + " :dir (toward here (pos-of (master))) (on-hit (heal target 4))))"));
+        // Too hungry to regenerate on its own, so only the heal can raise its health.
+        p.getFoodData().setFoodLevel(10);
+        p.setHealth(6);
+        h.assertTrue(lf.castSlot(0, p), "it should cast its heal page");
+        h.succeedWhen(() -> h.assertTrue(p.getHealth() >= 10, "the " + form + " should heal its master: " + p.getHealth()));
+    }
+
     /** Free mana nearby and nothing to fight: it flies over and drinks it. */
     static void foragesFreeMana(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
