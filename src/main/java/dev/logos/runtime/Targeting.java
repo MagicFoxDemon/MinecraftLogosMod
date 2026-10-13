@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
+import dev.logos.lang.Intent;
+import dev.logos.lang.Node;
+import dev.logos.lang.SpellProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -55,6 +58,29 @@ public final class Targeting {
     public static boolean mayAffect(SpellInstance inst, Entity e) {
         // A lifeform's spells may always touch its master, as a player's may touch themselves: that is how it heals and wards them.
         return e == inst.caster || !(e instanceof Player) || inst.spell.affectsPlayers() || e.getUUID().equals(Familiars.masterOf(inst.caster));
+    }
+
+    /**
+     * What a projectile, ray or beam strikes: enemies, and, when its hit handlers only heal or ward
+     * ({@code helps}), also anyone the spell may help — so a lifeform's healing bolt lands on its master
+     * instead of passing through them.
+     */
+    public static boolean mayHit(SpellInstance inst, Entity e, boolean helps) {
+        if (isEnemy(inst, e)) return true;
+        return helps && e instanceof LivingEntity le && le.isAlive() && e != inst.caster && !e.isSpectator()
+                && !(e instanceof ArmorStand) && mayAffect(inst, e);
+    }
+
+    /**
+     * Whether {@code form}'s hit handlers (on-hit, on-enter) only heal or ward. Read from what they do,
+     * not the page's declared {@code :intent}, so a damaging page filed under HEAL still spares its own side.
+     */
+    public static boolean helpsOnHit(Node form) {
+        List<Node> handlers = new ArrayList<>();
+        for (String event : List.of("on-hit", "on-enter")) handlers.addAll(form.events.getOrDefault(event, List.of()));
+        if (handlers.isEmpty()) return false;
+        for (Intent i : SpellProfile.of(handlers, List.of()).intents()) if (i != Intent.HEAL && i != Intent.WARD) return false;
+        return true;
     }
 
     public static List<LivingEntity> enemiesNear(SpellInstance inst, ServerLevel level, Vec3 at, double radius, boolean fresh) {
