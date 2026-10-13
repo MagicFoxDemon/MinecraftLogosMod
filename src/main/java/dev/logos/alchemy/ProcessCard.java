@@ -376,27 +376,53 @@ public final class ProcessCard {
     }
 
     /**
-     * Why the card cannot work now: no mana, nothing to work with, or, for the recipe it is closest
-     * to making (the fewest shortfalls; the richest among equals), what it lacks.
+     * Why the card cannot work now: no mana; nothing to work with; outputs too full for a craft whose
+     * materials are all there; or else what the recipe it seems meant for lacks. That recipe is the one
+     * using the most of what the card designates or holds (then the fewest shortfalls, then the
+     * richest), so a card set up for sugar, mushrooms and wheat that runs out of them says so, rather
+     * than asking for some other recipe's ingredients.
      */
     private Component diagnose(AlchemyTableBlockEntity table) {
         if (table.mana() < MANA_PER_CRAFT) return Component.translatable("logos.alchemy_card.no_mana");
         boolean anything = false;
         for (int i = 0; i < SLOTS; i++) anything |= !designated[i].isEmpty();
         if (!anything) return Component.translatable("logos.alchemy_card.idle");
+        Component outputFull = Component.translatable("logos.alchemy_card.output_full");
         List<Component> best = null;
+        int bestUses = -1;
         List<Source> sources = sources(table);
         for (AlchemyRecipe recipe : recipes(table, sources)) {
             List<Component> missing = new ArrayList<>();
             try (Transaction tx = Transaction.openRoot()) {
                 make(recipe, table, sources, tx, missing);
             }
-            if (best == null || missing.size() < best.size()) best = missing;
+            // Everything is there but the results have nowhere to go: that is the reason.
+            if (missing.equals(List.of(outputFull))) return outputFull;
+            int uses = uses(recipe);
+            if (best == null || uses > bestUses || uses == bestUses && missing.size() < best.size()) {
+                best = missing;
+                bestUses = uses;
+            }
         }
         if (best == null || best.isEmpty()) return Component.empty();
         MutableComponent out = Component.translatable("logos.alchemy_card.missing");
         for (int i = 0; i < best.size(); i++) out.append(i == 0 ? Component.empty() : Component.literal("、")).append(best.get(i));
         return out;
+    }
+
+    /** How many of {@code recipe}'s ingredients the card designates or holds. */
+    private int uses(AlchemyRecipe recipe) {
+        int n = 0;
+        for (SizedIngredient need : recipe.ingredients()) {
+            for (int i = 0; i < SLOTS; i++) {
+                ItemResource what = designated[i].isEmpty() ? inputs.getResource(i) : designated[i];
+                if (!what.isEmpty() && need.ingredient().test(what.toStack())) {
+                    n++;
+                    break;
+                }
+            }
+        }
+        return n;
     }
 
     static boolean isContainer(ItemResource r) {

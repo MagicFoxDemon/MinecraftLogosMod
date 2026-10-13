@@ -652,4 +652,35 @@ final class AlchemyGameTests {
             h.assertTrue(count(card.outputs(), LogosMod.POTION_POWDER.get()) == 1, "the unwired poison powder did not stay in the card");
         });
     }
+
+    /** A card set up for sugar, mushrooms and wheat with none left asks for those, not for another recipe's starter culture. */
+    static void statusFollowsDesignations(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.FERMENT);
+        card.designate(0, Items.SUGAR);
+        card.designate(1, Items.RED_MUSHROOM);
+        card.designate(2, Items.WHEAT);
+        h.succeedWhen(() -> {
+            String said = card.status().toString();
+            h.assertTrue(said.contains("logos.alchemy_card.missing") && said.contains("item.minecraft.sugar"), "the card does not ask for sugar: " + said);
+            h.assertFalse(said.contains("starter_culture"), "the card asks for another recipe's starter culture: " + said);
+        });
+    }
+
+    /** A card with every material for a brew but too few free output slots says its outputs are full, not that it lacks bottles. */
+    static void statusSaysOutputsFull(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(Items.NETHER_WART));
+        for (int i = 0; i < 3; i++) put(card.inputs(), waterBottle());
+        // Seven of nine outputs taken: three brewed bottles cannot all go in.
+        for (int i = 0; i < 7; i++) card.outputs().set(i, ItemResource.of(Items.DIRT), 64);
+        h.succeedWhen(() -> {
+            String said = card.status().toString();
+            h.assertTrue(said.contains("logos.alchemy_card.output_full"), "the card does not say its outputs are full: " + said);
+            h.assertFalse(said.contains("logos.alchemy_card.missing"), "the card says it is missing something: " + said);
+        });
+    }
 }
