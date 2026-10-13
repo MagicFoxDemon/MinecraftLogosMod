@@ -16,7 +16,8 @@
     "ItemInHandLayerMixin",
     "ItemInHandRendererMixin",
     "ItemStackRenderStateAccessor",
-    "LayerRenderStateAccessor"
+    "LayerRenderStateAccessor",
+    "IrisRenderingPipelineMixin"
   ],
   "injectors": {
     "defaultRequire": 1

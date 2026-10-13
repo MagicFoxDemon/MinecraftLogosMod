@@ -215,4 +215,6 @@ dependencies {
     implementation("com.lowdragmc.kilagraph:kilagraph-neoforge-26.1:${kilagraph_version}") { transitive = false }
     // geckolib-neoforge-26.1.2-5.5.2 (Modrinth version id; the version number is shared with the Fabric build)
     implementation "maven.modrinth:geckolib:${geckolib_version}"
+    // Iris is optional: compiled against for IrisCompat, never required or bundled.
+    compileOnly("maven.modrinth:iris:${iris_version}") { transitive = false }
 }

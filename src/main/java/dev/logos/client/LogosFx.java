@@ -373,19 +373,21 @@ public final class LogosFx {
     /** Draws lasting beams, and the item models of spell bodies that wear a {@code :look}. */
     public static void submit(SubmitCustomGeometryEvent event) {
         Minecraft mc = Minecraft.getInstance();
+        ShaderPackOverlay.begin();
         Level level = mc.level;
         if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && !dev.logos.runtime.ConstructEntity.any() && !AnchorMarkers.showing())) return;
         CameraRenderState cam = event.getLevelRenderState().cameraRenderState;
         Quaternionf toCamera = new Quaternionf(cam.orientation).conjugate();
         float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         PoseStack pose = event.getPoseStack();
+        SubmitNodeCollector vfx = ShaderPackOverlay.collector(event.getSubmitNodeCollector());
         for (Beam b : BEAMS.values()) submitBeam(mc, level, b, cam, pt, pose, event.getSubmitNodeCollector());
         ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector());
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
             Trail t = e.getValue();
             if (t.visual != null) t.visual.submit(cam, level.getGameTime() + pt,
-                    pose, event.getSubmitNodeCollector(), t.look == null, t.particle == null);
+                    pose, vfx, t.look == null, t.particle == null);
             Look l = t.look;
             if (l == null) continue;
             Vector3f h = toCamera.transform(new Vector3f((float) l.heading.x, (float) l.heading.y, (float) l.heading.z));
