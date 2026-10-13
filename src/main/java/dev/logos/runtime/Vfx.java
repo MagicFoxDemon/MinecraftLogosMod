@@ -116,7 +116,12 @@ public final class Vfx {
     }
 
     public static void line(ServerLevel level, Vec3 from, Vec3 to, Element e) {
-        send(level, Kind.BEAM, e, 0, from, to, 1, 0);
+        line(level, from, to, e, NONE);
+    }
+
+    /** A line; {@code caster} is the network id of the entity whose eyes it left from (or {@link #NONE}), so clients draw it from that caster's cast point. */
+    public static void line(ServerLevel level, Vec3 from, Vec3 to, Element e, int caster) {
+        send(level, Kind.BEAM, e, 0, from, to, 1, 0, new Guise(caster, 0, NONE));
     }
 
     public static void ring(ServerLevel level, Vec3 c, double r, Element e) {

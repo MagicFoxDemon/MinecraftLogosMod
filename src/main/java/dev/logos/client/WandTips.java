@@ -38,9 +38,9 @@ import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 
 /**
  * Where a held wand's head is in the world. Each wand model names its head with a {@code wand_tip}
- * group (see CONTRIBUTING, 6.3): the group's origin, in model units. While a wand charges, the hand
- * renderers report the pose they draw it with, and this turns the tip into a world position for the
- * charging effects, first person and third person alike.
+ * group (see CONTRIBUTING, 6.3): the group's origin, in model units. Whenever a wand is drawn in a main
+ * hand, the hand renderers report the pose they draw it with, and this turns the tip into a world
+ * position, first person and third person alike; {@link CastPoints} starts charges, beams and rays there.
  */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class WandTips {
@@ -61,6 +61,13 @@ public final class WandTips {
         event.addListener(Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_tips"), (ResourceManagerReloadListener) rm -> TIPS.clear());
     }
 
+    /** Forgets wand heads not drawn for a while (their holders out of sight, or gone). */
+    @SubscribeEvent
+    static void onTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        long now = ClientCharges.ticks();
+        if (now % 20 == 0) SAMPLES.values().removeIf(s -> now - s.tick > 20);
+    }
+
     /** The world position of {@code entity}'s wand head, as last drawn, or null if it has not been drawn just now. */
     public static @Nullable Vec3 sample(int entityId) {
         Sample s = SAMPLES.get(entityId);
@@ -79,7 +86,7 @@ public final class WandTips {
 
     /** First person: {@code pose} is the item's pose before its display transform, under {@link #beginHands}. */
     public static void captureFirstPerson(LivingEntity holder, ItemStack stack, ItemDisplayContext context, Matrix4fc pose) {
-        if (!(stack.getItem() instanceof WandItem) || ClientCharges.of(holder) == null) return;
+        if (!(stack.getItem() instanceof WandItem) || context.leftHand() != (holder.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT)) return;
         Minecraft mc = Minecraft.getInstance();
         ItemStackRenderState state = new ItemStackRenderState();
         mc.getItemModelResolver().updateForTopItem(state, stack, context, holder.level(), holder, 0);
@@ -87,9 +94,9 @@ public final class WandTips {
         capture(holder.getId(), stack, state, context.leftHand(), inView, mc.gameRenderer.getMainCamera().rotation());
     }
 
-    /** Third person: {@code pose} is camera-relative world space, before the item's display transform. */
-    public static void captureThirdPerson(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, Matrix4fc pose) {
-        if (!(stack.getItem() instanceof WandItem) || !ClientCharges.all().containsKey(entityId)) return;
+    /** Third person: {@code pose} is camera-relative world space, before the item's display transform; only a main hand counts. */
+    public static void captureThirdPerson(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, boolean mainHand, Matrix4fc pose) {
+        if (!(stack.getItem() instanceof WandItem) || !mainHand) return;
         capture(entityId, stack, state, leftHand, pose, null);
     }
 

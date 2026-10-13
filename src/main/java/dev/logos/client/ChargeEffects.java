@@ -33,21 +33,8 @@ public final class ChargeEffects {
         long now = ClientCharges.ticks();
         for (var e : ClientCharges.all().entrySet()) {
             if (!(level.getEntity(e.getKey()) instanceof LivingEntity holder)) continue;
-            Vec3 tip = WandTips.sample(e.getKey());
-            spawn(level, holder, e.getValue(), tip != null ? tip : guessTip(holder), now);
+            spawn(level, holder, e.getValue(), CastPoints.of(holder, 1), now);
         }
-    }
-
-    /** About where a wand head is when it was not drawn just now: ahead, below the eyes, to the right. */
-    static Vec3 guessTip(LivingEntity holder) {
-        Vec3 look = holder.getLookAngle();
-        // A caster with no wand (a mana lifeform) gathers the charge just in front of its body.
-        if (!(holder instanceof net.minecraft.world.entity.player.Player)) {
-            return holder.position().add(0, holder.getBbHeight() * 0.55, 0).add(look.scale(holder.getBbWidth() * 0.5 + 0.25));
-        }
-        Vec3 right = look.cross(new Vec3(0, 1, 0));
-        right = right.lengthSqr() < 1e-6 ? Vec3.ZERO : right.normalize();
-        return holder.getEyePosition().add(look.scale(0.9)).add(right.scale(0.4)).add(0, -0.45, 0);
     }
 
     static void spawn(ClientLevel level, LivingEntity holder, ClientCharges.State s, Vec3 tip, long now) {

@@ -305,7 +305,9 @@ public final class Runes {
                 blocked = null; // stopped by a creature before reaching the block
             }
         }
-        Vfx.line(level, from, end, n.element);
+        // Left from the caster's eyes, it is drawn from their cast point (a wand's head); only the picture moves.
+        boolean fromEyes = inst.caster.level() == level && from.distanceToSqr(inst.caster.getEyePosition()) < 1e-4;
+        Vfx.line(level, from, end, n.element, fromEyes ? inst.caster.getId() : Vfx.NONE);
         Vfx.sound(level, end, Vfx.sound(n.element), 0.4f, 1.6f);
         Ctx base = c.at(origin);
         for (Entity e : hits) {

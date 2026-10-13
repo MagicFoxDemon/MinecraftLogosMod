@@ -16,13 +16,15 @@ import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
 
-/** Third person: reports the pose a charging player's wand is drawn with, so its charge effects sit on the wand head. */
+/** Third person: reports the pose a player's wand is drawn with, so charges, beams and rays leave from its head. */
 @Mixin(ItemInHandLayer.class)
 abstract class ItemInHandLayerMixin {
     @Inject(method = "submitArmWithItem", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/renderer/item/ItemStackRenderState;submit(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;III)V"))
     private void logos$wandTip(ArmedEntityRenderState state, ItemStackRenderState item, ItemStack stack, HumanoidArm arm, PoseStack poseStack,
             SubmitNodeCollector collector, int light, CallbackInfo ci) {
-        if (state instanceof AvatarRenderState avatar) WandTips.captureThirdPerson(avatar.id, stack, item, arm == HumanoidArm.LEFT, poseStack.last().pose());
+        if (state instanceof AvatarRenderState avatar) {
+            WandTips.captureThirdPerson(avatar.id, stack, item, arm == HumanoidArm.LEFT, arm == state.mainArm, poseStack.last().pose());
+        }
     }
 }
