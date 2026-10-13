@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "G": "minecraft:gold_nugget",
+    "L": "#minecraft:oak_logs",
+    "P": "minecraft:oak_planks"
+  },
+  "pattern": [
+    "  G",
+    " P ",
+    "L  "
+  ],
+  "result": {
+    "id": "logos:oak_wand"
+  }
+}

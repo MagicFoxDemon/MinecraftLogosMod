@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "G": "minecraft:gold_nugget",
+    "L": "#minecraft:acacia_logs",
+    "P": "minecraft:acacia_planks"
+  },
+  "pattern": [
+    "  G",
+    " P ",
+    "L  "
+  ],
+  "result": {
+    "id": "logos:acacia_wand"
+  }
+}

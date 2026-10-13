@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "G": "minecraft:gold_nugget",
+    "L": "#minecraft:dark_oak_logs",
+    "P": "minecraft:dark_oak_planks"
+  },
+  "pattern": [
+    "  G",
+    " P ",
+    "L  "
+  ],
+  "result": {
+    "id": "logos:dark_oak_wand"
+  }
+}

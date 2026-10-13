@@ -96,6 +96,9 @@ public class LogosMod {
     public static final DeferredItem<WandItem> ADEPT_WAND = ITEMS.registerItem("adept_wand", p -> new WandItem(p, 6), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE));
     public static final DeferredItem<WandItem> MASTER_WAND = ITEMS.registerItem("master_wand",
             p -> new WandItem(p, 9), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC));
+    /** The first-tier wands, one per wood (log, planks and a gold nugget); each holds three pages like the novice wand. */
+    public static final List<DeferredItem<WandItem>> WOOD_WANDS = java.util.stream.Stream.of("oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "cherry")
+            .map(wood -> ITEMS.registerItem(wood + "_wand", p -> new WandItem(p, 3), p -> p.stacksTo(1))).toList();
     /** Every grade of 术式载页: an empty and a written item each. */
     public static final Map<PageTier, PageTier.Items> PAGES = new EnumMap<>(PageTier.class);
 
@@ -281,6 +284,7 @@ public class LogosMod {
             .title(Component.translatable("itemGroup.logos"))
             .icon(() -> new ItemStack(INSCRIBED_PAGE.get()))
             .displayItems((params, out) -> {
+                for (var wand : WOOD_WANDS) out.accept(wand.get());
                 out.accept(WAND.get());
                 out.accept(ADEPT_WAND.get());
                 out.accept(MASTER_WAND.get());
