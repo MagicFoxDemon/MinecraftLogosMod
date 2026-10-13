@@ -168,11 +168,31 @@ final class WorldGameTests {
         h.succeed();
     }
 
-    /** in-dimension maps overworld coordinates into the nether (÷8) and blink lands there, standing. */
+    /**
+     * in-dimension refuses a dimension the caster has never been to (free of charge) unless the config
+     * allows it; once visited, it maps overworld coordinates into the nether (÷8) and blink lands there, standing.
+     */
     static void netherStep(GameTestHelper h) {
         ServerPlayer p = caster(h);
         p.snapTo(800.5, 70, 1600.5, 0, 0);
-        SpellInstance inst = Casting.cast(p, Casting.compile("(spell :mana 200 (blink (in-dimension @the_nether (pos-of caster))))"), null, null);
+        String spell = "(spell :mana 200 (blink (in-dimension @the_nether (pos-of caster))))";
+        SpellInstance refused = Casting.cast(p, Casting.compile(spell), null, null);
+        h.assertTrue(refused != null && refused.dead && refused.endReason().contains("没有到过"),
+                "an unvisited nether must extinguish the spell, got " + (refused == null ? "refused" : refused.endReason()));
+        h.assertTrue(p.level().dimension() == Level.OVERWORLD, "the caster must stay put");
+        h.assertTrue(refused.mana >= refused.injected - 1e-6, "the refused rune must not charge, pool " + refused.mana);
+
+        dev.logos.LogosConfig.TRAVEL_UNVISITED_DIMENSIONS.set(true);
+        boolean free;
+        try {
+            free = dev.logos.runtime.Attunement.reaches(p, h.getLevel().getServer().getLevel(Level.NETHER));
+        } finally {
+            dev.logos.LogosConfig.TRAVEL_UNVISITED_DIMENSIONS.set(false);
+        }
+        h.assertTrue(free, "travelUnvisitedDimensions must lift the check");
+
+        dev.logos.runtime.Attunement.visit(p, Level.NETHER);
+        SpellInstance inst = Casting.cast(p, Casting.compile(spell), null, null);
         h.assertTrue(inst != null && !inst.dead, "blink failed: " + (inst == null ? "refused" : inst.endReason()));
         h.assertTrue(p.level().dimension() == Level.NETHER, "caster should now be in the nether, is in " + p.level().dimension());
         h.assertTrue(Math.abs(p.getX() - 100.5) < 1 && Math.abs(p.getZ() - 200.5) < 1,

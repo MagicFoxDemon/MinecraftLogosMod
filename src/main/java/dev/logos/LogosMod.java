@@ -334,6 +334,8 @@ public class LogosMod {
                     .sync(dev.logos.runtime.Familiars.Bond.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<dev.logos.runtime.Anchors>> ANCHORS = ATTACHMENTS.register("anchors",
             () -> AttachmentType.builder(() -> new dev.logos.runtime.Anchors()).serialize(dev.logos.runtime.Anchors.CODEC).copyOnDeath().build());
+    public static final Supplier<AttachmentType<dev.logos.runtime.Attunement>> ATTUNEMENT = ATTACHMENTS.register("attunement",
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.Attunement()).serialize(dev.logos.runtime.Attunement.CODEC).copyOnDeath().build());
 
     /** Passive spells triggered inside damage events run on the next tick, outside the event. */
     private static final List<Runnable> DEFERRED = new ArrayList<>();
@@ -425,7 +427,10 @@ public class LogosMod {
     /** The client keeps a copy of its anchors (editor list, markers); resend whenever the player is (re)created. */
     @SubscribeEvent
     public void onLogin(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) dev.logos.runtime.Anchors.sync(sp);
+        if (event.getEntity() instanceof ServerPlayer sp) {
+            dev.logos.runtime.Anchors.sync(sp);
+            dev.logos.runtime.Attunement.record(sp);
+        }
     }
 
     @SubscribeEvent
@@ -437,6 +442,7 @@ public class LogosMod {
     public void onChangeDimension(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent event) {
         if (event.getEntity() instanceof ServerPlayer sp) {
             dev.logos.runtime.Anchors.sync(sp);
+            dev.logos.runtime.Attunement.record(sp);
             dev.logos.runtime.Charging.interrupt(sp);
         }
     }

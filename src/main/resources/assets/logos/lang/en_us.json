@@ -48,6 +48,8 @@
   "logos.configuration.maxLifeforms": "Max Mana Lifeforms",
   "logos.configuration.maxLifeforms.tooltip": "How many mana lifeforms one player may have at once; summoning past it unmakes the oldest",
   "logos.configuration.maxAnchors.tooltip": "How many named anchors (^name) one player may keep",
+  "logos.configuration.travelUnvisitedDimensions": "Travel to unvisited dimensions",
+  "logos.configuration.travelUnvisitedDimensions.tooltip": "When on, in-dimension may name a dimension the caster has never been to; when off, they must travel there in person first (visits are always recorded)",
   "logos.configuration.groupCostMultiplier": "Group Effect Cost Multiplier",
   "logos.configuration.groupCostMultiplier.tooltip": "Group damage/ignite/freeze pay this many times the single-target price, once, regardless of target count (default 3)",
   "logos.configuration.chargeMinTicks": "Minimum Charge Time",
