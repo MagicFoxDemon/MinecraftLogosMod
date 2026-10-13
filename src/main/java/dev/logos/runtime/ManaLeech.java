@@ -1,5 +1,7 @@
 package dev.logos.runtime;
 
+import java.util.UUID;
+
 import org.jspecify.annotations.Nullable;
 
 import com.geckolib.animatable.GeoEntity;
@@ -63,6 +65,9 @@ import net.minecraft.world.phys.Vec3;
  * <p>
  * A familiar summoned by spell has no pool: its health stands for its mana, and draining it wounds it
  * as much. A made familiar (lifeform, colossus) is drained from its own pool.
+ * <p>
+ * Summoned as a familiar itself, it hunts nothing of its own: it fights what its master fights, never
+ * its master's side, drinks for its master (into their pool, keeping none) and so never splits.
  */
 public class ManaLeech extends Monster implements GeoEntity {
     public static final double SEARCH_RANGE = 16, CHARGE_RANGE = 3, SPLIT_AT = 60, SWELL_AT = 30;
@@ -196,10 +201,16 @@ public class ManaLeech extends Monster implements GeoEntity {
         return e.getHealth();
     }
 
-    private static boolean huntable(LivingEntity e) {
-        if (!e.isAlive() || e.isSpectator()) return false;
-        if (e instanceof Player p) return !p.getAbilities().invulnerable;
-        return Familiars.isFamiliar(e);
+    /**
+     * Whether it may go after {@code e}. Wild, it hunts players and their familiars; a familiar itself,
+     * anything but its master's side. Never itself, nor a player who cannot be hurt.
+     */
+    private boolean canHunt(LivingEntity e) {
+        if (e == this || !e.isAlive() || e.isSpectator() || e.level() != level()) return false;
+        if (e instanceof Player p && p.getAbilities().invulnerable) return false;
+        UUID master = Familiars.masterOf(this);
+        if (master != null) return !Familiars.friendly(master, e);
+        return e instanceof Player || Familiars.isFamiliar(e);
     }
 
     // ---- the hunt ---------------------------------------------------------------------------------
@@ -221,7 +232,7 @@ public class ManaLeech extends Monster implements GeoEntity {
 
     private void serverTick(ServerLevel level) {
         stateTicks++;
-        if (prey != null && (!huntable(prey) || prey.level() != level)) {
+        if (prey != null && !canHunt(prey)) {
             if (state() == State.LATCHED) dropOff(level);
             prey = null;
         }
@@ -249,7 +260,7 @@ public class ManaLeech extends Monster implements GeoEntity {
         near.addAll(level.players());
         for (LivingEntity e : near) {
             double d = distanceToSqr(e);
-            if (d > SEARCH_RANGE * SEARCH_RANGE || !huntable(e) || !hasLineOfSight(e)) continue;
+            if (d > SEARCH_RANGE * SEARCH_RANGE || !canHunt(e) || !hasLineOfSight(e)) continue;
             double m = manaOf(e);
             if (m > bestMana || (m == bestMana && d < bestDist)) {
                 best = e;
@@ -265,7 +276,11 @@ public class ManaLeech extends Monster implements GeoEntity {
             startSplit();
             return;
         }
-        if (prey == null || stateTicks % 20 == 0) {
+        if (Familiars.isFamiliar(this)) {
+            // A familiar picks no prey of its own: it fights what its master fights (the bond's order), and otherwise follows.
+            LivingEntity ordered = Familiars.orderedTarget(this);
+            prey = ordered != null && canHunt(ordered) ? ordered : null;
+        } else if (prey == null || stateTicks % 20 == 0) {
             LivingEntity found = smell(level);
             // It keeps after its prey while it is still within reach, unless something richer turns up.
             if (found != null || prey == null || distanceToSqr(prey) > SEARCH_RANGE * SEARCH_RANGE * 2) prey = found;
@@ -361,9 +376,17 @@ public class ManaLeech extends Monster implements GeoEntity {
         } else if (on instanceof AlchemicalColossus c) {
             c.setMana(c.trueMana() - took);
         } else {
-            wound = (float) took; // a summoned familiar's health is its mana
+            wound = (float) took; // a summoned familiar's (or any other creature's) health is its mana
         }
-        setMana(mana() + took);
+        // A familiar drinks for its master: what fits in their pool goes there, and it stays empty.
+        UUID masterId = Familiars.masterOf(this);
+        Player master = masterId == null ? null : level.getPlayerByUUID(masterId);
+        if (master != null) {
+            PlayerMagic m = PlayerMagic.of(master);
+            m.mana = Math.min(m.maxMana, m.mana + took);
+        } else if (masterId == null) {
+            setMana(mana() + took);
+        }
         float bite = (float) (attack() * (level.getDifficulty() == Difficulty.HARD ? 1.5 : 1));
         if (level.getDifficulty() == Difficulty.PEACEFUL) bite = 0;
         on.hurtServer(level, damageSources().source(DAMAGE, this), bite + wound);
@@ -409,7 +432,7 @@ public class ManaLeech extends Monster implements GeoEntity {
     // ---- splitting ----------------------------------------------------------------------------------
 
     private boolean canSplit(ServerLevel level) {
-        return !offspring && mana() >= SPLIT_AT
+        return !offspring && mana() >= SPLIT_AT && !Familiars.isFamiliar(this)
                 && level.getEntitiesOfClass(ManaLeech.class, getBoundingBox().inflate(SEARCH_RANGE), Entity::isAlive).size() < MAX_NEARBY;
     }
 

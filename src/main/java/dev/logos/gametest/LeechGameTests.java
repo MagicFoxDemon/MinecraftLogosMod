@@ -160,6 +160,37 @@ final class LeechGameTests {
         });
     }
 
+    /**
+     * Summoned as a familiar it neither drinks from itself nor turns on its master; ordered at a foe, it
+     * drinks for its master: the draw goes into their pool and it keeps none.
+     */
+    static void familiarObeys(GameTestHelper h) {
+        FamiliarGameTests.forceAround(h, 1);
+        ServerPlayer p = prey(h, 50);
+        ManaLeech leech = leech(h, 1.5, 3.5);
+        Familiars.bindForTest(leech, p);
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        husk.setNoAi(true);
+        h.runAfterDelay(60, () -> {
+            h.assertTrue(leech.isAlive() && leech.getHealth() == leech.getMaxHealth(), "it must not drink from itself, health " + leech.getHealth());
+            h.assertTrue(leech.prey() == null && leech.latchedOn() == null, "with no fight of its master's it must hunt nothing, hunts " + leech.prey());
+            PlayerMagic m = PlayerMagic.of(p);
+            m.maxMana = 1000;
+            m.mana = 0;
+            h.assertTrue(Familiars.order(leech, husk), "it should take the order");
+            double[] last = {0};
+            boolean[] gained = {false};
+            h.succeedWhen(() -> {
+                double now = m.mana;
+                if (now - last[0] >= 9.9) gained[0] = true; // a draw, not the master's own trickle of regeneration
+                last[0] = now;
+                h.assertTrue(gained[0], "the master should receive a draw of 10, has " + now);
+                h.assertTrue(leech.mana() == 0, "it should keep none, has " + leech.mana());
+                h.assertTrue(husk.getHealth() <= 20 - 10 - bite(h, 2) + 0.01, "the husk should lose 10 health and a bite, has " + husk.getHealth());
+            });
+        });
+    }
+
     /** Offspring never split, whatever they hold. */
     static void offspringDoNotSplit(GameTestHelper h) {
         floor(h);
