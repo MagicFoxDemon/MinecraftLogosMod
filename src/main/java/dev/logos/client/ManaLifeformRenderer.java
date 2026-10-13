@@ -18,10 +18,12 @@ import net.minecraft.resources.Identifier;
 /**
  * The mana lifeform's GeckoLib model (assets/logos/geckolib/…/mana_lifeform). Awake it is mana and
  * lights itself; dormant it lies dim and grey. Its size follows its level. Culled faces, because the
- * model's outline is an inverted shell that shows only from behind.
+ * model's outline is an inverted shell that shows only from behind. Where its {@code cast_point} bone
+ * is drawn, its spells visibly leave from ({@link CastPoints}).
  */
 public class ManaLifeformRenderer<R extends LivingEntityRenderState & GeoRenderState> extends GeoEntityRenderer<ManaLifeform, R> {
     private static final DataTicket<Float> SCALE = DataTicket.create("logos_lifeform_scale", Float.class);
+    private static final DataTicket<Integer> ENTITY = DataTicket.create("logos_lifeform_entity", Integer.class);
 
     public ManaLifeformRenderer(EntityRendererProvider.Context context) {
         super(context, new DefaultedEntityGeoModel<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_lifeform")));
@@ -32,6 +34,18 @@ public class ManaLifeformRenderer<R extends LivingEntityRenderState & GeoRenderS
     public void addRenderData(ManaLifeform lf, Void unused, R state, float partialTick) {
         super.addRenderData(lf, unused, state, partialTick);
         state.addGeckolibData(SCALE, ManaLifeform.renderScale(lf.lifeLevel()));
+        state.addGeckolibData(ENTITY, lf.getId());
+    }
+
+    @Override
+    public void adjustRenderPose(RenderPassInfo<R> info) {
+        super.adjustRenderPose(info);
+        int id = info.getOrDefaultGeckolibData(ENTITY, -1);
+        if (id < 0) return;
+        // GeckoLib hands over (world position, model-space position, position relative to the entity).
+        info.addBonePositionListener(CastPoints.BONE, (world, model, relative) -> {
+            if (world != null) CastPoints.report(id, world);
+        });
     }
 
     @Override
