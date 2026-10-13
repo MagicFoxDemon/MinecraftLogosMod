@@ -65,7 +65,8 @@ import net.minecraft.world.phys.Vec3;
  * <li>passive pages (one slot per level past the first): hurt / attack / kill, read from its own side;</li>
  * <li>alchemical devices (one slot from level 2, a second at level 5), see {@link LifeformAugment}.</li>
  * </ul>
- * Level 4 quickens it: it casts, moves and recovers faster.
+ * Level 4 quickens it: it casts, moves and recovers faster. A cast charges before it lets go, at a
+ * speed set by its level (see {@link #channelFlow()}).
  * <p>
  * It lives on its own pool of mana: idling costs a little, every cast costs what the page injects,
  * and the leftovers of its own spells flow back into it. Run dry, it goes dormant — it falls and
@@ -122,6 +123,8 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     private static final EntityDataAccessor<Float> MANA = SynchedEntityData.defineId(ManaLifeform.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Boolean> DORMANT = SynchedEntityData.defineId(ManaLifeform.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> CASTING = SynchedEntityData.defineId(ManaLifeform.class, EntityDataSerializers.BOOLEAN);
+    /** Mid-cast, holding the cast pose while mana flows in. */
+    private static final EntityDataAccessor<Boolean> CHARGING = SynchedEntityData.defineId(ManaLifeform.class, EntityDataSerializers.BOOLEAN);
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.mana_lifeform.idle");
     private static final RawAnimation WAKE = RawAnimation.begin().thenPlay("animation.mana_lifeform.startup").thenLoop("animation.mana_lifeform.idle");
@@ -228,6 +231,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         b.define(MANA, 0f);
         b.define(DORMANT, false);
         b.define(CASTING, false);
+        b.define(CHARGING, false);
     }
 
     public int lifeLevel() {
@@ -299,6 +303,27 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     /** Plays (or ends) the cast animation; the orbit rests while it plays. */
     public void setCasting(boolean casting) {
         entityData.set(CASTING, casting);
+        if (!casting) entityData.set(CHARGING, false);
+    }
+
+    public boolean isCharging() {
+        return entityData.get(CHARGING);
+    }
+
+    /** Holds the cast animation where it stands (just short of letting go) while the cast charges. */
+    public void setCharging(boolean charging) {
+        entityData.set(CHARGING, charging);
+    }
+
+    /** Charging speed by level, the same as wand tiers 1 to 5: mana per second at first, and its growth per second. */
+    private static final double[] FLOW = {40, 55, 70, 90, 110}, SURGE = {20, 60, 130, 184, 282};
+
+    public double channelFlow() {
+        return FLOW[Mth.clamp(lifeLevel(), 1, FLOW.length) - 1];
+    }
+
+    public double channelSurge() {
+        return SURGE[Mth.clamp(lifeLevel(), 1, SURGE.length) - 1];
     }
 
     public Role role() {
@@ -330,6 +355,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         if (isDormant()) return;
         entityData.set(DORMANT, true);
         entityData.set(CASTING, false);
+        entityData.set(CHARGING, false);
         setNoGravity(false);
         getNavigation().stop();
         setTarget(null);
@@ -557,6 +583,23 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         return true;
     }
 
+    /** Whether its master's stability bears the page in {@code slot}. */
+    public boolean canSpeak(int slot) {
+        Spell spell = spellIn(slot);
+        if (spell == null || !(level() instanceof ServerLevel level)) return false;
+        Player master = Familiars.masterOf(this) == null ? null : level.getPlayerByUUID(Familiars.masterOf(this));
+        int stability = master != null ? PlayerMagic.of(master).stability : Limits.DEFAULT_STABILITY;
+        return spell.stability() <= stability;
+    }
+
+    /** Casts the page in {@code slot} at {@code target} with {@code paid}, already drawn from its pool by a charge. */
+    public void castPaid(int slot, @Nullable Entity target, double paid) {
+        Spell spell = spellIn(slot);
+        if (spell == null || paid <= 0) return;
+        PageTier tier = SpellPages.tier(core.getItem(slot));
+        Casting.castAs(this, spell, paid, (tier == null ? PageTier.BASIC : tier).recovery(), target, null);
+    }
+
     /** The passive pages bound to {@code trigger}, each at most once a second. */
     public void firePassives(String trigger, @Nullable Entity target) {
         long now = level().getGameTime();
@@ -634,7 +677,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
                 return test.setAndContinue(SHUTDOWN);
             }
             if (isCasting()) {
-                test.setControllerSpeed(quick() ? QUICK : 1f);
+                test.setControllerSpeed(isCharging() ? 0f : quick() ? QUICK : 1f);
                 return test.setAndContinue(CAST);
             }
             test.setControllerSpeed(1f);
