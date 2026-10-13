@@ -105,7 +105,7 @@ public final class AlchemyTableUI {
     private record MovedCard(int index, float dx, float dy) {}
 
     /** A wire being drawn from card {@code card}'s product {@code item}. */
-    private record WireDrag(int card, Item item) {}
+    private record WireDrag(int card, ItemResource product) {}
 
     static ModularUI create(BlockUIMenuType.BlockUIHolder holder) {
         Player player = holder.player;
@@ -336,7 +336,7 @@ public final class AlchemyTableUI {
                 int x = (int) (e.x - getPositionX()), y = (int) (e.y - getPositionY());
                 if (dragged instanceof NewCard n) send(AlchemyCardPayload.add(pos, n.process, x - 20, y - 6));
                 else if (dragged instanceof MovedCard m) send(AlchemyCardPayload.move(pos, m.index, (int) (x - m.dx), (int) (y - m.dy)));
-                else if (dragged instanceof WireDrag w) send(AlchemyCardPayload.route(pos, w.card, w.item, wireTarget(w.card, e.x, e.y)));
+                else if (dragged instanceof WireDrag w) send(AlchemyCardPayload.route(pos, w.card, w.product, wireTarget(w.card, e.x, e.y)));
             }, true);
         }
 
@@ -375,9 +375,9 @@ public final class AlchemyTableUI {
             for (int i = 0; i < Math.min(panels.size(), table.cards().size()); i++) {
                 ProcessCard card = table.cards().get(i);
                 CardPanel from = panels.get(i);
-                for (Item item : card.made()) {
-                    int target = card.route(item);
-                    UIElement port = from.port(item);
+                for (ItemResource product : card.made()) {
+                    int target = card.route(product);
+                    UIElement port = from.port(product);
                     if (port == null || target == ProcessCard.KEEP) continue;
                     float sx = port.getPositionX() + port.getSizeWidth(), sy = port.getPositionY() + port.getSizeHeight() / 2;
                     if (target == ProcessCard.PRODUCTS) {
@@ -391,7 +391,7 @@ public final class AlchemyTableUI {
                 }
             }
             if (drawing != null && drawing.card < panels.size()) {
-                UIElement port = panels.get(drawing.card).port(drawing.item);
+                UIElement port = panels.get(drawing.card).port(drawing.product);
                 if (port != null) wire(ctx, port.getPositionX() + port.getSizeWidth(), port.getPositionY() + port.getSizeHeight() / 2, mouseX, mouseY, ARROW, -1);
             }
         }
@@ -444,7 +444,7 @@ public final class AlchemyTableUI {
         private final Selector<ItemResource> designate = new Selector<>();
         /** One row per product the card has made, each with a port to wire it on from. */
         private final UIElement products = new UIElement().layout(l -> l.gapAll(2));
-        private final java.util.Map<Item, UIElement> ports = new java.util.HashMap<>();
+        private final java.util.Map<ItemResource, UIElement> ports = new java.util.HashMap<>();
         /** What the product rows were built for, so they are rebuilt only when that changes. */
         private @Nullable Object productsFor;
         private final IGuiTexture[] ghosts = new IGuiTexture[ProcessCard.SLOTS];
@@ -556,8 +556,8 @@ public final class AlchemyTableUI {
         }
 
         /** Where {@code item}'s wire starts, if the card lists it. */
-        @Nullable UIElement port(Item item) {
-            return ports.get(item);
+        @Nullable UIElement port(ItemResource product) {
+            return ports.get(product);
         }
 
         /**
@@ -565,17 +565,18 @@ public final class AlchemyTableUI {
          * row onto a card or the product node to wire it there; right-click it to unwire it.
          */
         private void refreshProducts(ProcessCard card) {
-            List<Item> made = card.made();
+            List<ItemResource> made = card.made();
             List<Object> key = new ArrayList<>(List.of(made, table.cards().size()));
-            for (Item p : made) key.add(card.route(p));
+            for (ItemResource p : made) key.add(card.route(p));
             for (ProcessCard c : table.cards()) key.add(c.process);
             if (Objects.equals(key, productsFor)) return;
             productsFor = key;
             for (UIElement child : new ArrayList<>(products.getChildren())) products.removeChild(child);
             ports.clear();
-            for (Item product : made) {
+            java.util.Map<Item, Integer> seen = new java.util.HashMap<>();
+            for (ItemResource product : made) {
                 UIElement icon = new UIElement().layout(l -> l.width(16).height(16));
-                icon.style(s -> s.background(new ItemStackTexture(product)));
+                icon.style(s -> s.background(new ItemStackTexture(product.toStack())));
                 icon.setAllowHitTest(false);
                 Label where = new Label();
                 where.setText(targetName(card.route(product)));
@@ -586,11 +587,14 @@ public final class AlchemyTableUI {
                 port.setAllowHitTest(false);
                 ports.put(product, port);
                 UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER).widthPercent(100));
-                row.setId("card" + index + "_product_" + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(product).getPath());
+                // One id per row: the item, and for a second kind of the same item (another potion) a number.
+                int nth = seen.merge(product.getItem(), 1, Integer::sum);
+                String path = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(product.getItem()).getPath();
+                row.setId("card" + index + "_product_" + path + (nth > 1 ? "_" + nth : ""));
                 row.addChildren(icon, where, port);
                 row.addEventListener(UIEvents.MOUSE_DOWN, e -> {
                     if (e.button == 1) send(AlchemyCardPayload.route(pos, index, product, ProcessCard.KEEP));
-                    else row.startDrag(new WireDrag(index, product), new ItemStackTexture(product));
+                    else row.startDrag(new WireDrag(index, product), new ItemStackTexture(product.toStack()));
                 });
                 products.addChild(row);
             }

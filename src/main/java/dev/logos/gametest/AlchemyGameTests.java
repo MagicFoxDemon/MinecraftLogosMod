@@ -259,7 +259,7 @@ final class AlchemyGameTests {
             h.assertTrue(count(card.outputs(), LogosMod.STARTER_CULTURE.get()) == 3, "the card made " + count(card.outputs(), LogosMod.STARTER_CULTURE.get()) + " starter cultures");
             h.assertTrue(count(card.inputs(), Items.SUGAR) + count(card.inputs(), Items.WHEAT) + count(card.inputs(), Items.RED_MUSHROOM) == 0, "the materials were not used up");
             h.assertTrue(table.mana() == 9, "the craft left " + table.mana() + " mana");
-            h.assertTrue(card.made().equals(List.of(LogosMod.STARTER_CULTURE.get())), "the card lists " + card.made() + " as made");
+            h.assertTrue(card.made().equals(List.of(ItemResource.of(LogosMod.STARTER_CULTURE.get()))), "the card lists " + card.made() + " as made");
         });
     }
 
@@ -398,7 +398,7 @@ final class AlchemyGameTests {
         h.assertTrue(copy.cards().size() == 4 && copy.cards().get(3).process == Process.SETTLE, "the cards were not saved");
         h.assertTrue(copy.cards().get(0).route(Items.SUGAR) == 2 && copy.cards().get(0).defaultRoute() == 3, "the routes were not saved");
         h.assertTrue(copy.cards().get(1).designated(4).is(Items.CLAY_BALL), "the designation was not saved");
-        h.assertTrue(copy.cards().get(0).made().equals(List.of(LogosMod.STARTER_CULTURE.get())), "what the card made was not saved: " + copy.cards().get(0).made());
+        h.assertTrue(copy.cards().get(0).made().equals(List.of(ItemResource.of(LogosMod.STARTER_CULTURE.get()))), "what the card made was not saved: " + copy.cards().get(0).made());
         h.assertTrue(copy.cards().get(0).x() == 10 && copy.cards().get(0).y() == 20, "the card's place on the canvas was not saved");
         h.assertTrue(count(copy.cards().get(2).inputs(), Items.SUGAR) == 7, "the card's contents were not saved");
 
@@ -615,6 +615,41 @@ final class AlchemyGameTests {
             for (int i = 0; i < card.outputs().size(); i++) if (card.outputs().getResource(i).is(LogosMod.POTION_POWDER.get())) powders += card.outputs().getAmountAsInt(i);
             h.assertTrue(powders == 1, "the card settled " + powders + " potions, not just the swiftness one");
             h.assertTrue(countPotion(table.rawArea(), Potions.POISON) == 1, "the undesignated poison potion was taken");
+        });
+    }
+
+    /**
+     * Products are told apart exactly: settling swiftness and poison potions lists two powders, and
+     * wiring only the swiftness powder to the product area sends only that one there. A card saved
+     * when products and wires were only item ids still loads them.
+     */
+    static void processProductsExact(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.SETTLE);
+        put(card.inputs(), PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS));
+        put(card.inputs(), PotionContents.createItemStack(Items.POTION, Potions.POISON));
+        ItemResource swiftPowder = ItemResource.of(dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(), new PotionContents(Potions.SWIFTNESS), 1));
+        card.setRoute(swiftPowder, ProcessCard.PRODUCTS);
+
+        CompoundTag old = new CompoundTag();
+        old.putString("process", "ferment");
+        CompoundTag routes = new CompoundTag();
+        routes.putInt("minecraft:sugar", 1);
+        old.put("routes", routes);
+        net.minecraft.nbt.ListTag made = new net.minecraft.nbt.ListTag();
+        made.add(net.minecraft.nbt.StringTag.valueOf("logos:starter_culture"));
+        old.put("made", made);
+        ProcessCard loaded = ProcessCard.load(TagValueInput.create(ProblemReporter.DISCARDING, h.getLevel().registryAccess(), old));
+        h.assertTrue(loaded != null && loaded.route(Items.SUGAR) == 1, "an old item-id wire did not load");
+        h.assertTrue(loaded.made().equals(List.of(ItemResource.of(LogosMod.STARTER_CULTURE.get()))), "an old item-id product list did not load: " + loaded.made());
+
+        h.succeedWhen(() -> {
+            h.assertTrue(card.made().size() == 2, "the card lists " + card.made().size() + " kinds of powder, not 2");
+            h.assertTrue(count(table.productArea(), LogosMod.POTION_POWDER.get()) == 1, "the product area holds "
+                    + count(table.productArea(), LogosMod.POTION_POWDER.get()) + " powders, not just the swiftness one");
+            h.assertTrue(table.productArea().getResource(0).equals(swiftPowder), "the powder in the product area is " + table.productArea().getResource(0));
+            h.assertTrue(count(card.outputs(), LogosMod.POTION_POWDER.get()) == 1, "the unwired poison powder did not stay in the card");
         });
     }
 }
