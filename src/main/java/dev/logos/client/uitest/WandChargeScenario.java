@@ -73,6 +73,9 @@ public class WandChargeScenario implements UIScenario {
                         throw new AssertionError("the ring should show a partial charge");
                     if (ring.element != Element.ARCANE || ring.tier != 1) throw new AssertionError("a 100-mana mark is an elaborate arcane charge");
                     tipNearHand(player, "first person");
+                    var pose = net.neoforged.neoforge.client.extensions.common.IClientItemExtensions.of(player.getMainHandItem())
+                            .getArmPose(player, InteractionHand.MAIN_HAND, player.getMainHandItem());
+                    if (pose != dev.logos.client.WandPose.CHARGE.getValue()) throw new AssertionError("a charging wand should take the charging arm pose, not " + pose);
                 })
                 .server("part-way charged", sc -> {
                     var c = Charging.of(sc.player());
@@ -105,7 +108,11 @@ public class WandChargeScenario implements UIScenario {
                     if (StatusData.stacks(sc.player(), new Status("#charged")) != 1) throw new AssertionError("letting go should cast");
                 })
                 .step("ring gone", ctx -> {
-                    if (ClientCharges.of(Minecraft.getInstance().player) != null) throw new AssertionError("the ring should be gone after the cast");
+                    var player = Minecraft.getInstance().player;
+                    if (ClientCharges.of(player) != null) throw new AssertionError("the ring should be gone after the cast");
+                    if (net.neoforged.neoforge.client.extensions.common.IClientItemExtensions.of(player.getMainHandItem())
+                            .getArmPose(player, InteractionHand.MAIN_HAND, player.getMainHandItem()) != null)
+                        throw new AssertionError("the arm should drop back once the charge is cast");
                 })
                 .screenshot("released");
     }
