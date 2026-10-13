@@ -15,7 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
-/** First person: reports the pose the player's own charging wand is drawn with, so its charge effects sit on the wand head. */
+/** First person: reports the pose the player's own wand is drawn with, so charges, beams and rays leave from its head. */
 @Mixin(ItemInHandRenderer.class)
 abstract class ItemInHandRendererMixin {
     @Inject(method = "renderHandsWithItems", at = @At("HEAD"))

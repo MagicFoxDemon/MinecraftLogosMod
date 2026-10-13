@@ -319,11 +319,14 @@ public final class LogosFx {
             }
             case BEAM -> {
                 Vec3 end = new Vec3(p.ax(), p.ay(), p.az());
+                // A ray from its caster's eyes is drawn from the caster's cast point (a wand's head).
+                Entity caster = p.look() >= 0 ? level.getEntity(p.look()) : null;
+                if (caster != null) pos = CastPoints.of(caster, 1);
                 double len = pos.distanceTo(end);
                 int beads = (int) Math.max(3, Math.min(80, len * 5));
                 FX bead = fx("beam", el, 0, () -> bead(el));
                 // Start a little way out: a ray cast from the eye would otherwise put a bead inside the camera.
-                double start = len > 2 ? 1.2 / len : 0;
+                double start = caster == null && len > 2 ? 1.2 / len : 0;
                 for (int k = 0; k <= beads; k++) {
                     double t = start + (1 - start) * k / beads;
                     Vec3 at = pos.lerp(end, t);
@@ -413,26 +416,21 @@ public final class LogosFx {
      * gaze — for the caster that is the camera itself, so turning never lags behind the server; only
      * the length comes from the server (where blocks stop it). It leaves the hand thin and swells to
      * its full radius over the first blocks, so a thick beam does not fill the caster's whole view.
-     * A colossus's beam leaves its palm, where the model's muzzle bone was drawn this frame.
+     * It leaves from the caster's cast point ({@link CastPoints}): a wand's head, a colossus's palm.
      */
     private static void submitBeam(Minecraft mc, Level level, Beam b, CameraRenderState cam, float pt, PoseStack pose, SubmitNodeCollector out) {
         Vec3 from = b.prevFrom.lerp(b.from, pt);
         Vec3 to = b.prevTo.lerp(b.to, pt);
         boolean firstPerson = false;
         Entity anchor = b.anchor >= 0 ? level.getEntity(b.anchor) : null;
-        if (anchor instanceof AlchemicalColossus colossus) {
-            Vec3 muzzle = colossus.drawnBone("attachment_muzzle_right");
+        if (anchor instanceof AlchemicalColossus) {
+            Vec3 muzzle = CastPoints.drawn(anchor);
             if (muzzle != null) from = muzzle;
         } else if (anchor != null) {
             double len = b.from.distanceTo(b.to);
-            Vec3 eye = anchor.getEyePosition(pt);
-            Vec3 gaze = anchor.getViewVector(pt);
-            to = eye.add(gaze.scale(len));
-            // Leave the hand rather than the pupil: a little forward, to the right and down.
-            Vec3 right = gaze.cross(new Vec3(0, 1, 0));
-            right = right.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : right.normalize();
+            to = anchor.getEyePosition(pt).add(anchor.getViewVector(pt).scale(len));
             firstPerson = anchor == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson();
-            from = eye.add(gaze.scale(firstPerson ? 0.6 : 0.4)).add(right.scale(firstPerson ? 0.32 : 0.25)).add(0, firstPerson ? -0.28 : -0.3, 0);
+            from = CastPoints.of(anchor, pt);
         }
         Vec3 d = to.subtract(from);
         float len = (float) d.length();
