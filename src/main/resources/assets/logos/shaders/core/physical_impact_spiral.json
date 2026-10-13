@@ -1,0 +1,9 @@
+{
+    "vertex": "photon:particle",
+    "fragment": "logos:physical_impact_spiral",
+    "samplers": [
+        { "name": "SpiralNoise" },
+        { "name": "SpiralDistortion" },
+        { "name": "SpiralMask" }
+    ]
+}

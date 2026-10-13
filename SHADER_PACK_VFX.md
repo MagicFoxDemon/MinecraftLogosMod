@@ -30,7 +30,8 @@ Iris + Sodium 几乎是玩家必装的模组。本模组的特效在不开光影
 3. **只有 `submitCustomGeometry` 会被叠加。** 通过同一个收集器提交的物品模型、方块等其他内容照常交给光影处理。
 4. **不要做的事：** 调用 `IrisApi.assignPipeline`；为了「看起来更亮」改颜色或混合方式去迁就某一个光影包；在元素分支里直接引用 Iris 的类。
 5. **Photon 效果（命中特效、拖尾粒子层）：** Photon 26.1 自带一套 Iris 兼容（`com.lowdragmc.photon.client.compat.iris`）：它会识别光影包的类型，必要时把整层特效放到光影合成之后再叠加（配置 `photon-client.toml` 的 `iris_composite_mode`，默认 `AUTO`；游戏内可用 `/photon_iris` 查看状态，日志里有 `[Iris compat]` 提示）。实测 photon 光影下 Photon 自己的层都可见，只是没有泛光、在明亮的天空前对比度低一些。
-   - **会出问题的是自己构造 `RenderType` 的材质。** `PhysicalProjectileImpactMaterial`、`VoidProjectileImpactMaterial` 重写了 `getRenderType` 返回自己的管线，绕过了 Photon 的光影处理：物理命中的螺旋在 photon 光影下完全看不见，而同一次命中里 Photon 自己的闪光层正常。新材质用 Photon 的 `CustomShaderMaterial` 等现成材质承载自定义着色器，不要自建 `RenderType`；这两个旧材质待公共修复。
+   - **会出问题的是自己构造 `RenderType` 的材质。** 物理、虚空命中特效的材质曾经重写 `getRenderType` 返回自己的管线，绕过了 Photon 的光影处理：两个光影包下物理命中的螺旋、虚空命中的星空核心都看不见，而同一次命中里 Photon 自己的层正常。
+   - **自定义着色器的做法**（参照 `PhysicalProjectileImpactMaterial`、`VoidProjectileImpactMaterial`）：材质继承 `CustomShaderMaterial`，构造时传入着色器 id；在 `shaders/core/<名字>.json` 写 `"vertex": "photon:particle"`、`"fragment": "logos:<名字>"` 和 `samplers` 列表；只写片元着色器，输入是 `texCoord0`、`vertexColor`、`sphericalVertexDistance`、`cylindricalVertexDistance`，可以用 `GameTime`、`ScreenSize`（导入 `globals.glsl`）。采样器名**不能用** `Sampler0`–`Sampler2`（Photon 自己占用），贴图用 `PhotonShaderTextures.bind(...)` 绑定。混合方式、剔除、深度由发射器的 `MaterialSetting` 决定，不在材质里写死。
    - Photon 的 `photon:pipeline/hdr_particle_*`、`bloom_*` 在日志里报 `Missing program` 是 Photon 自己的事，它的兼容层会处理，不要替它登记程序。
    - Photon 本身有问题时，向上游提 issue 或 PR（许可证 CC BY-NC-SA 4.0；移植到 1.21.x 以外版本的公开发布需原作者书面同意），不要自己 fork 一份随模组发布：模组 id 冲突、其他依赖 Photon 的模组会出问题，也要自己追上游更新。
 6. **原版粒子**（`level.addParticle` 之类）由光影包正常处理，开光影时可见。

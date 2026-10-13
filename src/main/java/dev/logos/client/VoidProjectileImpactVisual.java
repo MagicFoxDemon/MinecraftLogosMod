@@ -13,6 +13,7 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.number.color.Gradient
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.Curve;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurves;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
+import com.mojang.blaze3d.platform.DestFactor;
 import dev.logos.lang.Element;
 import org.joml.Vector2i;
 
@@ -28,7 +29,11 @@ final class VoidProjectileImpactVisual implements ProjectileImpactVisual {
     private static List<ParticleEmitter> buildImpact() {
         ParticleEmitter core = stationary("cloud", .65f, .75f, 18, 0xFFFFFFFF);
         core.config.colorOverLifetime.setColor(new Gradient(new GradientColor(0xFFFFFFFF, 0xFFFFFFFF, 0xC0FFFFFF, 0x40FFFFFF, 0x00FFFFFF)));
-        for (var material : core.config.renderer.getMaterials()) material.setMaterial(new VoidProjectileImpactMaterial());
+        for (var material : core.config.renderer.getMaterials()) {
+            material.setMaterial(new VoidProjectileImpactMaterial());
+            // The dark interior has to cover what is behind it, so the starfield blends over, not adds.
+            material.getBlendMode().setDstColorFactor(DestFactor.ONE_MINUS_SRC_ALPHA);
+        }
         ParticleEmitter shell = stationary("cloud", .8f, .95f, 16, 0x909A28FF);
         ParticleEmitter rim = stationary("rim", 1, 1.1f, 18, 0x709A28FF);
         ParticleEmitter glow = stationary("glow", .95f, 1.15f, 15, 0x389A28FF);
