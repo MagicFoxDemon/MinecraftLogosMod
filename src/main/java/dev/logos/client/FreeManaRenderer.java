@@ -22,12 +22,16 @@ import net.minecraft.util.Mth;
 
 /**
  * Free mana as a swarm of glowing motes circling a common centre, each on its own tilted orbit.
- * More mana means more motes and a wider swarm.
+ * More mana means more motes and a wider swarm. It fades in over its first moments.
  */
 final class FreeManaRenderer extends EntityRenderer<FreeManaEntity, FreeManaRenderer.State> {
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/free_mana.png");
     private static final RenderType RENDER_TYPE = RenderTypes.eyes(TEXTURE);
     private static final int MAX_MOTES = 28;
+    /** The whole swarm is drawn at this size. */
+    private static final float SCALE = 0.7f;
+    /** Ticks to fade from invisible to fully visible after it appears (1.5 seconds). */
+    private static final float FADE_IN_TICKS = 30;
 
     static final class State extends EntityRenderState {
         float amount;
@@ -56,15 +60,17 @@ final class FreeManaRenderer extends EntityRenderer<FreeManaEntity, FreeManaRend
         int motes = Mth.clamp(4 + (int) Math.sqrt(state.amount) * 2, 4, MAX_MOTES);
         float spread = Mth.clamp(0.18f + (float) Math.cbrt(state.amount) * 0.06f, 0.18f, 0.7f);
         float t = state.ageInTicks;
+        float fade = Mth.clamp(t / FADE_IN_TICKS, 0, 1);
         Quaternionf face = camera.orientation;
         Vector3f right = face.transform(new Vector3f(1, 0, 0));
         Vector3f up = face.transform(new Vector3f(0, 1, 0));
         pose.pushPose();
         pose.translate(0, state.boundingBoxHeight / 2 + Mth.sin(t * 0.08f) * 0.05f, 0);
+        pose.scale(SCALE, SCALE, SCALE);
         out.submitCustomGeometry(pose, RENDER_TYPE, (p, buf) -> {
             // The core: one larger, slowly pulsing mote at the centre.
             float core = 0.22f + spread * 0.25f + Mth.sin(t * 0.15f) * 0.03f;
-            mote(p, buf, 0, 0, 0, core, right, up, 255);
+            mote(p, buf, 0, 0, 0, core, right, up, (int) (255 * fade));
             for (int i = 0; i < motes; i++) {
                 float h1 = hash(state.seed, i, 1), h2 = hash(state.seed, i, 2), h3 = hash(state.seed, i, 3);
                 float radius = spread * (0.45f + 0.55f * h1);
@@ -76,7 +82,7 @@ final class FreeManaRenderer extends EntityRenderer<FreeManaEntity, FreeManaRend
                 float x = ox * Mth.cos(yaw) - oz * Mth.sin(yaw), z = ox * Mth.sin(yaw) + oz * Mth.cos(yaw);
                 float twinkle = 0.65f + 0.35f * Mth.sin(t * (0.2f + h1 * 0.3f) + i);
                 float size = (0.07f + 0.07f * h3) * (0.8f + 0.2f * twinkle);
-                mote(p, buf, x, oy, z, size, right, up, (int) (255 * twinkle));
+                mote(p, buf, x, oy, z, size, right, up, (int) (255 * twinkle * fade));
             }
         });
         pose.popPose();
