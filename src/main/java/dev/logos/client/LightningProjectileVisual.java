@@ -132,7 +132,7 @@ final class LightningProjectileVisual implements ProjectileVisual {
 
     private static void vertex(PoseStack.Pose pose, VertexConsumer buf, Vec3 at, float u, float v, int color) {
         buf.addVertex(pose, (float)at.x, (float)at.y, (float)at.z).setColor(color).setUv(u, v)
-                .setLight(LightCoordsUtil.FULL_BRIGHT);
+                .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, 0, 1, 0);
     }
 
     private static RenderType sprite(String texture, boolean additive) {

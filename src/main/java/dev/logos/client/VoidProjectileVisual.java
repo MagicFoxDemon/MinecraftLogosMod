@@ -140,7 +140,7 @@ final class VoidProjectileVisual implements ProjectileVisual {
     }
 
     private static void vertex(PoseStack.Pose pose, VertexConsumer buf, Vec3 p, float u, float v, int color) {
-        buf.addVertex(pose, (float)p.x, (float)p.y, (float)p.z).setColor(color).setUv(u, v).setLight(LightCoordsUtil.FULL_BRIGHT);
+        buf.addVertex(pose, (float)p.x, (float)p.y, (float)p.z).setColor(color).setUv(u, v).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, 0, 1, 0);
     }
 
     private static RenderType material(String name, String texture, boolean additive) {
