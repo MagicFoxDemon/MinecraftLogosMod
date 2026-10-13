@@ -9,6 +9,8 @@ import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
 
+import dev.logos.lang.Compiler;
+import dev.logos.lang.Element;
 import dev.logos.lang.Intent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -66,9 +68,15 @@ public final class LifeformMind extends Goal {
     private @Nullable Vec3 masterLast;
     private int masterStill;
 
-    // Casting: the cast animation gathers, lets go at its release tick, then settles.
+    // Casting: the cast animation gathers while mana flows into the cast (as a wand charges, at its level's
+    // speed); if the charge is not full just before letting go, the pose holds there until it is; then it
+    // lets go and settles.
     private int castTimer, castCooldown, castSlot = -1, comboSlot = -1;
     private @Nullable Entity castAt;
+    /** The cast's charge: all it injects, how much is in so far, ticks paid, and ticks it takes. */
+    private double chargeTarget, chargeIn;
+    private int chargeDone, chargeTicks, chargeTier;
+    private Element chargeElement = Element.ARCANE;
     private long supportReadyAt, wardReadyAt, nextHunger;
     private int repath;
 
@@ -257,12 +265,27 @@ public final class LifeformMind extends Goal {
         return castTimer == 0 && castCooldown == 0;
     }
 
+    /**
+     * Starts casting {@code slot} at {@code at}, with {@code combo} too if its master's stability bears it and
+     * the pool can spare both. Charges what the pages inject, or all it has left if that is less.
+     */
     private void beginCast(int slot, int combo, Entity at) {
+        if (!lf.canSpeak(slot)) return;
+        if (combo >= 0 && (!lf.canSpeak(combo) || !lf.comboAffordable(slot, combo))) combo = -1;
+        double target = Math.min(lf.injection(slot) + (combo >= 0 ? lf.injection(combo) : 0), lf.mana());
+        if (target <= 0) return;
         castSlot = slot;
         comboSlot = combo;
         castAt = at;
         castTimer = lf.castTicks();
+        chargeTarget = target;
+        chargeIn = 0;
+        chargeDone = 0;
+        chargeTicks = Charging.ticks(target, lf.channelFlow(), lf.channelSurge());
+        chargeElement = Compiler.inferElement(lf.spellIn(slot).body());
+        chargeTier = Charging.tier(target);
         lf.setCasting(true);
+        Charging.show(lf, chargeElement, chargeTier, 0, false);
         lf.level().playSound(null, lf.getX(), lf.getY(), lf.getZ(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.NEUTRAL, 0.8f, 1.3f);
     }
 
@@ -279,21 +302,74 @@ public final class LifeformMind extends Goal {
     private void tickCast() {
         if (castCooldown > 0) castCooldown--;
         if (castTimer <= 0) return;
-        castTimer--;
-        if (castTimer == lf.castTicks() - lf.releaseAt() && castAt != null && castAt.isAlive()) {
-            lf.face(castAt);
-            // The second page joins only if the pool still holds its reserve after both.
-            boolean combo = comboSlot >= 0 && lf.comboAffordable(castSlot, comboSlot);
-            lf.castSlot(castSlot, castAt);
-            if (combo) lf.castSlot(comboSlot, castAt);
+        if (chargeTarget > 0 && (castAt == null || !castAt.isAlive())) {
+            // Its target gone before it let go: stop at once, the charge back in its pool.
+            endCast();
+            castCooldown = lf.quick() ? 4 : 10;
+            return;
         }
+        boolean full = chargeTarget <= 0 || charge();
+        // Two ticks short of letting go, an unfinished charge holds the pose until it is in.
+        if (!full && castTimer <= lf.castTicks() - lf.releaseAt() + 2) {
+            lf.setCharging(true);
+            if (castAt != null && castAt.isAlive()) lf.face(castAt);
+            return;
+        }
+        castTimer--;
+        if (castTimer == lf.castTicks() - lf.releaseAt()) release();
         if (castTimer == 0) {
             endCast();
             castCooldown = lf.quick() ? 4 : 10;
         }
     }
 
+    /** Draws this tick's share of the charge from its pool; true once all of it is in. */
+    private boolean charge() {
+        if (chargeIn >= chargeTarget) return true;
+        double share = Charging.injectedAfter(chargeDone + 1, chargeTarget, lf.channelFlow(), lf.channelSurge(), chargeTicks) - chargeIn;
+        if (lf.mana() + 1e-9 < share) {
+            // The pool ran low meanwhile (its upkeep): cast with what is in.
+            chargeTarget = chargeIn;
+        } else {
+            lf.setMana(lf.mana() - share);
+            chargeIn += share;
+            chargeDone++;
+        }
+        boolean full = chargeIn >= chargeTarget - 1e-9;
+        if (full) {
+            lf.setCharging(false);
+            Charging.show(lf, chargeElement, chargeTier, 1, true);
+            lf.level().playSound(null, lf.getX(), lf.getY(), lf.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 1.6f);
+        } else if (chargeDone % 2 == 0) {
+            Charging.show(lf, chargeElement, chargeTier, (float) (chargeIn / chargeTarget), false);
+        }
+        return full;
+    }
+
+    /** Lets go: the charge goes into the page (and the combo page gets what is left), or back to its pool if the target is gone. */
+    private void release() {
+        double paid = chargeIn;
+        chargeIn = 0;
+        chargeTarget = 0;
+        Charging.hide(lf);
+        if (paid <= 0) return;
+        if (castAt == null || !castAt.isAlive()) {
+            lf.receiveMana(paid);
+            return;
+        }
+        lf.face(castAt);
+        double first = Math.min(lf.injection(castSlot), paid);
+        lf.castPaid(castSlot, castAt, first);
+        if (comboSlot >= 0) lf.castPaid(comboSlot, castAt, paid - first);
+        if (lf.mana() <= 0) lf.goDormant();
+    }
+
+    /** Ends the cast; one cut short before letting go returns what it had charged to its pool. */
     private void endCast() {
+        if (chargeIn > 0) lf.receiveMana(chargeIn);
+        if (chargeTarget > 0) Charging.hide(lf);
+        chargeIn = 0;
+        chargeTarget = 0;
         castTimer = 0;
         castAt = null;
         if (lf.isCasting()) lf.setCasting(false);

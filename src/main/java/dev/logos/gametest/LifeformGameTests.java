@@ -3,8 +3,10 @@ package dev.logos.gametest;
 import java.util.List;
 
 import dev.logos.LogosMod;
+import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
 import dev.logos.runtime.Casting;
+import dev.logos.runtime.Charging;
 import dev.logos.runtime.Familiars;
 import dev.logos.runtime.ManaLifeform;
 import dev.logos.runtime.SpellInstance;
@@ -168,6 +170,60 @@ final class LifeformGameTests {
         h.succeedWhen(() -> {
             h.assertTrue(StatusData.has(husk, Status.parse("#weak")), "its attack should land");
             h.assertTrue(StatusData.has(husk, Status.parse("#strong")), "and the dearer page with it");
+        });
+    }
+
+    /** A 300-mana attack page on a level-1 lifeform (flow 40, surge 20, as a first-tier wand): 77 ticks of charging. */
+    private static final String CHARGED_ATTACK = "(spell :name \"蓄弹\" :intent strike :mana 300 (mark (foe) #charged))";
+
+    /**
+     * Its cast charges before it lets go: the pose holds while the mana flows out of its pool, the cast
+     * lands no sooner than the charge takes, and the whole injection is paid.
+     */
+    static void chargesItsCast(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 1200 (summon mana_lifeform :at (pos-of caster)))");
+        lf.core.setItem(0, SpellPages.inscribed(PageTier.ECHO, CHARGED_ATTACK, null));
+        int ticks = Charging.ticks(300, lf.channelFlow(), lf.channelSurge());
+        h.assertTrue(ticks == 77, "300 mana at level 1 should charge for 77 ticks, not " + ticks);
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        husk.setNoAi(true);
+        double before = lf.mana();
+        h.assertTrue(Familiars.order(lf, husk), "it should take the order");
+        long[] began = {-1};
+        boolean[] heldPartway = {false};
+        h.succeedWhen(() -> {
+            if (began[0] < 0 && lf.isCasting()) began[0] = h.getTick();
+            double spent = before - lf.mana();
+            if (lf.isCharging() && spent > 10 && spent < 290) heldPartway[0] = true;
+            h.assertTrue(StatusData.has(husk, Status.parse("#charged")), "the charged cast should land");
+            h.assertTrue(heldPartway[0], "it should have held its pose with the charge part-way in");
+            h.assertTrue(h.getTick() - began[0] >= ticks, "it let go after " + (h.getTick() - began[0]) + " ticks, before the charge was in");
+            h.assertTrue(spent >= 300, "the whole 300 should be paid, got " + spent);
+        });
+    }
+
+    /** Its target gone mid-charge, the cast casts nothing and the charged mana goes back to its pool. */
+    static void chargeReturnsWhenTargetGone(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 1200 (summon mana_lifeform :at (pos-of caster)))");
+        lf.core.setItem(0, SpellPages.inscribed(PageTier.ECHO, CHARGED_ATTACK, null));
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        husk.setNoAi(true);
+        double before = lf.mana();
+        h.assertTrue(Familiars.order(lf, husk), "it should take the order");
+        boolean[] gone = {false};
+        h.succeedWhen(() -> {
+            if (!gone[0]) {
+                h.assertTrue(lf.isCasting() && before - lf.mana() > 50, "waiting for the charge to build");
+                husk.discard();
+                gone[0] = true;
+            }
+            h.assertTrue(!lf.isCasting(), "the cast should end without its target");
+            // A few seconds of upkeep (0.125 a second at level 1) is all it may have lost.
+            h.assertTrue(before - lf.mana() < 2, "the charge should be back in its pool, " + (before - lf.mana()) + " short");
         });
     }
 

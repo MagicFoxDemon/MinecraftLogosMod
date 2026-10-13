@@ -41,6 +41,10 @@ public final class ChargeEffects {
     /** About where a wand head is when it was not drawn just now: ahead, below the eyes, to the right. */
     static Vec3 guessTip(LivingEntity holder) {
         Vec3 look = holder.getLookAngle();
+        // A caster with no wand (a mana lifeform) gathers the charge just in front of its body.
+        if (!(holder instanceof net.minecraft.world.entity.player.Player)) {
+            return holder.position().add(0, holder.getBbHeight() * 0.55, 0).add(look.scale(holder.getBbWidth() * 0.5 + 0.25));
+        }
         Vec3 right = look.cross(new Vec3(0, 1, 0));
         right = right.lengthSqr() < 1e-6 ? Vec3.ZERO : right.normalize();
         return holder.getEyePosition().add(look.scale(0.9)).add(right.scale(0.4)).add(0, -0.45, 0);

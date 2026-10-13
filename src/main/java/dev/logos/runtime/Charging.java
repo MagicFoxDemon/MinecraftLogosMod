@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.item.ItemStack;
@@ -67,11 +68,8 @@ public final class Charging {
             return injected >= in.mana();
         }
 
-        /** Mana injected after {@code k} ticks; a charge stretched to the minimum length flows proportionally slower. */
         double after(int k) {
-            if (k >= ticks) return in.mana();
-            double t = k / 20.0 * Math.min(1, seconds(in.mana(), flow, surge) * 20 / ticks);
-            return Math.min(in.mana(), flow * t + surge * t * t / 2);
+            return injectedAfter(k, in.mana(), flow, surge, ticks);
         }
     }
 
@@ -85,6 +83,16 @@ public final class Charging {
         if (mana <= 0) return 0;
         if (surge <= 0) return flow <= 0 ? Double.POSITIVE_INFINITY : mana / flow;
         return (Math.sqrt(flow * flow + 2 * surge * mana) - flow) / surge;
+    }
+
+    /**
+     * Mana a charge of {@code mana} taking {@code ticks} has injected after {@code k} ticks; a charge stretched
+     * to the minimum length flows proportionally slower.
+     */
+    public static double injectedAfter(int k, double mana, double flow, double surge, int ticks) {
+        if (k >= ticks) return mana;
+        double t = k / 20.0 * Math.min(1, seconds(mana, flow, surge) * 20 / ticks);
+        return Math.min(mana, flow * t + surge * t * t / 2);
     }
 
     /** Ticks a charge of {@code mana} takes, never fewer than the configured minimum. */
@@ -180,7 +188,7 @@ public final class Charging {
         Charge c = m.charge;
         if (c == null || !c.full()) return false;
         m.charge = null;
-        send(player, ChargePayload.ended(player.getId()));
+        hide(player);
         Casting.launch(player, c.entry, c.in, null, null);
         return true;
     }
@@ -191,7 +199,7 @@ public final class Charging {
         Charge c = m.charge;
         if (c == null) return;
         m.charge = null;
-        send(player, ChargePayload.ended(player.getId()));
+        hide(player);
         if (c.injected <= 0) return;
         FreeManaEntity.release(player.level(), player.getEyePosition().add(player.getLookAngle().scale(0.8)), c.injected);
         Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.FIRE_EXTINGUISH, 0.4f, 1.6f);
@@ -214,13 +222,24 @@ public final class Charging {
 
     /** Tells the player and everyone tracking them how the charge stands (the crosshair ring, the charging effects). */
     private static void sync(ServerPlayer player, Charge c) {
-        send(player, new ChargePayload(player.getId(), c.element.ordinal(), c.tier, c.progress(), c.full()));
+        show(player, c.element, c.tier, c.progress(), c.full());
+    }
+
+    /** Shows {@code caster} charging (a player's wand, a lifeform's cast): its element, tier and how full it is. */
+    public static void show(LivingEntity caster, Element element, int tier, float progress, boolean full) {
+        send(caster, new ChargePayload(caster.getId(), element.ordinal(), tier, progress, full));
+    }
+
+    /** Ends what {@link #show} shows. */
+    public static void hide(LivingEntity caster) {
+        send(caster, ChargePayload.ended(caster.getId()));
     }
 
     /** To players near enough to see it whose connection knows the channel (fake players and modless clients do not). */
-    private static void send(ServerPlayer player, ChargePayload payload) {
-        for (ServerPlayer p : player.level().players()) {
-            if (p.distanceToSqr(player) <= 128 * 128 && p.connection.hasChannel(ChargePayload.TYPE)) PacketDistributor.sendToPlayer(p, payload);
+    private static void send(LivingEntity caster, ChargePayload payload) {
+        if (!(caster.level() instanceof ServerLevel level)) return;
+        for (ServerPlayer p : level.players()) {
+            if (p.distanceToSqr(caster) <= 128 * 128 && p.connection.hasChannel(ChargePayload.TYPE)) PacketDistributor.sendToPlayer(p, payload);
         }
     }
 }
