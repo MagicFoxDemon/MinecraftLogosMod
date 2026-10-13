@@ -180,7 +180,7 @@ final class WorldGameTests {
         h.succeed();
     }
 
-    /** A wand casts the selected page; a codex in the off hand extends the list. */
+    /** A wand charges and casts the selected page; a codex in the off hand extends the list. */
     static void wandCastsSelectedPage(GameTestHelper h) {
         ServerPlayer p = caster(h);
         var husk = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 4.5), EntitySpawnReason.COMMAND);
@@ -195,6 +195,8 @@ final class WorldGameTests {
         p.setItemInHand(InteractionHand.OFF_HAND, codex);
         wand.set(LogosMod.SELECTED.get(), 1); // the codex page comes after the wand's pages
         wand.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND);
+        for (int i = 0; i < 20 && !dev.logos.runtime.Charging.of(p).full(); i++) wand.getItem().onUseTick(h.getLevel(), p, wand, p.getUseItemRemainingTicks());
+        p.releaseUsingItem();
         h.assertTrue(StatusData.stacks(husk, new Status("#b")) == 1, "the selected (codex) spell should have been cast");
         h.assertTrue(StatusData.stacks(husk, new Status("#a")) == 0, "only the selected spell should be cast");
         h.succeed();

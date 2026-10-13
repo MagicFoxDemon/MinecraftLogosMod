@@ -81,6 +81,16 @@ public final class Casting {
         PageTier tier = entry.tier();
         Injection in = injection(spell, tier, immolation(player, wand));
         if (!pay(player, spell, in.mana())) return null;
+        return launch(player, entry, in, target, here);
+    }
+
+    /**
+     * Starts a page's spell whose injection {@code in} has already been paid (a charged wand cast),
+     * burning the page if the injection asks for it.
+     */
+    public static SpellInstance launch(ServerPlayer player, SpellBag.Entry entry, Injection in, @Nullable Entity target, @Nullable Vec3 here) {
+        Spell spell = entry.spell();
+        PageTier tier = entry.tier();
         SpellInstance inst = run(player, spell, in.mana(), tier.recovery(), target, here);
         if (in.burns()) {
             entry.burn();
@@ -95,6 +105,13 @@ public final class Casting {
 
     /** Checks stability and takes {@code mana} from the player's pool. */
     private static boolean pay(ServerPlayer player, Spell spell, double mana) {
+        if (!affordable(player, spell, mana)) return false;
+        PlayerMagic.of(player).mana -= mana;
+        return true;
+    }
+
+    /** Whether the player's stability bears {@code spell} and their pool holds {@code mana}; alerts them if not. */
+    public static boolean affordable(ServerPlayer player, Spell spell, double mana) {
         PlayerMagic m = PlayerMagic.of(player);
         if (spell.stability() > m.stability) {
             PlayerMagic.alert(player, Component.literal("法则不稳定：《" + spell.name() + "》复杂度 " + Node.fmt(spell.stability())
@@ -106,7 +123,6 @@ public final class Casting {
                     + "，当前 " + Node.fmt(m.mana)).withStyle(ChatFormatting.RED));
             return false;
         }
-        m.mana -= mana;
         return true;
     }
 
