@@ -79,16 +79,25 @@ public final class Effects {
         inst.affected.add(t.getUUID());
     }
 
-    /** Adds absorption on top of what the target has; only vanilla's max_absorption range (2048) bounds it. */
+    /**
+     * Adds absorption on top of what the target has; only vanilla's max_absorption range (2048) bounds it.
+     * The modifier stays (at 0 when no headroom is needed) as the mark of a spell shield, see {@link #shielded}.
+     */
     public static void shield(LivingEntity t, double amount) {
         AttributeInstance max = t.getAttribute(Attributes.MAX_ABSORPTION);
         float want = (float) (t.getAbsorptionAmount() + amount);
         if (max != null) {
             AttributeModifier old = max.getModifier(SHIELD);
             double without = max.getValue() - (old == null ? 0 : old.amount());
-            if (want > without) max.addOrReplacePermanentModifier(new AttributeModifier(SHIELD, want - without, AttributeModifier.Operation.ADD_VALUE));
+            max.addOrReplacePermanentModifier(new AttributeModifier(SHIELD, Math.max(0, want - without), AttributeModifier.Operation.ADD_VALUE));
         }
         t.setAbsorptionAmount(want);
+    }
+
+    /** Whether {@code t} holds a spell shield. max_absorption is synced, so this also holds on clients. */
+    public static boolean shielded(LivingEntity t) {
+        AttributeInstance max = t.getAttribute(Attributes.MAX_ABSORPTION);
+        return max != null && max.getModifier(SHIELD) != null;
     }
 
     /** A broken shield gives back its max_absorption headroom. */

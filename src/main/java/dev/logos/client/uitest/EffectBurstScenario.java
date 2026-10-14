@@ -7,6 +7,8 @@ import com.lowdragmc.lowdraglib2.uitest.ScenarioBuilder;
 import com.lowdragmc.lowdraglib2.uitest.ScenarioOptions;
 import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 import dev.logos.client.LogosFx;
+import dev.logos.client.WardSpheres;
+import net.minecraft.client.Minecraft;
 import dev.logos.lang.Element;
 import dev.logos.net.FxPayload;
 import dev.logos.runtime.Casting;
@@ -20,7 +22,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
-/** The shared damage core in each damage element's colours, its stages, and real damage/heal routing from the server. */
+/** The shared damage core in each damage element's colours, its stages, real routing of every act from the server, and the ward sphere following a real shield. */
 @LDLRegisterClient(name = "logos_effect_burst", group = "logos", registry = UIScenario.REGISTRY,
         environment = RegistrationEnvironment.DEV_ONLY)
 public class EffectBurstScenario implements UIScenario {
@@ -97,8 +99,28 @@ public class EffectBurstScenario implements UIScenario {
                 .step("reset heal observation", ctx -> cache().clear())
                 .server("real heal on the cow", sc -> cast(sc.player(), "(heal (nearest :radius 12) 2)"))
                 .ticks(10)
-                .check("heal is not a damage burst and keeps the generic one", ctx -> cache().containsKey("burst/LIFE/0")
-                        && !cache().containsKey("effect_burst/LIFE/" + Vfx.Burst.GENERIC.ordinal()));
+                .check("heal, until drawn, keeps the generic burst", ctx -> cache().containsKey("burst/LIFE/0")
+                        && !cache().containsKey("effect_burst/LIFE/" + Vfx.Burst.HEAL.ordinal()))
+                .step("reset force and potion observation", ctx -> cache().clear())
+                .server("real push and potion on the cow", sc -> {
+                    cast(sc.player(), "(push (nearest :radius 12) 0.5)");
+                    cast(sc.player(), "(potion (nearest :radius 12) slowness 2)");
+                })
+                .ticks(10)
+                .check("push and potion, until drawn, keep the generic burst", ctx -> cache().containsKey("burst/PHYSICAL/0")
+                        && cache().containsKey("burst/ARCANE/0"))
+                .server("real shield on the cow", sc -> cast(sc.player(), "(shield (nearest :radius 12) 4)"))
+                .ticks(5)
+                .check("the client keeps a ward sphere for the shielded cow", ctx -> {
+                    var seen = target == null ? null : Minecraft.getInstance().level.getEntity(target.getId());
+                    return seen != null && WardSpheres.holds(seen);
+                })
+                .server("break the shield", sc -> target.hurtServer(sc.level(), target.damageSources().generic(), 5))
+                .ticks(5)
+                .check("the sphere goes with the shield", ctx -> {
+                    var seen = target == null ? null : Minecraft.getInstance().level.getEntity(target.getId());
+                    return seen != null && !WardSpheres.holds(seen);
+                });
         s.teardown("remove preview target", ctx -> {
             if (target != null) { target.discard(); target = null; }
         });

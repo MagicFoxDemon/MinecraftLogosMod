@@ -7,7 +7,7 @@ import dev.logos.runtime.Vfx;
 
 /**
  * What a {@code BURST} looks like: chosen by the act ({@link Vfx.Burst}) first, then by the element, so a
- * hit reads differently from other effects. Separate from projectile impacts, which only show the
+ * hit, a heal, a push or a potion read differently. Separate from projectile impacts, which only show the
  * collision. Local +Z points away from where the effect came from. An empty list keeps the old generic burst.
  */
 interface EffectBurstVisual {
@@ -29,6 +29,10 @@ interface EffectBurstVisual {
                 // Arcane and life never deal damage.
                 case ARCANE, LIFE -> GENERIC;
             };
+            case HEAL -> new HealBurstVisual();
+            case WARD -> new WardBurstVisual();
+            case FORCE -> new ForceBurstVisual();
+            case POTION_BENEFICIAL, POTION_HARMFUL, POTION_NEUTRAL -> new PotionBurstVisual(what);
             case GENERIC -> GENERIC;
         };
     }

@@ -553,7 +553,7 @@ public final class Runes {
                     for (LivingEntity t : living(n.arg(0), c)) {
                         if (!c.inst().spend(amt * 1.5, "heal")) return null;
                         t.heal((float) amt);
-                        Vfx.burst(lv(t), Targeting.center(t), Element.LIFE, 6);
+                        Vfx.burst(lv(t), t, null, Element.LIFE, Vfx.Burst.HEAL);
                     }
                     return null;
                 });
@@ -563,7 +563,7 @@ public final class Runes {
                     for (LivingEntity t : living(n.arg(0), c)) {
                         if (!c.inst().spend(amt * 1.5, "shield")) return null;
                         Effects.shield(t, amt);
-                        Vfx.burst(lv(t), Targeting.center(t), Element.LIFE, 10);
+                        Vfx.burst(lv(t), t, null, Element.LIFE, Vfx.Burst.WARD);
                     }
                     return null;
                 });
@@ -647,7 +647,7 @@ public final class Runes {
                         if (drop != null) drop.setPickUpDelay(40);
                         c.inst().affected.add(t.getUUID());
                         Vfx.sound(lv(t), Targeting.center(t), SoundEvents.ITEM_BREAK.value(), 0.6f, 1.6f);
-                        Vfx.burst(lv(t), Targeting.center(t), Element.PHYSICAL, 8);
+                        Vfx.burst(lv(t), t, c.inst().caster.level() == t.level() ? c.inst().caster.getEyePosition() : null, Element.PHYSICAL, Vfx.Burst.FORCE);
                     }
                     return null;
                 });
@@ -667,6 +667,7 @@ public final class Runes {
                         if (!c.inst().spend(cost, "potion")) return null;
                         t.addEffect(new MobEffectInstance(effect, ticks, level - 1), c.inst().caster);
                         c.inst().affected.add(t.getUUID());
+                        Vfx.burst(lv(t), t, null, Element.ARCANE, Vfx.potion(effect));
                     }
                     return null;
                 });
@@ -1071,6 +1072,9 @@ public final class Runes {
             Vec3 d = away ? t.position().subtract(p) : p.subtract(t.position());
             double strength = away ? s : Math.min(s, d.length() * 0.25);
             Effects.impulse(c.inst(), t, d, strength);
+            // FORCE faces the way the force acts: away from where it seems to come from.
+            if (d.lengthSqr() > 1e-6 && t.level() instanceof ServerLevel level)
+                Vfx.burst(level, t, Targeting.center(t).subtract(d.normalize()), Element.PHYSICAL, Vfx.Burst.FORCE);
         }
         return null;
     }

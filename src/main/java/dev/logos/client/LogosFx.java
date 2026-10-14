@@ -443,12 +443,13 @@ public final class LogosFx {
         }
     }
 
-    /** Draws lasting beams, and the item models of spell bodies that wear a {@code :look}. */
+    /** Draws lasting beams, ward spheres, and the item models of spell bodies that wear a {@code :look}. */
     public static void submit(SubmitCustomGeometryEvent event) {
         Minecraft mc = Minecraft.getInstance();
         ShaderPackOverlay.begin();
         Level level = mc.level;
-        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && !dev.logos.runtime.ConstructEntity.any() && !AnchorMarkers.showing())) return;
+        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && !WardSpheres.any()
+                && !dev.logos.runtime.ConstructEntity.any() && !AnchorMarkers.showing())) return;
         CameraRenderState cam = event.getLevelRenderState().cameraRenderState;
         Quaternionf toCamera = new Quaternionf(cam.orientation).conjugate();
         float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
@@ -457,6 +458,7 @@ public final class LogosFx {
         for (Beam b : BEAMS.values()) submitBeam(mc, level, b, cam, pt, pose,
                 b.fire != null || b.frost != null || b.lightning != null ? vfx : event.getSubmitNodeCollector());
         ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector());
+        WardSpheres.submit(mc, cam, pt, pose, vfx);
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
             Trail t = e.getValue();

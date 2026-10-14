@@ -6,6 +6,7 @@ import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
 import dev.logos.net.FxPayload;
 import dev.logos.net.FxPayload.Kind;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -13,6 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -141,10 +143,25 @@ public final class Vfx {
     }
 
     /**
-     * What a burst says happened, so clients can show the act and not only the element: so far harm, or
-     * anything else ({@code GENERIC}). Synced by ordinal; append only.
+     * What a burst says happened, so clients can show the act and not only the element: harm, healing, a
+     * ward raised, a force applied ({@code push}, {@code pull}, {@code disarm}), a potion effect by how it
+     * reads, or anything else ({@code GENERIC}). Synced by ordinal; append only.
      */
-    public enum Burst { GENERIC, DAMAGE }
+    public enum Burst { GENERIC, DAMAGE, HEAL, WARD, FORCE, POTION_BENEFICIAL, POTION_HARMFUL, POTION_NEUTRAL }
+
+    /**
+     * How a potion effect reads: vanilla's beneficial and harmful effects by their category; anything
+     * else (neutral, or from another mod, whose category may not mean the same) as neutral.
+     */
+    public static Burst potion(Holder<MobEffect> effect) {
+        boolean vanilla = effect.unwrapKey().map(k -> k.identifier().getNamespace().equals("minecraft")).orElse(false);
+        if (!vanilla) return Burst.POTION_NEUTRAL;
+        return switch (effect.value().getCategory()) {
+            case BENEFICIAL -> Burst.POTION_BENEFICIAL;
+            case HARMFUL -> Burst.POTION_HARMFUL;
+            case NEUTRAL -> Burst.POTION_NEUTRAL;
+        };
+    }
 
     /** An impact; {@code n} is the old particle count, mapped to a scale. */
     public static void burst(ServerLevel level, Vec3 p, Element e, int n) {

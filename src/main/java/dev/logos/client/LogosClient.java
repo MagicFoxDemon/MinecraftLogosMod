@@ -83,6 +83,7 @@ public final class LogosClient {
     @SubscribeEvent
     static void onClientTick(ClientTickEvent.Post event) {
         LogosFx.tick();
+        WardSpheres.tick();
         while (SPELL_WHEEL.consumeClick()) SpellWheelScreen.tryOpen();
     }
 }
