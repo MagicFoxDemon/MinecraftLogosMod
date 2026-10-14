@@ -157,7 +157,16 @@ final class ConstructGameTests {
             Arrow a = arrow(h, 4.5, 3.5, 2.5, 1.2);
             h.runAfterDelay(12, () -> {
                 h.assertTrue(a.isOnFire(), "the arrow should be burning after passing");
-                var arrows = h.getLevel().getEntitiesOfClass(Arrow.class, new net.minecraft.world.phys.AABB(h.absolutePos(BlockPos.ZERO)).inflate(30));
+                // Only this arrow and whatever descends from it: a neighbouring test's arrows may fly within the box.
+                var nearby = h.getLevel().getEntitiesOfClass(Arrow.class, new net.minecraft.world.phys.AABB(h.absolutePos(BlockPos.ZERO)).inflate(30));
+                var arrows = new java.util.ArrayList<Arrow>(java.util.List.of(a));
+                for (boolean grew = true; grew; ) {
+                    grew = false;
+                    for (Arrow x : nearby) {
+                        java.util.UUID origin = dev.logos.runtime.Copies.originOf(x);
+                        if (!arrows.contains(x) && arrows.stream().anyMatch(y -> y.getUUID().equals(origin))) grew = arrows.add(x);
+                    }
+                }
                 h.assertTrue(arrows.size() == 3, "expected the arrow and exactly two copies, got " + arrows.size());
                 h.assertTrue(arrows.stream().filter(x -> x != a).allMatch(x -> x.pickup == net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.CREATIVE_ONLY),
                         "copies must not be pickable");
