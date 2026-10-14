@@ -7,13 +7,19 @@ import dev.logos.item.SpellPages;
 import dev.logos.lang.LogosError;
 import dev.logos.lang.Status;
 import dev.logos.runtime.Casting;
+import dev.logos.runtime.Effects;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.StatusData;
+import dev.logos.runtime.Vfx;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -130,6 +136,28 @@ final class RuneGameTests {
         } catch (LogosError expected) {
             h.assertTrue(expected.getMessage().contains("no_such_effect"), "the error should name the id: " + expected.getMessage());
         }
+        h.succeed();
+    }
+
+    /** A spell shield is marked (for the ward sphere) while it holds, even inside existing headroom, and unmarked once broken. */
+    static void shieldMarksWard(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var husk = mob(h, EntityType.HUSK);
+        husk.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 600, 3));
+        Casting.cast(p, Casting.compile("(spell :mana 40 (shield (nearest :radius 6) 2))"), null, null);
+        h.assertTrue(Effects.shielded(husk), "a shield inside absorption headroom should still be marked");
+        husk.hurtServer(h.getLevel(), husk.damageSources().generic(), 100);
+        h.assertTrue(husk.getAbsorptionAmount() <= 0 && !Effects.shielded(husk), "a broken shield should be unmarked");
+        h.succeed();
+    }
+
+    /** Potion bursts read vanilla effects by category; neutral or unregistered (another mod's) ones read neutral. */
+    static void potionBurstPolarity(GameTestHelper h) {
+        h.assertTrue(Vfx.potion(MobEffects.SPEED) == Vfx.Burst.POTION_BENEFICIAL, "speed should read beneficial");
+        h.assertTrue(Vfx.potion(MobEffects.POISON) == Vfx.Burst.POTION_HARMFUL, "poison should read harmful");
+        h.assertTrue(Vfx.potion(MobEffects.GLOWING) == Vfx.Burst.POTION_NEUTRAL, "glowing should read neutral");
+        Holder<MobEffect> foreign = Holder.direct(new MobEffect(MobEffectCategory.BENEFICIAL, 0) {});
+        h.assertTrue(Vfx.potion(foreign) == Vfx.Burst.POTION_NEUTRAL, "an effect outside vanilla should read neutral");
         h.succeed();
     }
 }
