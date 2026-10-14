@@ -597,7 +597,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         Spell spell = spellIn(slot);
         if (spell == null || paid <= 0) return;
         PageTier tier = SpellPages.tier(core.getItem(slot));
-        Casting.castAs(this, spell, paid, (tier == null ? PageTier.BASIC : tier).recovery(), target, null);
+        Casting.castAs(this, spell, paid, (tier == null ? PageTier.BASIC : tier).recovery(), target, null, true);
     }
 
     /** The passive pages bound to {@code trigger}, each at most once a second. */

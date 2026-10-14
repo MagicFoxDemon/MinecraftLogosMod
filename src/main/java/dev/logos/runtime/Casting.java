@@ -50,7 +50,7 @@ public final class Casting {
      */
     public static @Nullable SpellInstance cast(ServerPlayer player, Spell spell, @Nullable Entity target, @Nullable Vec3 here) {
         if (!pay(player, spell, spell.mana())) return null;
-        return run(player, spell, spell.mana(), PageTier.BASIC.recovery(), target, here);
+        return run(player, spell, spell.mana(), PageTier.BASIC.recovery(), target, here, false);
     }
 
     /** What a cast from a page injects, and whether it burns the page doing so. */
@@ -81,17 +81,18 @@ public final class Casting {
         PageTier tier = entry.tier();
         Injection in = injection(spell, tier, immolation(player, wand));
         if (!pay(player, spell, in.mana())) return null;
-        return launch(player, entry, in, target, here);
+        return launch(player, entry, in, target, here, false);
     }
 
     /**
-     * Starts a page's spell whose injection {@code in} has already been paid (a charged wand cast),
-     * burning the page if the injection asks for it.
+     * Starts a page's spell whose injection {@code in} has already been paid, burning the page if the
+     * injection asks for it. {@code charged}: let go from a charge, whose release already marks the cast.
      */
-    public static SpellInstance launch(ServerPlayer player, SpellBag.Entry entry, Injection in, @Nullable Entity target, @Nullable Vec3 here) {
+    public static SpellInstance launch(ServerPlayer player, SpellBag.Entry entry, Injection in, @Nullable Entity target, @Nullable Vec3 here,
+            boolean charged) {
         Spell spell = entry.spell();
         PageTier tier = entry.tier();
-        SpellInstance inst = run(player, spell, in.mana(), tier.recovery(), target, here);
+        SpellInstance inst = run(player, spell, in.mana(), tier.recovery(), target, here, charged);
         if (in.burns()) {
             entry.burn();
             ServerLevel level = player.level();
@@ -132,16 +133,26 @@ public final class Casting {
      */
     public static SpellInstance castAs(net.minecraft.world.entity.LivingEntity caster, Spell spell, double mana, double recovery,
             @Nullable Entity target, @Nullable Vec3 here) {
-        return run(caster, spell, mana, recovery, target, here);
+        return castAs(caster, spell, mana, recovery, target, here, false);
     }
 
-    private static SpellInstance run(net.minecraft.world.entity.LivingEntity caster, Spell spell, double mana, double recovery, @Nullable Entity target, @Nullable Vec3 here) {
+    /** As above; {@code charged}: let go from a charge, whose release already marks the cast. */
+    public static SpellInstance castAs(net.minecraft.world.entity.LivingEntity caster, Spell spell, double mana, double recovery,
+            @Nullable Entity target, @Nullable Vec3 here, boolean charged) {
+        return run(caster, spell, mana, recovery, target, here, charged);
+    }
+
+    /** An uncharged cast is marked by a small circle at the caster's feet in the spell's element; a charged one by its release. */
+    private static SpellInstance run(net.minecraft.world.entity.LivingEntity caster, Spell spell, double mana, double recovery, @Nullable Entity target,
+            @Nullable Vec3 here, boolean charged) {
         ServerLevel level = (ServerLevel) caster.level();
         SpellInstance inst = new SpellInstance(spell, caster, level, mana, recovery);
         Vec3 origin = here != null ? here : caster.getEyePosition();
         Ctx ctx = new Ctx(inst, level, origin, caster.getLookAngle(), target, Map.of(), 0, 0);
-        Vfx.sound(level, origin, SoundEvents.EVOKER_CAST_SPELL, 0.6f, 1.4f);
-        Vfx.cast(level, caster.position().add(0, 0.1, 0), dev.logos.lang.Element.ARCANE);
+        if (!charged) {
+            Vfx.sound(level, origin, SoundEvents.EVOKER_CAST_SPELL, 0.6f, 1.4f);
+            Vfx.cast(level, caster.position().add(0, 0.1, 0), Compiler.inferElement(spell.body()));
+        }
         inst.hold();
         try {
             Interp.run(spell.body(), ctx);

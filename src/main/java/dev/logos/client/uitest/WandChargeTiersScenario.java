@@ -67,7 +67,10 @@ public class WandChargeTiersScenario implements UIScenario {
                 })
                 .screenshot("grand_fire")
                 .step("let go", ctx -> Minecraft.getInstance().options.keyUse.setDown(false))
-                .ticks(5)
+                .ticks(2)
+                .step("grand release", ctx -> released(2, Element.FIRE))
+                .screenshot("grand_fire_release")
+                .ticks(3)
                 .server("select the colossal page", sc -> sc.player().getMainHandItem().set(LogosMod.SELECTED.get(), 1))
                 .ticks(2)
                 .step("hold right-click", ctx -> Minecraft.getInstance().options.keyUse.setDown(true))
@@ -77,9 +80,16 @@ public class WandChargeTiersScenario implements UIScenario {
                     if (c == null || c.tier != 3 || c.element != Element.FROST) throw new AssertionError("expected a colossal frost charge");
                 })
                 .screenshot("colossal_frost")
-                .step("let go", ctx -> {
-                    Minecraft.getInstance().options.keyUse.setDown(false);
-                    Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON);
-                });
+                .step("let go", ctx -> Minecraft.getInstance().options.keyUse.setDown(false))
+                .ticks(3)
+                .step("colossal release", ctx -> released(3, Element.FROST))
+                .screenshot("colossal_frost_release")
+                .step("back to first person", ctx -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
+    }
+
+    private static void released(int tier, Element element) {
+        var end = dev.logos.client.ChargeEffects.last();
+        if (end == null || !end.released() || end.tier() != tier || end.element() != element)
+            throw new AssertionError("expected a tier-" + tier + " " + element + " release, got " + end);
     }
 }
