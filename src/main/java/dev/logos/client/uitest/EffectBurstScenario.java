@@ -109,6 +109,15 @@ public class EffectBurstScenario implements UIScenario {
                 .ticks(10)
                 .check("push and potion, until drawn, keep the generic burst", ctx -> cache().containsKey("burst/PHYSICAL/0")
                         && cache().containsKey("burst/ARCANE/0"))
+                .step("reset dropped item observation", ctx -> cache().clear())
+                .server("real pull on a dropped item", sc -> {
+                    var item = new net.minecraft.world.entity.item.ItemEntity(sc.level(), -2.5, 101, 3, new net.minecraft.world.item.ItemStack(Blocks.OAK_LOG));
+                    sc.level().addFreshEntity(item);
+                    cast(sc.player(), "(pull (items :radius 12) 1 :to (pos-of caster))");
+                })
+                .ticks(10)
+                .check("a pulled dropped item gets no force burst", ctx -> !cache().containsKey("burst/PHYSICAL/0")
+                        && !cache().containsKey("effect_burst/PHYSICAL/" + Vfx.Burst.FORCE.ordinal()))
                 .server("real shield on the cow", sc -> cast(sc.player(), "(shield (nearest :radius 12) 4)"))
                 .ticks(5)
                 .check("the client keeps a ward sphere for the shielded cow", ctx -> {
