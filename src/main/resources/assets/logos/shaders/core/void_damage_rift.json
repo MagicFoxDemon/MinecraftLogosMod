@@ -1,0 +1,8 @@
+{
+    "vertex": "photon:particle",
+    "fragment": "logos:void_damage_rift",
+    "samplers": [
+        { "name": "RiftMask" },
+        { "name": "StarTexture" }
+    ]
+}
