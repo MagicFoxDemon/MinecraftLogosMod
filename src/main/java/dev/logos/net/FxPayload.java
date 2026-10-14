@@ -28,6 +28,10 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
         TRAIL,
         /** The spell body ceased to exist. */
         TRAIL_END,
+        /**
+         * Something took effect: {@code variant} is the {@link dev.logos.runtime.Vfx.Burst} ordinal. Apart from
+         * {@code GENERIC}, (ax,ay,az) is the direction it came from (or zero) and {@code size} the target's scale.
+         */
         BURST,
         BEAM,
         RING,

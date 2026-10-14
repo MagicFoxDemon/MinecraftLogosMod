@@ -158,7 +158,7 @@ gh pr create --fill                # 或在网页上开 PR
 
 - 26.1 用 **Mojang 映射**：是 `Identifier` 不是 `ResourceLocation`；很多类换了包（如 `projectile.arrow`）。找不到时去 `build/moddev/artifacts/minecraft-patched-*-sources.jar` 里查原版源码，不要凭旧版本的记忆写 API。
 - 代码风格跟着周围的代码走：注释密度、命名、写法保持一致。类和公开方法写一句说明"它是什么、为什么"，不写复述代码的注释。
-- 元素魔弹并行制作：飞行外观遵守 [PROJECTILE_VFX.md](PROJECTILE_VFX.md)，命中特效遵守 [PROJECTILE_IMPACT_VFX.md](PROJECTILE_IMPACT_VFX.md)。每个元素使用独立工作树，只修改自身实现、资源和专属客户端场景；公共入口集中处理。
+- 元素魔弹并行制作：飞行外观遵守 [PROJECTILE_VFX.md](PROJECTILE_VFX.md)，命中特效遵守 [PROJECTILE_IMPACT_VFX.md](PROJECTILE_IMPACT_VFX.md)，节点生效（BURST，如伤害）特效遵守 [EFFECT_BURST_VFX.md](EFFECT_BURST_VFX.md)。每个元素使用独立工作树，只修改自身实现、资源和专属客户端场景；公共入口集中处理。
 - 任何特效和渲染改动都要在光影包（Iris）下可用：顶点写全、自定义几何走 `ShaderPackOverlay`、开光影实测，见 [SHADER_PACK_VFX.md](SHADER_PACK_VFX.md)。
 - 玩家看得到的文字放语言文件或沿用现有写法；中文为主，英文条目同步补上。
 - `.gitignore` 里忽略文件夹时要加前导 `/`，锚定在根目录。曾经写成 `net/`，结果把源码包 `dev/logos/net`（全部网络包）也忽略了，仓库因此编译不过。提交前用 `git status --ignored --short src` 确认源码没有被忽略。

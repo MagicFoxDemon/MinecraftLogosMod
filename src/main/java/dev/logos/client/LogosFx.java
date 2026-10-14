@@ -36,6 +36,7 @@ import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
 import dev.logos.net.FxPayload;
 import dev.logos.runtime.AlchemicalColossus;
+import dev.logos.runtime.Vfx;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
@@ -326,6 +327,20 @@ public final class LogosFx {
                 else play(level, fx("burst", e, 0, () -> burst(e)), pos, 0.8f);
             }
             case BURST -> {
+                Vfx.Burst what = Vfx.Burst.values()[Math.floorMod(p.variant(), Vfx.Burst.values().length)];
+                EffectBurstVisual visual = EffectBurstVisual.create(what, el);
+                List<ParticleEmitter> layers = visual.layers();
+                if (!layers.isEmpty()) {
+                    float scale = visual.scale(p.size());
+                    Vector3f away = new Vector3f(p.ax(), p.ay(), p.az());
+                    // With a direction, it is drawn on the struck side of the body, which would otherwise hide it.
+                    if (away.lengthSquared() > 1e-6f) pos = pos.subtract(new Vec3(away.normalize()).scale(.45 * scale + .3));
+                    else away.set(0, 1, 0);
+                    // Local +Z points away from the source (or up).
+                    FXRuntime runtime = play(level, fx("effect_burst", el, what.ordinal(), () -> layers), pos, scale);
+                    runtime.getRoot().updateRotation(new Quaternionf().rotationTo(new Vector3f(0, 0, 1), away.normalize()));
+                    break;
+                }
                 play(level, fx("burst", el, 0, () -> burst(el)), pos, Math.max(0.7f, Math.min(1.3f, p.size())));
                 accents(level, el, pos, 8 + (int) (p.size() * 6), 0.3, 0.12);
             }

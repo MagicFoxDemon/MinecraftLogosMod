@@ -1085,7 +1085,7 @@ public final class Runes {
         if (broken != null) {
             // The premise no longer holds: the world rejects the proof and the spell collapses on its author.
             inst.caster.hurtServer(casterLevel, inst.caster.damageSources().magic(), 4);
-            Vfx.burst(casterLevel, Targeting.center(inst.caster), Element.VOID, 30);
+            Vfx.burst(casterLevel, inst.caster, null, Element.VOID, Vfx.Burst.DAMAGE);
             inst.terminate("悖论：前提 " + broken.describe() + " 已不成立，术式反噬");
             return null;
         }
