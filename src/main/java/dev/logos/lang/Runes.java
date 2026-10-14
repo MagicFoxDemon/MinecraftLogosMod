@@ -1072,8 +1072,9 @@ public final class Runes {
             Vec3 d = away ? t.position().subtract(p) : p.subtract(t.position());
             double strength = away ? s : Math.min(s, d.length() * 0.25);
             Effects.impulse(c.inst(), t, d, strength);
-            // FORCE faces the way the force acts: away from where it seems to come from.
-            if (d.lengthSqr() > 1e-6 && t.level() instanceof ServerLevel level)
+            // FORCE faces the way the force acts: away from where it seems to come from. Dropped items get
+            // none: a pull sweeping up loot would set off one per item.
+            if (!(t instanceof ItemEntity) && d.lengthSqr() > 1e-6 && t.level() instanceof ServerLevel level)
                 Vfx.burst(level, t, Targeting.center(t).subtract(d.normalize()), Element.PHYSICAL, Vfx.Burst.FORCE);
         }
         return null;
