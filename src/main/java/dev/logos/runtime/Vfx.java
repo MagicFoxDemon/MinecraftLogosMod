@@ -1,5 +1,7 @@
 package dev.logos.runtime;
 
+import org.jspecify.annotations.Nullable;
+
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
 import dev.logos.net.FxPayload;
@@ -11,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -137,9 +140,26 @@ public final class Vfx {
         send(level, Kind.PULSE, e, 0, c.add(0, -0.5, 0), Vec3.ZERO, (float) r, 0);
     }
 
+    /**
+     * What a burst says happened, so clients can show the act and not only the element: so far harm, or
+     * anything else ({@code GENERIC}). Synced by ordinal; append only.
+     */
+    public enum Burst { GENERIC, DAMAGE }
+
     /** An impact; {@code n} is the old particle count, mapped to a scale. */
     public static void burst(ServerLevel level, Vec3 p, Element e, int n) {
-        send(level, Kind.BURST, e, 0, p, Vec3.ZERO, (float) Math.min(3, 0.5 + n / 20.0), 0);
+        send(level, Kind.BURST, e, Burst.GENERIC.ordinal(), p, Vec3.ZERO, (float) Math.min(3, 0.5 + n / 20.0), 0);
+    }
+
+    /**
+     * {@code what} took effect on {@code t}: drawn round its body, sized to it, and turned to face away
+     * from {@code from} (the caster's eyes, say) when that is not null.
+     */
+    public static void burst(ServerLevel level, Entity t, @Nullable Vec3 from, Element e, Burst what) {
+        Vec3 c = Targeting.center(t);
+        Vec3 dir = from == null || from.distanceToSqr(c) < 1e-6 ? Vec3.ZERO : c.subtract(from).normalize();
+        float scale = (float) Math.max(0.6, Math.min(2.5, Math.max(t.getBbWidth(), t.getBbHeight() * 0.6) / 0.9));
+        send(level, Kind.BURST, e, what.ordinal(), c, dir, scale, 0);
     }
 
     public static void cast(ServerLevel level, Vec3 p, Element e) {

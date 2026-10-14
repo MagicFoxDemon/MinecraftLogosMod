@@ -46,7 +46,7 @@ public final class Effects {
         }
         inst.affected.add(t.getUUID());
         ServerLevel level = (ServerLevel) t.level();
-        Vfx.burst(level, Targeting.center(t), el, 6 + (int) Math.min(20, amt));
+        Vfx.burst(level, t, inst.caster.level() == level ? inst.caster.getEyePosition() : null, el, Vfx.Burst.DAMAGE);
         if (amt <= 0) return false;
         t.invulnerableTime = 0;
         spellDepth++;
