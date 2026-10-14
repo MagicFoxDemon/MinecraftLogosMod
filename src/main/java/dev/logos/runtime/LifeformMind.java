@@ -351,13 +351,13 @@ public final class LifeformMind extends Goal {
         double paid = chargeIn;
         chargeIn = 0;
         chargeTarget = 0;
-        Charging.hide(lf);
-        if (paid <= 0) return;
-        if (castAt == null || !castAt.isAlive()) {
-            lf.receiveMana(paid);
+        if (paid <= 0 || castAt == null || !castAt.isAlive()) {
+            Charging.hide(lf);
+            if (paid > 0) lf.receiveMana(paid);
             return;
         }
         lf.face(castAt);
+        Charging.discharge(lf, chargeElement, chargeTier);
         double first = Math.min(lf.injection(castSlot), paid);
         lf.castPaid(castSlot, castAt, first);
         if (comboSlot >= 0) lf.castPaid(comboSlot, castAt, paid - first);

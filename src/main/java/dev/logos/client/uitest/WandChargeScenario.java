@@ -113,8 +113,24 @@ public class WandChargeScenario implements UIScenario {
                     if (net.neoforged.neoforge.client.extensions.common.IClientItemExtensions.of(player.getMainHandItem())
                             .getArmPose(player, InteractionHand.MAIN_HAND, player.getMainHandItem()) != null)
                         throw new AssertionError("the arm should drop back once the charge is cast");
+                    var end = dev.logos.client.ChargeEffects.last();
+                    if (end == null || !end.released() || end.entityId() != player.getId() || end.element() != Element.ARCANE || end.tier() != 1)
+                        throw new AssertionError("letting go should play an elaborate arcane release, got " + end);
                 })
-                .screenshot("released");
+                .screenshot("released")
+                // Let go early: no cast, and the charge fizzles instead of releasing.
+                .ticks(10)
+                .step("hold again", ctx -> Minecraft.getInstance().options.keyUse.setDown(true))
+                .ticks(8)
+                .step("let go early", ctx -> Minecraft.getInstance().options.keyUse.setDown(false))
+                .ticks(3)
+                .step("fizzled", ctx -> {
+                    var end = dev.logos.client.ChargeEffects.last();
+                    if (end == null || end.released()) throw new AssertionError("letting go early should fizzle, got " + end);
+                })
+                .server("nothing cast", sc -> {
+                    if (StatusData.stacks(sc.player(), new Status("#charged")) != 1) throw new AssertionError("an early let-go must not cast");
+                });
     }
 
     /** The wand head was drawn just now, ahead of the player and to their right, between chest and eyes. */

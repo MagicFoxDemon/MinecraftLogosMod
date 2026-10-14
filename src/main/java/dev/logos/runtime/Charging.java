@@ -188,8 +188,8 @@ public final class Charging {
         Charge c = m.charge;
         if (c == null || !c.full()) return false;
         m.charge = null;
-        hide(player);
-        Casting.launch(player, c.entry, c.in, null, null);
+        discharge(player, c.element, c.tier);
+        Casting.launch(player, c.entry, c.in, null, null, true);
         return true;
     }
 
@@ -230,7 +230,21 @@ public final class Charging {
         send(caster, new ChargePayload(caster.getId(), element.ordinal(), tier, progress, full));
     }
 
-    /** Ends what {@link #show} shows. */
+    /**
+     * A charge let go into its spell: clients play its release at the caster's cast point (bigger by
+     * tier), and it is heard. Stands in for the plain cast flourish an uncharged cast gets.
+     */
+    public static void discharge(LivingEntity caster, Element element, int tier) {
+        send(caster, ChargePayload.released(caster.getId(), element.ordinal(), tier));
+        if (!(caster.level() instanceof ServerLevel level)) return;
+        Vec3 at = caster.getEyePosition();
+        Vfx.sound(level, at, SoundEvents.EVOKER_CAST_SPELL, 0.6f + 0.1f * tier, 1.4f - 0.15f * tier);
+        if (tier >= 1) Vfx.sound(level, at, SoundEvents.AMETHYST_BLOCK_RESONATE, 0.7f, 1.2f);
+        if (tier >= 2) Vfx.sound(level, at, SoundEvents.BEACON_POWER_SELECT, 0.5f, 1.3f);
+        if (tier >= 3) Vfx.sound(level, at, SoundEvents.BEACON_DEACTIVATE, 0.8f, 0.6f);
+    }
+
+    /** Ends what {@link #show} shows, without casting (clients play a fizzle). */
     public static void hide(LivingEntity caster) {
         send(caster, ChargePayload.ended(caster.getId()));
     }
