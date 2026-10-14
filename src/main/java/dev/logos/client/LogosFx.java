@@ -112,6 +112,7 @@ public final class LogosFx {
         @Nullable FireBeamVisual fire;
         @Nullable FrostBeamVisual frost;
         @Nullable LightningBeamVisual lightning;
+        @Nullable VoidBeamVisual voidBeam;
 
         Beam(Element element, int anchor, @Nullable ParticleOptions particle, Vec3 from, Vec3 to) {
             this.element = element;
@@ -122,6 +123,7 @@ public final class LogosFx {
             if (element == Element.FIRE) fire = new FireBeamVisual();
             if (element == Element.FROST) frost = new FrostBeamVisual();
             if (element == Element.LIGHTNING) lightning = new LightningBeamVisual(particle == null);
+            if (element == Element.VOID) voidBeam = new VoidBeamVisual(particle == null);
         }
     }
 
@@ -315,16 +317,17 @@ public final class LogosFx {
                     double s = p.size();
                     at = at.add((r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * s);
                     if (b.particle != null) level.addParticle(b.particle, at.x, at.y, at.z, 0, 0, 0);
-                    else if (b.fire == null && b.frost == null && b.lightning == null) accents(level, el, at, 1, 0.05, 0.02);
+                    else if (b.fire == null && b.frost == null && b.lightning == null && b.voidBeam == null) accents(level, el, at, 1, 0.05, 0.02);
                 }
-                if (b.fire == null && b.frost == null && b.lightning == null && r.nextInt(3) == 0) accents(level, el, to, 2, 0.15, 0.08);
+                if (b.fire == null && b.frost == null && b.lightning == null && b.voidBeam == null && r.nextInt(3) == 0) accents(level, el, to, 2, 0.15, 0.08);
             }
             case BEAM_END -> {
                 Beam b = BEAMS.remove(p.id());
-                if (b != null && (b.fire != null || b.frost != null || b.lightning != null)) {
+                if (b != null && (b.fire != null || b.frost != null || b.lightning != null || b.voidBeam != null)) {
                     if (b.fire != null) b.fire.end();
                     if (b.frost != null) b.frost.end();
                     if (b.lightning != null) b.lightning.end();
+                    if (b.voidBeam != null) b.voidBeam.end();
                     if (b.particle != null) scatter(level, b.particle, pos, 10, 0.4);
                     break;
                 }
@@ -406,6 +409,7 @@ public final class LogosFx {
                 if (b.fire != null) b.fire.end();
                 if (b.frost != null) b.frost.end();
                 if (b.lightning != null) b.lightning.end();
+                if (b.voidBeam != null) b.voidBeam.end();
             });
             BEAMS.clear();
             return;
@@ -415,6 +419,7 @@ public final class LogosFx {
             if (b.fire != null) b.fire.end();
             if (b.frost != null) b.frost.end();
             if (b.lightning != null) b.lightning.end();
+            if (b.voidBeam != null) b.voidBeam.end();
             return true;
         });
         for (Iterator<Trail> it = TRAILS.values().iterator(); it.hasNext(); ) {
@@ -455,7 +460,7 @@ public final class LogosFx {
         PoseStack pose = event.getPoseStack();
         SubmitNodeCollector vfx = ShaderPackOverlay.collector(event.getSubmitNodeCollector());
         for (Beam b : BEAMS.values()) submitBeam(mc, level, b, cam, pt, pose,
-                b.fire != null || b.frost != null || b.lightning != null ? vfx : event.getSubmitNodeCollector());
+                b.fire != null || b.frost != null || b.lightning != null || b.voidBeam != null ? vfx : event.getSubmitNodeCollector());
         ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector());
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
@@ -483,7 +488,7 @@ public final class LogosFx {
 
     /**
      * A beam follows the interpolated gaze, keeping the server's blocked length, but leaves the
-     * same cast point as charging effects. Fire, frost and lightning use dedicated visuals; the remaining
+     * same cast point as charging effects. Fire, frost, lightning and void use dedicated visuals; the remaining
      * elements keep the beacon-style core/glow, swelling from a thin outlet to their full radius.
      * A colossus's beam leaves its palm, where the model's muzzle bone was drawn this frame.
      */
@@ -511,6 +516,10 @@ public final class LogosFx {
         }
         if (b.lightning != null) {
             b.lightning.submit(level, from, to, b.radius, cam, pose, out);
+            return;
+        }
+        if (b.voidBeam != null) {
+            b.voidBeam.submit(level, from, to, b.radius, cam, pose, out);
             return;
         }
         Vec3 d = to.subtract(from);
