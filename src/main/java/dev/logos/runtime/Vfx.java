@@ -129,9 +129,20 @@ public final class Vfx {
         line(level, from, to, e, NONE);
     }
 
-    /** A line; {@code caster} is the network id of the entity whose eyes it left from (or {@link #NONE}), so clients draw it from that caster's cast point. */
+    /** A line linking two bodies (drain, execute); {@code caster} as for {@link #ray}. */
     public static void line(ServerLevel level, Vec3 from, Vec3 to, Element e, int caster) {
-        send(level, Kind.BEAM, e, 0, from, to, 1, 0, new Guise(caster, 0, NONE));
+        ray(level, from, to, e, caster, RayEnd.LINK);
+    }
+
+    /**
+     * How a ray ended, so clients can show the hit: it ran out in the {@code OPEN}, struck a {@code BLOCK}
+     * or a {@code CREATURE}; or it is a {@code LINK} drawn between two bodies. Synced by ordinal; append only.
+     */
+    public enum RayEnd { OPEN, BLOCK, CREATURE, LINK }
+
+    /** A {@code ray}; {@code caster} is the network id of the entity whose eyes it left from (or {@link #NONE}), so clients draw it from that caster's cast point. */
+    public static void ray(ServerLevel level, Vec3 from, Vec3 to, Element e, int caster, RayEnd end) {
+        send(level, Kind.BEAM, e, end.ordinal(), from, to, 1, 0, new Guise(caster, 0, NONE));
     }
 
     public static void ring(ServerLevel level, Vec3 c, double r, Element e) {

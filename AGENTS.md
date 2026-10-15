@@ -17,3 +17,5 @@
 制作魔弹命中特效时，遵守 [PROJECTILE_IMPACT_VFX.md](PROJECTILE_IMPACT_VFX.md)。公共碰撞入口统一后，元素分支只修改自身命中实现、专属资源和专属客户端测试；飞行外观保持只读。
 
 制作节点生效特效（BURST：伤害、治疗、护盾、推拉与缴械、药水）时，遵守 [EFFECT_BURST_VFX.md](EFFECT_BURST_VFX.md)。公共入口和伤害核心只读，各分支只修改自身实现、专属资源和专属客户端场景。
+
+制作射线（ray）特效时，遵守 [RAY_VFX.md](RAY_VFX.md)。公共入口只读，各元素分支只修改自身射线实现、专属资源和专属客户端场景。

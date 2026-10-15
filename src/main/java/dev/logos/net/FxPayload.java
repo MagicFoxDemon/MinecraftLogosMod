@@ -33,6 +33,10 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
          * {@code GENERIC}, (ax,ay,az) is the direction it came from (or zero) and {@code size} the target's scale.
          */
         BURST,
+        /**
+         * A ray or a link, at once: from (x,y,z) to (ax,ay,az); {@code variant} is the
+         * {@link dev.logos.runtime.Vfx.RayEnd} ordinal, {@code look} the caster whose cast point it leaves from, or -1.
+         */
         BEAM,
         RING,
         PULSE,

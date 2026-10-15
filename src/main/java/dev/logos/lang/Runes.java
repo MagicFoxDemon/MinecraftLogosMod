@@ -326,7 +326,10 @@ public final class Runes {
         }
         // Left from the caster's eyes, it is drawn from their cast point (a wand's head); only the picture moves.
         boolean fromEyes = inst.caster.level() == level && from.distanceToSqr(inst.caster.getEyePosition()) < 1e-4;
-        Vfx.line(level, from, end, n.element, fromEyes ? inst.caster.getId() : Vfx.NONE);
+        // A ray that ends on a creature (its :to, or the first it could not pierce) ends at that creature's centre.
+        Vfx.RayEnd how = blocked != null ? Vfx.RayEnd.BLOCK
+                : !hits.isEmpty() && end.equals(Targeting.center(hits.getLast())) ? Vfx.RayEnd.CREATURE : Vfx.RayEnd.OPEN;
+        Vfx.ray(level, from, end, n.element, fromEyes ? inst.caster.getId() : Vfx.NONE, how);
         Vfx.sound(level, end, Vfx.sound(n.element), 0.4f, 1.6f);
         Ctx base = c.at(origin);
         for (Entity e : hits) {

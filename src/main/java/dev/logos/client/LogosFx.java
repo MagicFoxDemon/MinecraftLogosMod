@@ -99,6 +99,14 @@ public final class LogosFx {
     private record SetOut(int caster, Vec3 eye, long at) {}
     private static final Map<Integer, SetOut> SET_OUT = new HashMap<>();
     private static final Map<Integer, Beam> BEAMS = new HashMap<>();
+    /** Rays drawn by their element (not the legacy bead chain) that still have something showing. */
+    private record LiveRay(RayVisual visual, long born) {}
+    private static final List<LiveRay> RAYS = new ArrayList<>();
+    /** No ray lingers longer than this, whatever its element asks for. */
+    private static final int RAY_CAP = 200;
+    /** The last ray or link that arrived (the client scenes check it). */
+    public record FiredRay(Element element, Vfx.RayEnd end) {}
+    private static @Nullable FiredRay lastRay;
 
     /** A lasting {@code beam} as last reported; drawn every frame as a beacon-style tube. */
     private static final class Beam {
@@ -381,6 +389,14 @@ public final class LogosFx {
                 // A ray from its caster's eyes is drawn from the caster's cast point (a wand's head).
                 Entity caster = p.look() >= 0 ? level.getEntity(p.look()) : null;
                 if (caster != null) pos = CastPoints.of(caster, 1);
+                Vfx.RayEnd how = Vfx.RayEnd.values()[Math.floorMod(p.variant(), Vfx.RayEnd.values().length)];
+                lastRay = new FiredRay(el, how);
+                RayVisual ray = RayVisual.create(el);
+                if (!ray.legacy()) {
+                    ray.start(level, pos, end, how);
+                    RAYS.add(new LiveRay(ray, level.getGameTime()));
+                    break;
+                }
                 double len = pos.distanceTo(end);
                 int beads = (int) Math.max(3, Math.min(80, len * 5));
                 FX bead = fx("beam", el, 0, () -> bead(el));
@@ -401,6 +417,16 @@ public final class LogosFx {
         return TRAILS.values().stream().map(t -> t.last).toList();
     }
 
+    /** The last ray or link that arrived, or null (the client scenes check it). */
+    public static @Nullable FiredRay lastRay() {
+        return lastRay;
+    }
+
+    /** How many element-drawn rays still have something showing (the client scenes check it). */
+    public static int liveRays() {
+        return RAYS.size();
+    }
+
     /** Drops trails whose spell body stopped reporting (e.g. it left tracking range). */
     public static void tick() {
         Level level = Minecraft.getInstance().level;
@@ -416,8 +442,15 @@ public final class LogosFx {
                 if (b.physical != null) b.physical.end();
             });
             BEAMS.clear();
+            RAYS.forEach(r -> r.visual().end());
+            RAYS.clear();
             return;
         }
+        RAYS.removeIf(r -> {
+            if (level.getGameTime() - r.born() <= RAY_CAP && r.visual().tick(level)) return false;
+            r.visual().end();
+            return true;
+        });
         BEAMS.values().removeIf(b -> {
             if (level.getGameTime() - b.lastSeen <= 10) return false;
             if (b.fire != null) b.fire.end();
@@ -453,12 +486,12 @@ public final class LogosFx {
         }
     }
 
-    /** Draws lasting beams, ward spheres, and the item models of spell bodies that wear a {@code :look}. */
+    /** Draws lasting beams, rays and what they leave, ward spheres, and the item models of spell bodies that wear a {@code :look}. */
     public static void submit(SubmitCustomGeometryEvent event) {
         Minecraft mc = Minecraft.getInstance();
         ShaderPackOverlay.begin();
         Level level = mc.level;
-        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && !WardSpheres.any()
+        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && RAYS.isEmpty() && !WardSpheres.any()
                 && !dev.logos.runtime.ConstructEntity.any() && !AnchorMarkers.showing())) return;
         CameraRenderState cam = event.getLevelRenderState().cameraRenderState;
         Quaternionf toCamera = new Quaternionf(cam.orientation).conjugate();
@@ -469,6 +502,7 @@ public final class LogosFx {
                 b.fire != null || b.frost != null || b.lightning != null || b.voidBeam != null || b.physical != null ? vfx : event.getSubmitNodeCollector());
         ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector());
         WardSpheres.submit(mc, cam, pt, pose, vfx);
+        for (LiveRay r : RAYS) r.visual().submit(level, cam, pt, pose, vfx);
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
             Trail t = e.getValue();
