@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.lowdragmc.lowdraglib2.gui.factory.HeldItemUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphPreview;
 import com.lowdragmc.lowdraglib2.registry.RegistrationEnvironment;
 import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegisterClient;
 import com.lowdragmc.lowdraglib2.uitest.ScenarioBuilder;
@@ -19,6 +21,7 @@ import dev.logos.client.SpellWheelScreen;
 import dev.logos.item.SpellPages;
 import dev.logos.lang.Examples;
 import net.minecraft.core.BlockPos;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -43,6 +46,27 @@ public class SpellEditorScenario implements UIScenario {
     @SuppressWarnings("unchecked")
     private static void selectTemplate(TestContext ctx, String id) {
         ctx.ui().select("#templates", Selector.class).findFirst().ifPresent(sel -> ((Selector<Object>) sel).setSelected(id, true));
+    }
+
+    /** The map must stay in the canvas corner after loading another graph, without the tool panels. */
+    private static void checkNavigation(TestContext ctx) {
+        GraphPreview map = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow();
+        var view = map.graphView;
+        ctx.check("variable library is not mounted", view.blackboard.getParent() == null);
+        ctx.check("property inspector is not mounted", view.inspector.getParent() == null);
+        ctx.check("navigation has no panel wrapper", map.getParent() == view.canvas);
+        ctx.check("navigation is a small square", Math.abs(map.getSizeWidth() - 110) < 1
+                && Math.abs(map.getSizeHeight() - 110) < 1);
+        ctx.check("navigation is anchored at the bottom right", Math.abs(map.getPositionX() + map.getSizeWidth()
+                - view.canvas.getPositionX() - view.canvas.getSizeWidth() + 8) < 1
+                && Math.abs(map.getPositionY() + map.getSizeHeight()
+                - view.canvas.getPositionY() - view.canvas.getSizeHeight() + 8) < 1);
+        UIElement background = ctx.ui().select("#spell_editor_background", UIElement.class).findFirst().orElseThrow();
+        var window = Minecraft.getInstance().getWindow();
+        ctx.check("parchment covers the current window", Math.abs(background.getPositionX()) < 1
+                && Math.abs(background.getPositionY()) < 1
+                && Math.abs(background.getSizeWidth() - window.getGuiScaledWidth()) < 1
+                && Math.abs(background.getSizeHeight() - window.getGuiScaledHeight()) < 1);
     }
 
     @Override
@@ -73,7 +97,40 @@ public class SpellEditorScenario implements UIScenario {
                 .ticks(10)
                 .checkTextContains("#status", "成立")
                 .checkTextContains("#overview", "意图")
+                .step("check the standalone navigation", SpellEditorScenario::checkNavigation)
                 .screenshot("fireball_graph")
+                .step("click the navigation away from its center", ctx -> {
+                    GraphPreview map = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow();
+                    ctx.put("before_map_x", map.graphView.graphView.getOffsetX());
+                    ctx.put("before_map_y", map.graphView.graphView.getOffsetY());
+                    float x = map.getContentX() + map.getContentWidth() * 0.8f;
+                    float y = map.getContentY() + map.getContentHeight() * 0.8f;
+                    ctx.input().mouseDown(x, y, 0);
+                })
+                .ticks(2)
+                .step("check navigation pans and drag it", ctx -> {
+                    GraphPreview map = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow();
+                    float beforeX = ctx.get("before_map_x");
+                    float beforeY = ctx.get("before_map_y");
+                    ctx.check("clicking the map pans the canvas", Math.abs(map.graphView.graphView.getOffsetX() - beforeX) > 1
+                            || Math.abs(map.graphView.graphView.getOffsetY() - beforeY) > 1);
+                    ctx.put("before_map_x", map.graphView.graphView.getOffsetX());
+                    ctx.put("before_map_y", map.graphView.graphView.getOffsetY());
+                    ctx.input().dragTo(map.getContentX() + map.getContentWidth() * 0.2f,
+                            map.getContentY() + map.getContentHeight() * 0.2f, 0);
+                })
+                .ticks(2)
+                .step("check navigation drag and frame the graph again", ctx -> {
+                    GraphPreview map = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow();
+                    ctx.input().mouseUp(map.getContentX() + map.getContentWidth() * 0.2f,
+                            map.getContentY() + map.getContentHeight() * 0.2f, 0);
+                    float beforeX = ctx.get("before_map_x");
+                    float beforeY = ctx.get("before_map_y");
+                    ctx.check("dragging the map pans the canvas", Math.abs(map.graphView.graphView.getOffsetX() - beforeX) > 1
+                            || Math.abs(map.graphView.graphView.getOffsetY() - beforeY) > 1);
+                    checkNavigation(ctx);
+                    map.graphView.fitGraphChildren();
+                })
                 .click("#inscribe")
                 .waitUntilServer("the page on the table keeps the drawing", sc ->
                         sc.level().getBlockEntity(table) instanceof InscriptionTableBlockEntity t && t.page().has(LogosMod.SPELL_GRAPH.get()))
@@ -81,7 +138,32 @@ public class SpellEditorScenario implements UIScenario {
                 .click("#load_template")
                 .ticks(10)
                 .checkTextContains("#status", "成立")
+                .step("check navigation after switching templates", SpellEditorScenario::checkNavigation)
                 .screenshot("harvest_graph")
+                .step("resize the open editor to a taller window", ctx -> {
+                    var window = Minecraft.getInstance().getWindow();
+                    ctx.put("original_width", window.getScreenWidth());
+                    ctx.put("original_height", window.getScreenHeight());
+                    window.setWindowed(1024, 768);
+                })
+                .ticks(10)
+                .step("check live resize to 4 by 3", ctx -> {
+                    ctx.check("window changed to 1024 by 768", Minecraft.getInstance().getWindow().getScreenWidth() == 1024
+                            && Minecraft.getInstance().getWindow().getScreenHeight() == 768);
+                    checkNavigation(ctx);
+                })
+                .screenshot("parchment_1024x768")
+                .step("resize the open editor to an ultrawide window", ctx -> Minecraft.getInstance().getWindow().setWindowed(1920, 720))
+                .ticks(10)
+                .step("check live resize to ultrawide", ctx -> {
+                    ctx.check("window changed to 1920 by 720", Minecraft.getInstance().getWindow().getScreenWidth() == 1920
+                            && Minecraft.getInstance().getWindow().getScreenHeight() == 720);
+                    checkNavigation(ctx);
+                })
+                .screenshot("parchment_1920x720")
+                .step("restore the original window size", ctx -> Minecraft.getInstance().getWindow()
+                        .setWindowed(ctx.get("original_width"), ctx.get("original_height")))
+                .ticks(10)
                 .step("pick the proof-chain template", ctx -> selectTemplate(ctx, "sever"))
                 .click("#load_template")
                 .ticks(10)

@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.lowdragmc.lowdraglib2.Platform;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
+import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -17,7 +19,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.utils.UIElementProvider;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.editor.GraphEditorView;
-import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphPanel;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphView;
 
 import dev.logos.LogosMod;
 import dev.logos.graph.GraphBuilder;
@@ -32,6 +34,7 @@ import dev.logos.lang.LogosError;
 import dev.logos.lang.Node;
 import dev.logos.net.InscribePayload;
 import dev.vfyjxf.taffy.style.FlexDirection;
+import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -51,7 +54,7 @@ public final class SpellEditor {
     private final BlockPos table;
     /** Grade of the page on the table: the editor warns when the spell injects more than it holds. */
     private final PageTier tier;
-    private final GraphEditorView editor = new GraphEditorView();
+    private final GraphEditorView editor = new GraphEditorView(SpellGraphView::new);
     private final Label status = new Label();
     private final Label overview = new Label();
     private final Selector<SpecialNodes.IntentChoice> intent = new Selector<>();
@@ -60,6 +63,25 @@ public final class SpellEditor {
     private SpellGraph graph;
     /** Ticks until the canvas is framed around a freshly loaded graph (node sizes need a layout pass first). */
     private int fitIn = -1;
+
+    /** A spell canvas needs navigation, but not the toolkit's variable and appearance panels. */
+    private static final class SpellGraphView extends GraphView {
+        private SpellGraphView() {
+            header.style(s -> s.backgroundTexture(IGuiTexture.EMPTY));
+            graphView.graphViewStyle(s -> s.gridLineColor(0x183E2918).gridAccentColor(0x303E2918));
+            SpellNavigation navigation = new SpellNavigation(this);
+            navigation.setId("spell_navigation");
+            navigation.layout(l -> l.positionType(TaffyPosition.ABSOLUTE)
+                    .right(8).bottom(8).width(110).height(110));
+            navigation.style(s -> s.backgroundTexture(new ColorRectTexture(0x80181818)));
+            canvas.addChild(navigation);
+        }
+
+        @Override
+        protected void initPanels() {
+            // Leave the dock empty; navigation is attached directly to the canvas instead.
+        }
+    }
 
     private SpellEditor(BlockPos table, PageTier tier) {
         this.table = table;
@@ -100,13 +122,6 @@ public final class SpellEditor {
         graph = g;
         graph.addListener(this::refresh);
         editor.loadGraph(graph, this::send);
-        // Spell graphs have no variables (remember nodes replace them); fold the blackboard away.
-        for (UIElement el = editor.getCurrentView().blackboard; el != null; el = el.getParent()) {
-            if (el instanceof GraphPanel panel) {
-                panel.setCollapsed(true);
-                break;
-            }
-        }
         fitIn = 3;
         refresh();
     }
@@ -139,10 +154,12 @@ public final class SpellEditor {
         status.setId("status");
         overview.setId("overview");
         for (Label l : List.of(status, overview)) {
-            l.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true));
+            l.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true).textColor(0xFF392719).textShadow(false));
             l.layout(x -> x.widthPercent(100));
         }
         ScrollerView overviewView = new ScrollerView();
+        overviewView.style(s -> s.backgroundTexture(IGuiTexture.EMPTY));
+        overviewView.viewPort(v -> v.style(s -> s.backgroundTexture(IGuiTexture.EMPTY)));
         overviewView.layout(l -> l.widthPercent(100).flex(1));
         overviewView.addScrollViewChild(overview);
 
@@ -163,7 +180,7 @@ public final class SpellEditor {
         UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(4).widthPercent(100));
         row.addChildren(loadTemplate, clear);
 
-        UIElement side = new UIElement().addClass("panel_bg")
+        UIElement side = new UIElement()
                 .layout(l -> l.width(190).heightPercent(100).paddingAll(6).gapAll(5));
         side.addChildren(
                 new Label().setText(Component.literal("☉ Logos 术式工坊")),
@@ -176,8 +193,14 @@ public final class SpellEditor {
                 intent,
                 overviewView,
                 inscribe);
+        for (UIElement child : side.getChildren()) {
+            if (child instanceof Label label) label.textStyle(s -> s.textColor(0xFF392719).textShadow(false));
+        }
 
-        UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).widthPercent(100).heightPercent(100));
+        UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW)
+                .widthPercent(100).heightPercent(100).paddingAll(28));
+        root.setId("spell_editor_background");
+        root.style(s -> s.backgroundTexture(new SpellEditorBackground()));
         root.addChildren(editor, side);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)));
     }
