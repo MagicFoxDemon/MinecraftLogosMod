@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.lowdragmc.lowdraglib2.Platform;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
+import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -17,7 +18,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.utils.UIElementProvider;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.editor.GraphEditorView;
-import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphPanel;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphView;
 
 import dev.logos.LogosMod;
 import dev.logos.graph.GraphBuilder;
@@ -32,6 +33,7 @@ import dev.logos.lang.LogosError;
 import dev.logos.lang.Node;
 import dev.logos.net.InscribePayload;
 import dev.vfyjxf.taffy.style.FlexDirection;
+import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -51,7 +53,7 @@ public final class SpellEditor {
     private final BlockPos table;
     /** Grade of the page on the table: the editor warns when the spell injects more than it holds. */
     private final PageTier tier;
-    private final GraphEditorView editor = new GraphEditorView();
+    private final GraphEditorView editor = new GraphEditorView(SpellGraphView::new);
     private final Label status = new Label();
     private final Label overview = new Label();
     private final Selector<SpecialNodes.IntentChoice> intent = new Selector<>();
@@ -60,6 +62,23 @@ public final class SpellEditor {
     private SpellGraph graph;
     /** Ticks until the canvas is framed around a freshly loaded graph (node sizes need a layout pass first). */
     private int fitIn = -1;
+
+    /** A spell canvas needs navigation, but not the toolkit's variable and appearance panels. */
+    private static final class SpellGraphView extends GraphView {
+        private SpellGraphView() {
+            SpellNavigation navigation = new SpellNavigation(this);
+            navigation.setId("spell_navigation");
+            navigation.layout(l -> l.positionType(TaffyPosition.ABSOLUTE)
+                    .right(8).bottom(8).width(110).height(110));
+            navigation.style(s -> s.backgroundTexture(new ColorRectTexture(0x80181818)));
+            canvas.addChild(navigation);
+        }
+
+        @Override
+        protected void initPanels() {
+            // Leave the dock empty; navigation is attached directly to the canvas instead.
+        }
+    }
 
     private SpellEditor(BlockPos table, PageTier tier) {
         this.table = table;
@@ -100,13 +119,6 @@ public final class SpellEditor {
         graph = g;
         graph.addListener(this::refresh);
         editor.loadGraph(graph, this::send);
-        // Spell graphs have no variables (remember nodes replace them); fold the blackboard away.
-        for (UIElement el = editor.getCurrentView().blackboard; el != null; el = el.getParent()) {
-            if (el instanceof GraphPanel panel) {
-                panel.setCollapsed(true);
-                break;
-            }
-        }
         fitIn = 3;
         refresh();
     }

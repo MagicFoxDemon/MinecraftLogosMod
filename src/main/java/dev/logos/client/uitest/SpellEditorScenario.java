@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.lowdragmc.lowdraglib2.gui.factory.HeldItemUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphPreview;
 import com.lowdragmc.lowdraglib2.registry.RegistrationEnvironment;
 import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegisterClient;
 import com.lowdragmc.lowdraglib2.uitest.ScenarioBuilder;
@@ -45,6 +46,21 @@ public class SpellEditorScenario implements UIScenario {
         ctx.ui().select("#templates", Selector.class).findFirst().ifPresent(sel -> ((Selector<Object>) sel).setSelected(id, true));
     }
 
+    /** The map must stay in the canvas corner after loading another graph, without the tool panels. */
+    private static void checkNavigation(TestContext ctx) {
+        GraphPreview map = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow();
+        var view = map.graphView;
+        ctx.check("variable library is not mounted", view.blackboard.getParent() == null);
+        ctx.check("property inspector is not mounted", view.inspector.getParent() == null);
+        ctx.check("navigation has no panel wrapper", map.getParent() == view.canvas);
+        ctx.check("navigation is a small square", Math.abs(map.getSizeWidth() - 110) < 1
+                && Math.abs(map.getSizeHeight() - 110) < 1);
+        ctx.check("navigation is anchored at the bottom right", Math.abs(map.getPositionX() + map.getSizeWidth()
+                - view.canvas.getPositionX() - view.canvas.getSizeWidth() + 8) < 1
+                && Math.abs(map.getPositionY() + map.getSizeHeight()
+                - view.canvas.getPositionY() - view.canvas.getSizeHeight() + 8) < 1);
+    }
+
     @Override
     public void define(ScenarioBuilder s) {
         ItemStack wand = new ItemStack(LogosMod.MASTER_WAND.get());
@@ -73,7 +89,40 @@ public class SpellEditorScenario implements UIScenario {
                 .ticks(10)
                 .checkTextContains("#status", "成立")
                 .checkTextContains("#overview", "意图")
+                .step("check the standalone navigation", SpellEditorScenario::checkNavigation)
                 .screenshot("fireball_graph")
+                .step("click the navigation away from its center", ctx -> {
+                    GraphPreview map = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow();
+                    ctx.put("before_map_x", map.graphView.graphView.getOffsetX());
+                    ctx.put("before_map_y", map.graphView.graphView.getOffsetY());
+                    float x = map.getContentX() + map.getContentWidth() * 0.8f;
+                    float y = map.getContentY() + map.getContentHeight() * 0.8f;
+                    ctx.input().mouseDown(x, y, 0);
+                })
+                .ticks(2)
+                .step("check navigation pans and drag it", ctx -> {
+                    GraphPreview map = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow();
+                    float beforeX = ctx.get("before_map_x");
+                    float beforeY = ctx.get("before_map_y");
+                    ctx.check("clicking the map pans the canvas", Math.abs(map.graphView.graphView.getOffsetX() - beforeX) > 1
+                            || Math.abs(map.graphView.graphView.getOffsetY() - beforeY) > 1);
+                    ctx.put("before_map_x", map.graphView.graphView.getOffsetX());
+                    ctx.put("before_map_y", map.graphView.graphView.getOffsetY());
+                    ctx.input().dragTo(map.getContentX() + map.getContentWidth() * 0.2f,
+                            map.getContentY() + map.getContentHeight() * 0.2f, 0);
+                })
+                .ticks(2)
+                .step("check navigation drag and frame the graph again", ctx -> {
+                    GraphPreview map = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow();
+                    ctx.input().mouseUp(map.getContentX() + map.getContentWidth() * 0.2f,
+                            map.getContentY() + map.getContentHeight() * 0.2f, 0);
+                    float beforeX = ctx.get("before_map_x");
+                    float beforeY = ctx.get("before_map_y");
+                    ctx.check("dragging the map pans the canvas", Math.abs(map.graphView.graphView.getOffsetX() - beforeX) > 1
+                            || Math.abs(map.graphView.graphView.getOffsetY() - beforeY) > 1);
+                    checkNavigation(ctx);
+                    map.graphView.fitGraphChildren();
+                })
                 .click("#inscribe")
                 .waitUntilServer("the page on the table keeps the drawing", sc ->
                         sc.level().getBlockEntity(table) instanceof InscriptionTableBlockEntity t && t.page().has(LogosMod.SPELL_GRAPH.get()))
@@ -81,6 +130,7 @@ public class SpellEditorScenario implements UIScenario {
                 .click("#load_template")
                 .ticks(10)
                 .checkTextContains("#status", "成立")
+                .step("check navigation after switching templates", SpellEditorScenario::checkNavigation)
                 .screenshot("harvest_graph")
                 .step("pick the proof-chain template", ctx -> selectTemplate(ctx, "sever"))
                 .click("#load_template")
