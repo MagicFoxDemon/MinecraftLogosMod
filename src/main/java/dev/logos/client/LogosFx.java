@@ -107,6 +107,28 @@ public final class LogosFx {
     /** The last ray or link that arrived (the client scenes check it). */
     public record FiredRay(Element element, Vfx.RayEnd end) {}
     private static @Nullable FiredRay lastRay;
+    /** How fast a new beam's end races out to its full length, in blocks a tick (a 64-block beam in 0.8 s). */
+    private static final double BEAM_REACH = 4;
+
+    /**
+     * A beam is gone: its element's wake ({@link BeamWake}), if it draws one, is left along the line as last
+     * drawn and fades like a ray's. A beam that wears a {@code :trail} particle leaves none.
+     */
+    private static void leaveWake(Level level, Beam b) {
+        if (b.particle != null) return;
+        RayVisual wake = BeamWake.create(b.element);
+        if (wake.legacy()) return;
+        wake.start(level, b.shownFrom, b.shownTo, Vfx.RayEnd.OPEN);
+        RAYS.add(new LiveRay(wake, level.getGameTime()));
+    }
+
+    /** How far each lasting beam has reached out by now, growing to its full length (the client scenes check it). */
+    public static List<Double> drawnBeamLengths() {
+        Level level = Minecraft.getInstance().level;
+        if (level == null) return List.of();
+        return BEAMS.values().stream()
+                .map(b -> Math.min(b.from.distanceTo(b.to), (level.getGameTime() - b.born) * BEAM_REACH)).toList();
+    }
 
     /** A lasting {@code beam} as last reported; drawn every frame as a beacon-style tube. */
     private static final class Beam {
@@ -116,24 +138,49 @@ public final class LogosFx {
         Vec3 prevFrom, prevTo, from, to;
         float radius;
         long lastSeen;
+        /** When it first arrived: its end races out from the cast point from then on. */
+        final long born;
+        /** The line as last drawn (after the cast point and the reach), where its wake is left. */
+        Vec3 shownFrom, shownTo;
 
         @Nullable FireBeamVisual fire;
         @Nullable FrostBeamVisual frost;
         @Nullable LightningBeamVisual lightning;
         @Nullable VoidBeamVisual voidBeam;
         @Nullable PhysicalBeamVisual physical;
+        @Nullable ArcaneBeamVisual arcane;
+        @Nullable LifeBeamVisual life;
 
-        Beam(Element element, int anchor, @Nullable ParticleOptions particle, Vec3 from, Vec3 to) {
+        /** Whether its element draws the beam itself, rather than the generic beacon-style tube. */
+        boolean dedicated() {
+            return fire != null || frost != null || lightning != null || voidBeam != null || physical != null || arcane != null || life != null;
+        }
+
+        void endVisual() {
+            if (fire != null) fire.end();
+            if (frost != null) frost.end();
+            if (lightning != null) lightning.end();
+            if (voidBeam != null) voidBeam.end();
+            if (physical != null) physical.end();
+            if (arcane != null) arcane.end();
+            if (life != null) life.end();
+        }
+
+        Beam(Element element, int anchor, @Nullable ParticleOptions particle, Vec3 from, Vec3 to, long born) {
             this.element = element;
             this.anchor = anchor;
             this.particle = particle;
-            this.prevFrom = this.from = from;
+            this.prevFrom = this.from = this.shownFrom = from;
             this.prevTo = this.to = to;
+            this.shownTo = from;
+            this.born = born;
             if (element == Element.FIRE) fire = new FireBeamVisual();
             if (element == Element.FROST) frost = new FrostBeamVisual();
             if (element == Element.LIGHTNING) lightning = new LightningBeamVisual(particle == null);
             if (element == Element.VOID) voidBeam = new VoidBeamVisual(particle == null);
             if (element == Element.PHYSICAL) physical = new PhysicalBeamVisual(particle == null);
+            if (element == Element.ARCANE && !ArcaneBeamVisual.legacy()) arcane = new ArcaneBeamVisual(particle == null);
+            if (element == Element.LIFE && !LifeBeamVisual.legacy()) life = new LifeBeamVisual(particle == null);
         }
     }
 
@@ -309,7 +356,7 @@ public final class LogosFx {
                 Vec3 to = new Vec3(p.ax(), p.ay(), p.az());
                 Beam b = BEAMS.get(p.id());
                 if (b == null) {
-                    b = new Beam(el, p.look(), particle(p.particle()), pos, to);
+                    b = new Beam(el, p.look(), particle(p.particle()), pos, to, level.getGameTime());
                     BEAMS.put(p.id(), b);
                 } else {
                     b.prevFrom = b.from;
@@ -327,18 +374,15 @@ public final class LogosFx {
                     double s = p.size();
                     at = at.add((r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * s);
                     if (b.particle != null) level.addParticle(b.particle, at.x, at.y, at.z, 0, 0, 0);
-                    else if (b.fire == null && b.frost == null && b.lightning == null && b.voidBeam == null && b.physical == null) accents(level, el, at, 1, 0.05, 0.02);
+                    else if (!b.dedicated()) accents(level, el, at, 1, 0.05, 0.02);
                 }
-                if (b.fire == null && b.frost == null && b.lightning == null && b.voidBeam == null && b.physical == null && r.nextInt(3) == 0) accents(level, el, to, 2, 0.15, 0.08);
+                if (!b.dedicated() && r.nextInt(3) == 0) accents(level, el, to, 2, 0.15, 0.08);
             }
             case BEAM_END -> {
                 Beam b = BEAMS.remove(p.id());
-                if (b != null && (b.fire != null || b.frost != null || b.lightning != null || b.voidBeam != null || b.physical != null)) {
-                    if (b.fire != null) b.fire.end();
-                    if (b.frost != null) b.frost.end();
-                    if (b.lightning != null) b.lightning.end();
-                    if (b.voidBeam != null) b.voidBeam.end();
-                    if (b.physical != null) b.physical.end();
+                if (b != null) leaveWake(level, b);
+                if (b != null && b.dedicated()) {
+                    b.endVisual();
                     if (b.particle != null) scatter(level, b.particle, pos, 10, 0.4);
                     break;
                 }
@@ -427,6 +471,12 @@ public final class LogosFx {
         return RAYS.size();
     }
 
+    /** Ends every ray and beam wake still showing, so a client scene can sample a fresh one. */
+    public static void clearRays() {
+        RAYS.forEach(r -> r.visual().end());
+        RAYS.clear();
+    }
+
     /** Drops trails whose spell body stopped reporting (e.g. it left tracking range). */
     public static void tick() {
         Level level = Minecraft.getInstance().level;
@@ -434,13 +484,7 @@ public final class LogosFx {
         if (level == null) {
             TRAILS.values().forEach(t -> t.destroy(true));
             TRAILS.clear();
-            BEAMS.values().forEach(b -> {
-                if (b.fire != null) b.fire.end();
-                if (b.frost != null) b.frost.end();
-                if (b.lightning != null) b.lightning.end();
-                if (b.voidBeam != null) b.voidBeam.end();
-                if (b.physical != null) b.physical.end();
-            });
+            BEAMS.values().forEach(Beam::endVisual);
             BEAMS.clear();
             RAYS.forEach(r -> r.visual().end());
             RAYS.clear();
@@ -453,11 +497,8 @@ public final class LogosFx {
         });
         BEAMS.values().removeIf(b -> {
             if (level.getGameTime() - b.lastSeen <= 10) return false;
-            if (b.fire != null) b.fire.end();
-            if (b.frost != null) b.frost.end();
-            if (b.lightning != null) b.lightning.end();
-            if (b.voidBeam != null) b.voidBeam.end();
-            if (b.physical != null) b.physical.end();
+            leaveWake(level, b);
+            b.endVisual();
             return true;
         });
         for (Iterator<Trail> it = TRAILS.values().iterator(); it.hasNext(); ) {
@@ -499,7 +540,7 @@ public final class LogosFx {
         PoseStack pose = event.getPoseStack();
         SubmitNodeCollector vfx = ShaderPackOverlay.collector(event.getSubmitNodeCollector());
         for (Beam b : BEAMS.values()) submitBeam(mc, level, b, cam, pt, pose,
-                b.fire != null || b.frost != null || b.lightning != null || b.voidBeam != null || b.physical != null ? vfx : event.getSubmitNodeCollector());
+                b.dedicated() ? vfx : event.getSubmitNodeCollector());
         ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector());
         WardSpheres.submit(mc, cam, pt, pose, vfx);
         for (LiveRay r : RAYS) r.visual().submit(level, cam, pt, pose, vfx);
@@ -547,6 +588,11 @@ public final class LogosFx {
             firstPerson = anchor == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson();
             from = CastPoints.of(anchor, pt);
         }
+        // Its end races out at BEAM_REACH blocks a tick, then holds; only the picture, the server's reach is unchanged.
+        double reach = (level.getGameTime() - b.born + pt) * BEAM_REACH, full = from.distanceTo(to);
+        if (reach < full) to = from.lerp(to, reach / full);
+        b.shownFrom = from;
+        b.shownTo = to;
         if (b.fire != null) {
             b.fire.submit(level, from, to, b.radius, cam, pose, out);
             return;
@@ -565,6 +611,14 @@ public final class LogosFx {
         }
         if (b.physical != null) {
             b.physical.submit(level, from, to, b.radius, cam, pose, out);
+            return;
+        }
+        if (b.arcane != null) {
+            b.arcane.submit(level, from, to, b.radius, cam, pose, out);
+            return;
+        }
+        if (b.life != null) {
+            b.life.submit(level, from, to, b.radius, cam, pose, out);
             return;
         }
         Vec3 d = to.subtract(from);
