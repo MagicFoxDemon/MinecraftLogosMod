@@ -6,6 +6,7 @@ import java.util.List;
 import com.lowdragmc.lowdraglib2.Platform;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -66,6 +67,8 @@ public final class SpellEditor {
     /** A spell canvas needs navigation, but not the toolkit's variable and appearance panels. */
     private static final class SpellGraphView extends GraphView {
         private SpellGraphView() {
+            header.style(s -> s.backgroundTexture(IGuiTexture.EMPTY));
+            graphView.graphViewStyle(s -> s.gridLineColor(0x183E2918).gridAccentColor(0x303E2918));
             SpellNavigation navigation = new SpellNavigation(this);
             navigation.setId("spell_navigation");
             navigation.layout(l -> l.positionType(TaffyPosition.ABSOLUTE)
@@ -151,10 +154,12 @@ public final class SpellEditor {
         status.setId("status");
         overview.setId("overview");
         for (Label l : List.of(status, overview)) {
-            l.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true));
+            l.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true).textColor(0xFF392719).textShadow(false));
             l.layout(x -> x.widthPercent(100));
         }
         ScrollerView overviewView = new ScrollerView();
+        overviewView.style(s -> s.backgroundTexture(IGuiTexture.EMPTY));
+        overviewView.viewPort(v -> v.style(s -> s.backgroundTexture(IGuiTexture.EMPTY)));
         overviewView.layout(l -> l.widthPercent(100).flex(1));
         overviewView.addScrollViewChild(overview);
 
@@ -175,7 +180,7 @@ public final class SpellEditor {
         UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(4).widthPercent(100));
         row.addChildren(loadTemplate, clear);
 
-        UIElement side = new UIElement().addClass("panel_bg")
+        UIElement side = new UIElement()
                 .layout(l -> l.width(190).heightPercent(100).paddingAll(6).gapAll(5));
         side.addChildren(
                 new Label().setText(Component.literal("☉ Logos 术式工坊")),
@@ -188,8 +193,14 @@ public final class SpellEditor {
                 intent,
                 overviewView,
                 inscribe);
+        for (UIElement child : side.getChildren()) {
+            if (child instanceof Label label) label.textStyle(s -> s.textColor(0xFF392719).textShadow(false));
+        }
 
-        UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).widthPercent(100).heightPercent(100));
+        UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW)
+                .widthPercent(100).heightPercent(100).paddingAll(28));
+        root.setId("spell_editor_background");
+        root.style(s -> s.backgroundTexture(new SpellEditorBackground()));
         root.addChildren(editor, side);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)));
     }

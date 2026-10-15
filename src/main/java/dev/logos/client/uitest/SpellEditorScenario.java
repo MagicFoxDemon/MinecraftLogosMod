@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.lowdragmc.lowdraglib2.gui.factory.HeldItemUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphPreview;
 import com.lowdragmc.lowdraglib2.registry.RegistrationEnvironment;
@@ -20,6 +21,7 @@ import dev.logos.client.SpellWheelScreen;
 import dev.logos.item.SpellPages;
 import dev.logos.lang.Examples;
 import net.minecraft.core.BlockPos;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -59,6 +61,12 @@ public class SpellEditorScenario implements UIScenario {
                 - view.canvas.getPositionX() - view.canvas.getSizeWidth() + 8) < 1
                 && Math.abs(map.getPositionY() + map.getSizeHeight()
                 - view.canvas.getPositionY() - view.canvas.getSizeHeight() + 8) < 1);
+        UIElement background = ctx.ui().select("#spell_editor_background", UIElement.class).findFirst().orElseThrow();
+        var window = Minecraft.getInstance().getWindow();
+        ctx.check("parchment covers the current window", Math.abs(background.getPositionX()) < 1
+                && Math.abs(background.getPositionY()) < 1
+                && Math.abs(background.getSizeWidth() - window.getGuiScaledWidth()) < 1
+                && Math.abs(background.getSizeHeight() - window.getGuiScaledHeight()) < 1);
     }
 
     @Override
@@ -132,6 +140,30 @@ public class SpellEditorScenario implements UIScenario {
                 .checkTextContains("#status", "成立")
                 .step("check navigation after switching templates", SpellEditorScenario::checkNavigation)
                 .screenshot("harvest_graph")
+                .step("resize the open editor to a taller window", ctx -> {
+                    var window = Minecraft.getInstance().getWindow();
+                    ctx.put("original_width", window.getScreenWidth());
+                    ctx.put("original_height", window.getScreenHeight());
+                    window.setWindowed(1024, 768);
+                })
+                .ticks(10)
+                .step("check live resize to 4 by 3", ctx -> {
+                    ctx.check("window changed to 1024 by 768", Minecraft.getInstance().getWindow().getScreenWidth() == 1024
+                            && Minecraft.getInstance().getWindow().getScreenHeight() == 768);
+                    checkNavigation(ctx);
+                })
+                .screenshot("parchment_1024x768")
+                .step("resize the open editor to an ultrawide window", ctx -> Minecraft.getInstance().getWindow().setWindowed(1920, 720))
+                .ticks(10)
+                .step("check live resize to ultrawide", ctx -> {
+                    ctx.check("window changed to 1920 by 720", Minecraft.getInstance().getWindow().getScreenWidth() == 1920
+                            && Minecraft.getInstance().getWindow().getScreenHeight() == 720);
+                    checkNavigation(ctx);
+                })
+                .screenshot("parchment_1920x720")
+                .step("restore the original window size", ctx -> Minecraft.getInstance().getWindow()
+                        .setWindowed(ctx.get("original_width"), ctx.get("original_height")))
+                .ticks(10)
                 .step("pick the proof-chain template", ctx -> selectTemplate(ctx, "sever"))
                 .click("#load_template")
                 .ticks(10)
