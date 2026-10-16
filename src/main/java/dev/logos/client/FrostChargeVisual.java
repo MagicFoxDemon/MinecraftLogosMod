@@ -1,4 +1,10 @@
 package dev.logos.client;
 
-/** The frost charge: still the legacy particle charge until the frost branch draws its own (see CHARGE_VFX.md). */
-final class FrostChargeVisual implements ChargeVisual {}
+import dev.logos.lang.Element;
+
+/** The frost charge: the shared charge in frost's colours, until the frost branch adds its own layers (see CHARGE_VFX.md). */
+final class FrostChargeVisual extends ChargeCore {
+    FrostChargeVisual() {
+        super(ChargeStyle.of(Element.FROST));
+    }
+}

@@ -46,6 +46,7 @@ public final class ClientCharges {
 
     private static final Map<Integer, State> CHARGES = new HashMap<>();
     private static long ticks;
+    private static boolean frozen;
 
     private ClientCharges() {}
 
@@ -87,13 +88,22 @@ public final class ClientCharges {
         return CHARGES;
     }
 
+    /** Client scenes only: stops the charge clock (and with it every charge and its visuals) for a screenshot. */
+    public static void freeze(boolean stop) {
+        frozen = stop;
+    }
+
+    public static boolean frozen() {
+        return frozen;
+    }
+
     public static long ticks() {
         return ticks;
     }
 
     @SubscribeEvent
     static void onTick(ClientTickEvent.Post event) {
-        ticks++;
+        if (!frozen) ticks++;
         var level = Minecraft.getInstance().level;
         if (level == null) {
             CHARGES.clear();

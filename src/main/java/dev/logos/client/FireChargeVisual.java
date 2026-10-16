@@ -1,4 +1,10 @@
 package dev.logos.client;
 
-/** The fire charge: still the legacy particle charge until the fire branch draws its own (see CHARGE_VFX.md). */
-final class FireChargeVisual implements ChargeVisual {}
+import dev.logos.lang.Element;
+
+/** The fire charge: the shared charge in fire's colours, until the fire branch adds its own layers (see CHARGE_VFX.md). */
+final class FireChargeVisual extends ChargeCore {
+    FireChargeVisual() {
+        super(ChargeStyle.of(Element.FIRE));
+    }
+}

@@ -104,7 +104,7 @@ public final class ChargeVisuals {
             clear();
             return;
         }
-        if (mc.isPaused()) return;
+        if (mc.isPaused() || ClientCharges.frozen()) return;
         for (Iterator<LiveCharge> it = LIVE.values().iterator(); it.hasNext(); ) {
             LiveCharge c = it.next();
             // Not heard of for a while, or its caster is gone: ClientCharges has dropped it.

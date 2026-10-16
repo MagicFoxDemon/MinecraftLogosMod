@@ -1,4 +1,10 @@
 package dev.logos.client;
 
-/** The physical charge: still the legacy particle charge until the physical branch draws its own (see CHARGE_VFX.md). */
-final class PhysicalChargeVisual implements ChargeVisual {}
+import dev.logos.lang.Element;
+
+/** The physical charge: the shared charge in physical's colours, until the physical branch adds its own layers (see CHARGE_VFX.md). */
+final class PhysicalChargeVisual extends ChargeCore {
+    PhysicalChargeVisual() {
+        super(ChargeStyle.of(Element.PHYSICAL));
+    }
+}
