@@ -1,278 +1,303 @@
 package dev.logos.client;
 
-import java.util.List;
-import com.lowdragmc.lowdraglib2.math.GradientColor;
-import com.lowdragmc.photon.client.fx.FX;
-import com.lowdragmc.photon.client.fx.FXRuntime;
-import com.lowdragmc.photon.client.fx.IEffectExecutor;
-import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction;
-import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction3;
-import com.lowdragmc.photon.client.gameobject.emitter.data.number.color.Gradient;
-import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.Curve;
-import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurves;
-import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
-import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.lowdragmc.photon.client.render.FXCompositeMode;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import dev.logos.lang.Element;
-import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
-import org.joml.Vector2i;
 import org.joml.Vector3f;
-import static dev.logos.client.LogosFx.layer;
-import static dev.logos.client.LogosFx.range;
-import static dev.logos.client.LogosFx.size;
-import static dev.logos.client.LogosFx.sphere;
+import static dev.logos.client.FrostBeamDraw.*;
 
-/** WaterRay's streaming water texture and continuously renewed splash caps, tinted slightly toward icy white. */
+/**
+ * A lasting frost beam after Piloto Studio {@code Frost/FrostRay}: a streaming ice body (the FrostBeam line
+ * renderer's IceBeam mask) around a white-hot core in a cold haze, a starry band and two strands of frost
+ * vapour twisting around it, and what the prefab's beam systems shed along the line: harsh cold smoke racing
+ * outward, glinting dots and shiny ice flecks, ice crystals forming and spinning off the line. The wand head
+ * jets small crystals forward under a restrained soft cross; the end races out as a bright frost spearhead
+ * and, once it holds, bursts into ice spikes, a turning frost sigil, soft crosses, pulsing rings, mist and
+ * snow. Everything is stateless in time (slots that recycle), custom geometry submitted through {@code out}.
+ */
 final class FrostBeamVisual {
-    private static final RenderType WATER = material("water"), CAP = material("cap"), CORE = material("core"), CRYSTALS = material("crystals");
-    private static final FX OUTLET = effect(false), TERMINUS = effect(true);
-    private FXRuntime outlet, terminus;
+    /** The radius of the last frost beam drawn, for the wake it leaves (the wake is only handed the line). */
+    static float lastRadius = .35f;
+
     private Vec3 lastFrom;
+    private double prevLength = -1, prevTime, lastGrowth = Double.NaN;
+    private long checkedAt = Long.MIN_VALUE;
+    private boolean blocked;
 
-    void submit(Level level, Vec3 from, Vec3 to, float radius, CameraRenderState camera,
-            PoseStack stack, SubmitNodeCollector out) {
-        Vec3 delta = to.subtract(from);
-        if (delta.lengthSqr() < .0025) return;
-        Vec3 axis = delta.normalize();
-        float scale = Math.max(.2f, radius / .5f);
-        if (outlet == null) {
-            outlet = emit(OUTLET, level, from, scale);
-            terminus = emit(TERMINUS, level, to, scale);
-        }
-        locate(outlet, from, axis, scale);
-        locate(terminus, to.subtract(axis.scale(.05)), axis.scale(-1), scale);
+    void submit(Level level, Vec3 from, Vec3 to, float radius, CameraRenderState camera, PoseStack stack, SubmitNodeCollector out) {
         lastFrom = from;
-        stack.pushPose();
-        stack.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
-        out.submitCustomGeometry(stack, WATER, (pose, buf) -> cylinder(pose, buf, from, to, camera.pos, radius));
-        out.submitCustomGeometry(stack, CORE, (pose, buf) -> band(pose, buf, from, to, camera.pos, radius * .75f));
-        double time = level.getGameTime() + net.minecraft.client.Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        out.submitCustomGeometry(stack, CRYSTALS, (pose, buf) -> crystals(pose, buf, from, to, radius, time));
-        // Stable centres hide the strip ends while the individual splash particles grow and fade.
-        out.submitCustomGeometry(stack, CAP, (pose, buf) -> {
-            cap(pose, buf, from.add(axis.scale(.02)), camera, radius * .95f);
-            cap(pose, buf, to.subtract(axis.scale(.07)), camera, radius * 1.6f);
+        lastRadius = radius;
+        Line line = new Line(from, to);
+        double length = line.length;
+        if (length < .05) return;
+        double time = level.getGameTime() + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+
+        // The public reach races the end out; the hit at the end waits until it holds still.
+        if (Double.isNaN(lastGrowth)) lastGrowth = time;
+        if (prevLength >= 0 && time > prevTime + 1e-4) {
+            if ((length - prevLength) / (time - prevTime) > 1.5) lastGrowth = time;
+        }
+        if (time != prevTime) { prevLength = length; prevTime = time; }
+        float held = smooth((float) (time - lastGrowth - .5) / 4);
+        if (level.getGameTime() != checkedAt) {
+            checkedAt = level.getGameTime();
+            blocked = blocked(level, line);
+        }
+
+        Vec3 eye = camera.pos;
+        Vec3 camRight = new Vec3(camera.orientation.transform(new Vector3f(1, 0, 0)));
+        Vec3 camUp = new Vec3(camera.orientation.transform(new Vector3f(0, 1, 0)));
+        // A first-person caster has the wand head right beside the camera.
+        boolean close = eye.distanceTo(from) < 1.6;
+        float k = Math.max(.4f, Math.min(3, radius / .35f));
+        double r = .35 * k;
+        float t = (float) (time % 24000);
+
+        // Thin at the wand head, full a block and a half out; the racing tip narrows to a spearhead.
+        Width taper = s -> {
+            double head = Math.min(1, s / 1.4);
+            double tip = Math.max(0, Math.min(1, (length - s) / .9));
+            return (.28 + .72 * head * head * (3 - 2 * head)) * (1 - (1 - held) * (1 - (.35 + .65 * tip)));
+        };
+
+        // ---- the body ------------------------------------------------------------------------------
+        // Beside a first-person camera the first blocks of the beam fade out entirely, so it does not
+        // pile up over the view; seen from elsewhere only a hint of that fade is kept.
+        double near = close ? 1.1 : .5, far = close ? 4.5 : 2.4;
+        float floor = close ? 0 : .25f;
+        out.submitCustomGeometry(stack, HAZE, (p, buf) -> {
+            ribbon(p, buf, eye, line, 0, length, s -> 1.9 * r * taper.at(s),
+                    s -> argb(.3f, mix(0xCFE6FF, 0x9DBCE4, (float) (s / Math.max(8, length)))), -t * .035f, 1 / 4.5f, near, far, 0);
+            ribbon(p, buf, eye, line, 0, length, s -> 1.4 * r * taper.at(s),
+                    s -> argb(.22f, 0xE4F3FF), .41f + t * .02f, 1 / 6f, near, far, 0);
         });
-        stack.popPose();
-    }
-
-    void end() {
-        if (outlet != null) { outlet.destroy(false); outlet = null; }
-        if (terminus != null) { terminus.destroy(false); terminus = null; }
-    }
-
-    private record Executor(Level level) implements IEffectExecutor {
-        @Override public Level getLevel() { return level; }
-    }
-
-    private static FXRuntime emit(FX template, Level level, Vec3 at, float scale) {
-        FXRuntime runtime = template.createRuntime();
-        for (var object : runtime.objects.values()) if (object instanceof ParticleEmitter e)
-            e.config.renderer.setCompositeMode(FXCompositeMode.VANILLA);
-        locate(runtime, at, new Vec3(0, 1, 0), scale);
-        runtime.emit(new Executor(level));
-        return runtime;
-    }
-
-    private static void locate(FXRuntime fx, Vec3 at, Vec3 axis, float scale) {
-        fx.getRoot().updatePos(new Vector3f((float)at.x, (float)at.y, (float)at.z));
-        fx.getRoot().updateRotation(new Quaternionf().rotationTo(new Vector3f(0, 1, 0),
-                new Vector3f((float)axis.x, (float)axis.y, (float)axis.z)));
-        fx.getRoot().updateScale(new Vector3f(scale));
-    }
-
-    private static FX effect(boolean end) {
-        FX fx = new FX();
-        fx.getFxData().objects().addAll(end ? List.of(
-                splash("flip", 1.15f, 1.6f, .3f, 18, 26, 0xB0C6EFFF, 5, 4, false),
-                splash("ring", 1.4f, 1.85f, .18f, 10, 16, 0xA0A3DCFF, 1, 1, false),
-                splash("cross", 1.1f, 1.55f, .12f, 12, 20, 0x70DEF7FF, 1, 1, true),
-                motes(true)) : List.of(
-                splash("flip", .65f, .95f, .22f, 16, 24, 0xA8BCEAFF, 5, 4, false),
-                splash("ring", .7f, 1.05f, .12f, 12, 18, 0x889DDCFF, 1, 1, false),
-                splash("cross", .55f, .85f, .12f, 10, 18, 0x68D8F4FF, 1, 1, true),
-                motes(false)));
-        return fx;
-    }
-
-    private static ParticleEmitter splash(String texture, float min, float max, float rate, float lifeMin,
-            float lifeMax, int color, int columns, int rows, boolean additive) {
-        ParticleEmitter e = layer(Element.FROST, true, rate, 0, size(min, max), range(0, 0), range(lifeMin, lifeMax), sphere(0));
-        ProjectileParticles.configureTexture(e, (texture.equals("cross") ? "fire_beam/" : "frost_beam/") + texture, additive);
-        e.config.setSimulationSpace(ParticleConfig.Space.Local);
-        e.config.setStartColor(NumberFunction.color(color));
-        e.config.setStartRotation(new NumberFunction3(NumberFunction.constant(0), NumberFunction.constant(0), range(0, 360)));
-        e.config.physics.setEnable(false);
-        e.config.colorOverLifetime.setColor(new Gradient(new GradientColor(0x00FFFFFF, 0xFFFFFFFF, 0xC0C8ECFF, 0x00B8E8FF)));
-        Curve grow = new Curve(0, 1, 0, 1, "age", "size", new ECBCurves(0, .65f, .18f, .9f, .65f, 1, 1, 1.25f));
-        e.config.sizeOverLifetime.setSize(new NumberFunction3(grow, grow, grow));
-        e.config.setMaxParticles(24);
-        if (columns > 1 || rows > 1) {
-            e.config.uvAnimation.setEnable(true);
-            e.config.uvAnimation.setTiles(new Vector2i(columns, rows));
-            e.config.uvAnimation.setStartFrame(NumberFunction.constant(0));
-            e.config.uvAnimation.setFrameOverTime(new Curve(0, 1, 0, columns * rows - 1, "age", "frame",
-                    new ECBCurves(0, 0, .33f, .33f, .67f, .67f, 1, 1)));
-        }
-        return e;
-    }
-
-    private static ParticleEmitter motes(boolean end) {
-        ParticleEmitter e = layer(Element.FROST, true, end ? .45f : .18f, 0, size(.035f, .085f),
-                range(.01f, .045f), range(10, 24), sphere(end ? .18f : .08f));
-        ProjectileParticles.configureTexture(e, "frost_beam/bubble", true);
-        e.config.setStartColor(NumberFunction.color(0xD8E1F8FF));
-        e.config.physics.setEnable(false);
-        e.config.uvAnimation.setEnable(true);
-        e.config.uvAnimation.setTiles(new Vector2i(2, 2));
-        e.config.uvAnimation.setStartFrame(range(0, 3.999f));
-        e.config.uvAnimation.setFrameOverTime(NumberFunction.constant(0));
-        return e;
-    }
-
-    private static void band(PoseStack.Pose pose, VertexConsumer buf, Vec3 from, Vec3 to, Vec3 camera, float radius) {
-        Vec3 axis = to.subtract(from);
-        Vec3 side = axis.cross(camera.subtract(from.add(to).scale(.5)));
-        if (side.lengthSqr() < 1e-8) side = axis.cross(new Vec3(0, 1, 0));
-        if (side.lengthSqr() < 1e-8) side = new Vec3(1, 0, 0);
-        side = side.normalize();
-        float repeat = (float)axis.length() / 2.8f;
-        for (int i = 0; i < 32; i++) {
-            float a = i / 32f, b = (i + 1) / 32f;
-            Vec3 pa = from.add(axis.scale(a)), pb = from.add(axis.scale(b));
-            Vec3 sa = side.scale(radius * width(a, axis.length())), sb = side.scale(radius * width(b, axis.length()));
-            vertex(pose, buf, pa.add(sa), a * repeat, 0);
-            vertex(pose, buf, pa.subtract(sa), a * repeat, 1);
-            vertex(pose, buf, pb.subtract(sb), b * repeat, 1);
-            vertex(pose, buf, pb.add(sb), b * repeat, 0);
-        }
-    }
-
-    private static float width(float t, double length) {
-        float s = (float)Math.min(1, t * length / .65);
-        return .22f + .78f * s * s * (3 - 2 * s);
-    }
-
-    /** Camera-independent circular cross sections make the water texture wrap around a real shell. */
-    private static void cylinder(PoseStack.Pose pose, VertexConsumer buf, Vec3 from, Vec3 to, Vec3 camera, float radius) {
-        Vec3 delta = to.subtract(from), axis = delta.normalize();
-        Vec3 right = axis.cross(new Vec3(0, 1, 0));
-        if (right.lengthSqr() < 1e-8) right = new Vec3(1, 0, 0);
-        right = right.normalize();
-        Vec3 up = axis.cross(right).normalize();
-        double length = delta.length();
-        for (int i = 0; i < 32; i++) {
-            float t0 = i / 32f, t1 = (i + 1) / 32f;
-            Vec3 p0 = from.add(delta.scale(t0)), p1 = from.add(delta.scale(t1));
-            for (int j = 0; j < 24; j++) {
-                double a = j * Math.PI / 12, b = (j + 1) * Math.PI / 12;
-                Vec3 n0 = right.scale(Math.cos(a)).add(up.scale(Math.sin(a)));
-                Vec3 n1 = right.scale(Math.cos(b)).add(up.scale(Math.sin(b)));
-                Vec3 a0 = p0.add(n0.scale(radius * width(t0, length))), a1 = p0.add(n1.scale(radius * width(t0, length)));
-                Vec3 b0 = p1.add(n0.scale(radius * width(t1, length))), b1 = p1.add(n1.scale(radius * width(t1, length)));
-                surfaceVertex(pose, buf, a0, n0, camera, t0 * (float)length / 2.8f, j / 12f);
-                surfaceVertex(pose, buf, a1, n1, camera, t0 * (float)length / 2.8f, (j + 1) / 12f);
-                surfaceVertex(pose, buf, b1, n1, camera, t1 * (float)length / 2.8f, (j + 1) / 12f);
-                surfaceVertex(pose, buf, b0, n0, camera, t1 * (float)length / 2.8f, j / 12f);
+        out.submitCustomGeometry(stack, ICE, (p, buf) -> {
+            Tint ice = s -> argb(.72f, gradient((float) (s / Math.max(6, length))));
+            ribbon(p, buf, eye, line, 0, length, s -> 1.05 * r * taper.at(s), ice, -t * .11f, 1 / 7f, near, far, floor);
+            ribbon(p, buf, eye, line, 0, length, s -> .75 * r * taper.at(s), s -> argb(.55f, PALE), .37f - t * .07f, 1 / 5f, near, far, floor);
+        });
+        out.submitCustomGeometry(stack, STARRY, (p, buf) -> {
+            ribbon(p, buf, eye, line, 0, length, s -> .95 * r * taper.at(s), s -> argb(.36f, 0xB8E4FF), -t * .06f, 1 / 3.5f, near, far, floor);
+            ribbon(p, buf, eye, line, 0, length, s -> .65 * r * taper.at(s), s -> argb(.22f, PALE), .5f - t * .025f, 1 / 2.3f, near, far, floor);
+        });
+        out.submitCustomGeometry(stack, LASER, (p, buf) -> {
+            // A breath of cold runs out along the core.
+            Width pulse = s -> taper.at(s) * (1 + .14 * Math.sin(s * 2.2 - t * 1.3));
+            ribbon(p, buf, eye, line, 0, length, s -> .5 * r * pulse.at(s), s -> argb(.38f, DEEP), 0, 1, near, far, floor);
+            ribbon(p, buf, eye, line, 0, length, s -> .17 * r * pulse.at(s), s -> argb(.85f, ICY), 0, 1, near * .8, far * .8, floor);
+        });
+        // Two strands of frost vapour twisting around the beam.
+        out.submitCustomGeometry(stack, WISP, (p, buf) -> {
+            int segments = clamp((int) (length * 8), 24, 320);
+            for (int strand = 0; strand < 2; strand++) {
+                double phase = strand * Math.PI;
+                int rgb = strand == 0 ? 0xCDEBFF : 0x9CD2FF;
+                double pitch = strand == 0 ? 2.3 : -1.7;
+                // Wandering radius and pitch, so the strands read as vapour rather than a coil.
+                Offset helix = s -> line.radial(s * pitch + Math.sin(s * .7 + phase) * .9 - t * .2 + phase)
+                        .scale(r * taper.at(s) * (.7 + .35 * Math.sin(s * 1.1 + phase * 1.3 - t * .05)));
+                ribbon(p, buf, eye, line, .3, length, helix, s -> .13 * r * taper.at(s),
+                        s -> argb(.38f * (float) (.55 + .45 * Math.sin(s * .9 - t * .15 + phase)), rgb), -t * .09f + strand * .5f, 1 / 2.5f, near + .2, far, 0, segments);
             }
-        }
+        });
+
+        // ---- what the beam sheds along the line ---------------------------------------------------
+        double clear = Math.min(length * .5, close ? 1.4 : .6);
+        out.submitCustomGeometry(stack, FLECKS, (p, buf) -> flecks(p, buf, eye, camRight, camUp, line, clear, r, t));
+        out.submitCustomGeometry(stack, CRYSTAL, (p, buf) -> {
+            crystals(p, buf, eye, line, clear, r, t);
+            jets(p, buf, eye, line, r, t);
+        });
+        out.submitCustomGeometry(stack, SMOKE, (p, buf) -> smoke(p, buf, eye, camRight, camUp, line, clear, r, t));
+        out.submitCustomGeometry(stack, GLINTS, (p, buf) -> glints(p, buf, eye, camRight, camUp, line, clear, r, t));
+
+        // ---- the wand head: a restrained soft cross and frost sigil, small and pushed ahead in first person ----
+        Vec3 head = close ? from.add(line.axis.scale(Math.min(1, length * .5))) : from.add(line.axis.scale(.05));
+        float headScale = close ? .35f : 1, headAlpha = close ? .35f : 1;
+        out.submitCustomGeometry(stack, CROSS, (p, buf) ->
+                sprite(p, buf, eye, camRight, camUp, head, .55 * k * headScale * (1 + .08 * Math.sin(t * .9)), t * .03, 0, 0, 1, 1,
+                        argb(.75f * headAlpha, 0x9FE8FF)));
+        out.submitCustomGeometry(stack, GLOW, (p, buf) ->
+                sprite(p, buf, eye, camRight, camUp, head, .5 * k * headScale, 0, 0, 0, 1, 1, argb(.7f * headAlpha, BLUE)));
+        if (!close) out.submitCustomGeometry(stack, RUNE, (p, buf) ->
+                disc(p, buf, eye, from.add(line.axis.scale(Math.min(.45, length * .4))), line.right, line.up, line.axis,
+                        .32 * k, t * .05, argb(.6f, BLUE)));
+
+        // ---- the end: a racing spearhead, then the hit once it holds ----
+        Vec3 end = to.subtract(line.axis.scale(Math.min(.15, length * .2)));
+        float hit = held * (blocked ? 1 : .45f);
+        out.submitCustomGeometry(stack, GLOW, (p, buf) ->
+                sprite(p, buf, eye, camRight, camUp, end, (.55 + .75 * hit) * k, 0, 0, 0, 1, 1, argb(.85f, BLUE)));
+        out.submitCustomGeometry(stack, STAR, (p, buf) -> {
+            float a = (1 - held) * .95f;
+            sprite(p, buf, eye, camRight, camUp, to, .7 * k, t * .2, 0, 0, 1, 1, argb(a, PALE));
+            sprite(p, buf, eye, camRight, camUp, to, .45 * k, -t * .13 + .8, 0, 0, 1, 1, argb(a * .8f, ICY));
+        });
+        if (hit > .01) terminus(out, stack, eye, camRight, camUp, line, end, k, t, hit);
     }
 
-    private static void surfaceVertex(PoseStack.Pose pose, VertexConsumer buf, Vec3 at, Vec3 normal, Vec3 camera, float u, float v) {
-        double facing = normal.dot(camera.subtract(at).normalize());
-        int alpha = (int)(255 * (facing < 0 ? .16 : .35 + .65 * facing));
-        double light = .65 + .35 * Math.max(0, normal.dot(new Vec3(.3, .8, -.4).normalize()));
-        int shade = (int)(255 * light);
-        int color = alpha << 24 | shade << 16 | shade << 8 | shade;
-        buf.addVertex(pose, (float)at.x, (float)at.y, (float)at.z).setColor(color).setUv(u, v)
-                .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, (float)normal.x, (float)normal.y, (float)normal.z);
+    void end() {}
+
+    /** The FrostBeam line colours, pulled into the frost palette: pale cyan at the wand, deep ice blue far out. */
+    private static int gradient(float s) {
+        return s < .58f ? mix(0x7FD3F2, 0x5AAEF2, s / .58f) : mix(0x5AAEF2, 0x3479E0, (s - .58f) / .42f);
     }
 
-    /** Small six-sided pointed crystals move around the beam in world space rather than facing the camera. */
-    private static void crystals(PoseStack.Pose pose, VertexConsumer buf, Vec3 from, Vec3 to, float radius, double time) {
-        Vec3 delta = to.subtract(from), axis = delta.normalize();
-        Vec3 right = axis.cross(new Vec3(0, 1, 0));
-        if (right.lengthSqr() < 1e-8) right = new Vec3(1, 0, 0);
-        right = right.normalize();
-        Vec3 up = axis.cross(right).normalize();
-        int count = Math.min(28, Math.max(6, (int)(delta.length() * 1.7)));
-        for (int i = 0; i < count; i++) {
-            double cycle = time * .012 + i * .61803398875;
-            double t = cycle - Math.floor(cycle);
-            double angle = i * 2.399963 + time * .025;
-            Vec3 radial = right.scale(Math.cos(angle)).add(up.scale(Math.sin(angle)));
-            Vec3 centre = from.add(delta.scale(.06 + .88 * t)).add(radial.scale(radius * (.8 + .35 * Math.sin(i * 1.7))));
-            double size = radius * (.07 + .045 * (1 + Math.sin(i * 3.1)));
-            Vec3 direction = axis.add(radial.scale(.45 * Math.sin(i * 2.1))).normalize();
-            Vec3 x = direction.cross(up);
-            if (x.lengthSqr() < 1e-8) x = right;
-            x = x.normalize();
-            Vec3 y = direction.cross(x).normalize();
-            Vec3 tip = centre.add(direction.scale(size * 2.4)), tail = centre.subtract(direction.scale(size * 1.7));
-            int alpha = (int)(180 * Math.min(1, t * 8) * Math.min(1, (1 - t) * 8));
-            for (int face = 0; face < 6; face++) {
-                double a = face * Math.PI / 3 + angle, b = (face + 1) * Math.PI / 3 + angle;
-                Vec3 p = centre.add(x.scale(Math.cos(a) * size)).add(y.scale(Math.sin(a) * size));
-                Vec3 q = centre.add(x.scale(Math.cos(b) * size)).add(y.scale(Math.sin(b) * size));
-                int color = alpha << 24 | (face % 3 == 0 ? 0xF0FCFF : face % 3 == 1 ? 0x82B9E2 : 0xB8E8FF);
-                crystalFace(pose, buf, tip, p, q, color);
-                crystalFace(pose, buf, tail, q, p, color);
+    /** Ice spikes, a turning frost sigil, soft crosses, a pulsing ring, mist and snow at the end. */
+    private static void terminus(SubmitNodeCollector out, PoseStack stack, Vec3 eye, Vec3 camRight, Vec3 camUp, Line line,
+            Vec3 end, float k, float t, float hit) {
+        out.submitCustomGeometry(stack, SPIKES, (p, buf) -> {
+            for (int i = 0; i < 9; i++) {
+                float life = 5 + 4 * hash(i, 0, 71);
+                float x = (t + hash(i, 1, 71) * life) / life;
+                int cycle = (int) Math.floor(x);
+                float age = x - cycle;
+                double angle = hash(i, cycle, 72) * Math.PI * 2;
+                // Thrown back toward the caster and out to the sides, never through the wall.
+                Vec3 dir = line.radial(angle).scale(.8).subtract(line.axis.scale(.25 + .6 * hash(i, cycle, 73))).normalize();
+                double len = (.45 + .55 * hash(i, cycle, 74)) * k * (.55 + .45 * smooth(age * 3));
+                int frame = (int) (hash(i, cycle, 75) * 4);
+                float u = frame % 2 * .5f, v = frame / 2 * .5f;
+                streak(p, buf, eye, end, dir, len, len * .55, u, v, u + .5f, v + .5f,
+                        argb(hit * envelope(age, .15f, .5f), mix(PALE, BLUE, hash(i, cycle, 76))));
             }
+        });
+        out.submitCustomGeometry(stack, CROSS, (p, buf) -> {
+            sprite(p, buf, eye, camRight, camUp, end, 1.05 * k * (.6 + .4 * hit), t * .012, 0, 0, 1, 1, argb(.6f * hit, 0x9FFEFF));
+            sprite(p, buf, eye, camRight, camUp, end, .8 * k * (.6 + .4 * hit), -t * .019 + 1, 0, 0, 1, 1, argb(.55f * hit, 0xC8F4FF));
+        });
+        out.submitCustomGeometry(stack, RUNE, (p, buf) ->
+                disc(p, buf, eye, end, line.right, line.up, line.axis, (.55 + .1 * Math.sin(t * .2)) * k * hit, -t * .045, argb(.8f * hit, BLUE)));
+        out.submitCustomGeometry(stack, RING, (p, buf) -> {
+            for (int i = 0; i < 2; i++) {
+                float age = ((t / 14f) + i * .5f) % 1;
+                sprite(p, buf, eye, camRight, camUp, end, (.25 + 1.05 * Math.sqrt(age)) * k, i * 1.7, 0, 0, 1, 1,
+                        argb(.5f * hit * (1 - smooth(age)) * smooth(age * 6), ICY));
+            }
+        });
+        out.submitCustomGeometry(stack, MIST, (p, buf) -> {
+            for (int i = 0; i < 6; i++) {
+                float life = 26 + 14 * hash(i, 0, 81);
+                float x = (t + hash(i, 1, 81) * life) / life;
+                int cycle = (int) Math.floor(x);
+                float age = x - cycle;
+                Vec3 drift = line.radial(hash(i, cycle, 82) * Math.PI * 2).scale(.9).subtract(line.axis.scale(.5)).add(0, .25, 0);
+                Vec3 at = end.add(drift.scale(age * .8 * k));
+                int frame = (int) (hash(i, cycle, 83) * 4);
+                cell(p, buf, eye, camRight, camUp, at, (.35 + .45 * age) * k, hash(i, cycle, 84) * 6 + age * .6, frame, 2, 2,
+                        fadeNear(argb(.42f * hit * envelope(age, .2f, .6f), mix(0xD4E8FF, 0xA3BEE0, age)), at, eye, 1.5, 3.5, 0));
+            }
+        });
+        out.submitCustomGeometry(stack, SNOW, (p, buf) -> {
+            for (int i = 0; i < 7; i++) {
+                float life = 30 + 20 * hash(i, 0, 91);
+                float x = (t + hash(i, 1, 91) * life) / life;
+                int cycle = (int) Math.floor(x);
+                float age = x - cycle;
+                Vec3 thrown = line.radial(hash(i, cycle, 92) * Math.PI * 2).scale(.5 + .6 * hash(i, cycle, 93)).subtract(line.axis.scale(.4));
+                Vec3 at = end.add(thrown.scale(k * Math.min(1, age * 3))).add(0, -age * 1.1 * k, 0)
+                        .add(line.right.scale(Math.sin(age * 9 + i) * .08));
+                sprite(p, buf, eye, camRight, camUp, at, (.06 + .06 * hash(i, cycle, 94)) * k, age * 3 + i, 0, 0, 1, 1,
+                        fadeNear(argb(.9f * hit * envelope(age, .1f, .35f), 0xE6F6FF), at, eye, 1.5, 3.5, 0));
+            }
+        });
+    }
+
+    /** Harsh cold smoke racing outward along the beam (Smoke_Harsh_Disolve: speed along the line, 2x2 sheet). */
+    private static void smoke(PoseStack.Pose p, VertexConsumer buf, Vec3 eye, Vec3 camRight, Vec3 camUp, Line line,
+            double clear, double r, float t) {
+        int slots = clamp((int) (line.length * 1.6), 6, 96);
+        for (int i = 0; i < slots; i++) {
+            float life = 16 + 14 * hash(i, 0, 11);
+            float x = (t + hash(i, 1, 11) * life) / life;
+            int cycle = (int) Math.floor(x);
+            float age = x - cycle;
+            double s = clear + (line.length - clear) * hash(i, cycle, 12) + age * life * .16;
+            if (s > line.length) continue;
+            Vec3 at = line.at(s).add(line.radial(hash(i, cycle, 13) * Math.PI * 2).scale(r * (.15 + .5 * hash(i, cycle, 14)) * (1 + age)));
+            float c = hash(i, cycle, 15);
+            int rgb = c < .5f ? mix(CYAN, 0x61A0BE, c * 2) : mix(0x61A0BE, 0x2F7DFF, c * 2 - 1);
+            int color = fadeNear(argb(.32f * envelope(age, .08f, .2f), rgb), at, eye, .9, 3, 0);
+            cell(p, buf, eye, camRight, camUp, at, r * (.6 + .35 * hash(i, cycle, 16)),
+                    hash(i, cycle, 17) * 6.28 + age * (hash(i, cycle, 18) - .5) * 3, (int) (hash(i, cycle, 19) * 4), 2, 2, color);
         }
     }
 
-    private static void crystalFace(PoseStack.Pose pose, VertexConsumer buf, Vec3 a, Vec3 b, Vec3 c, int color) {
-        Vec3 normal = b.subtract(a).cross(c.subtract(a)).normalize();
-        for (Vec3 point : new Vec3[] {a, b, c, c})
-            buf.addVertex(pose, (float)point.x, (float)point.y, (float)point.z).setColor(color).setUv(0, 0)
-                    .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, (float)normal.x, (float)normal.y, (float)normal.z);
+    /** Glinting dots on the beam's edge (Flare_Glowdot / Glowdots_Speckles), twinkling as they come and go. */
+    private static void glints(PoseStack.Pose p, VertexConsumer buf, Vec3 eye, Vec3 camRight, Vec3 camUp, Line line,
+            double clear, double r, float t) {
+        int slots = clamp((int) (line.length * 2.2), 8, 128);
+        for (int i = 0; i < slots; i++) {
+            float life = 20 + 20 * hash(i, 0, 21);
+            float x = (t + hash(i, 1, 21) * life) / life;
+            int cycle = (int) Math.floor(x);
+            float age = x - cycle;
+            double s = clear + (line.length - clear) * hash(i, cycle, 22);
+            Vec3 at = line.at(s).add(line.radial(hash(i, cycle, 23) * Math.PI * 2 + age * .6)
+                    .scale(r * (.7 + .7 * hash(i, cycle, 24) + .4 * age)));
+            float twinkle = .45f + .55f * (float) Math.pow(Math.max(0, Math.sin(age * 14 + i)), 3);
+            int color = fadeNear(argb(envelope(age, .15f, .4f) * twinkle, hash(i, cycle, 25) < .5f ? PALE : 0x9FE8FF), at, eye, 1, 3, 0);
+            cell(p, buf, eye, camRight, camUp, at, r * (.25 + .55 * hash(i, cycle, 26)), 0, (int) (hash(i, cycle, 27) * 9), 3, 3, color);
+        }
     }
 
-    private static void cap(PoseStack.Pose pose, VertexConsumer buf, Vec3 at, CameraRenderState camera, float radius) {
-        Vec3 right = new Vec3(camera.orientation.transform(new Vector3f(1, 0, 0))).scale(radius);
-        Vec3 up = new Vec3(camera.orientation.transform(new Vector3f(0, 1, 0))).scale(radius);
-        vertex(pose, buf, at.subtract(right).add(up), 0, 0);
-        vertex(pose, buf, at.subtract(right).subtract(up), 0, 1);
-        vertex(pose, buf, at.add(right).subtract(up), 1, 1);
-        vertex(pose, buf, at.add(right).add(up), 1, 0);
+    /** Shiny ice flecks hanging on the beam's edge (Flecks_Shiny_Alpha), drifting out and turning. */
+    private static void flecks(PoseStack.Pose p, VertexConsumer buf, Vec3 eye, Vec3 camRight, Vec3 camUp, Line line,
+            double clear, double r, float t) {
+        int slots = clamp((int) (line.length * 1.5), 6, 96);
+        for (int i = 0; i < slots; i++) {
+            float life = 20 + 20 * hash(i, 0, 31);
+            float x = (t + hash(i, 1, 31) * life) / life;
+            int cycle = (int) Math.floor(x);
+            float age = x - cycle;
+            double s = clear + (line.length - clear) * hash(i, cycle, 32);
+            Vec3 at = line.at(s).add(line.radial(hash(i, cycle, 33) * Math.PI * 2).scale(r * (.8 + .5 * hash(i, cycle, 34) + .7 * age)))
+                    .add(0, -age * .15, 0);
+            int color = fadeNear(argb(.85f * envelope(age, .1f, .35f), hash(i, cycle, 35) < .5f ? 0xF2FBFF : 0xC2E6FF), at, eye, 1, 3, 0);
+            cell(p, buf, eye, camRight, camUp, at, r * (.28 + .2 * hash(i, cycle, 36)), hash(i, cycle, 37) * 6.28 + age * 2,
+                    (int) (hash(i, cycle, 38) * 4), 2, 2, color);
+        }
     }
 
-    private static void vertex(PoseStack.Pose pose, VertexConsumer buf, Vec3 at, float u, float v) {
-        buf.addVertex(pose, (float)at.x, (float)at.y, (float)at.z).setColor(0xFFFFFFFF).setUv(u, v)
-                .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, 0, 1, 0);
+    /** Ice crystals forming on the line, spinning slowly off it and melting away. */
+    private static void crystals(PoseStack.Pose p, VertexConsumer buf, Vec3 eye, Line line, double clear, double r, float t) {
+        int slots = clamp((int) (line.length * 1.3), 6, 80);
+        for (int i = 0; i < slots; i++) {
+            float life = 26 + 20 * hash(i, 0, 41);
+            float x = (t + hash(i, 1, 41) * life) / life;
+            int cycle = (int) Math.floor(x);
+            float age = x - cycle;
+            double s = clear + (line.length - clear) * hash(i, cycle, 42) + age * .4;
+            if (s > line.length) continue;
+            double angle = hash(i, cycle, 43) * Math.PI * 2 + age * 1.2;
+            Vec3 radial = line.radial(angle);
+            Vec3 centre = line.at(s).add(radial.scale(r * (.75 + .45 * hash(i, cycle, 44) + .6 * age)));
+            Vec3 dir = line.axis.scale(.6).add(radial.scale(.8 * (hash(i, cycle, 45) - .5)))
+                    .add(radial.cross(line.axis).scale(Math.sin(age * 5 + i))).normalize();
+            double size = r * (.13 + .14 * hash(i, cycle, 46)) * smooth(age * 5) * smooth((1 - age) * 3.5f);
+            crystal(p, buf, eye, centre, dir, size, age * 4 + i, (int) (215 * nearFactor(centre, eye, 1.2, 3)));
+        }
     }
 
-    private static RenderType material(String layer) {
-        var pipeline = RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET, RenderPipelines.GLOBALS_SNIPPET)
-                .withLocation(id("pipeline/frost_beam_" + layer))
-                .withFragmentShader(id("core/frost_beam")).withCull(false)
-                .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
-                .withColorTargetState(new ColorTargetState(layer.equals("crystals") ? BlendFunction.TRANSLUCENT : BlendFunction.LIGHTNING));
-        if (layer.equals("cap")) pipeline.withShaderDefine("FROST_CAP");
-        if (layer.equals("core")) pipeline.withShaderDefine("FROST_CORE");
-        if (layer.equals("crystals")) pipeline.withShaderDefine("FROST_CRYSTALS");
-        // Shared gradient_002 export already used by fire; no duplicate ice texture.
-        String texture = layer.equals("core") ? "fire_beam/laser" : layer.equals("cap") ? "fire_beam/glow" : "frost_beam/water";
-        return RenderType.create("logos_frost_beam", RenderSetup.builder(pipeline.build())
-                .withTexture("Sampler0", id("textures/vfx/" + texture + ".png"))
-                .sortOnUpload().createRenderSetup());
+    /** Small crystals jetting forward from the wand head down the beam (Ice_Crystal: a cone, fast and short-lived). */
+    private static void jets(PoseStack.Pose p, VertexConsumer buf, Vec3 eye, Line line, double r, float t) {
+        for (int i = 0; i < 12; i++) {
+            float life = 10 + 4 * hash(i, 0, 51);
+            float x = (t + hash(i, 1, 51) * life) / life;
+            int cycle = (int) Math.floor(x);
+            float age = x - cycle;
+            double speed = (.2 + .25 * hash(i, cycle, 52)) * life;
+            double s = .3 + speed * age;
+            if (s > line.length - .3) continue;
+            Vec3 spread = line.radial(hash(i, cycle, 53) * Math.PI * 2).scale(.22 * hash(i, cycle, 54) * s + r * .3);
+            Vec3 centre = line.at(s).add(spread);
+            Vec3 dir = line.axis.add(spread.scale(.3)).normalize();
+            double size = r * (.12 + .1 * hash(i, cycle, 55)) * smooth(age * 6) * smooth((1 - age) * 4);
+            crystal(p, buf, eye, centre, dir, size, age * 6, (int) (220 * nearFactor(centre, eye, 1.4, 3.2)));
+        }
     }
-
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
 }
