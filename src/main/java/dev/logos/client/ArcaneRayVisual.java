@@ -60,6 +60,8 @@ final class ArcaneRayVisual implements RayVisual {
     private static final float THREAD_HOLD = 8, THREAD_GONE = 100;
     /** Nothing is left after this (6.8 s; the last rune goes out by about 124). */
     private static final int LIFE = 136, LINK_LIFE = 40;
+    /** A beam's wake: its body narrows into the thread over this. */
+    private static final float COLLAPSE = 9, WAKE_THREAD_GONE = 118;
 
     // ---- palette (from the arcane projectile and its impact) --------------------------------------
     private static final int PINK = 0xE668EF, VIOLET = 0xCA38FF, DEEP = 0xA136EF, LILAC = 0xE6A0FF,
@@ -97,6 +99,18 @@ final class ArcaneRayVisual implements RayVisual {
     private final List<Glint> glints = new ArrayList<>();
     private final List<Dart> darts = new ArrayList<>();
     private FXRuntime impact;
+    /** Only what a ray leaves (no burst, no hit): the wake of a lasting arcane beam ({@link ArcaneBeamWake}). */
+    private final boolean wake;
+
+    ArcaneRayVisual() { this(false); }
+
+    private ArcaneRayVisual(boolean wake) { this.wake = wake; }
+
+    /**
+     * What an ended arcane beam leaves: its body collapses into the thread within a few ticks, the runes and
+     * glints are written along it at once and float up and go out like a ray's, all gone in 6.8 s.
+     */
+    static ArcaneRayVisual wake() { return new ArcaneRayVisual(true); }
 
     @Override
     public boolean legacy() { return false; }
@@ -125,8 +139,8 @@ final class ArcaneRayVisual implements RayVisual {
             Vec3 offset = side.scale(Math.cos(a) * rad).add(lift.scale(Math.sin(a) * rad));
             Vec3 drift = new Vec3((r.nextDouble() - .5) * .004, .0056 + r.nextDouble() * .005, (r.nextDouble() - .5) * .004);
             // Written once the laser starts to thin, so the burst itself stays clean.
-            float appear = (float) (reveal * s / length) + 3.5f + r.nextFloat() * 2.5f;
-            runes.add(new Rune(s, offset, drift, appear, 54 + r.nextFloat() * 64, .19f + r.nextFloat() * .08f,
+            float appear = wake ? 1 + r.nextFloat() * 6 : (float) (reveal * s / length) + 3.5f + r.nextFloat() * 2.5f;
+            runes.add(new Rune(s, offset, drift, appear, wake ? 74 + r.nextFloat() * 56 : 54 + r.nextFloat() * 64, .19f + r.nextFloat() * .08f,
                     (r.nextFloat() - .5f) * 50, (r.nextFloat() - .5f) * 1.6f, r.nextInt(9), r.nextFloat() * 6.28f));
         }
         int stars = (int) Math.max(3, Math.min(70, Math.round(length * 1.6)));
@@ -136,10 +150,11 @@ final class ArcaneRayVisual implements RayVisual {
             Vec3 offset = side.scale(Math.cos(a) * rad).add(lift.scale(Math.sin(a) * rad));
             boolean dot = r.nextFloat() < .55f;
             Vec3 drift = new Vec3((r.nextDouble() - .5) * .006, (dot ? .0075 : .0025) + r.nextDouble() * .006, (r.nextDouble() - .5) * .006);
-            float appear = (float) (reveal * s / length) + r.nextFloat() * 4;
-            glints.add(new Glint(s, offset, drift, appear, 29 + r.nextFloat() * (dot ? 48 : 74),
+            float appear = wake ? r.nextFloat() * 5 : (float) (reveal * s / length) + r.nextFloat() * 4;
+            glints.add(new Glint(s, offset, drift, appear, wake ? 40 + r.nextFloat() * (dot ? 60 : 85) : 29 + r.nextFloat() * (dot ? 48 : 74),
                     dot ? .025f + r.nextFloat() * .025f : .07f + r.nextFloat() * .07f, r.nextFloat() * 6.28f, dot));
         }
+        if (wake) return;
         int[] tints = {PINK, VIOLET, LILAC, PERIWINKLE, HOT};
         for (int i = 0; i < 9; i++) {
             double a = r.nextDouble() * Math.PI * 2, rad = r.nextDouble() * .2;
@@ -174,12 +189,13 @@ final class ArcaneRayVisual implements RayVisual {
         Vec3 right = new Vec3(camera.orientation.transform(new Vector3f(1, 0, 0)));
         Vec3 up = new Vec3(camera.orientation.transform(new Vector3f(0, 1, 0)));
         boolean link = end == Vfx.RayEnd.LINK;
-        double front = Math.min(length, length * t / revealTicks());
+        double front = wake ? length : Math.min(length, length * t / revealTicks());
         stack.pushPose();
         stack.translate(-cam.x, -cam.y, -cam.z);
 
+        if (wake) collapse(stack, out, cam, t);
         // ---- burst ----
-        float laser = laser(t, LASER), starry = laser(t, LASER - 1);
+        float laser = wake ? 0 : laser(t, LASER), starry = wake ? 0 : laser(t, LASER - 1);
         if (laser > 0) {
             out.submitCustomGeometry(stack, GLOW, (pose, buf) -> strip(pose, buf, cam, 0, front, .5f * laser,
                     argb(.4f, VIOLET), 0, 0));
@@ -191,7 +207,7 @@ final class ArcaneRayVisual implements RayVisual {
             out.submitCustomGeometry(stack, STARRY, (pose, buf) -> strip(pose, buf, cam, 0, front, .34f * starry,
                     argb(.75f, tint), .5f, -t * .32f));
         }
-        if (!link) {
+        if (!link && !wake) {
             float crackle = t < 5 ? Math.min(1, t * 2) : 0;
             if (crackle > 0) {
                 float flip = (int) (t * 1.5f) * .29f;
@@ -212,8 +228,8 @@ final class ArcaneRayVisual implements RayVisual {
         }
 
         // ---- what it leaves ----
-        float threadLeft = t < THREAD_HOLD ? 1 : Math.max(0, 1 - (t - THREAD_HOLD) / ((link ? 30 : THREAD_GONE) - THREAD_HOLD));
-        float threadIn = (float) smooth(2, 6, t);
+        float threadLeft = t < THREAD_HOLD ? 1 : Math.max(0, 1 - (t - THREAD_HOLD) / ((link ? 30 : wake ? WAKE_THREAD_GONE : THREAD_GONE) - THREAD_HOLD));
+        float threadIn = wake ? 1 : (float) smooth(2, 6, t);
         if (threadLeft > 0 && threadIn > 0) {
             // Fades in patch by patch as the laser thins, and goes the same way.
             float left = threadLeft * threadIn;
@@ -234,6 +250,18 @@ final class ArcaneRayVisual implements RayVisual {
     }
 
     // ---- burst pieces -----------------------------------------------------------------------------
+
+    /** A beam's wake only: the beam's violet body and starry band narrow into the thread over {@link #COLLAPSE} ticks. */
+    private void collapse(PoseStack stack, SubmitNodeCollector out, Vec3 cam, float t) {
+        if (t >= COLLAPSE) return;
+        float k = (float) Math.pow(1 - t / COLLAPSE, 1.6);
+        out.submitCustomGeometry(stack, GLOW, (pose, buf) -> strip(pose, buf, cam, 0, length, .2f + .25f * k,
+                argb(.4f * k, VIOLET), 0, 0));
+        out.submitCustomGeometry(stack, CORE, (pose, buf) -> strip(pose, buf, cam, 0, length, .05f + .1f * k,
+                argb(.95f * k, PINK), 0, 0));
+        out.submitCustomGeometry(stack, STARRY, (pose, buf) -> strip(pose, buf, cam, 0, length, .3f * k,
+                argb(.7f * k, mix(PINK, DEEP, 1 - k)), .5f, -t * .12f));
+    }
 
     /** Ticks for the burst to reach the end: practically instant, but the eye still sees it go out. */
     private double revealTicks() {
@@ -396,7 +424,7 @@ final class ArcaneRayVisual implements RayVisual {
     }
 
     /** A camera-facing strip through {@code p}; widths shrink near the camera so the wand head never fills the view. */
-    private static void polyline(PoseStack.Pose pose, VertexConsumer buf, Vec3 cam, Vec3[] p, float[] w, float[] u, int[] c) {
+    static void polyline(PoseStack.Pose pose, VertexConsumer buf, Vec3 cam, Vec3[] p, float[] w, float[] u, int[] c) {
         int n = p.length - 1;
         Vec3[] sides = new Vec3[n + 1];
         for (int i = 0; i <= n; i++) {
@@ -412,7 +440,7 @@ final class ArcaneRayVisual implements RayVisual {
         }
     }
 
-    private static void sprite(PoseStack.Pose pose, VertexConsumer buf, Vec3 at, Vec3 right, Vec3 up, float half, float rollDeg,
+    static void sprite(PoseStack.Pose pose, VertexConsumer buf, Vec3 at, Vec3 right, Vec3 up, float half, float rollDeg,
             int color, float u0, float v0, float u1, float v1, Vec3 cam, boolean shrinkNear) {
         if (half <= 0 || (color >>> 24) == 0) return;
         if (shrinkNear) {
@@ -444,20 +472,20 @@ final class ArcaneRayVisual implements RayVisual {
 
     // ---- colour -----------------------------------------------------------------------------------
 
-    private static double smooth(double a, double b, double x) {
+    static double smooth(double a, double b, double x) {
         double k = Math.max(0, Math.min(1, (x - a) / (b - a)));
         return k * k * (3 - 2 * k);
     }
 
-    private static int argb(float alpha, int rgb) {
+    static int argb(float alpha, int rgb) {
         return Math.round(Math.max(0, Math.min(1, alpha)) * 255) << 24 | rgb & 0xFFFFFF;
     }
 
-    private static int fade(int argb, float k) {
+    static int fade(int argb, float k) {
         return Math.round((argb >>> 24) * Math.max(0, Math.min(1, k))) << 24 | argb & 0xFFFFFF;
     }
 
-    private static int mix(int a, int b, float k) {
+    static int mix(int a, int b, float k) {
         k = Math.max(0, Math.min(1, k));
         int r = Math.round((a >> 16 & 255) * (1 - k) + (b >> 16 & 255) * k);
         int g = Math.round((a >> 8 & 255) * (1 - k) + (b >> 8 & 255) * k);
