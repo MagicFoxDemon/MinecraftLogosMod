@@ -56,6 +56,10 @@ import static dev.logos.client.ProjectileParticles.configureTexture;
  * and dimmer until nothing is left after six and a half seconds. A ray stopped by a block or a creature
  * ends in an electric shock; open rays and links just end. Near the camera (a first-person wand) the
  * geometry fades out and the muzzle keeps only a small flash and forward sparks.
+ *
+ * <p>{@link #beamWake()} keeps only the afterglow, for {@link LightningBeamWake}: no bolt, muzzle or
+ * shock, the channel tighter and in the lightning beam's cyan, lit at once under a fading after-image of
+ * the beam, re-striking four times and gone after about six seconds. The ray itself is unchanged.
  */
 final class LightningRayVisual implements RayVisual {
     /** In ticks: the bolt reaching the end, the bolt's flash, and everything including the afterglow. */
@@ -67,6 +71,19 @@ final class LightningRayVisual implements RayVisual {
     private static final RenderType BAND = material("band", "line", "RAY_BAND");
     private static final RenderType DOT = material("dot", "glow", "RAY_BAND");
     private static final FX MUZZLE = muzzle(false), MUZZLE_NEAR = muzzle(true), IMPACT = impact();
+    /** The beam's wake starts this far into the ray's clock (where the channel takes over), and its after-image lasts this long. */
+    private static final float WAKE_LEAD = 4, WAKE_IMAGE = 12;
+
+    /** Everything that differs between a ray's afterglow and a lightning beam's wake. */
+    private record Look(boolean wake, double amp, double step, int fresh, int spent, int arc, int halo,
+            float[] restrikes, float[] power) {}
+    private static final Look RAY = new Look(false, .3, .45, 0x6AAEFF, 0x2A55FF, ARC, STRAND,
+            RESTRIKES, new float[] {.8f, .55f, .3f});
+    /** The beam (strip 0x57EFFF, ribbons 0x00D5F5, discharges 0xC9FFFF) is straighter and cyan; so is its wake. */
+    private static final Look WAKE = new Look(true, .16, .4, 0x57EFFF, 0x1E6BFF, 0xC9FFFF, 0x00BFFF,
+            new float[] {9, 18, 30, 46}, new float[] {.7f, .55f, .38f, .22f});
+
+    private final Look look;
 
     private final List<FXRuntime> playing = new ArrayList<>();
     private Vec3 from = Vec3.ZERO, to = Vec3.ZERO, axis = new Vec3(0, 0, 1);
@@ -78,6 +95,16 @@ final class LightningRayVisual implements RayVisual {
     private boolean struck;
     /** The bolt's last shape, which the afterglow keeps. */
     private Vec3[] channel = new Vec3[0];
+
+    LightningRayVisual() { this(RAY); }
+
+    private LightningRayVisual(Look look) { this.look = look; }
+
+    /** Only the ionised channel, left along a lightning beam's last line (see {@link LightningBeamWake}). */
+    static LightningRayVisual beamWake() { return new LightningRayVisual(WAKE); }
+
+    /** The ray's clock: the beam's wake starts where the ray's afterglow begins. */
+    private float lead() { return look.wake ? WAKE_LEAD : 0; }
 
     @Override public boolean legacy() { return false; }
 
@@ -92,14 +119,15 @@ final class LightningRayVisual implements RayVisual {
         this.to = to;
         this.length = from.distanceTo(to);
         this.axis = length > 1e-4 ? to.subtract(from).scale(1 / length) : new Vec3(0, 0, 1);
-        this.channel = trunk(seed ^ (long)(STRIKE - 1), .3, .45);
+        this.channel = trunk(seed ^ (long)(STRIKE - 1), look.amp, look.step);
+        if (look.wake) return;
         boolean near = nearCamera(from, 2);
         playing.add(emit(near ? MUZZLE_NEAR : MUZZLE, level, from.add(axis.scale(near ? .25 : .05)), axis, 1));
     }
 
     @Override
     public boolean tick(Level level) {
-        long age = level.getGameTime() - born;
+        long age = level.getGameTime() - born + (long)lead();
         // The shock goes off as the bolt's head arrives.
         if (!struck && age >= 1 && (how == Vfx.RayEnd.BLOCK || how == Vfx.RayEnd.CREATURE)) {
             struck = true;
@@ -121,13 +149,17 @@ final class LightningRayVisual implements RayVisual {
     @Override
     public void submit(Level level, CameraRenderState camera, float partialTick, PoseStack pose, SubmitNodeCollector out) {
         if (length < .05) return;
-        float t = level.getGameTime() - born + partialTick;
+        float t = level.getGameTime() - born + partialTick + lead();
         Vec3 eye = camera.pos;
         pose.pushPose();
         pose.translate(-eye.x, -eye.y, -eye.z);
-        out.submitCustomGeometry(pose, BAND, (p, buf) -> glow(p, buf, t, eye));
+        out.submitCustomGeometry(pose, BAND, (p, buf) -> {
+            if (look.wake) afterimage(p, buf, t, eye, false);
+            else glow(p, buf, t, eye);
+        });
         out.submitCustomGeometry(pose, LINE, (p, buf) -> {
-            if (t < STRIKE) strike(p, buf, t, eye);
+            if (look.wake) afterimage(p, buf, t, eye, true);
+            else if (t < STRIKE) strike(p, buf, t, eye);
             channel(p, buf, t, eye);
             arcs(p, buf, t, eye);
         });
@@ -152,7 +184,11 @@ final class LightningRayVisual implements RayVisual {
     /** How far along the ray the bolt has reached, 0–1. */
     private static double reach(float t) { return Math.min(1, t / REACH); }
 
-    private boolean pinned() { return how != Vfx.RayEnd.OPEN; }
+    /** A beam's wake always ends where the beam did (its terminus stood there). */
+    private boolean pinned() { return look.wake || how != Vfx.RayEnd.OPEN; }
+
+    /** Arcs keep crawling over the struck point; a beam's wake keeps them where its terminus was. */
+    private boolean struckEnd() { return look.wake || how == Vfx.RayEnd.BLOCK || how == Vfx.RayEnd.CREATURE; }
 
     /** Lines leave the cast point thin and reach full width a couple of blocks out. */
     private double muzzle(double s) { return .35 + .65 * Math.min(1, s * length / 2.5); }
@@ -202,16 +238,30 @@ final class LightningRayVisual implements RayVisual {
                 s -> .45 * k * tip(s * head) * muzzle(s * head), GLOW, 4);
     }
 
+    /**
+     * A beam's wake only: the beam's after-image along its straight line, a wide soft cyan band and a
+     * bright core that thin and fade over {@link #WAKE_IMAGE} ticks while the channel shows through.
+     */
+    private void afterimage(PoseStack.Pose pose, VertexConsumer buf, float t, Vec3 eye, boolean core) {
+        float k = 1 - (t - WAKE_LEAD) / WAKE_IMAGE;
+        if (k <= 0) return;
+        float e = k * k;
+        Vec3[] line = new Vec3[13];
+        for (int i = 0; i < line.length; i++) line[i] = from.lerp(to, (double)i / (line.length - 1));
+        if (core) ribbon(pose, buf, line, eye, s -> .06 * (.3 + .7 * k) * muzzle(s), s -> .9 * e, 0xC9FFFF, 5);
+        else ribbon(pose, buf, line, eye, s -> .42 * (.45 + .55 * k) * muzzle(s), s -> .5 * e * muzzle(s), 0x2EBEFF, 8);
+    }
+
     // ---- the afterglow --------------------------------------------------------------------------
 
     /** 0 when the afterglow starts, 1 when it is gone. */
     private static float afterglow(float t) { return Math.max(0, Math.min(1, (t - 4) / (LIFE - 4))); }
 
     /** Extra brightness while the channel re-strikes. */
-    private static float restrike(float t) {
-        for (int i = 0; i < RESTRIKES.length; i++) {
-            float d = t - RESTRIKES[i];
-            if (d >= 0 && d < 1.5f) return (1 - d / 1.5f) * (.8f - i * .25f);
+    private float restrike(float t) {
+        for (int i = 0; i < look.restrikes.length; i++) {
+            float d = t - look.restrikes[i];
+            if (d >= 0 && d < 1.5f) return (1 - d / 1.5f) * look.power[i];
         }
         return 0;
     }
@@ -223,10 +273,10 @@ final class LightningRayVisual implements RayVisual {
         float flash = restrike(t);
         float fade = (float)Math.pow(1 - r, 1.1);
         // A fresh channel fades in under the dying bolt.
-        float in = Math.min(1, (t - 4) / 3);
+        float in = look.wake ? 1 : Math.min(1, (t - 4) / 3);
         long tick = (long)Math.floor(t);
         int dashes = Math.max(2, (int)Math.ceil(length / 1.4));
-        int color = lerpColor(0x6AAEFF, 0x2A55FF, r);
+        int color = lerpColor(look.fresh, look.spent, r);
         for (int i = 0; i < dashes; i++) {
             // Each dash goes dark for good at its own moment; the restrikes light all of them again.
             double life = unit(seed, 100 + i, 0);
@@ -238,7 +288,7 @@ final class LightningRayVisual implements RayVisual {
             Vec3[] dash = slice(channel, s0, s1);
             double w = .028 + .035 * flash;
             ribbon(pose, buf, dash, eye, s -> w * tip(s0 + (s1 - s0) * s) * muzzle(s0 + (s1 - s0) * s),
-                    s -> a * tip(s0 + (s1 - s0) * s), color);
+                    s -> a * tip(s0 + (s1 - s0) * s), color, look.wake ? 4 : 2.5);
         }
     }
 
@@ -260,9 +310,9 @@ final class LightningRayVisual implements RayVisual {
             Vec3 bow = perpendicular(Math.PI * 2 * unit(as, 4, 0)).scale(.08 + .2 * unit(as, 5, 0));
             Vec3[] arc = bolt(as, a, b, .1, .09, true, bow);
             float alpha = .9f * second * (float)Math.pow(1 - r, .7) * (float)tip(c);
-            ribbon(pose, buf, arc, eye, s -> .03, s -> alpha, ARC);
+            ribbon(pose, buf, arc, eye, s -> .03, s -> alpha, look.arc);
         }
-        if (how != Vfx.RayEnd.BLOCK && how != Vfx.RayEnd.CREATURE) return;
+        if (!struckEnd()) return;
         // Arcs still crawling over the struck point.
         for (int i = 0; i < 3; i++) {
             long as = seed ^ (i * 92_821L + slot * 6_291_469L + 5);
@@ -272,13 +322,13 @@ final class LightningRayVisual implements RayVisual {
             Vec3 a = to.subtract(axis.scale(.05));
             Vec3[] arc = bolt(as, a, a.add(out), .1, .08, false, null);
             float alpha = .9f * second * (float)Math.pow(1 - r, .8);
-            ribbon(pose, buf, arc, eye, s -> .03 * (1 - s * .7), s -> alpha * (1 - s * .5), ARC);
+            ribbon(pose, buf, arc, eye, s -> .03 * (1 - s * .7), s -> alpha * (1 - s * .5), look.arc);
         }
     }
 
     /** Glows: the bolt's racing head, the restrikes, and a soft halo on every lit arc. */
     private void sprites(PoseStack.Pose pose, VertexConsumer buf, float t, CameraRenderState camera) {
-        if (t < REACH + 1.5f) {
+        if (!look.wake && t < REACH + 1.5f) {
             double head = reach(t);
             float a = t < REACH ? 1 : 1 - (t - REACH) / 1.5f;
             if (head < 1 || pinned()) sprite(pose, buf, camera, from.lerp(to, head), .42 * (.6 + .4 * a), a, HOT);
@@ -293,10 +343,10 @@ final class LightningRayVisual implements RayVisual {
             if (unit(as, 1, 0) > chance) continue;
             double c = (i + .5 + (unit(as, 2, 0) - .5) * .8) / sites;
             if (c * length < 2.5) continue;
-            sprite(pose, buf, camera, along(channel, c), .45, .32f * (float)Math.pow(1 - r, .7) * (float)tip(c), STRAND);
+            sprite(pose, buf, camera, along(channel, c), .45, .32f * (float)Math.pow(1 - r, .7) * (float)tip(c), look.halo);
         }
         float flash = restrike(t);
-        if (flash > 0 && (how == Vfx.RayEnd.BLOCK || how == Vfx.RayEnd.CREATURE)) sprite(pose, buf, camera, to, .9, flash * .8f, STRAND);
+        if (flash > 0 && struckEnd()) sprite(pose, buf, camera, to, .9, flash * .8f, look.halo);
     }
 
     // ---- geometry -------------------------------------------------------------------------------
