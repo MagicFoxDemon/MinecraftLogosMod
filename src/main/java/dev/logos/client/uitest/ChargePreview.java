@@ -45,6 +45,11 @@ public final class ChargePreview {
         lower();
     }
 
+    /** Client ticks since the last charge was started, still counting once it has ended (not while the charge clock is frozen). */
+    public static int elapsed() {
+        return t;
+    }
+
     /** Whether a charge is still being played. */
     public static boolean busy() {
         return plan != null;
@@ -73,12 +78,13 @@ public final class ChargePreview {
     static void onTick(ClientTickEvent.Post event) {
         Plan p = plan;
         Minecraft mc = Minecraft.getInstance();
-        if (p == null || mc.isPaused()) return;
+        if (mc.isPaused() || ClientCharges.frozen()) return;
+        t++;
+        if (p == null) return;
         if (mc.level == null) {
             plan = null;
             return;
         }
-        t++;
         float progress = Math.min(1, t / (float) p.chargeTicks());
         if (progress >= p.stopAt()) {
             ClientCharges.receive(ChargePayload.ended(p.entityId()));

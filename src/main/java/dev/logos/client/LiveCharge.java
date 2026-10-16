@@ -84,18 +84,26 @@ public final class LiveCharge {
 
     /** Injected share, 0 to 1, eased between the server's updates; 1 once held or released, frozen where it stopped once fizzled. */
     public float progress(float partialTick) {
+        partialTick = held(partialTick);
         if (state != null) return state.progress(partialTick);
         return phase == Phase.FIZZLED ? endProgress : 1;
     }
 
     /** Ticks since the charge was first heard of. */
     public float age(float partialTick) {
+        partialTick = held(partialTick);
         return ClientCharges.ticks() - born + partialTick;
     }
 
     /** Ticks since the current phase began. */
     public float phaseAge(float partialTick) {
+        partialTick = held(partialTick);
         return ClientCharges.ticks() - since + partialTick;
+    }
+
+    /** A frozen charge clock (a client scene's screenshot) holds the frame still too. */
+    private static float held(float partialTick) {
+        return ClientCharges.frozen() ? 0 : partialTick;
     }
 
     /** The caster, while it is still in the level. */

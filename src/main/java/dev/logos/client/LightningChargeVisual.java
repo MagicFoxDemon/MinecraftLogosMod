@@ -1,4 +1,10 @@
 package dev.logos.client;
 
-/** The lightning charge: still the legacy particle charge until the lightning branch draws its own (see CHARGE_VFX.md). */
-final class LightningChargeVisual implements ChargeVisual {}
+import dev.logos.lang.Element;
+
+/** The lightning charge: the shared charge in lightning's colours, until the lightning branch adds its own layers (see CHARGE_VFX.md). */
+final class LightningChargeVisual extends ChargeCore {
+    LightningChargeVisual() {
+        super(ChargeStyle.of(Element.LIGHTNING));
+    }
+}

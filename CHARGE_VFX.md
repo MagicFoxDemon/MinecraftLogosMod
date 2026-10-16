@@ -26,17 +26,25 @@
 
 - `ChargePreview`（`client/uitest`）在本客户端按固定节奏模拟一次蓄力：`release(实体, 元素, 等级, 蓄力刻数, 保持刻数)` 或 `fizzle(实体, 元素, 等级, 蓄力刻数, 中断进度)`。不施法、不消耗法力；本地玩家会像真实蓄力一样举起法杖。
 - `ChargeTour` 是各元素预览的统一展示：正面第三人称依次播放四个等级（每级在聚集、将满、保持、释放、释放后各截一张图），第一人称再播放精致与巨型，背后视角中途放弃一次宏大，夜晚再播放一次巨型。元素分支继承它、实现 `element()`，注册为 `logos_<element>_charge`，需要时在 `extra` 里追加步骤。
+  - 截图时间按蓄力自己的时钟对齐：`at(s, 刻)` 等到 `ChargePreview.elapsed()` 到达指定刻，`shot(s, 名字)` 截图期间用 `ClientCharges.freeze` 冻结蓄力时钟，截图不占蓄力的时间。不要用 `.ticks(n)` 数刻：每个步骤和截图本身都会多耗几刻，越往后偏得越多。
+  - 整个展示约一分半，场景时限已放宽到 300 秒。
 - `ChargeVisuals.substitute(...)` 只供客户端场景替换所有元素的可视化（公共场景 `logos_charge` 用它检查生命周期）。
 
 ## 分工：公共核心 + 元素特色
 
 四个等级的效果层次多、各元素共用同一套结构，因此和伤害 BURST 一样分两步：
 
-1. **公共核心**（协调聊天完成，元素分支只读）。按参考做出所有等级的完整效果，由元素的调色与少量可替换项（法阵图案、粒子贴图）参数化：
-   - `ChargeCore`：杖头部分，即聚集、环绕聚拢、冲击波、巨型的远方条带、保持时的能量球、巨型释放、熄灭。
-   - `ChargeBody`：身上部分，即法阵、光柱、地面扩散的波浪、被升到空中的粒子。
-   - 两者共用一个 `ChargeStyle`（主色、副色、法阵图案等）。核心完成后，七个元素先以各自的 `ChargeStyle` 接上核心，外观即全部替换。
-2. **元素特色**（各元素分支并行）：在核心之上添加本元素的特色层，并可以调整 `ChargeStyle`。例如火焰的火星与日冕状能量球、寒霜的冰晶、雷霆缠身的电弧（参考图 3）、虚空的屏幕空间星空、生命的叶片、奥秘的符文、物理的白色气压。
+1. **公共核心**（已完成，元素分支只读）。所有等级的完整效果，由元素的调色与法阵图案参数化：
+   - `ChargeCore`：七个 `<Element>ChargeVisual` 的父类，组合下面两部分，`legacy()` 固定为 false。
+   - `ChargeHead`：杖头部分，即聚集、环绕聚拢、冲击波、巨型的远方条带与收拢的高能球、保持时的能量球、释放、熄灭。
+   - `ChargeBody`：身上部分，即法阵、光柱、上升的光痕、地面扩散的波浪、脚下的旋风、被卷上空中的地面碎块（用脚下方块自己的贴图）与光点。
+   - `ChargeStyle`：`light`（中心的高光）、`main`（元素色）、`deep`（柔光、光柱、远处条带的深色）和各等级的法阵图案。`ChargeStyle.of(元素)` 是各元素现在的调色，`withCircles(...)` 换法阵。
+   - `ChargeParts`：材质与几何（面向镜头的方片、序列帧方片、平放的方片、拖尾带、圆筒、小方块）。全部是自定义几何，经过 `ShaderPackOverlay`。
+   - 新增的贴图只有 `textures/vfx/charge/` 下的 `romb`、`plasma`、`pillar`、`shockwave`（从 Star aura 的 ShockWave 着色器烘焙的 8 帧图集）和 6 个法阵 `circle_03/11/15/16/17/18`；其余直接引用已有的 `heal/glow`、`heal/ring`、`heal/swirl`、`fire_beam/spiral`、`fire_beam/dot`、`force/streak`、`physical_ray/wind`、`arcane_impact/flash`、`arcane_impact/star`、`fire_impact/flash`、`void_ray/ring`、`lightning_beam/rays`。
+   - 冲击波（宏大、巨型）：用 `charge/shockwave` 的 8 帧从杖头向外扩散，每圈 1.2 秒，上一圈消失后才出下一圈；进度过 60% 渐少，85% 后不再出现。
+   - 第一人称：杖头效果按 `near()` 减半并在贴近镜头时淡出；能量球不超过到镜头距离的三成；收拢的高能球只在比镜头距离更小时显示，且不画外层柔光；巨型释放的爆闪和冲击环大幅减弱；不画自己的光柱；升空的碎块和光点靠近镜头时淡出。
+   - 公共场景 `logos_charge_core`：寒霜调色走一遍完整展示，再在夜里用其余六种调色各播放一次巨型。
+2. **元素特色**（各元素分支并行）：在核心之上添加本元素的特色层，并可以调整 `ChargeStyle`。做法：在自己的 `<Element>ChargeVisual` 里传入调整后的样式，覆盖 `tick`、`submit`、`end` 并先调用 `super`，自己的层画在核心之后。例如火焰的火星与日冕状能量球、寒霜的冰晶、雷霆缠身的电弧（参考图 3）、虚空的屏幕空间星空、生命的叶片、奥秘的符文、物理的白色气压。
 
 ## 参考与要求（各等级）
 
@@ -104,7 +112,7 @@
 - 自身资源 `assets/logos/textures/vfx/<element>_charge/` 和 `shaders/core/<element>_charge_*`。
 - 自身专属客户端场景 `client/uitest/<Element>ChargeScenario.java`（继承 `ChargeTour`），注册名 `logos_<element>_charge`。
 
-共享文件在元素分支保持只读：`ChargeVisual`、`ChargeVisuals`、`LiveCharge`、`ClientCharges`、`ChargeEffects`、`ChargeRing`、`ChargePreview`、`ChargeTour`、公共核心（`ChargeCore`、`ChargeBody`、`ChargeStyle` 及其资源 `textures/vfx/charge/`）、`LogosFx`、网络包、`ShaderPackOverlay`、其它元素的实现。已有的贴图（如 `heal/ring`、`heal/glow`、各元素射线和光束的贴图）直接按路径引用，不要复制出重复的美术资源。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
+共享文件在元素分支保持只读：`ChargeVisual`、`ChargeVisuals`、`LiveCharge`、`ClientCharges`、`ChargeEffects`、`ChargeRing`、`ChargePreview`、`ChargeTour`、公共核心（`ChargeCore`、`ChargeHead`、`ChargeBody`、`ChargeStyle`、`ChargeParts` 及其资源 `textures/vfx/charge/`）、`LogosFx`、网络包、`ShaderPackOverlay`、其它元素的实现。已有的贴图（如 `heal/ring`、`heal/glow`、各元素射线和光束的贴图）直接按路径引用，不要复制出重复的美术资源。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
 
 ## 验收
 
