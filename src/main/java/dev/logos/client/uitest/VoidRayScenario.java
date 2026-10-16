@@ -156,7 +156,7 @@ public class VoidRayScenario implements UIScenario {
                 .teleportPlayer(.5, 101, -2, 0, 0).ticks(2).screenshot("void_ray_volley").runCommand(CALM)
                 .check("a volley keeps every ray", ctx -> LogosFx.liveRays() >= 3)
                 // The line lasts 111 ticks; every volley ray is older than that here.
-                .ticks(115).screenshot("void_ray_volley_gone")
+                .ticks(60).ticks(55).screenshot("void_ray_volley_gone")
                 .check("nothing is left once the lines are gone", ctx -> LogosFx.liveRays() == 0);
         s.teardown("restore", ctx -> {
             camera(CameraType.FIRST_PERSON);

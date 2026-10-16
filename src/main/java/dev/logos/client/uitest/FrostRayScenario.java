@@ -159,7 +159,7 @@ public class FrostRayScenario implements UIScenario {
         }
         s.ticks(2).screenshot("fp_volley")
                 .check("several frost rays live at once", ctx -> LogosFx.liveRays() >= 3)
-                .ticks(140).screenshot("fp_volley_gone")
+                .ticks(70).ticks(70).screenshot("fp_volley_gone")
                 .check("every frost ray is gone again", ctx -> LogosFx.liveRays() == 0);
         s.teardown("remove the cow, first person", ctx -> {
             Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON);

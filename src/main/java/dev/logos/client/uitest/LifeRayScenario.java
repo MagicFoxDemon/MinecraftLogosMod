@@ -127,7 +127,7 @@ public class LifeRayScenario implements UIScenario {
         s.teleportPlayer(lane(3), 101, -2, 0, 0).ticks(2)
                 .server("last ray", sc -> cast(sc.player(), OPEN)).ticks(2)
                 .check("the last ray is showing", ctx -> LogosFx.liveRays() > 0)
-                .ticks(140).screenshot("life_ray_5_gone")
+                .ticks(70).ticks(70).screenshot("life_ray_5_gone")
                 .check("every life ray has fully faded and been dropped", ctx -> LogosFx.liveRays() == 0);
         s.teardown("clean up", ctx -> {
             Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON);
