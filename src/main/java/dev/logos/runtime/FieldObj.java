@@ -9,7 +9,10 @@ import dev.logos.lang.Node;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
-/** Salt form "field": a lingering region that pulses on-tick and notices entities entering it. */
+/**
+ * Salt form "field": a lingering region that pulses on-tick and notices entities entering it. Clients are
+ * told it exists every few ticks ({@link Vfx#field}), when it pulses and when someone enters, and when it ends.
+ */
 public final class FieldObj extends SpellObject {
     public static final double UPKEEP = 0.5;
 
@@ -17,6 +20,8 @@ public final class FieldObj extends SpellObject {
     private final int every;
     private final boolean follow;
     private final Set<UUID> inside = new HashSet<>();
+    /** How often clients are reminded the field is there; a client that stops hearing of it lets it go. */
+    private static final int HOLD_EVERY = 4;
 
     public FieldObj(Node node, Ctx ctx, Vec3 center, double radius, int life, int every, boolean follow) {
         super(node, ctx, center, life);
@@ -32,6 +37,7 @@ public final class FieldObj extends SpellObject {
             return;
         }
         if (follow && inst.caster.level() == level) pos = inst.caster.position().add(0, 1, 0);
+        if (age == 1 || age % HOLD_EVERY == 0) hold();
 
         if (node.events.containsKey("on-enter")) {
             List<LivingEntity> now = Targeting.enemiesNear(inst, level, pos, radius, false);
@@ -39,6 +45,7 @@ public final class FieldObj extends SpellObject {
             for (LivingEntity e : now) {
                 ids.add(e.getUUID());
                 if (inside.add(e.getUUID())) {
+                    Vfx.fieldEnter(level, id, Targeting.center(e), node.element, e);
                     Interp.fire(node, "on-enter", ctx.on(e, Targeting.center(e)));
                     if (inst.dead) return;
                 }
@@ -48,9 +55,18 @@ public final class FieldObj extends SpellObject {
 
         if (age % every == 0) {
             if (!inst.spend(UPKEEP, "领域维持")) return;
-            Vfx.pulse(level, pos, radius, node.element);
+            Vfx.fieldPulse(level, id, pos, radius, node.element);
             Interp.fire(node, "on-tick", ctx.at(pos));
         }
-        if (age % 4 == 0) Vfx.ring(level, pos, radius, node.element);
+    }
+
+    private void hold() {
+        int caster = follow && inst.caster.level() == level ? inst.caster.getId() : Vfx.NONE;
+        Vfx.field(level, id, pos, radius, node.element, age, life, every, caster);
+    }
+
+    @Override
+    protected void onEnded() {
+        Vfx.fieldEnd(level, id, pos, node.element);
     }
 }

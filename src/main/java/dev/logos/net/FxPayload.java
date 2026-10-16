@@ -58,7 +58,19 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
          * Sent once as a spell body {@code id} sets out from its caster's eyes (x,y,z): {@code look} is the
          * caster's network id, so clients draw the body from the caster's cast point at first.
          */
-        TRAIL_FROM;
+        TRAIL_FROM,
+        /**
+         * A field ({@code field}), re-sent every few ticks under {@code id} while it lasts: centre (x,y,z),
+         * radius {@code size}, (ax,ay,az) = (ticks it has lasted, its whole life in ticks, ticks between
+         * pulses); {@code look} is the network id of the caster it follows ({@code :follow}), or -1.
+         */
+        FIELD_HOLD,
+        /** That field pulsed ({@code on-tick}): centre (x,y,z), radius {@code size}. */
+        FIELD_PULSE,
+        /** A body entered that field ({@code on-enter}): (x,y,z) is its centre, {@code look} its network id. */
+        FIELD_ENTER,
+        /** That field ceased to exist, at (x,y,z). */
+        FIELD_END;
 
         public static final Kind[] VALUES = values();
     }
