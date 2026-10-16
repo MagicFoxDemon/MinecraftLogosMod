@@ -21,6 +21,10 @@ import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.editor.GraphEditorView;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphView;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.ModelElement;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.api.graph.Graph;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.itemlibrary.GraphNodeCreationData;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.itemlibrary.NodeModelLibraryItem;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.ICustomNodeModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.Model;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.StickyNoteModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.PlacematModel;
@@ -29,6 +33,7 @@ import dev.logos.LogosMod;
 import dev.logos.graph.GraphBuilder;
 import dev.logos.graph.GraphCompiler;
 import dev.logos.graph.SpecialNodes;
+import dev.logos.graph.LogosNode;
 import dev.logos.graph.SpellGraph;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
@@ -98,6 +103,25 @@ public final class SpellEditor {
         @Override
         protected void initPanels() {
             // Leave the dock empty; navigation is attached directly to the canvas instead.
+        }
+
+        @Override
+        public GraphView loadGraph(Graph graph) {
+            super.loadGraph(graph);
+            if (graph == null) return this;
+            // Library labels otherwise come from the registration ID, not the node's localized name.
+            var orphan = GraphNodeCreationData.ofOrphan(graph.graphModel);
+            itemLibrary.getAllItems().forEach(item -> {
+                if (item instanceof NodeModelLibraryItem entry
+                        && entry.createNode(orphan) instanceof ICustomNodeModel model
+                        && model.getNode() instanceof LogosNode node) {
+                    Component name = Component.translatableWithFallback(node.nameKey(), node.word());
+                    item.setDisplayName(name);
+                    item.setSearchableName(name.getString() + " " + node.word() + " " + item.getSearchableName());
+                }
+            });
+            itemLibrary.nodeTree.reloadList();
+            return this;
         }
     }
 

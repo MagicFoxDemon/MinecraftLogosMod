@@ -99,29 +99,29 @@ public abstract class RuneNode extends LogosNode {
             if (p.type() == Type.DIMENSION) {
                 // Not a port: dimensions are chosen from the registered list, not computed.
                 context.addOption(dim(p.name()), String.class).withDefaultValue(Dimensions.DEFAULT)
-                        .withConfigurable(Dimensions.SELECTOR).withDisplayName(Component.literal("◐ 维度"));
+                        .withConfigurable(Dimensions.SELECTOR).withDisplayName(Component.literal("◐ ").append(NodeTerms.parameter(word(), p.name())));
             }
             if (p.type() == Type.CREATURE) {
-                context.addOption(option(p), String.class).withDefaultValue("zombie").withDisplayName(Component.literal("❦ 生物"));
+                context.addOption(option(p), String.class).withDefaultValue("zombie").withDisplayName(Component.literal("❦ ").append(NodeTerms.parameter(word(), p.name())));
             }
             if (p.type() == Type.MOB_EFFECT) {
-                context.addOption(option(p), String.class).withDefaultValue("speed").withDisplayName(Component.literal("⚗ 药水效果"));
+                context.addOption(option(p), String.class).withDefaultValue("speed").withDisplayName(Component.literal("⚗ ").append(NodeTerms.parameter(word(), p.name())));
             }
             if (p.type() == Type.ANCHOR) {
                 // Typed, not picked: anchor may name a new one.
-                context.addOption(option(p), String.class).withDefaultValue("家").withDisplayName(Component.literal("⚓ 锚点名"));
+                context.addOption(option(p), String.class).withDefaultValue("家").withDisplayName(Component.literal("⚓ ").append(NodeTerms.parameter(word(), p.name())));
             }
             if (p.type() == Type.KIND) {
                 context.addOption(option(p), String.class).withDefaultValue(TargetKinds.DEFAULT)
-                        .withConfigurable(TargetKinds.SELECTOR).withDisplayName(Component.literal("◈ 种类"));
+                        .withConfigurable(TargetKinds.SELECTOR).withDisplayName(Component.literal("◈ ").append(NodeTerms.parameter(word(), p.name())));
             }
             if (p.rest()) {
-                context.addOption(COUNT, Integer.class).withDefaultValue(2).withDisplayName(Component.literal("数量"));
+                context.addOption(COUNT, Integer.class).withDefaultValue(2).withDisplayName(NodeTerms.parameter(word(), "argument-count"));
             }
         }
         for (Rune.Kw k : r.keywords.values()) {
             if (k.flag()) {
-                context.addOption(flag(k.name()), Boolean.class).withDefaultValue(false).withDisplayName(Component.literal(":" + k.name()));
+                context.addOption(flag(k.name()), Boolean.class).withDefaultValue(false).withDisplayName(NodeTerms.parameter(word(), k.name()));
             }
         }
     }
@@ -137,34 +137,34 @@ public abstract class RuneNode extends LogosNode {
         for (Rune.Param p : r.params) {
             if (isOption(p)) continue;
             if (p.type() == Type.ACTION) {
-                String label = p.name().equals("then") ? "✔ 成立" : p.name().equals("else") ? "✘ 否则" : "⤷ " + p.name();
-                context.addOutputPort(p.name(), LTypes.FLOW).withDisplayName(Component.literal(label)).build();
+                String glyph = p.name().equals("then") ? "✔ " : p.name().equals("else") ? "✘ " : "⤷ ";
+                context.addOutputPort(p.name(), LTypes.FLOW).withDisplayName(Component.literal(glyph).append(NodeTerms.parameter(word(), p.name()))).build();
             } else if (p.rest()) {
                 Integer n = option(COUNT, Integer.class);
                 for (int i = 0; i < Math.max(1, n == null ? 2 : n); i++) {
-                    input(context, p.name() + i, p.name() + (i + 1), p.type(), false, null, p.name());
+                    input(context, p.name() + i, NodeTerms.parameter(word(), p.name()).append(" " + (i + 1)), p.type(), false, null, p.name());
                 }
             } else {
-                input(context, p.name(), p.name(), p.type(), p.broadcast(), p.defaultSrc(), p.name());
+                input(context, p.name(), NodeTerms.parameter(word(), p.name()), p.type(), p.broadcast(), p.defaultSrc(), p.name());
             }
         }
         for (Rune.Kw k : r.keywords.values()) {
-            if (!k.flag()) input(context, kw(k.name()), ":" + k.name(), k.type(), false, k.defaultSrc(), k.name());
+            if (!k.flag()) input(context, kw(k.name()), NodeTerms.parameter(word(), k.name()), k.type(), false, k.defaultSrc(), k.name());
         }
         for (Rune.EventSpec e : r.events.values()) {
-            context.addOutputPort(event(e.name()), LTypes.FLOW).withDisplayName(Component.literal("☽ " + e.name())).build();
+            context.addOutputPort(event(e.name()), LTypes.FLOW).withDisplayName(Component.literal("☽ ").append(NodeTerms.event(word(), e.name()))).build();
         }
         if (r.body) {
-            context.addOutputPort(BODY, LTypes.FLOW).withDisplayName(Component.literal("⤷ 执行")).build();
+            context.addOutputPort(BODY, LTypes.FLOW).withDisplayName(Component.literal("⤷ ").append(NodeTerms.parameter(word(), BODY))).build();
         }
         if (r.returns == Type.ACTION) {
             context.addOutputPort(NEXT, LTypes.FLOW).withOrientation(PortOrientation.Vertical).withDisplayName(Component.literal("▶")).build();
         }
     }
 
-    private static void input(IPortDefinitionContext context, String id, String label, Type t, boolean broadcast, String defaultSrc, String paramName) {
+    private static void input(IPortDefinitionContext context, String id, Component label, Type t, boolean broadcast, String defaultSrc, String paramName) {
         var builder = context.addInputPort(id, LTypes.of(t, broadcast))
-                .withDisplayName(Component.literal(label));
+                .withDisplayName(label);
         Object def = defaultValue(t, defaultSrc, paramName);
         if (def != null) builder.withDefaultValue(def);
         else builder.withoutConfigurator();

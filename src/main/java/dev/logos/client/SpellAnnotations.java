@@ -4,11 +4,13 @@ import java.util.List;
 import org.joml.Vector2f;
 
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.Style;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextArea;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.dependency.ModelUpdateVisitor;
@@ -16,6 +18,9 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.wiget.PlacematElement;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.wiget.StickyNoteElement;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.PlacematModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.StickyNoteModel;
+import dev.vfyjxf.taffy.style.TaffyDisplay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /** Paper annotations share the workbench's ink palette while retaining toolkit editing behavior. */
 final class SpellAnnotations {
@@ -24,6 +29,9 @@ final class SpellAnnotations {
             .setSprite(0, 0, 192, 128).setBorder(16);
 
     static final class PaperNote extends StickyNoteElement {
+        private final GuiTexture paper = this::drawPaper;
+        private Label summary;
+
         PaperNote(StickyNoteModel model) {
             super(model);
         }
@@ -31,7 +39,39 @@ final class SpellAnnotations {
         @Override
         protected void buildUI() {
             super.buildUI();
+            summary = new Label();
+            summary.addClass("spell-note-summary");
+            summary.layout(l -> l.flex(1).minWidth(0).height(12).marginRight(5));
+            summary.textStyle(s -> s.textColor(INK).textShadow(false).fontSize(9));
+            select(".__sticky-note_header__").findFirst().orElseThrow().addChild(summary);
+            addEventListener(UIEvents.TICK, ev -> updateSummary());
+            updateSummary();
             paperStyle();
+        }
+
+        private void updateSummary() {
+            if (summary == null) return;
+            summary.setDisplay(getModel().isCollapsed() ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
+            String firstLine = getModel().getContent().lines().filter(line -> !line.isBlank()).findFirst()
+                    .orElseGet(() -> Component.translatable("logos.editor.note").getString());
+            summary.setText(Minecraft.getInstance().font.plainSubstrByWidth(firstLine,
+                    Math.max(0, (int) getSizeWidth() - 28)));
+        }
+
+        private void drawPaper(GUIContext context, float x, float y, float width, float height) {
+            if (!getModel().isCollapsed()) {
+                context.drawTexture(PAPER, x, y, width, height);
+                return;
+            }
+            // A collapsed note is a small paper label, never a vertically squeezed full sheet.
+            int edge = isSelected() ? 0xFF805024 : 0xFF977045;
+            DrawerHelperClient.drawSolidRect(context, x + 2, y + 2, width - 2, height - 1, 0x403A2818);
+            DrawerHelperClient.drawSolidRect(context, x + 1, y + 1, width - 2, height - 2, 0xFFF6E4BB);
+            DrawerHelperClient.drawSolidRect(context, x + 2, y, width - 4, 1, edge);
+            DrawerHelperClient.drawSolidRect(context, x + 2, y + height - 1, width - 4, 1, edge);
+            DrawerHelperClient.drawSolidRect(context, x, y + 2, 1, height - 4, edge);
+            DrawerHelperClient.drawSolidRect(context, x + width - 1, y + 2, 1, height - 4, edge);
+            DrawerHelperClient.drawSolidRect(context, x + 2, y + 1, width - 4, 1, 0xFFFFF1D1);
         }
 
         @Override
@@ -41,7 +81,7 @@ final class SpellAnnotations {
         }
 
         private void paperStyle() {
-            Style.importantPipeline(getStyle(), s -> s.backgroundTexture(PAPER));
+            Style.importantPipeline(getStyle(), s -> s.backgroundTexture(paper));
             select(".__sticky-note_text-area__", TextArea.class).forEach(area -> {
                 Style.importantPipeline(area.getLayout(), l -> l.marginLeft(10).marginRight(12)
                         .marginBottom(10).widthAuto().minWidth(0));
@@ -54,6 +94,7 @@ final class SpellAnnotations {
 
         @Override
         public void drawBackgroundOverlay(GUIContext context) {
+            if (getModel().isCollapsed()) return;
             if (isSelected() || isSelfOrChildHover() || isUnderRegionSelection()) {
                 roughBorder(context, this, isSelected() ? 0xFF9A642C : 0x99754F2B, 2);
             }
