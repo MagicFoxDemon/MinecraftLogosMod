@@ -6,6 +6,12 @@ import java.util.List;
 import com.lowdragmc.lowdraglib2.gui.factory.HeldItemUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.TextArea;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.command.GraphCommands;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.node.NodeElement;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.wiget.StickyNoteElement;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.AbstractNodeModel;
+import org.joml.Vector2f;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphPreview;
 import com.lowdragmc.lowdraglib2.registry.RegistrationEnvironment;
 import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegisterClient;
@@ -55,18 +61,52 @@ public class SpellEditorScenario implements UIScenario {
         ctx.check("variable library is not mounted", view.blackboard.getParent() == null);
         ctx.check("property inspector is not mounted", view.inspector.getParent() == null);
         ctx.check("navigation has no panel wrapper", map.getParent() == view.canvas);
-        ctx.check("navigation is a small square", Math.abs(map.getSizeWidth() - 110) < 1
-                && Math.abs(map.getSizeHeight() - 110) < 1);
+        ctx.check("navigation is a small square", Math.abs(map.getSizeWidth() - 64) < 1
+                && Math.abs(map.getSizeHeight() - 64) < 1);
         ctx.check("navigation is anchored at the bottom right", Math.abs(map.getPositionX() + map.getSizeWidth()
                 - view.canvas.getPositionX() - view.canvas.getSizeWidth() + 8) < 1
                 && Math.abs(map.getPositionY() + map.getSizeHeight()
-                - view.canvas.getPositionY() - view.canvas.getSizeHeight() + 8) < 1);
+                - view.canvas.getPositionY() - view.canvas.getSizeHeight() + 28) < 1);
         UIElement background = ctx.ui().select("#spell_editor_background", UIElement.class).findFirst().orElseThrow();
         var window = Minecraft.getInstance().getWindow();
         ctx.check("parchment covers the current window", Math.abs(background.getPositionX()) < 1
                 && Math.abs(background.getPositionY()) < 1
                 && Math.abs(background.getSizeWidth() - window.getGuiScaledWidth()) < 1
                 && Math.abs(background.getSizeHeight() - window.getGuiScaledHeight()) < 1);
+        UIElement canvas = ctx.ui().select("#spell_canvas", UIElement.class).findFirst().orElseThrow();
+        UIElement details = ctx.ui().select("#spell_details", UIElement.class).findFirst().orElseThrow();
+        ctx.check("canvas and details keep a two to one ratio", Math.abs(canvas.getSizeWidth() / details.getSizeWidth() - 2) < 0.03);
+        ctx.check("details stay to the right of the canvas", details.getPositionX() >= canvas.getPositionX() + canvas.getSizeWidth());
+    }
+
+    private static void addAnnotations(TestContext ctx) {
+        var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
+        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+        for (UIElement child : view.getLayer(NodeElement.NODE_LAYER).getChildren()) {
+            if (!(child instanceof NodeElement node)) continue;
+            var position = ((AbstractNodeModel) node.getModel()).getPosition();
+            minX = Math.min(minX, position.x);
+            minY = Math.min(minY, position.y);
+            maxX = Math.max(maxX, position.x + node.getSizeWidth());
+            maxY = Math.max(maxY, position.y + node.getSizeHeight());
+        }
+        view.dispatchCommand(new GraphCommands.CreateStickyNoteCommand(new Vector2f(maxX + 24, minY + 20)));
+        var note = view.getGraph().graphModel.getStickyNoteModels().getFirst();
+        note.setContent("施法笔记\n命中后触发伤害");
+        view.dispatchCommand(new GraphCommands.CreatePlacematCommand("命中效果", new Vector2f(minX - 20, minY - 38),
+                new Vector2f(maxX - minX + 40, maxY - minY + 58)));
+        ctx.put("annotation_bounds", new float[]{minX - 28, minY - 46, maxX + 182, maxY + 28});
+    }
+
+    private static void checkAnnotations(TestContext ctx) {
+        var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
+        var graph = view.getGraph().graphModel;
+        ctx.check("one paper note exists", graph.getStickyNoteModels().size() == 1);
+        ctx.check("one ink region exists", graph.getPlacematModels().size() == 1);
+        ctx.check("note uses the spell paper renderer", view.getModelElement(graph.getStickyNoteModels().getFirst())
+                .getClass().getName().contains("SpellAnnotations$PaperNote"));
+        ctx.check("region uses the spell ink renderer", view.getModelElement(graph.getPlacematModels().getFirst())
+                .getClass().getName().contains("SpellAnnotations$InkRegion"));
     }
 
     @Override
@@ -131,9 +171,71 @@ public class SpellEditorScenario implements UIScenario {
                     checkNavigation(ctx);
                     map.graphView.fitGraphChildren();
                 })
+                .step("create paper note and ink region through canvas commands", SpellEditorScenario::addAnnotations)
+                .ticks(5)
+                .step("check annotations and undo the region", ctx -> {
+                    checkAnnotations(ctx);
+                    var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
+                    view.getHistoryStack().undo();
+                    ctx.check("undo removes the region", view.getGraph().graphModel.getPlacematModels().isEmpty());
+                    view.getHistoryStack().redo();
+                })
+                .ticks(5)
+                .step("check redo and frame annotations", ctx -> {
+                    checkAnnotations(ctx);
+                    float[] b = ctx.get("annotation_bounds");
+                    var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
+                    view.fitGraph(b[0], b[1], b[2], b[3], 16);
+                    view.clearAllSelected();
+                })
+                .ticks(5)
+                .screenshot("paper_annotations")
+                .step("edit note text", ctx -> ctx.ui().select(".__sticky-note_text-area__", TextArea.class)
+                        .findFirst().orElseThrow().setValue(new String[]{"施法笔记", "命中后触发伤害", "保留到载页"}, true))
+                .ticks(3)
+                .step("note text reaches the graph", ctx -> {
+                    StickyNoteElement note = ctx.ui().select(".__sticky-note__", StickyNoteElement.class).findFirst().orElseThrow();
+                    ctx.check("editable text updates the note", note.getModel().getContent().contains("保留到载页"));
+                })
                 .click("#inscribe")
                 .waitUntilServer("the page on the table keeps the drawing", sc ->
                         sc.level().getBlockEntity(table) instanceof InscriptionTableBlockEntity t && t.page().has(LogosMod.SPELL_GRAPH.get()))
+                .closeScreen()
+                .step("reopen the saved drawing", ctx -> ClientHooks.openTableEditor(table,
+                        ctx.level().getBlockEntity(table) instanceof InscriptionTableBlockEntity t ? t.page().copy() : ItemStack.EMPTY))
+                .awaitModularUI()
+                .ticks(10)
+                .step("saved annotations keep their rendering", SpellEditorScenario::checkAnnotations)
+                .step("use a larger Minecraft GUI scale", ctx -> {
+                    Minecraft.getInstance().options.guiScale().set(4);
+                    Minecraft.getInstance().resizeGui();
+                })
+                .ticks(10)
+                .step("check layout at GUI scale four", ctx -> {
+                    checkNavigation(ctx);
+                    checkAnnotations(ctx);
+                    var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
+                    view.fitGraphChildren();
+                    UIElement button = ctx.ui().select("#inscribe", UIElement.class).findFirst().orElseThrow();
+                    UIElement details = ctx.ui().select("#spell_details", UIElement.class).findFirst().orElseThrow();
+                    ctx.check("inscribe remains inside the details column", button.getPositionY() + button.getSizeHeight()
+                            <= details.getPositionY() + details.getSizeHeight() + 1);
+                })
+                .ticks(5)
+                .screenshot("paper_annotations_gui_scale_4")
+                .step("frame the note at a readable size", ctx -> {
+                    var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
+                    var note = view.getGraph().graphModel.getStickyNoteModels().getFirst();
+                    var p = note.getPosition();
+                    view.fitGraph(p.x - 130, p.y - 40, p.x + 180, p.y + 140, 8);
+                })
+                .ticks(5)
+                .screenshot("paper_note_closeup")
+                .step("restore GUI scale two", ctx -> {
+                    Minecraft.getInstance().options.guiScale().set(2);
+                    Minecraft.getInstance().resizeGui();
+                })
+                .ticks(10)
                 .step("pick the block-magic template", ctx -> selectTemplate(ctx, "harvest"))
                 .click("#load_template")
                 .ticks(10)

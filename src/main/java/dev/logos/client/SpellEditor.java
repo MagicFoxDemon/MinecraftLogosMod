@@ -20,6 +20,10 @@ import com.lowdragmc.lowdraglib2.gui.ui.utils.UIElementProvider;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.editor.GraphEditorView;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphView;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.ModelElement;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.Model;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.StickyNoteModel;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.PlacematModel;
 
 import dev.logos.LogosMod;
 import dev.logos.graph.GraphBuilder;
@@ -72,9 +76,23 @@ public final class SpellEditor {
             SpellNavigation navigation = new SpellNavigation(this);
             navigation.setId("spell_navigation");
             navigation.layout(l -> l.positionType(TaffyPosition.ABSOLUTE)
-                    .right(8).bottom(8).width(110).height(110));
-            navigation.style(s -> s.backgroundTexture(new ColorRectTexture(0x80181818)));
+                    .right(8).bottom(28).width(64).height(64));
+            navigation.style(s -> s.backgroundTexture(new ColorRectTexture(0x5033261A)));
             canvas.addChild(navigation);
+        }
+
+        @Override
+        public ModelElement createAndAddModelElement(Model model) {
+            if (!(model instanceof StickyNoteModel) && !(model instanceof PlacematModel)) {
+                return super.createAndAddModelElement(model);
+            }
+            ModelElement existing = getModelElement(model);
+            if (existing != null) return existing;
+            ModelElement element = model instanceof StickyNoteModel note
+                    ? new SpellAnnotations.PaperNote(note)
+                    : new SpellAnnotations.InkRegion((PlacematModel) model);
+            if (addElement(element)) element.doCompleteUpdate();
+            return element;
         }
 
         @Override
@@ -127,7 +145,8 @@ public final class SpellEditor {
     }
 
     private ModularUI createUI() {
-        editor.layout(l -> l.flex(1).heightPercent(100));
+        editor.setId("spell_canvas");
+        editor.layout(l -> l.flex(2).minWidth(0).heightPercent(100));
         editor.addEventListener(UIEvents.TICK, ev -> {
             if (fitIn > 0 && --fitIn == 0) editor.getCurrentView().fitGraphChildren();
         });
@@ -157,12 +176,6 @@ public final class SpellEditor {
             l.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true).textColor(0xFF392719).textShadow(false));
             l.layout(x -> x.widthPercent(100));
         }
-        ScrollerView overviewView = new ScrollerView();
-        overviewView.style(s -> s.backgroundTexture(IGuiTexture.EMPTY));
-        overviewView.viewPort(v -> v.style(s -> s.backgroundTexture(IGuiTexture.EMPTY)));
-        overviewView.layout(l -> l.widthPercent(100).flex(1));
-        overviewView.addScrollViewChild(overview);
-
         // The intent a lifeform files this spell under: inferred unless the player picks one.
         intent.setId("intent");
         intent.setCandidateUIProvider(UIElementProvider.text(c -> Component.translatable("dev.logos.graph.SpecialNodes$IntentChoice." + c.name())));
@@ -181,8 +194,10 @@ public final class SpellEditor {
         row.addChildren(loadTemplate, clear);
 
         UIElement side = new UIElement()
-                .layout(l -> l.width(190).heightPercent(100).paddingAll(6).gapAll(5));
-        side.addChildren(
+                .layout(l -> l.flex(1).minWidth(0).heightPercent(100).gapAll(5));
+        side.setId("spell_details");
+        UIElement details = new UIElement().layout(l -> l.widthPercent(100).gapAll(5).paddingAll(6));
+        details.addChildren(
                 new Label().setText(Component.literal("☉ Logos 术式工坊")),
                 new Label().setText(Component.literal("模板")),
                 templates,
@@ -191,14 +206,25 @@ public final class SpellEditor {
                 new Label().setText(Component.literal("☷ 总览")),
                 new Label().setText(Component.literal("意图（魔力生命体据此决定何时施放）")),
                 intent,
-                overviewView,
-                inscribe);
-        for (UIElement child : side.getChildren()) {
-            if (child instanceof Label label) label.textStyle(s -> s.textColor(0xFF392719).textShadow(false));
+                overview);
+        for (UIElement child : details.getChildren()) {
+            if (child instanceof Label label) {
+                label.layout(l -> l.widthPercent(100));
+                label.textStyle(s -> s.textColor(0xFF392719).textShadow(false)
+                        .textWrap(TextWrap.WRAP).adaptiveHeight(true));
+            }
         }
+        ScrollerView detailsView = new ScrollerView();
+        detailsView.setId("spell_details_scroll");
+        detailsView.style(s -> s.backgroundTexture(IGuiTexture.EMPTY));
+        detailsView.viewPort(v -> v.style(s -> s.backgroundTexture(IGuiTexture.EMPTY)));
+        detailsView.layout(l -> l.widthPercent(100).flex(1).minHeight(0));
+        detailsView.addScrollViewChild(details);
+        inscribe.layout(l -> l.widthPercent(100).flexShrink(0));
+        side.addChildren(detailsView, inscribe);
 
         UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW)
-                .widthPercent(100).heightPercent(100).paddingAll(28));
+                .widthPercent(100).heightPercent(100).paddingAll(28).gapAll(8));
         root.setId("spell_editor_background");
         root.style(s -> s.backgroundTexture(new SpellEditorBackground()));
         root.addChildren(editor, side);
