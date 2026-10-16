@@ -69,7 +69,7 @@ public class PhysicalRayScenario implements UIScenario {
         s.server("cast for " + shot, sc -> cast(sc.player(), RAY.formatted(range), null))
                 .ticks(age).screenshot(shot)
                 .check(shot + " ends " + end, ctx -> last(end))
-                .ticks(CLEAR - age);
+                .ticks((CLEAR - age) / 2).ticks(CLEAR - age - (CLEAR - age) / 2);
     }
 
     /** One cast seen from the side, sampled {@code age} ticks later, then left to clear. */
@@ -77,7 +77,7 @@ public class PhysicalRayScenario implements UIScenario {
         s.server("cast for " + shot, sc -> cast(sc.player(), SIDE_RAY.formatted(range), SIDE_FROM))
                 .ticks(age).screenshot(shot)
                 .check(shot + " ends " + end, ctx -> last(end))
-                .ticks(CLEAR - age);
+                .ticks((CLEAR - age) / 2).ticks(CLEAR - age - (CLEAR - age) / 2);
     }
 
     /** A full life sampled from one cast: lit, the afterline, then nothing drawn and nothing kept. */
@@ -144,14 +144,14 @@ public class PhysicalRayScenario implements UIScenario {
                         .5f, 101.8f, 2, .5f, 101.8f, 22, 1, 0, -1, 0, -1)))
                 .ticks(3).screenshot("side_link")
                 .check("a physical link is drawn by the physical ray", ctx -> last(Vfx.RayEnd.LINK) && LogosFx.liveRays() > 0)
-                .ticks(CLEAR - 3);
+                .ticks(60).ticks(CLEAR - 63);
         s.server("four rays in quick succession", sc -> cast(sc.player(), SIDE_RAY.formatted(30), SIDE_FROM))
                 .ticks(2).server("second", sc -> cast(sc.player(), SIDE_RAY.formatted(30), SIDE_FROM.add(0, .9, 0)))
                 .ticks(2).server("third", sc -> cast(sc.player(), SIDE_RAY.formatted(30), SIDE_FROM.add(0, 1.8, 0)))
                 .ticks(2).server("fourth", sc -> cast(sc.player(), SIDE_RAY.formatted(30), SIDE_FROM.add(0, 2.7, 0)))
                 .ticks(2).screenshot("side_rapid")
                 .check("every ray of a burst is live", ctx -> LogosFx.liveRays() >= 4)
-                .ticks(CLEAR);
+                .ticks(61).ticks(CLEAR - 61);
         // Night.
         s.runCommand("time set midnight").ticks(3);
         side(s, "side_night_peak", 30, 3, Vfx.RayEnd.OPEN);

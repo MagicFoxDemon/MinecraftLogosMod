@@ -144,7 +144,7 @@ public class ArcaneRayScenario implements UIScenario {
                 .check("each ray of the volley is live", ctx -> LogosFx.liveRays() >= 3)
                 .ticks(10).screenshot("arcane_ray_volley_residue")
                 // 142 ticks after the last cast: past the 136-tick residue, inside the 200-tick cap.
-                .ticks(130)
+                .ticks(65).ticks(65)
                 .check("everything the rays left is gone", ctx -> LogosFx.liveRays() == 0)
                 .screenshot("arcane_ray_5_gone");
         s.teardown("restore", ctx -> {

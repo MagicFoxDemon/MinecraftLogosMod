@@ -173,7 +173,8 @@ public class LightningRayScenario implements UIScenario {
         s.ticks(2).screenshot("14_rapid_fire")
                 .check("rapid rays are all still showing", ctx -> LogosFx.liveRays() >= 4);
 
-        s.runCommand("tick step 140").waitUntil("every ray has faded", ctx -> LogosFx.liveRays() == 0)
+        s.runCommand("tick step 70").waitUntil("half the afterglow passes", ctx -> now() - castAt >= 70)
+                .runCommand("tick step 70").waitUntil("every ray has faded", ctx -> LogosFx.liveRays() == 0)
                 .check("nothing is left once the afterglow is over", ctx -> LogosFx.liveRays() == 0)
                 .screenshot("15_all_gone")
                 .runCommand("tick unfreeze");
