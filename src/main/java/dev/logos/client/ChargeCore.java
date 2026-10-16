@@ -18,8 +18,17 @@ public class ChargeCore implements ChargeVisual {
     private final ChargeBody body;
 
     protected ChargeCore(ChargeStyle style) {
+        this(style, true);
+    }
+
+    /**
+     * With {@code sharedBall} false the head leaves out the ball itself (charging, held, released, dropped) and
+     * the colossal closing sphere, for an element that draws its own; everything else, the release flash and
+     * burst included, is unchanged.
+     */
+    protected ChargeCore(ChargeStyle style, boolean sharedBall) {
         this.style = style;
-        this.head = new ChargeHead(style);
+        this.head = new ChargeHead(style, sharedBall);
         this.body = new ChargeBody(style);
     }
 

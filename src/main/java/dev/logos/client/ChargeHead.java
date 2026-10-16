@@ -72,12 +72,15 @@ final class ChargeHead {
     private record Strip(Vec3 a, Vec3 b, double theta0, double twist, double length, double swirl, float width) {}
 
     private final ChargeStyle style;
+    /** False when the element draws the ball and the colossal closing sphere itself ({@link ChargeCore#ChargeCore(ChargeStyle, boolean)}). */
+    private final boolean sharedBall;
     private final List<Mote> motes = new ArrayList<>();
     private final List<Strip> strips = new ArrayList<>();
     private final float[] owed = new float[Kind.values().length];
 
-    ChargeHead(ChargeStyle style) {
+    ChargeHead(ChargeStyle style, boolean sharedBall) {
         this.style = style;
+        this.sharedBall = sharedBall;
     }
 
     // ---- simulation ----------------------------------------------------------------------------
@@ -186,7 +189,7 @@ final class ChargeHead {
             if (tier >= 2) shockwaves(stack, out, view, tip, now, R * shrink, p, clear);
             if (tier == 3) {
                 strips(stack, out, view, tip, now, p, near);
-                closingSphere(stack, out, view, tip, now, p, near, c.firstPerson());
+                if (sharedBall) closingSphere(stack, out, view, tip, now, p, near, c.firstPerson());
             }
         }
         if (phase == LiveCharge.Phase.FIZZLED && tier == 3 && since < 8) {
@@ -448,7 +451,7 @@ final class ChargeHead {
     }
 
     private void drawBall(PoseStack stack, SubmitNodeCollector out, View view, Vec3 tip, double now, int tier, float r, float a, boolean dim) {
-        if (a <= .003f || r <= 0) return;
+        if (!sharedBall || a <= .003f || r <= 0) return;
         int light = dim ? lerpColor(style.light(), style.deep(), .5f) : style.light();
         int main = dim ? style.deep() : style.main();
         float spin = (float) now * .08f;
