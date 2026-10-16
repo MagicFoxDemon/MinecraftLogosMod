@@ -49,16 +49,20 @@ public final class ClientCharges {
 
     private ClientCharges() {}
 
-    static void receive(ChargePayload p) {
+    /** A charge update from the server (and from the client scenes' {@code ChargePreview}). */
+    public static void receive(ChargePayload p) {
         Element element = Element.values()[Math.floorMod(p.element(), Element.values().length)];
         if (p.released()) {
             CHARGES.remove(p.entityId());
+            ChargeVisuals.released(p.entityId(), element, p.tier());
             ChargeEffects.release(p.entityId(), element, p.tier());
             return;
         }
         if (p.ended()) {
             State s = CHARGES.remove(p.entityId());
-            if (s != null) ChargeEffects.fizzle(p.entityId(), s.element, s.tier);
+            if (s == null) return;
+            ChargeVisuals.fizzled(p.entityId());
+            ChargeEffects.fizzle(p.entityId(), s.element, s.tier);
             return;
         }
         State s = CHARGES.get(p.entityId());
@@ -72,6 +76,7 @@ public final class ClientCharges {
         if (p.full() && !s.full) s.fullSince = ticks;
         s.full = p.full();
         s.updated = ticks;
+        ChargeVisuals.charging(p.entityId(), s);
     }
 
     public static @Nullable State of(@Nullable Entity entity) {

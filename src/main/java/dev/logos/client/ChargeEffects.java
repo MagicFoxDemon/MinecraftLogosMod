@@ -23,7 +23,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  * charges add more: a ring round the head (elaborate), a circle on the ground (grand), and a second
  * circle with rising sparks (colossal). Let go into its spell, the charge is released from the head
  * (see {@link #release}); dropped without casting, it fizzles out. A first pass to be replaced by real
- * art, but already shaped by element and tier.
+ * art, but already shaped by element and tier: an element that draws its own charge
+ * ({@link ChargeVisuals#drawsOwn}) is skipped here.
  */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class ChargeEffects {
@@ -46,6 +47,7 @@ public final class ChargeEffects {
      */
     static void release(int entityId, Element element, int tier) {
         last = new Ended(entityId, element, tier, true, ClientCharges.ticks());
+        if (ChargeVisuals.drawsOwn(element)) return;
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null || !(level.getEntity(entityId) instanceof LivingEntity holder)) return;
         RandomSource r = level.getRandom();
@@ -95,6 +97,7 @@ public final class ChargeEffects {
     /** A charge dropped without casting: its motes drift off the head, dimmed, and a wisp of smoke. */
     static void fizzle(int entityId, Element element, int tier) {
         last = new Ended(entityId, element, tier, false, ClientCharges.ticks());
+        if (ChargeVisuals.drawsOwn(element)) return;
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null || !(level.getEntity(entityId) instanceof LivingEntity holder)) return;
         RandomSource r = level.getRandom();
@@ -115,7 +118,7 @@ public final class ChargeEffects {
         if (level == null || mc.isPaused()) return;
         long now = ClientCharges.ticks();
         for (var e : ClientCharges.all().entrySet()) {
-            if (!(level.getEntity(e.getKey()) instanceof LivingEntity holder)) continue;
+            if (ChargeVisuals.drawsOwn(e.getValue().element) || !(level.getEntity(e.getKey()) instanceof LivingEntity holder)) continue;
             spawn(level, holder, e.getValue(), CastPoints.of(holder, 1), now);
         }
     }
