@@ -77,6 +77,15 @@ final class PhysicalRayVisual implements RayVisual {
     private long born;
     private int seed;
     private FXRuntime burst;
+    /** Only the narrowing needle and the stuttering afterline, with no launch, landing or sound: a physical beam's wake. */
+    private final boolean afterlineOnly;
+
+    PhysicalRayVisual() { this(false); }
+
+    private PhysicalRayVisual(boolean afterlineOnly) { this.afterlineOnly = afterlineOnly; }
+
+    /** The afterline alone, joining the ray's life where its needle starts to narrow ({@link PhysicalBeamWake}). */
+    static PhysicalRayVisual afterline() { return new PhysicalRayVisual(true); }
 
     @Override public boolean legacy() { return false; }
 
@@ -92,6 +101,10 @@ final class PhysicalRayVisual implements RayVisual {
         strikes = end == Vfx.RayEnd.BLOCK || end == Vfx.RayEnd.CREATURE;
         born = level.getGameTime();
         seed = level.getRandom().nextInt();
+        if (afterlineOnly) {
+            born -= (long) HOT;
+            return;
+        }
         level.playLocalSound(from.x, from.y, from.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, .45f, 1.9f, false);
         level.playLocalSound(from.x, from.y, from.z, SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, .5f, .6f, false);
         kickGround(level);
@@ -139,6 +152,10 @@ final class PhysicalRayVisual implements RayVisual {
                 needle(pose, buf, from, tip, eye, .17f + (.05f - .17f) * k, t < HOT ? 1 : 1 - (t - HOT) / (AFTER - HOT) * .45f);
             } else afterline(pose, buf, eye, t);
         });
+        if (afterlineOnly) {
+            stack.popPose();
+            return;
+        }
         out.submitCustomGeometry(stack, GLOW, (pose, buf) -> {
             float flash = flashCurve(t, 10);
             if (flash > 0) {
