@@ -3,6 +3,7 @@ package dev.logos.client;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayDeque;
 import java.util.Objects;
 import com.lowdragmc.lowdraglib2.math.GradientColor;
 import com.lowdragmc.photon.client.fx.FX;
@@ -39,7 +40,11 @@ import static dev.logos.client.LogosFx.range;
 import static dev.logos.client.LogosFx.size;
 import static dev.logos.client.LogosFx.sphere;
 
-/** Ray 4's nested tubes and Energy/Hit 4 spheres, with Ray 3 aura and a screen-projected void interior. */
+/**
+ * Ray 4's nested tubes and Energy/Hit 4 spheres, with Ray 3 aura and a screen-projected void interior.
+ * Kept compact (closer to Piloto's VoidRay, a thin dark line in a slim haze): every layer grows out of a
+ * narrow neck at the wand, and the knot at the wand stays small, shrinking further right in front of the lens.
+ */
 final class VoidBeamVisual {
     private static final Mesh TUBE = Mesh.load("tube_1"), SWELL = Mesh.load("tube_2"), SPHERE = Mesh.load("sphere");
     private static final RenderType CORE = material("core", "solid", "VOID_CORE", false);
@@ -57,6 +62,13 @@ final class VoidBeamVisual {
     private FXRuntime terminus;
     private Vec3 lastFrom;
     private final boolean defaultMotes;
+    /** Overall scale of the beam's radius; the visible tube's half-width is this times the requested radius. */
+    static final float BODY = .62f;
+    /** The tubes widen from a neck at the wand over this many blocks. */
+    private static final float NECK = 1.4f;
+    /** Lines drawn lately and the radius they were drawn with, so the wake left by a beam can match it. */
+    private record Drawn(Vec3 from, Vec3 to, float radius) {}
+    private static final ArrayDeque<Drawn> DRAWN = new ArrayDeque<>();
 
     VoidBeamVisual(boolean defaultMotes) { this.defaultMotes = defaultMotes; }
 
@@ -65,7 +77,8 @@ final class VoidBeamVisual {
         Vec3 delta = to.subtract(from);
         if (delta.lengthSqr() < .0025) return;
         Vec3 axis = delta.normalize();
-        radius *= .8f;
+        float requested = radius;
+        radius *= BODY;
         float length = (float)delta.length(), scale = Math.max(.2f, radius / .5f);
         final float width = radius;
         double now = level.getGameTime() + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
@@ -78,26 +91,48 @@ final class VoidBeamVisual {
         }
         if (terminus != null) locate(terminus, to.subtract(axis.scale(.1)), axis.scale(-1), scale);
         lastFrom = from;
+        remember(from, to, requested);
+        double eye = from.distanceTo(camera.pos);
+        // Right in front of the lens (first person) the neck is drawn out further, so the beam opens up away from the view.
+        float close = 1 - smooth((float)((eye - .6) / 2.5)), neckLength = NECK * (1 + 3 * close);
+        float neck = Math.min(.45f, neckLength / length), base = .3f - .18f * close;
         stack.pushPose();
         stack.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
         Quaternionf rotation = new Quaternionf().rotationTo(new Vector3f(0, 1, 0), axis.toVector3f());
-        tube(stack, out, CORE, TUBE, from, rotation, radius * .52f, length, now, false);
-        // The original three mesh layers retain their 1 / .7 / .4 relative radial scales.
-        tube(stack, out, SOLID, TUBE, from, rotation, radius, length, now, true);
-        tube(stack, out, FLOW, SWELL, from, rotation, radius * .7f, length, now, false);
-        tube(stack, out, INNER_FLOW, TUBE, from, rotation, radius * .4f, length, now, false);
-        out.submitCustomGeometry(stack, AURA, (pose, buf) -> aura(pose, buf, from, to, camera.pos, width, now));
-        float patchStart = Math.min(length * .2f, radius * 1.4f), patchEnd = Math.min(length * .2f, radius * 1.8f);
-        tube(stack, out, PATCHES, SWELL, from.add(axis.scale(patchStart)), rotation,
-                radius * 1.12f, length - patchStart - patchEnd, now, false);
-        endpoint(stack, out, from.add(axis.scale(.02)), rotation, radius * 1.25f, now, false);
-        endpoint(stack, out, to.subtract(axis.scale(.06)), rotation, radius * 1.65f, now, true);
+        tube(stack, out, CORE, TUBE, from, rotation, radius * .52f, length, now, false, neck, base);
+        // The three mesh layers, drawn closer together than the original 1 / .7 / .4.
+        tube(stack, out, SOLID, TUBE, from, rotation, radius * .85f, length, now, true, neck, base);
+        tube(stack, out, FLOW, SWELL, from, rotation, radius * .62f, length, now, false, neck, base);
+        tube(stack, out, INNER_FLOW, TUBE, from, rotation, radius * .4f, length, now, false, neck, base);
+        out.submitCustomGeometry(stack, AURA, (pose, buf) -> aura(pose, buf, from, to, camera.pos, width, now, neckLength));
+        // The dark patches keep clear of the wand, where they would sweep across a first-person view.
+        float patchStart = Math.min(length * .25f, Math.max(radius * 1.4f, neckLength)), patchEnd = Math.min(length * .2f, radius * 1.8f);
+        if (length - patchStart - patchEnd > .1f) tube(stack, out, PATCHES, SWELL, from.add(axis.scale(patchStart)), rotation,
+                radius * .95f, length - patchStart - patchEnd, now, false, 0, 1);
+        // A small knot at the wand, smaller still right in front of the lens.
+        float knot = radius * .6f * (1 - .8f * close);
+        endpoint(stack, out, from.add(axis.scale(.02)), rotation, knot, now, false);
+        endpoint(stack, out, to.subtract(axis.scale(.06)), rotation, radius * 1.25f, now, true);
         stack.popPose();
     }
 
     void end() {
         if (terminus != null) { terminus.destroy(false); terminus = null; }
     }
+
+    private static void remember(Vec3 from, Vec3 to, float radius) {
+        DRAWN.removeIf(d -> d.to.distanceToSqr(to) < 1e-6 || d.from.distanceToSqr(from) < 1e-6);
+        DRAWN.addFirst(new Drawn(from, to, radius));
+        while (DRAWN.size() > 16) DRAWN.removeLast();
+    }
+
+    /** The radius a void beam was last drawn with along this line (its wake matches it), or {@code fallback}. */
+    static float drawnRadius(Vec3 from, Vec3 to, float fallback) {
+        for (Drawn d : DRAWN) if (d.to.distanceToSqr(to) < 1e-4 && d.from.distanceToSqr(from) < 1e-4) return d.radius;
+        return fallback;
+    }
+
+    private static float smooth(float x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
 
     private record Executor(Level level) implements IEffectExecutor {
         @Override public Level getLevel() { return level; }
@@ -124,12 +159,12 @@ final class VoidBeamVisual {
     }
 
     private static void tube(PoseStack stack, SubmitNodeCollector out, RenderType material, Mesh mesh,
-            Vec3 from, Quaternionf rotation, float radius, float length, double now, boolean displaced) {
+            Vec3 from, Quaternionf rotation, float radius, float length, double now, boolean displaced, float neck, float base) {
         stack.pushPose();
         stack.translate(from.x, from.y, from.z);
         stack.mulPose(rotation);
         stack.scale(radius, length, radius);
-        out.submitCustomGeometry(stack, material, (pose, buf) -> mesh.draw(pose, buf, now, displaced));
+        out.submitCustomGeometry(stack, material, (pose, buf) -> mesh.draw(pose, buf, now, displaced, neck, base));
         stack.popPose();
     }
 
@@ -151,21 +186,22 @@ final class VoidBeamVisual {
     private static void sphereLayer(PoseStack stack, SubmitNodeCollector out, RenderType type,
             float radius, double now, boolean displaced) {
         stack.pushPose(); stack.scale(radius, radius, radius);
-        out.submitCustomGeometry(stack, type, (pose, buf) -> SPHERE.draw(pose, buf, now, displaced));
+        out.submitCustomGeometry(stack, type, (pose, buf) -> SPHERE.draw(pose, buf, now, displaced, 0, 1));
         stack.popPose();
     }
 
     /** Ray 3's slowly panning aura occupies a loose ribbon around the tube, without snowflake sprites. */
-    private static void aura(PoseStack.Pose pose, VertexConsumer buf, Vec3 from, Vec3 to, Vec3 camera, float radius, double now) {
+    private static void aura(PoseStack.Pose pose, VertexConsumer buf, Vec3 from, Vec3 to, Vec3 camera, float radius, double now, float neck) {
         Vec3 delta = to.subtract(from), side = delta.cross(camera.subtract(from.add(to).scale(.5)));
         if (side.lengthSqr() < 1e-8) side = delta.cross(new Vec3(0, 1, 0));
         side = side.lengthSqr() < 1e-8 ? new Vec3(1, 0, 0) : side.normalize();
-        float repeat = (float)delta.length() / 3;
+        float length = (float)delta.length(), repeat = length / 3;
         for (int i = 0; i < 48; i++) {
             float a = i / 48f, b = (i + 1) / 48f;
             Vec3 p = from.add(delta.scale(a)), q = from.add(delta.scale(b));
-            double wa = radius * (1.75 + .15 * Math.sin(a * 19 + now * .035));
-            double wb = radius * (1.75 + .15 * Math.sin(b * 19 + now * .035));
+            // A slimmer haze than Ray 3's, pinched in at the wand like the tubes.
+            double wa = radius * (1.2 + .1 * Math.sin(a * 19 + now * .035)) * (.2 + .8 * smooth(a * length / (neck * 1.3f)));
+            double wb = radius * (1.2 + .1 * Math.sin(b * 19 + now * .035)) * (.2 + .8 * smooth(b * length / (neck * 1.3f)));
             vertex(pose, buf, p.add(side.scale(wa)), a * repeat, 0);
             vertex(pose, buf, p.subtract(side.scale(wa)), a * repeat, 1);
             vertex(pose, buf, q.subtract(side.scale(wb)), b * repeat, 1);
@@ -196,20 +232,23 @@ final class VoidBeamVisual {
             } catch (IOException e) { throw new UncheckedIOException(e); }
         }
 
-        void draw(PoseStack.Pose pose, VertexConsumer buf, double now, boolean displaced) {
+        /** A positive {@code neck} narrows the tube to {@code base} at y = 0, reaching full width at y = neck. */
+        void draw(PoseStack.Pose pose, VertexConsumer buf, double now, boolean displaced, float neck, float base) {
             for (int i = 0; i < triangles.length; i += 3) {
-                put(pose, buf, triangles[i], now, displaced);
-                put(pose, buf, triangles[i + 1], now, displaced);
-                put(pose, buf, triangles[i + 2], now, displaced);
-                put(pose, buf, triangles[i + 2], now, displaced);
+                put(pose, buf, triangles[i], now, displaced, neck, base);
+                put(pose, buf, triangles[i + 1], now, displaced, neck, base);
+                put(pose, buf, triangles[i + 2], now, displaced, neck, base);
+                put(pose, buf, triangles[i + 2], now, displaced, neck, base);
             }
         }
 
-        private void put(PoseStack.Pose pose, VertexConsumer buf, int index, double now, boolean displaced) {
+        private void put(PoseStack.Pose pose, VertexConsumer buf, int index, double now, boolean displaced, float neck, float base) {
             int k = index * 8;
             float bulge = displaced ? (float)(.035 * Math.sin(vertices[k + 3] * 18 + now * .08)
                     * Math.sin(vertices[k + 4] * 25 - now * .05)) : 0;
-            buf.addVertex(pose, vertices[k] + vertices[k + 5] * bulge, vertices[k + 1], vertices[k + 2] + vertices[k + 7] * bulge)
+            float narrow = neck > 0 ? base + (1 - base) * smooth(vertices[k + 1] / neck) : 1;
+            buf.addVertex(pose, (vertices[k] + vertices[k + 5] * bulge) * narrow, vertices[k + 1],
+                            (vertices[k + 2] + vertices[k + 7] * bulge) * narrow)
                     .setColor(0xFF9A28FF).setUv(vertices[k + 3], vertices[k + 4])
                     .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, vertices[k + 5], vertices[k + 6], vertices[k + 7]);
         }
