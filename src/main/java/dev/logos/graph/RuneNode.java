@@ -63,7 +63,7 @@ public abstract class RuneNode extends LogosNode {
 
     @Override
     public String doc() {
-        return rune().signature() + "\n\n" + rune().doc;
+        return NodeDescriptions.describe(this);
     }
 
     public static String kw(String name) {

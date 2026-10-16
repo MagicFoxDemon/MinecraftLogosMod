@@ -73,8 +73,7 @@ public final class SpecialNodes {
 
         @Override
         public String doc() {
-            return "每个术式图有且只有一个启式。注入的魔力是整个法术生命周期共享的魔力池；启式决定何时触发（主动施放 / 受伤 / 攻击 / 击杀）。「影响玩家」关闭时（默认），整个术式不会作用于施法者以外的玩家。"
-                    + "注入魔力可以高于载页的承载上限，施放时只注入载页能承载的部分；「允许焚式」开启时（默认），持焚式法杖施放会放大上限并焚毁载页，被动触发也一样。";
+            return NodeDescriptions.describe(this);
         }
 
         @Override
@@ -125,7 +124,7 @@ public final class SpecialNodes {
 
         @Override
         public String doc() {
-            return "上下文值，由所在事件提供。target 只存在于 on-hit / on-enter / on-kill / 对每个 内部，或 受伤/攻击/击杀 启式中。";
+            return NodeDescriptions.describe(this);
         }
 
         @Override
@@ -203,7 +202,7 @@ public final class SpecialNodes {
 
         @Override
         public String doc() {
-            return "你立下的锚点，当作 ◇位置 使用（跨维度也行）。拿着锚钉右键方块立下锚点；运行时锚点不存在则法术熄灭。";
+            return NodeDescriptions.describe(this);
         }
 
         @Override
@@ -273,7 +272,7 @@ public final class SpecialNodes {
 
         @Override
         public String doc() {
-            return "在此刻求值一次并记住它，之后流程中的所有使用都得到同一个值（例如：施法瞬间的视线落点，延迟后仍落在原处）。";
+            return NodeDescriptions.describe(this);
         }
 
         public RememberKind kind() {
