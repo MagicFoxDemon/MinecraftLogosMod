@@ -416,18 +416,19 @@ public final class LogosFx {
                 accents(level, Element.VOID, pos, 40, 0.6, 0.25);
             }
             case MARK -> play(level, fx("mark", el, 0, () -> mark(el)), pos, 0.8f);
-            case RING -> {
-                play(level, fx("ring", el, 0, () -> ring(el)), pos, 1, p.size());
-                RandomSource r = level.getRandom();
-                for (int k = 0; k < (int) (6 + p.size() * 4); k++) {
-                    double a = r.nextDouble() * Math.PI * 2;
-                    accents(level, el, pos.add(Math.cos(a) * p.size(), 0.1, Math.sin(a) * p.size()), 1, 0.05, 0.02);
-                }
+            case RING -> legacyRing(level, el, pos, p.size());
+            case PULSE -> legacyPulse(level, el, pos, p.size());
+            // A field: its element's own visual if it draws one, otherwise the old particle ring every reminder and burst on each pulse.
+            case FIELD_HOLD -> {
+                FieldVisuals.hold(p.id(), el, pos, p.size(), (int) p.ax(), (int) p.ay(), (int) p.az(), p.look());
+                if (!FieldVisuals.drawsOwn(el)) legacyRing(level, el, pos.add(0, -0.8, 0), p.size());
             }
-            case PULSE -> {
-                play(level, fx("pulse", el, 0, () -> pulse(el)), pos, 1, p.size());
-                accents(level, el, pos, (int) (4 + p.size() * 4), p.size() * 0.6, 0.03);
+            case FIELD_PULSE -> {
+                FieldVisuals.pulse(p.id());
+                if (!FieldVisuals.drawsOwn(el)) legacyPulse(level, el, pos.add(0, -0.5, 0), p.size());
             }
+            case FIELD_ENTER -> FieldVisuals.enter(p.id(), pos, p.look());
+            case FIELD_END -> FieldVisuals.ended(p.id());
             case BEAM -> {
                 Vec3 end = new Vec3(p.ax(), p.ay(), p.az());
                 // A ray from its caster's eyes is drawn from the caster's cast point (a wand's head).
@@ -475,6 +476,22 @@ public final class LogosFx {
     public static void clearRays() {
         RAYS.forEach(r -> r.visual().end());
         RAYS.clear();
+    }
+
+    /** The old field look: a particle ring of radius {@code size} with a few accents round its rim. */
+    private static void legacyRing(Level level, Element el, Vec3 pos, float size) {
+        play(level, fx("ring", el, 0, () -> ring(el)), pos, 1, size);
+        RandomSource r = level.getRandom();
+        for (int k = 0; k < (int) (6 + size * 4); k++) {
+            double a = r.nextDouble() * Math.PI * 2;
+            accents(level, el, pos.add(Math.cos(a) * size, 0.1, Math.sin(a) * size), 1, 0.05, 0.02);
+        }
+    }
+
+    /** The old field pulse: a particle burst of radius {@code size}. */
+    private static void legacyPulse(Level level, Element el, Vec3 pos, float size) {
+        play(level, fx("pulse", el, 0, () -> pulse(el)), pos, 1, size);
+        accents(level, el, pos, (int) (4 + size * 4), size * 0.6, 0.03);
     }
 
     /** Drops trails whose spell body stopped reporting (e.g. it left tracking range). */
@@ -527,12 +544,12 @@ public final class LogosFx {
         }
     }
 
-    /** Draws lasting beams, rays and what they leave, ward spheres, wand charges, and the item models of spell bodies that wear a {@code :look}. */
+    /** Draws lasting beams, rays and what they leave, ward spheres, wand charges, fields, and the item models of spell bodies that wear a {@code :look}. */
     public static void submit(SubmitCustomGeometryEvent event) {
         Minecraft mc = Minecraft.getInstance();
         ShaderPackOverlay.begin();
         Level level = mc.level;
-        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && RAYS.isEmpty() && !WardSpheres.any() && !ChargeVisuals.any()
+        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && RAYS.isEmpty() && !WardSpheres.any() && !ChargeVisuals.any() && !FieldVisuals.any()
                 && !dev.logos.runtime.ConstructEntity.any() && !AnchorMarkers.showing())) return;
         CameraRenderState cam = event.getLevelRenderState().cameraRenderState;
         Quaternionf toCamera = new Quaternionf(cam.orientation).conjugate();
@@ -545,6 +562,7 @@ public final class LogosFx {
         WardSpheres.submit(mc, cam, pt, pose, vfx);
         for (LiveRay r : RAYS) r.visual().submit(level, cam, pt, pose, vfx);
         ChargeVisuals.submit(level, cam, pt, pose, vfx);
+        FieldVisuals.submit(level, cam, pt, pose, vfx);
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
             Trail t = e.getValue();

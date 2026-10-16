@@ -145,12 +145,28 @@ public final class Vfx {
         send(level, Kind.BEAM, e, end.ordinal(), from, to, 1, 0, new Guise(caster, 0, NONE));
     }
 
-    public static void ring(ServerLevel level, Vec3 c, double r, Element e) {
-        send(level, Kind.RING, e, 0, c.add(0, -0.8, 0), Vec3.ZERO, (float) r, 0);
+    /**
+     * A lasting field under a stable id, re-sent every few ticks: its centre, radius, how long it has lasted
+     * and will last in all, and how often it pulses, all in ticks. {@code follow} is the network id of the
+     * caster it moves with, or {@link #NONE}; clients then keep it on that caster between updates.
+     */
+    public static void field(ServerLevel level, int id, Vec3 centre, double radius, Element e, int age, int life, int every, int follow) {
+        send(level, Kind.FIELD_HOLD, e, 0, centre, new Vec3(age, life, every), (float) radius, id, new Guise(follow, 0, NONE));
     }
 
-    public static void pulse(ServerLevel level, Vec3 c, double r, Element e) {
-        send(level, Kind.PULSE, e, 0, c.add(0, -0.5, 0), Vec3.ZERO, (float) r, 0);
+    /** Field {@code id} pulsed (its {@code on-tick} fired). */
+    public static void fieldPulse(ServerLevel level, int id, Vec3 centre, double radius, Element e) {
+        send(level, Kind.FIELD_PULSE, e, 0, centre, Vec3.ZERO, (float) radius, id);
+    }
+
+    /** {@code body} (its centre {@code at}) entered field {@code id}. */
+    public static void fieldEnter(ServerLevel level, int id, Vec3 at, Element e, Entity body) {
+        send(level, Kind.FIELD_ENTER, e, 0, at, Vec3.ZERO, 1, id, new Guise(body.getId(), 0, NONE));
+    }
+
+    /** Field {@code id} ended. */
+    public static void fieldEnd(ServerLevel level, int id, Vec3 centre, Element e) {
+        send(level, Kind.FIELD_END, e, 0, centre, Vec3.ZERO, 1, id);
     }
 
     /**
