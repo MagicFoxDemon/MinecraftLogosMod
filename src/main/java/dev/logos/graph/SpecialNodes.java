@@ -79,18 +79,18 @@ public final class SpecialNodes {
 
         @Override
         public void onDefineOptions(IOptionDefinitionContext context) {
-            context.addOption(NAME, String.class).withDefaultValue("无名术式").withDisplayName(Component.literal("名"));
-            context.addOption(MANA, Integer.class).withDefaultValue(40).withDisplayName(Component.literal("注入魔力"));
-            context.addOption(TRIGGER, Trigger.class).withDefaultValue(Trigger.CAST).withDisplayName(Component.literal("启式"));
-            context.addOption(PLAYERS, Boolean.class).withDefaultValue(false).withDisplayName(Component.literal("影响玩家"));
-            context.addOption(IMMOLATE, Boolean.class).withDefaultValue(true).withDisplayName(Component.literal("允许焚式"));
-            context.addOption(INTENT, IntentChoice.class).withDefaultValue(IntentChoice.AUTO).withDisplayName(Component.literal("意图"));
+            context.addOption(NAME, String.class).withDefaultValue("无名术式").withDisplayName(NodeTerms.parameter(word(), NAME));
+            context.addOption(MANA, Integer.class).withDefaultValue(40).withDisplayName(NodeTerms.parameter(word(), MANA));
+            context.addOption(TRIGGER, Trigger.class).withDefaultValue(Trigger.CAST).withDisplayName(NodeTerms.parameter(word(), TRIGGER));
+            context.addOption(PLAYERS, Boolean.class).withDefaultValue(false).withDisplayName(NodeTerms.parameter(word(), PLAYERS));
+            context.addOption(IMMOLATE, Boolean.class).withDefaultValue(true).withDisplayName(NodeTerms.parameter(word(), IMMOLATE));
+            context.addOption(INTENT, IntentChoice.class).withDefaultValue(IntentChoice.AUTO).withDisplayName(NodeTerms.parameter(word(), INTENT));
         }
 
         @Override
         public void onDefinePorts(IPortDefinitionContext context) {
             context.addOutputPort(START, LTypes.FLOW).withOrientation(PortOrientation.Vertical)
-                    .withDisplayName(Component.literal("▶ 施放")).build();
+                    .withDisplayName(Component.literal("▶ ").append(NodeTerms.parameter(word(), START))).build();
         }
     }
 
@@ -209,7 +209,7 @@ public final class SpecialNodes {
         @Override
         public void onDefineOptions(IOptionDefinitionContext context) {
             context.addOption(NAME, String.class).withDefaultValue("").withConfigurable(AnchorNames.SELECTOR)
-                    .withDisplayName(Component.literal("⚓ 锚点"));
+                    .withDisplayName(Component.literal("⚓ ").append(NodeTerms.parameter(word(), "anchor")));
         }
 
         @Override
@@ -283,19 +283,19 @@ public final class SpecialNodes {
 
         @Override
         public void onDefineOptions(IOptionDefinitionContext context) {
-            context.addOption(KIND, RememberKind.class).withDefaultValue(RememberKind.POS).withDisplayName(Component.literal("类型"));
+            context.addOption(KIND, RememberKind.class).withDefaultValue(RememberKind.POS).withDisplayName(NodeTerms.parameter(word(), KIND));
         }
 
         @Override
         public void onDefinePorts(IPortDefinitionContext context) {
             TypeHandle h = LTypes.of(kind().type, false);
             context.addInputPort(RuneNode.IN, LTypes.FLOW).withOrientation(PortOrientation.Vertical).withDisplayName(Component.literal("▶")).build();
-            var value = context.addInputPort(VALUE, h).withDisplayName(Component.literal(kind().type.label()));
+            var value = context.addInputPort(VALUE, h).withDisplayName(Component.literal(kind().type.glyph + " ").append(NodeTerms.parameter(word(), VALUE)));
             Object def = RuneNode.defaultValue(kind().type, null, VALUE);
             if (def != null) value.withDefaultValue(def);
             else value.withoutConfigurator();
             value.build();
-            context.addOutputPort(RuneNode.OUT, h).withDisplayName(Component.literal("记住的" + kind().type.zh)).build();
+            context.addOutputPort(RuneNode.OUT, h).withDisplayName(Component.literal(kind().type.glyph + " ").append(NodeTerms.parameter(word(), "remembered"))).build();
             context.addOutputPort(RuneNode.NEXT, LTypes.FLOW).withOrientation(PortOrientation.Vertical).withDisplayName(Component.literal("▶")).build();
         }
     }
