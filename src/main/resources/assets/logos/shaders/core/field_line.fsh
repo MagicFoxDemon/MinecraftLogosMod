@@ -29,7 +29,7 @@ void main() {
     // The lines break up into the fill's pattern as the circle dissolves.
     if (fieldParam.y > 0 && flow < fieldParam.y * 1.1 - .05) discard;
     float sweep = fieldParam.x;
-    float lit = exp(-pow((r - sweep) / .07, 2)) * 1.6 + smoothstep(sweep - .35, sweep, r) * step(r, sweep) * .35;
+    float lit = exp(-pow((r - sweep) / .07, 2)) * 1.15 + smoothstep(sweep - .35, sweep, r) * step(r, sweep) * .25;
     float body = .45 + .85 * flow;
     vec3 color = vertexColor.rgb * (body + lit) + vec3(lit * .35);
     fragColor = vec4(color, clamp(mask * vertexColor.a, 0, 1)) * ColorModulator;

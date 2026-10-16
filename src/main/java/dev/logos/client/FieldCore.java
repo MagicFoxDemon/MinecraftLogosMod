@@ -42,7 +42,9 @@ public class FieldCore implements FieldVisual {
     protected static final int OPEN = 10;
     /** Ticks it takes to break up and fade after it ends. */
     protected static final int CLOSE = 20;
-    private static final int WAVE = 14, RIPPLE = 16;
+    /** Ticks a pulse's wave takes to run from the centre to the edge. */
+    protected static final int WAVE = 14;
+    private static final int RIPPLE = 16;
 
     protected final FieldStyle style;
     private final List<Long> pulses = new ArrayList<>();
@@ -63,6 +65,28 @@ public class FieldCore implements FieldVisual {
         entries.addAll(f.newEntries());
         entries.removeIf(e -> now - e.tick() > RIPPLE + 6);
         return f.phase() == LiveField.Phase.ACTIVE || f.sinceEnd(0) < CLOSE;
+    }
+
+    /** Client ticks of the pulses still showing (the latest last), for an element that times its own layers to them. */
+    protected final List<Long> pulseTimes() {
+        return java.util.Collections.unmodifiableList(pulses);
+    }
+
+    /** How many runes float over a field of radius {@code R}. */
+    protected static int runeCount(float R) {
+        return Mth.clamp(Math.round(2 + R * .8f), 3, 10);
+    }
+
+    /**
+     * Where rune {@code i} of {@code n} floats over a field lying at {@code floor} with (opened) radius {@code R},
+     * {@code end} ticks after it ended (0 while it lasts), so an element can dress the runes it draws.
+     */
+    protected static Vec3 runeAt(int i, int n, Vec3 floor, float R, double now, float end) {
+        double h1 = hash(i * 7 + 1), h2 = hash(i * 13 + 5);
+        double phi = Math.PI * 2 * i / n + now * .003 + h1;
+        double r = R * (.3 + .5 * h2);
+        double y = .7 + .5 * hash(i * 3 + 2) + .08 * Math.sin(now * .05 + i * 1.7) - .6 * smooth(0, 10, end);
+        return onRing(floor, r, phi).add(0, y, 0);
     }
 
     /** How far the field has spread out, 0 to 1, easing out over {@link #OPEN} ticks. */
@@ -116,7 +140,7 @@ public class FieldCore implements FieldVisual {
             float own = sweep >= FieldParts.NO_SWEEP ? sweep : sweep * R / radius[layer];
             Vec3 at = floor.add(0, .03 + .01 * layer, 0);
             out.submitCustomGeometry(pose, FieldParts.lines(texture[layer], style.lineShader(), style.fill()), (p, buf) ->
-                    FieldParts.circle(p, buf, at, radius[layer], turn[layer], argb(bright[layer] * shown, layer == 2 ? style.light() : tint), own,
+                    FieldParts.circle(p, buf, at, radius[layer], turn[layer], argb(bright[layer] * shown, layer == 2 ? lerpColor(style.main(), style.light(), .55f) : tint), own,
                             dissolve[layer]));
         }
         // The thin ring at the edge, and a soft glow under the whole circle.
@@ -129,7 +153,7 @@ public class FieldCore implements FieldVisual {
     }
 
     /** A point at angle {@code phi} (0 north, turning clockwise seen from above) on a ring of radius {@code r}. */
-    private static Vec3 onRing(Vec3 c, double r, double phi) {
+    protected static Vec3 onRing(Vec3 c, double r, double phi) {
         return c.add(Math.sin(phi) * r, 0, -Math.cos(phi) * r);
     }
 
@@ -177,7 +201,8 @@ public class FieldCore implements FieldVisual {
         for (long t : pulses) flare = Math.max(flare, (float) Math.exp(-(now - t - WAVE * .8) * (now - t - WAVE * .8) / 18));
         float h = Mth.clamp(.5f + .1f * R, .7f, 2f) * (1 - smooth(0, 8, end));
         if (h <= .01f) return;
-        float a = shown * (.11f + .3f * flare);
+        if (style.curtainAlpha() <= 0) return;
+        float a = shown * style.curtainAlpha() * (1 + 2.7f * flare);
         int segments = Mth.clamp((int) (R * 10), 24, 120);
         float tiles = Math.max(1, Math.round(R * (float) (Math.PI * 2) / 2.5f));
         float v = (float) (-now * .02);
@@ -185,16 +210,29 @@ public class FieldCore implements FieldVisual {
                 ChargeParts.cylinder(p, buf, floor, R, h, segments, (float) (now * .001), tiles, v, .8f, argb(a, style.main()), argb(0, style.deep())));
     }
 
-    /** Each pulse: a ring of light running out over the ground from the centre to the edge. */
+    /**
+     * Each pulse: a thin ring of light running out over the ground from the centre to the edge, with a soft
+     * glow trailing it once it is out of the middle (a soft ring that small would be a solid white disc).
+     */
     private void waves(PoseStack pose, SubmitNodeCollector out, Vec3 floor, float R, double now) {
         if (pulses.isEmpty()) return;
+        int color = lerpColor(style.main(), style.light(), .5f);
+        out.submitCustomGeometry(pose, ChargeParts.add("void_ray/ring"), (p, buf) -> {
+            for (long t : pulses) {
+                float k = (float) ((now - t) / WAVE);
+                if (k < 0 || k > 1) continue;
+                float r = R * (.08f + 1.02f * (1 - (1 - k) * (1 - k)));
+                ChargeParts.flat(p, buf, floor.add(0, .09, 0), new Vec3(1, 0, 0), new Vec3(0, 0, 1), r / .84f, t * .7f,
+                        argb((1 - k) * smooth(0, .2f, k) * .8f, color));
+            }
+        });
         out.submitCustomGeometry(pose, ChargeParts.add("heal/ring"), (p, buf) -> {
             for (long t : pulses) {
                 float k = (float) ((now - t) / WAVE);
                 if (k < 0 || k > 1) continue;
                 float r = R * (.08f + 1.02f * (1 - (1 - k) * (1 - k)));
-                ChargeParts.flat(p, buf, floor.add(0, .09, 0), new Vec3(1, 0, 0), new Vec3(0, 0, 1), r, t * .7f,
-                        argb((1 - k) * smooth(0, .1f, k) * .85f, style.light()));
+                ChargeParts.flat(p, buf, floor.add(0, .08, 0), new Vec3(1, 0, 0), new Vec3(0, 0, 1), r, t * .7f,
+                        argb((1 - k) * smooth(.3f, .55f, k) * .3f, style.main()));
             }
         });
     }
@@ -218,16 +256,13 @@ public class FieldCore implements FieldVisual {
 
     private void runes(PoseStack pose, SubmitNodeCollector out, View view, Vec3 floor, float R, double now, float end, float shown, boolean inside) {
         if (R <= .3f) return;
-        int n = Mth.clamp(Math.round(2 + R * .8f), 3, 10);
+        int n = runeCount(R);
         int frames = style.runeCols() * style.runeRows();
         float leave = smooth(0, 10, end);
         out.submitCustomGeometry(pose, ChargeParts.add(style.runes()), (p, buf) -> {
             for (int i = 0; i < n; i++) {
-                double h1 = hash(i * 7 + 1), h2 = hash(i * 13 + 5);
-                double phi = Math.PI * 2 * i / n + now * .003 + h1;
-                double r = R * (.3 + .5 * h2);
-                double y = .7 + .5 * hash(i * 3 + 2) + .08 * Math.sin(now * .05 + i * 1.7) - .6 * leave;
-                Vec3 at = onRing(floor, r, phi).add(0, y, 0);
+                double h1 = hash(i * 7 + 1);
+                Vec3 at = runeAt(i, n, floor, R, now, end);
                 float size = Math.min(.36f, .18f + .03f * R);
                 float twinkle = .7f + .3f * Mth.sin((float) (now * .09 + i * 2.3));
                 // Kept off the camera, above all when standing in the field.

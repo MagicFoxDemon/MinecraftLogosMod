@@ -70,10 +70,13 @@
   - 符文图集与行列数：`withRunes`；
   - 线条着色器与填充纹理：`withLines`。
 
+  - 光幕亮度：`withCurtain(纹理, 亮度)`，默认 0.11；传 0 时不画核心光幕，由元素自己画边界。
+
   `FieldStyle.of(元素)` 是现在的默认值：蓄力的法阵、`charge/pillar` 光幕、`arcane_ray/runes` 符文、`core/field_line` 线条着色器加 `ward/noise` 填充。
 - 线条着色器：`FieldParts.lines(法阵, 着色器, 填充)` 把法阵贴图当作遮罩，用片元着色器填充线条。
   - 顶点阶段固定为 `core/field_line`，它通过第二 UV 交给片元阶段两个数：`fieldParam.x` 是脉动光已扫到的半径（以法阵半径为 1，3 及以上表示没有），`fieldParam.y` 是碎裂程度（0 完整，1 消失）。
   - 默认片元着色器 `field_line.fsh` 用法阵的极坐标让填充纹理绕圈并向外流动。元素自己的着色器保持同样的输入（`Sampler0` 法阵、`FillTex` 填充、`vertexColor`、`texCoord0`、`fieldParam`、`GameTime` 等）和输出，放在 `shaders/core/<element>_field_*`，用 `withLines("core/<element>_field_line", "<填充纹理>")` 接上。虚空可以在这里用屏幕空间星空。
+- 给元素用的钩子：`pulseTimes()`（还在显示的脉动时刻）、`WAVE`（光波从中心到边缘的刻数）、`runeCount(R)`、`runeAt(...)`（悬浮符文的位置），以及 `onRing(...)`、`opened(...)`、`hash(...)`。不要照抄核心的私有公式。
 - 预览场景 `logos_field_core`：奥秘配色走完整展示，再在夜里看其余六种配色。展示改为从背后俯看，因为正面平视时法阵几乎贴成一条线。
 
 ### 与蓄力区分开
