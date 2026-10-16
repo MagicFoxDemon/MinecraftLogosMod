@@ -8,152 +8,150 @@ import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
-/** UltimateBeam's soft laser core, sparse winding trails and fat-dot accents, all world-depth tested. */
+/**
+ * What the fire beam and its wake share: the strip materials ({@code fire_beam_flame.fsh}) and a
+ * camera-facing strip whose centre wanders and whose width swells along the line, so the flame has a
+ * moving, ragged silhouette instead of two straight edges. Every vertex is written in full and only
+ * submitted through the caller's (ShaderPackOverlay) collector.
+ */
 final class FireBeamCore {
-    private static final RenderType CORE = material("laser", "LASER_CORE");
-    private static final RenderType CONE = material("cone", "CONE_GLOW");
-    private static final RenderType SPIRAL = material("spiral", "WINDING_TRAIL");
-    private static final RenderType DOT = material("dot", "FAT_DOT");
+    /** Additive turbulent flame. */
+    static final RenderType FLAME = strip("flame", "FIRE_FLAME", "fire_ray/fire_trail", BlendFunction.LIGHTNING);
+    /** The same flame alpha-blended: the beam's coloured body, which stays orange against a bright sky. */
+    static final RenderType FLAME_BODY = strip("flame_body", "FIRE_FLAME", "fire_ray/fire_trail", BlendFunction.TRANSLUCENT);
+    /** Additive white-gold heart. */
+    static final RenderType CORE = strip("core", "FIRE_CORE", "fire_ray/fire_trail", BlendFunction.LIGHTNING);
+    /** Alpha-blended dark-red soot around the flame. */
+    static final RenderType SHEATH = strip("sheath", "FIRE_SHEATH", "fire_ray/smoke_trail", BlendFunction.TRANSLUCENT);
+    /** Alpha-blended smoke band of the wake. */
+    static final RenderType SMOKE = strip("smoke", "FIRE_SMOKE", "fire_ray/smoke_trail", BlendFunction.TRANSLUCENT);
+    /** Additive smouldering glow of the wake. */
+    static final RenderType EMBER = strip("ember", "FIRE_EMBER", "fire_ray/fire_trail", BlendFunction.LIGHTNING);
+    /** Additive soft sprite. */
+    static final RenderType GLOW = glow();
 
     private FireBeamCore() {}
 
-    /** Called with the same ShaderPackOverlay collector as the beam's other custom geometry. */
-    static void submit(Vec3 from, Vec3 to, float radius, double now, CameraRenderState camera,
-            PoseStack stack, SubmitNodeCollector out) {
-        Vec3 delta = to.subtract(from);
-        double length = delta.length();
-        if (length < .05) return;
-        Vec3 axis = delta.scale(1 / length);
-        Vec3 right = axis.cross(new Vec3(0, 1, 0));
-        if (right.lengthSqr() < 1e-8) right = new Vec3(1, 0, 0);
+    /** How a strip runs along the line, {@code s} blocks from its start. */
+    interface Profile {
+        /** Half width in blocks. */
+        double width(double s);
+        /** Where the strip's centre sits off the straight line. */
+        Vec3 offset(double s);
+        /** How much of the layer shows (0–1). */
+        float alpha(double s);
+    }
+
+    /**
+     * A camera-facing strip from {@code start} to {@code end} blocks along {@code dir} from {@code from},
+     * {@code perBlock} segments a block. U runs in blocks / 4 plus {@code seed}; V across.
+     */
+    static void strip(PoseStack.Pose pose, VertexConsumer buf, Vec3 eye, Vec3 from, Vec3 dir, double start, double end,
+            int perBlock, float seed, float r, float g, float b, Profile profile) {
+        if (end - start < 1e-3) return;
+        int n = Mth.clamp((int) Math.ceil((end - start) * perBlock), 4, 256);
+        Vec3 prevA = null, prevB = null;
+        float prevU = 0, prevAlpha = 0;
+        for (int i = 0; i <= n; i++) {
+            double s = start + (end - start) * i / n;
+            Vec3 p = from.add(dir.scale(s)).add(profile.offset(s));
+            Vec3 side = side(dir, p, eye).scale(Math.max(0, profile.width(s)));
+            float a = profile.alpha(s);
+            Vec3 pa = p.add(side), pb = p.subtract(side);
+            float u = (float) (s / 4) + seed;
+            if (prevA != null && (a > 0 || prevAlpha > 0)) {
+                vertex(pose, buf, prevA, prevU, 0, r, g, b, prevAlpha);
+                vertex(pose, buf, prevB, prevU, 1, r, g, b, prevAlpha);
+                vertex(pose, buf, pb, u, 1, r, g, b, a);
+                vertex(pose, buf, pa, u, 0, r, g, b, a);
+            }
+            prevA = pa;
+            prevB = pb;
+            prevU = u;
+            prevAlpha = a;
+        }
+    }
+
+    /** A camera-facing square sprite of half size {@code size}. */
+    static void sprite(PoseStack.Pose pose, VertexConsumer buf, CameraRenderState camera, Vec3 at, float size,
+            float r, float g, float b, float a) {
+        if (a <= 0 || size <= 0) return;
+        Vec3 right = new Vec3(camera.orientation.transform(new Vector3f(1, 0, 0))).scale(size);
+        Vec3 up = new Vec3(camera.orientation.transform(new Vector3f(0, 1, 0))).scale(size);
+        vertex(pose, buf, at.subtract(right).add(up), 0, 0, r, g, b, a);
+        vertex(pose, buf, at.subtract(right).subtract(up), 0, 1, r, g, b, a);
+        vertex(pose, buf, at.add(right).subtract(up), 1, 1, r, g, b, a);
+        vertex(pose, buf, at.add(right).add(up), 1, 0, r, g, b, a);
+    }
+
+    /** Unit vector across the line at {@code p}, square to both the line and the view. */
+    static Vec3 side(Vec3 dir, Vec3 p, Vec3 eye) {
+        Vec3 s = dir.cross(eye.subtract(p));
+        if (s.lengthSqr() < 1e-8) s = dir.cross(new Vec3(0, 1, 0));
+        if (s.lengthSqr() < 1e-8) s = new Vec3(1, 0, 0);
+        return s.normalize();
+    }
+
+    /** Two unit vectors square to {@code dir} (the second as close to world up as it can be). */
+    static Vec3[] frame(Vec3 dir) {
+        Vec3 right = dir.cross(new Vec3(0, 1, 0));
+        if (right.lengthSqr() < 1e-6) right = new Vec3(1, 0, 0);
         right = right.normalize();
-        Vec3 up = axis.cross(right).normalize();
-        Vec3 horizontal = right;
-        // The source laser is a single gradient strip, with no noisy opacity or broken centre.
-        out.submitCustomGeometry(stack, CORE, (pose, buf) -> strip(pose, buf, from, to, camera.pos,
-                radius * .95f, radius * .95f, 0xFFFFFFFF));
-        out.submitCustomGeometry(stack, CONE, (pose, buf) -> {
-            // Two faint travelling cones give breathing motion without a cloud of overlapping quads.
-            for (int i = 0; i < 2; i++) {
-                double t = fract(now * .012 + i * .5);
-                double reach = Math.min(length * .2, radius * 2.5);
-                Vec3 a = from.add(axis.scale(t * Math.max(0, length - reach)));
-                Vec3 b = a.add(axis.scale(reach));
-                int alpha = (int)(45 * Math.sin(t * Math.PI));
-                strip(pose, buf, a, b, camera.pos, radius * .12f, radius * .85f, alpha << 24 | 0xFFB63B);
-            }
-        });
-        out.submitCustomGeometry(stack, SPIRAL, (pose, buf) -> {
-            helix(pose, buf, from, axis, horizontal, up, length, radius, now * .045, camera.pos, 0);
-            helix(pose, buf, from, axis, horizontal, up, length, radius, now * .045, camera.pos, Math.PI);
-        });
-        out.submitCustomGeometry(stack, DOT, (pose, buf) -> {
-            Vec3 screenRight = new Vec3(camera.orientation.transform(new Vector3f(1, 0, 0)));
-            Vec3 screenUp = new Vec3(camera.orientation.transform(new Vector3f(0, 1, 0)));
-            int count = Math.min(18, Math.max(3, (int)(length * 1.2)));
-            for (int i = 0; i < count; i++) {
-                double t = fract(now * .018 + i * .61803398875);
-                double a = i * 2.399963 + now * .025;
-                double scatter = radius * (.45 + .28 * Math.sin(i * 1.7));
-                Vec3 at = from.add(delta.scale(.06 + .88 * t))
-                        .add(horizontal.scale(Math.cos(a) * scatter)).add(up.scale(Math.sin(a) * scatter));
-                float r = radius * (.045f + .02f * (i % 3));
-                int alpha = (int)(190 * Math.pow(Math.sin(t * Math.PI), .65));
-                quad(pose, buf, at, screenRight.scale(r), screenUp.scale(r), alpha << 24 | 0xFFE6A0);
-            }
-        });
+        return new Vec3[] {right, right.cross(dir).normalize()};
     }
 
-    private static void helix(PoseStack.Pose pose, VertexConsumer buf, Vec3 from, Vec3 axis, Vec3 right, Vec3 up,
-            double length, float radius, double time, Vec3 camera, double phase) {
-        int segments = Math.min(192, Math.max(32, (int)(length * 14)));
-        for (int i = 0; i < segments; i++) {
-            double t0 = (double)i / segments, t1 = (double)(i + 1) / segments;
-            Vec3 a = helixPoint(from, axis, right, up, length, radius, time, phase, t0);
-            Vec3 b = helixPoint(from, axis, right, up, length, radius, time, phase, t1);
-            Vec3 side = facingSide(b.subtract(a), camera.subtract(a.add(b).scale(.5))).scale(radius * .075);
-            int c0 = windingColor(t0), c1 = windingColor(t1);
-            float u0 = (float)(t0 * length / 2.8 - time * .13), u1 = (float)(t1 * length / 2.8 - time * .13);
-            vertex(pose, buf, a.add(side), u0, 0, c0);
-            vertex(pose, buf, a.subtract(side), u0, 1, c0);
-            vertex(pose, buf, b.subtract(side), u1, 1, c1);
-            vertex(pose, buf, b.add(side), u1, 0, c1);
-        }
+    /** How much of something at {@code p} to show this close to the camera: nothing within {@code near}. */
+    static float nearFade(Vec3 eye, Vec3 p, double near, double far) {
+        return (float) Mth.clamp((eye.distanceTo(p) - near) / (far - near), 0, 1);
     }
 
-    private static Vec3 helixPoint(Vec3 from, Vec3 axis, Vec3 right, Vec3 up, double length,
-            float radius, double time, double phase, double t) {
-        double a = t * length * Math.PI * 2 / 3.8 - time + phase;
-        double taper = Math.min(1, t * length / .8) * Math.min(1, (1 - t) * length / .65);
-        double r = radius * .8 * taper;
-        return from.add(axis.scale(t * length)).add(right.scale(Math.cos(a) * r)).add(up.scale(Math.sin(a) * r));
+    /** Seen down the line (as the caster sees it) the far strip piles up into one spot; thin it there. */
+    static float endOn(Vec3 eye, Vec3 p, Vec3 dir) {
+        Vec3 view = p.subtract(eye);
+        double d = view.length();
+        if (d < 1e-4) return 1;
+        double k = Mth.clamp((Math.abs(view.dot(dir)) / d - .9) / .1, 0, 1);
+        return (float) (1 - .65 * k * k);
     }
 
-    private static int windingColor(double t) {
-        int alpha = (int)(145 * Math.min(1, t * 9) * Math.min(1, (1 - t) * 9));
-        return alpha << 24 | 0xFFD97A;
+    static float smooth(float k) {
+        k = Mth.clamp(k, 0, 1);
+        return k * k * (3 - 2 * k);
     }
 
-    private static void strip(PoseStack.Pose pose, VertexConsumer buf, Vec3 a, Vec3 b, Vec3 camera,
-            float startWidth, float endWidth, int color) {
-        Vec3 axis = b.subtract(a);
-        Vec3 side = facingSide(axis, camera.subtract(a.add(b).scale(.5)));
-        // Only the muzzle narrows. The long edge stays straight so the core reads as a ray.
-        for (int i = 0; i < 24; i++) {
-            float t0 = i / 24f, t1 = (i + 1) / 24f;
-            float w0 = (startWidth + (endWidth - startWidth) * t0) * muzzle(t0, axis.length());
-            float w1 = (startWidth + (endWidth - startWidth) * t1) * muzzle(t1, axis.length());
-            Vec3 p0 = a.add(axis.scale(t0)), p1 = a.add(axis.scale(t1));
-            vertex(pose, buf, p0.add(side.scale(w0)), t0, 0, color);
-            vertex(pose, buf, p0.subtract(side.scale(w0)), t0, 1, color);
-            vertex(pose, buf, p1.subtract(side.scale(w1)), t1, 1, color);
-            vertex(pose, buf, p1.add(side.scale(w1)), t1, 0, color);
-        }
+    static void vertex(PoseStack.Pose pose, VertexConsumer buf, Vec3 p, float u, float v, float r, float g, float b, float a) {
+        buf.addVertex(pose, (float) p.x, (float) p.y, (float) p.z)
+                .setColor(Mth.clamp(r, 0, 1), Mth.clamp(g, 0, 1), Mth.clamp(b, 0, 1), Mth.clamp(a, 0, 1))
+                .setUv(u, v).setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, 0, 1, 0);
     }
 
-    private static float muzzle(float t, double len) {
-        float s = (float)Math.min(1, t * len / .65);
-        return .22f + .78f * s * s * (3 - 2 * s);
-    }
-
-    private static Vec3 facingSide(Vec3 axis, Vec3 view) {
-        Vec3 side = axis.cross(view);
-        if (side.lengthSqr() < 1e-8) side = axis.cross(new Vec3(0, 1, 0));
-        return side.lengthSqr() < 1e-8 ? new Vec3(1, 0, 0) : side.normalize();
-    }
-
-    private static void quad(PoseStack.Pose pose, VertexConsumer buf, Vec3 at, Vec3 right, Vec3 up, int color) {
-        vertex(pose, buf, at.subtract(right).add(up), 0, 0, color);
-        vertex(pose, buf, at.subtract(right).subtract(up), 0, 1, color);
-        vertex(pose, buf, at.add(right).subtract(up), 1, 1, color);
-        vertex(pose, buf, at.add(right).add(up), 1, 0, color);
-    }
-
-    private static void vertex(PoseStack.Pose pose, VertexConsumer buf, Vec3 p, float u, float v, int color) {
-        buf.addVertex(pose, (float)p.x, (float)p.y, (float)p.z).setColor(color).setUv(u, v)
-                .setLight(LightCoordsUtil.FULL_BRIGHT).setNormal(pose, 0, 1, 0);
-    }
-
-    private static double fract(double n) { return n - Math.floor(n); }
-
-    private static RenderType material(String texture, String define) {
-        var pipeline = RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET)
-                .withLocation(id("pipeline/fire_beam_detail_" + texture)).withFragmentShader(id("core/fire_beam_detail"))
-                .withShaderDefine(define).withCull(false)
+    private static RenderType strip(String name, String define, String texture, BlendFunction blend) {
+        var pipeline = RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET, RenderPipelines.GLOBALS_SNIPPET)
+                .withLocation(id("pipeline/fire_beam_" + name)).withFragmentShader(id("core/fire_beam_flame"))
+                .withShaderDefine(define).withSampler("NoiseTex").withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
-                .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).build();
-        return RenderType.create("logos_fire_beam_" + texture, RenderSetup.builder(pipeline)
-                .withTexture("Sampler0", id("textures/vfx/fire_beam/" + texture + ".png"))
-                .sortOnUpload().createRenderSetup());
+                .withColorTargetState(new ColorTargetState(blend)).build();
+        return RenderType.create("logos_fire_beam_" + name, RenderSetup.builder(pipeline)
+                .withTexture("Sampler0", id("textures/vfx/" + texture + ".png"))
+                .withTexture("NoiseTex", id("textures/vfx/fire_ray/noise.png")).sortOnUpload().createRenderSetup());
+    }
+
+    private static RenderType glow() {
+        var pipeline = RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET)
+                .withLocation(id("pipeline/fire_beam_glow")).withFragmentShader(id("core/fire_beam_glow"))
+                .withCull(false).withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+                .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING)).build();
+        return RenderType.create("logos_fire_beam_glow", RenderSetup.builder(pipeline)
+                .withTexture("Sampler0", id("textures/vfx/fire_ray/glow.png")).sortOnUpload().createRenderSetup());
     }
 
     private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
