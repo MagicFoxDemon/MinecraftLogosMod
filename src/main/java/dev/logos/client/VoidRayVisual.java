@@ -43,7 +43,8 @@ import org.jspecify.annotations.Nullable;
  * middle and a crossed flare at the wand. The wisps collapse within a third of a second; what stays is the
  * band, which keeps narrowing until it is gone, shedding a few pale motes. A ray that struck something
  * tears a small rift there, with a shock ring and sparks thrown back toward the caster. Links (drain,
- * execute) are the same line, slimmer, with nothing at their ends.
+ * execute) are the same line, slimmer, with nothing at their ends. A void beam's wake ({@link #wake}) is
+ * the narrowing line alone, already open, with the motes it sheds.
  */
 final class VoidRayVisual implements RayVisual {
     /** Ticks until nothing is left: the burst settles by tick 11, then the line narrows away over five seconds. */
@@ -64,6 +65,23 @@ final class VoidRayVisual implements RayVisual {
     private long born;
     private int seed;
     private @Nullable FXRuntime sparks;
+    /** Zero for a ray; for a beam's wake, the band's starting half-width (there is no burst, only the narrowing line). */
+    private final float wake;
+
+    VoidRayVisual() { this(0); }
+
+    private VoidRayVisual(float wake) { this.wake = wake; }
+
+    /**
+     * Only the ray's narrowing line, for what a void beam leaves behind ({@link VoidBeamWake}): it starts
+     * already open at {@code halfWidth} and narrows away over {@link #WAKE_LIFE} ticks.
+     */
+    static VoidRayVisual wake(float halfWidth) { return new VoidRayVisual(Math.max(.01f, halfWidth)); }
+
+    /** Ticks a beam's wake takes to narrow away (about five seconds). */
+    static final int WAKE_LIFE = 100;
+
+    private int life() { return wake > 0 ? WAKE_LIFE : LIFE; }
 
     @Override
     public boolean legacy() { return false; }
@@ -84,13 +102,13 @@ final class VoidRayVisual implements RayVisual {
     public boolean tick(Level level) {
         long age = level.getGameTime() - born;
         // The sparks leave the struck point as the band's front arrives there.
-        if (sparks == null && age >= 1 && hit()) {
+        if (sparks == null && wake == 0 && age >= 1 && hit()) {
             sparks = SPARKS.createRuntime();
             sparks.getRoot().updatePos(impactPoint().toVector3f());
             sparks.getRoot().updateRotation(new Quaternionf().rotationTo(new Vector3f(0, 0, 1), axis.toVector3f()));
             sparks.emit(new Executor(level));
         }
-        return age < LIFE;
+        return age < life();
     }
 
     @Override
@@ -114,9 +132,16 @@ final class VoidRayVisual implements RayVisual {
     public void submit(Level level, CameraRenderState camera, float partialTick, PoseStack pose, SubmitNodeCollector out) {
         if (length < .05) return;
         float age = level.getGameTime() - born + partialTick;
-        if (age < 0 || age >= LIFE) return;
+        if (age < 0 || age >= life()) return;
         Frame f = new Frame(camera.pos, camera.orientation);
         float scale = end == Vfx.RayEnd.LINK ? .6f : 1;
+        if (wake > 0) {
+            // A beam's wake: the line is already there, so only the band, its halo and the shed motes.
+            out.submitCustomGeometry(pose, BAND, (p, buf) -> band(p, buf, f, age, length, 1));
+            out.submitCustomGeometry(pose, GLOW, (p, buf) -> glow(p, buf, f, age, length, 1));
+            out.submitCustomGeometry(pose, STAR, (p, buf) -> motes(p, buf, f, age, 1));
+            return;
+        }
         // The front tears from the wand to the end within a tick.
         double front = length * ease(clamp(age / 1.2f));
         out.submitCustomGeometry(pose, BAND, (p, buf) -> band(p, buf, f, age, front, scale));
@@ -138,8 +163,17 @@ final class VoidRayVisual implements RayVisual {
         return .085f * (float) Math.pow(1 - clamp((age - 11) / (LIFE - 12)), 1.4);
     }
 
+    /** The band's half-width now: a ray's {@link #bandWidth}, or a wake narrowing from where the beam left it. */
+    private float width(float age) {
+        if (wake == 0) return bandWidth(age);
+        return wake * (float) Math.pow(1 - clamp(age / (WAKE_LIFE - 2)), 1.3);
+    }
+
     /** How the line thins toward its ends: it grows out of the wand, and an open ray frays out in the air. */
     private float endTaper(double s) {
+        // A wake keeps the beam's shape: the same neck at the wand, and a short close where it ended.
+        if (wake > 0) return smooth((float) (s / Math.min(1.4, length * .3)))
+                * (.3f + .7f * smooth((float) ((length - s) / Math.min(.6, length * .2))));
         float t = smooth((float) (s / Math.min(1, length * .3)));
         if (end == Vfx.RayEnd.OPEN) t *= 1 - .8f * smooth((float) ((s - length * .75) / (length * .25)));
         if (end == Vfx.RayEnd.LINK) t *= smooth((float) ((length - s) / Math.min(.8, length * .3)));
@@ -147,16 +181,16 @@ final class VoidRayVisual implements RayVisual {
     }
 
     private float endFade(double s) {
-        return end == Vfx.RayEnd.OPEN ? 1 - smooth((float) ((s - length * .85) / (length * .15))) : 1;
+        return end == Vfx.RayEnd.OPEN && wake == 0 ? 1 - smooth((float) ((s - length * .85) / (length * .15))) : 1;
     }
 
     private void band(PoseStack.Pose pose, VertexConsumer buf, Frame f, float age, double front, float scale) {
-        float width = bandWidth(age) * scale;
+        float width = width(age) * scale;
         if (width <= .002f) return;
-        float burst = 1 - smooth((age - 4) / 7);
+        float burst = wake > 0 ? 0 : 1 - smooth((age - 4) / 7);
         // Pale while the burst is hot, settling to the void's violet (the shader reads the colour's floor as heat).
         float r = lerp(.6f, .93f, burst), g = lerp(.16f, .8f, burst);
-        float alpha = 1 - smooth((age - (LIFE - 8)) / 8);
+        float alpha = 1 - smooth((age - (life() - 8)) / 8);
         ribbon(pose, buf, f, front, (s, out) -> {
             float ripple = 1 + .2f * burst * (float) Math.sin(s * 2.3 - age * 2.5);
             out.set(width * ripple * endTaper(s), r, g, 1, alpha * endFade(s) * near(f, s));
@@ -165,11 +199,11 @@ final class VoidRayVisual implements RayVisual {
 
     /** The burst's violet wisps (MA_Laser_Fire), and afterwards a faint halo that keeps the thin line readable at night. */
     private void glow(PoseStack.Pose pose, VertexConsumer buf, Frame f, float age, double front, float scale) {
-        float burst = age < 1 ? ease(age) : age < 4 ? 1 : 1 - smooth((age - 4) / 5);
-        float halo = bandWidth(age) * 2.6f;
+        float burst = wake > 0 ? 0 : age < 1 ? ease(age) : age < 4 ? 1 : 1 - smooth((age - 4) / 5);
+        float halo = width(age) * (wake > 0 ? 1.7f : 2.6f);
         float width = (burst * .75f + halo) * scale;
         if (width <= .002f) return;
-        float alpha = (burst * .9f + (1 - burst) * .3f) * (end == Vfx.RayEnd.LINK ? .6f : 1) * (1 - smooth((age - (LIFE - 10)) / 10));
+        float alpha = (burst * .9f + (1 - burst) * .3f) * (end == Vfx.RayEnd.LINK ? .6f : 1) * (1 - smooth((age - (life() - 10)) / 10));
         ribbon(pose, buf, f, front, (s, out) ->
                 out.set(width * endTaper(s), .62f, .24f, 1, alpha * endFade(s) * near(f, s)));
     }
