@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The showcase every element's field preview runs (see FIELD_VFX.md), played by {@link FieldPreview} so
- * nothing is cast: a field round the caster seen from the front (its opening, a pulse, a body entering,
+ * nothing is cast: a field round the caster seen from behind and above (its opening, a pulse, a body entering,
  * its clock half way and nearly round, its end); a wide field seen from its edge; a field that follows
  * the caster seen in first person from inside; and the first again by night. An element subclasses it,
  * registers it as {@code logos_<element>_field}, and may add its own steps in {@link #extra}.
@@ -63,10 +63,10 @@ public abstract class FieldTour implements UIScenario {
         s.setGameMode(GameType.CREATIVE).runCommand("time set noon").runCommand("weather clear")
                 .clearArea(new BlockPos(0, 110, 0), 20)
                 .fill(new BlockPos(-18, 100, -18), new BlockPos(18, 100, 18), Blocks.SMOOTH_STONE.defaultBlockState())
-                .teleportPlayer(.5, 101, .5, 0, 20)
-                .step("show the HUD, look from the front", ctx -> {
+                .teleportPlayer(.5, 101, .5, 0, 45)
+                .step("show the HUD, look down from behind", ctx -> {
                     Minecraft.getInstance().options.hideGui = false;
-                    camera(CameraType.THIRD_PERSON_FRONT);
+                    camera(CameraType.THIRD_PERSON_BACK);
                 })
                 .ticks(10);
 
@@ -102,7 +102,8 @@ public abstract class FieldTour implements UIScenario {
         at(s, 150).check("the following field is over", ctx -> !FieldPreview.busy());
 
         // By night.
-        s.step("front again", ctx -> camera(CameraType.THIRD_PERSON_FRONT)).runCommand("time set midnight").ticks(5)
+        s.step("from behind again", ctx -> camera(CameraType.THIRD_PERSON_BACK)).teleportPlayer(.5, 101, .5, 0, 45)
+                .runCommand("time set midnight").ticks(5)
                 .step("a field by night", ctx -> FieldPreview.start(e, new Vec3(.5, 102, .5), 5, 100, 20, -1));
         shot(at(s, 30), name("night"));
         shot(at(s, 41), name("night_pulse"));

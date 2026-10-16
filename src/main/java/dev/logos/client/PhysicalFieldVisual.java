@@ -1,4 +1,10 @@
 package dev.logos.client;
 
-/** The physical field: still the legacy particle ring until the physical branch draws its own (see FIELD_VFX.md). */
-final class PhysicalFieldVisual implements FieldVisual {}
+import dev.logos.lang.Element;
+
+/** The physical field: the shared field in physical's colours, until the physical branch adds its own (see FIELD_VFX.md). */
+final class PhysicalFieldVisual extends FieldCore {
+    PhysicalFieldVisual() {
+        super(FieldStyle.of(Element.PHYSICAL));
+    }
+}

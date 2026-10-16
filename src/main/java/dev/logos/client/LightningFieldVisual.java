@@ -1,4 +1,10 @@
 package dev.logos.client;
 
-/** The lightning field: still the legacy particle ring until the lightning branch draws its own (see FIELD_VFX.md). */
-final class LightningFieldVisual implements FieldVisual {}
+import dev.logos.lang.Element;
+
+/** The lightning field: the shared field in lightning's colours, until the lightning branch adds its own (see FIELD_VFX.md). */
+final class LightningFieldVisual extends FieldCore {
+    LightningFieldVisual() {
+        super(FieldStyle.of(Element.LIGHTNING));
+    }
+}

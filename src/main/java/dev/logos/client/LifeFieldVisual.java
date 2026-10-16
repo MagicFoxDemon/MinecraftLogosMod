@@ -1,4 +1,10 @@
 package dev.logos.client;
 
-/** The life field: still the legacy particle ring until the life branch draws its own (see FIELD_VFX.md). */
-final class LifeFieldVisual implements FieldVisual {}
+import dev.logos.lang.Element;
+
+/** The life field: the shared field in life's colours, until the life branch adds its own (see FIELD_VFX.md). */
+final class LifeFieldVisual extends FieldCore {
+    LifeFieldVisual() {
+        super(FieldStyle.of(Element.LIFE));
+    }
+}
