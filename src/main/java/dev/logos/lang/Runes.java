@@ -27,6 +27,7 @@ import dev.logos.runtime.SpellInstance;
 import dev.logos.runtime.SpellRuntime;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
+import dev.logos.runtime.TimeSkipObj;
 import dev.logos.runtime.TimeStop;
 import dev.logos.runtime.Vfx;
 import net.minecraft.ChatFormatting;
@@ -1017,6 +1018,15 @@ public final class Runes {
                             Vfx.burst(level, Targeting.center(mob), Element.LIFE, 8);
                         }
                     }
+                    return null;
+                });
+        def("time-skip", EFFECT, ACTION).p("seconds", NUM).stab(3)
+                .doc("时间加速：把所在维度的时间向前推进若干秒（最多 36000），越推越快直到上限，临近终点时急刹。"
+                        + "有日夜的维度推进日夜，同时加快该维度的随机刻（作物、树苗、冰雪）；没有日夜的维度只加快随机刻。"
+                        + "边推进边付费，每推进 1 秒 4 魔力，魔力耗尽即停。同一时钟同时只能有一个时间加速")
+                .exec((n, c) -> {
+                    double s = clamp(num(n.arg(0), c), 0, 36000);
+                    if (s > 0) TimeSkipObj.start(n, c, c.here(), s);
                     return null;
                 });
         def("decay", EFFECT, ACTION).eachBlock("at").opt("radius", NUM, "1").stab(2)

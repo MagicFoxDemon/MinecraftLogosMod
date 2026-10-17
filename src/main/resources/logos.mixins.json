@@ -10,6 +10,7 @@
     "EnderDragonFightAccessor",
     "EnderDragonMixin",
     "MobMixin",
+    "ServerLevelMixin",
     "LivingEntityMixin",
     "WardenMixin"
   ],
@@ -18,6 +19,7 @@
     "ItemInHandRendererMixin",
     "ItemStackRenderStateAccessor",
     "LayerRenderStateAccessor",
+    "CloudRendererMixin",
     "IrisRenderingPipelineMixin"
   ],
   "injectors": {

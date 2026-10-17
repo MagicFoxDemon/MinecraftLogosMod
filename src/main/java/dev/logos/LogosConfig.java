@@ -102,6 +102,17 @@ public final class LogosConfig {
             .translation("logos.configuration.chargeManaScale")
             .defineInRange("chargeManaScale", 1000.0, 1.0, 1e9);
 
+    public static final ModConfigSpec.DoubleValue TIME_SKIP_MAX_RATE = BUILDER
+            .comment("The fastest time-skip pushes a clock: this many ticks of day per game tick (720 passes an in-game day in under 2 seconds).")
+            .translation("logos.configuration.timeSkipMaxRate")
+            .defineInRange("timeSkipMaxRate", 720.0, 1.0, 24000.0);
+
+    public static final ModConfigSpec.DoubleValue TIME_SKIP_MAX_RANDOM_TICKS = BUILDER
+            .comment("The most a time-skip multiplies random ticks (crops, saplings, ice) in its dimension. They cost the server",
+                    "in proportion, in every loaded chunk there, so this stays far below timeSkipMaxRate.")
+            .translation("logos.configuration.timeSkipMaxRandomTicks")
+            .defineInRange("timeSkipMaxRandomTicks", 20.0, 1.0, 1000.0);
+
     /** Formula Immolation I, II, III: how many times a page's capacity a burning cast may inject. */
     public static final List<ModConfigSpec.DoubleValue> IMMOLATION_MULTIPLIERS = List.of(
             immolation(1, 2), immolation(2, 3), immolation(3, 5));
@@ -228,6 +239,22 @@ public final class LogosConfig {
             return CHARGE_MANA_SCALE.getAsDouble();
         } catch (IllegalStateException e) {
             return 1000.0;
+        }
+    }
+
+    public static double timeSkipMaxRate() {
+        try {
+            return TIME_SKIP_MAX_RATE.getAsDouble();
+        } catch (IllegalStateException e) {
+            return 720.0;
+        }
+    }
+
+    public static double timeSkipMaxRandomTicks() {
+        try {
+            return TIME_SKIP_MAX_RANDOM_TICKS.getAsDouble();
+        } catch (IllegalStateException e) {
+            return 20.0;
         }
     }
 
