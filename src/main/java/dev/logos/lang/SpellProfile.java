@@ -203,6 +203,10 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = argNum(n, 1, 3) * 1.2 * count(n.arg(0));
                     found.add(Intent.CONTROL);
                 }
+                case "time-stop" -> {
+                    own = Math.min(argNum(n, 1, 3), 10) * 4 * count(n.arg(0));
+                    found.add(Intent.CONTROL);
+                }
                 case "damage-all" -> {
                     double factor = n.arg(2) != null && n.arg(2).value instanceof Element el ? el.costFactor : Element.PHYSICAL.costFactor;
                     own = argNum(n, 1, 5) * factor * groupMultiplier(n.arg(0)) + events(n, "on-kill", true);

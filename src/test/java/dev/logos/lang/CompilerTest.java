@@ -273,6 +273,16 @@ class CompilerTest {
     }
 
     @Test
+    void timeStopIsControlPricedPerSecond() {
+        Spell s = Compiler.compile("(spell :mana 60 (time-stop (foe) 3))");
+        assertEquals(Intent.CONTROL, s.profile().primary());
+        assertEquals(12, s.profile().estimate(), 1e-9);
+        // The rune holds at most 10 seconds, and so does the estimate.
+        assertEquals(40, Compiler.compile("(spell :mana 60 (time-stop caster 30))").profile().estimate(), 1e-9);
+        assertError("(time-stop here 2)", "插槽形状不符");
+    }
+
+    @Test
     void recursionCostsStability() {
         Spell plain = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1)))");
         Spell rec = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1) (recurse)))");

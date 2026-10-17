@@ -10,6 +10,7 @@ import dev.logos.runtime.Casting;
 import dev.logos.runtime.Effects;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.StatusData;
+import dev.logos.runtime.TimeStop;
 import dev.logos.runtime.Vfx;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -23,6 +24,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -159,5 +161,44 @@ final class RuneGameTests {
         Holder<MobEffect> foreign = Holder.direct(new MobEffect(MobEffectCategory.BENEFICIAL, 0) {});
         h.assertTrue(Vfx.potion(foreign) == Vfx.Burst.POTION_NEUTRAL, "an effect outside vanilla should read neutral");
         h.succeed();
+    }
+
+    /** A stopped mob hangs where it is and takes no damage; when time resumes the kept blows all land, and it falls. */
+    static void timeStopMob(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        FamiliarGameTests.forceAround(h, 1);
+        var husk = h.spawn(EntityType.HUSK, new Vec3(4.5, 5, 3.5));
+        var inst = Casting.cast(p, Casting.compile("(spell :mana 60 (time-stop (nearest :radius 8) 2))"), null, null);
+        h.assertTrue(inst != null && !inst.dead && TimeStop.stopped(husk), "the husk should be stopped");
+        h.assertTrue(Math.abs(inst.injected - inst.mana - 9) < 1e-6, "nearest 1 + 2 s × 4 should cost 9, cost " + (inst.injected - inst.mana));
+        double y = husk.getY();
+        float full = husk.getHealth();
+        husk.hurtServer(h.getLevel(), husk.damageSources().magic(), 3);
+        husk.hurtServer(h.getLevel(), husk.damageSources().magic(), 2);
+        h.assertTrue(husk.getHealth() == full && TimeStop.stored(husk) == 5, "both blows should be kept, kept " + TimeStop.stored(husk));
+        h.runAfterDelay(20, () -> h.assertTrue(TimeStop.stopped(husk) && husk.getY() == y, "a stopped husk should hang still, moved to " + husk.getY()));
+        // Both land, the second not turned away by the first one's invulnerability.
+        h.succeedWhen(() -> h.assertTrue(!TimeStop.stopped(husk) && husk.getHealth() == full - 5 && husk.getY() < y,
+                "once time resumes, the husk should take 5 and fall; health " + husk.getHealth() + ", y " + husk.getY()));
+    }
+
+    /** A stopped player cannot move (speed, jump and gravity held at zero) or attack, and their kept damage lands at the end. */
+    static void timeStopPlayer(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        p.connection.markClientLoaded();
+        FamiliarGameTests.forceAround(h, 1);
+        var husk = mob(h, EntityType.HUSK);
+        double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED);
+        Casting.cast(p, Casting.compile("(spell :mana 60 (time-stop caster 1))"), null, null);
+        h.assertTrue(TimeStop.stopped(p), "the caster should be stopped");
+        for (var a : List.of(Attributes.MOVEMENT_SPEED, Attributes.JUMP_STRENGTH, Attributes.GRAVITY))
+            h.assertTrue(p.getAttributeValue(a) == 0, a.getRegisteredName() + " should be held at 0, is " + p.getAttributeValue(a));
+        h.assertTrue(net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p, husk)).isCanceled(), "a stopped player's attack should be refused");
+        float full = p.getHealth();
+        p.hurtServer(h.getLevel(), p.damageSources().magic(), 4);
+        h.assertTrue(p.getHealth() == full, "the blow should be kept, health " + p.getHealth() + ", kept " + TimeStop.stored(p));
+        h.succeedWhen(() -> h.assertTrue(!TimeStop.stopped(p) && p.getAttributeValue(Attributes.MOVEMENT_SPEED) == speed && p.getHealth() == full - 4,
+                "once time resumes, the player should move again and take 4; health " + p.getHealth()));
     }
 }
