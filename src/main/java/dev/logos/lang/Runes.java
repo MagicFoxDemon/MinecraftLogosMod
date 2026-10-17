@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.function.DoubleBinaryOperator;
 
 import dev.logos.LogosConfig;
+import dev.logos.runtime.AreaWeatherObj;
 import dev.logos.runtime.BeamObj;
 import dev.logos.runtime.ConstructEntity;
 import dev.logos.runtime.ConstructObj;
@@ -1042,6 +1043,23 @@ public final class Runes {
                         default -> server.setWeatherParameters(0, ticks, true, true);
                     }
                     Vfx.sound(c.level(), c.inst().caster.getEyePosition(), net.minecraft.sounds.SoundEvents.BEACON_POWER_SELECT, 1f, 0.7f);
+                    return null;
+                });
+        def("weather", EFFECT, ACTION).p("weather", WEATHER).kw("at", POS, "here").kw("radius", NUM, "8").kw("life", NUM, "30").flag("follow").stab(4)
+                .doc("区域天气：在以某处为中心的圆柱区域内改变天气，区域外照旧。雨在寒冷的群系里是雪；雪在任何群系都下，地面积雪、水面结冰；"
+                        + "晴让区域内不下雨；雷暴在区域内落雷，但不落在施法者和友方附近。展开 10 魔力，之后每秒维持 0.02 × 半径² 魔力（雷暴加倍），"
+                        + "魔力耗尽即消散。半径 1～48（默认 8），持续 1～600 秒（默认 30）。:follow 让区域跟随施法者。没有天气的维度不能施放（不消耗魔力）")
+                .exec((n, c) -> {
+                    Weather w = eval(n.arg(0), c) instanceof Weather x ? x : Weather.RAIN;
+                    Place at = place(kw(n, "at"), c);
+                    if (!at.level().canHaveWeather()) {
+                        c.inst().terminate("这个维度没有天气");
+                        return null;
+                    }
+                    double radius = clamp(num(kw(n, "radius"), c), 1, 48);
+                    int life = (int) Math.round(clamp(num(kw(n, "life"), c), 1, 600) * 20);
+                    if (!c.inst().spend(AreaWeatherObj.SETUP, "weather")) return null;
+                    AreaWeatherObj.start(n, c.at(at), at.pos(), w, radius, life, n.flags.contains("follow"));
                     return null;
                 });
         def("time-skip", EFFECT, ACTION).p("seconds", NUM).stab(3)
