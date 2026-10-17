@@ -111,7 +111,7 @@ public final class LogosConfig {
             .comment("The most a time-skip multiplies random ticks (crops, saplings, ice) in its dimension. They cost the server",
                     "in proportion, in every loaded chunk there, so this stays far below timeSkipMaxRate.")
             .translation("logos.configuration.timeSkipMaxRandomTicks")
-            .defineInRange("timeSkipMaxRandomTicks", 20.0, 1.0, 1000.0);
+            .defineInRange("timeSkipMaxRandomTicks", 300.0, 1.0, 1000.0);
 
     /** Formula Immolation I, II, III: how many times a page's capacity a burning cast may inject. */
     public static final List<ModConfigSpec.DoubleValue> IMMOLATION_MULTIPLIERS = List.of(
@@ -254,7 +254,7 @@ public final class LogosConfig {
         try {
             return TIME_SKIP_MAX_RANDOM_TICKS.getAsDouble();
         } catch (IllegalStateException e) {
-            return 20.0;
+            return 300.0;
         }
     }
 

@@ -61,7 +61,7 @@
   "logos.configuration.timeSkipMaxRate": "Time Skip Max Rate",
   "logos.configuration.timeSkipMaxRate.tooltip": "The most ticks of day a time-skip pushes per game tick (default 720: an in-game day in under 2 seconds)",
   "logos.configuration.timeSkipMaxRandomTicks": "Time Skip Random Tick Cap",
-  "logos.configuration.timeSkipMaxRandomTicks.tooltip": "The most a time-skip multiplies random ticks (crops, saplings, ice) in its dimension; costs the server in proportion, in every loaded chunk there (default 20)",
+  "logos.configuration.timeSkipMaxRandomTicks.tooltip": "The most a time-skip multiplies random ticks (crops, saplings, ice) in its dimension; costs the server in proportion, in every loaded chunk there (default 300)",
   "logos.configuration.chargeManaScale": "Max Mana Surge Scale",
   "logos.configuration.chargeManaScale.tooltip": "Channel surge is multiplied by 1 + max mana / this: a deeper pool gathers faster (default 1000)",
   "item.logos.adept_wand": "Adept Wand",
