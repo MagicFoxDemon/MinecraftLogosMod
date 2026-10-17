@@ -687,6 +687,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "time_skip", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class TimeSkip extends RuneNode {
+        public TimeSkip() {
+            super("time-skip");
+        }
+    }
+
     @NodeAttribute(name = "decay", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Decay extends RuneNode {
         public Decay() {
@@ -756,6 +763,7 @@ public final class RuneNodes {
         BY_RUNE.put("in-dimension", InDimension::new);
         BY_RUNE.put("toggle-state", ToggleState::new);
         BY_RUNE.put("grow", Grow::new);
+        BY_RUNE.put("time-skip", TimeSkip::new);
         BY_RUNE.put("decay", Decay::new);
         BY_RUNE.put("break-block", BreakBlock::new);
         BY_RUNE.put("set-fire", SetFire::new);

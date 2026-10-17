@@ -200,6 +200,54 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /**
+     * time-skip pays 4 per second as it pushes the overworld clock and speeds random ticks there; it stops
+     * when its mana runs dry, refuses a second skip on the same clock, and gives the clock its rate back.
+     * In the nether, which has no clock, only random ticks speed up. One test, as skips share the clock.
+     */
+    static void timeSkip(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var server = h.getLevel().getServer();
+        var clock = h.getLevel().dimensionType().defaultClock().orElseThrow();
+        float rate = server.clockManager().getRate(clock);
+        var nether = server.getLevel(Level.NETHER);
+        SpellInstance dry = Casting.cast(p, Casting.compile("(spell :mana 10 (time-skip 60))"), null, null);
+        SpellInstance[] run = new SpellInstance[2];
+        long[] before = new long[1];
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(dry.finished(), "the dry skip is still running"))
+                .thenExecute(() -> {
+                    h.assertTrue(dry.dead && dry.endReason().contains("魔力耗尽"), "it should stop when its mana runs dry, got " + dry.endReason());
+                    h.assertTrue(server.clockManager().getRate(clock) == rate, "a stopped skip should give the clock its rate back");
+                    before[0] = server.clockManager().getTotalTicks(clock);
+                    run[0] = Casting.cast(p, Casting.compile("(spell :mana 100 (time-skip 10))"), null, null);
+                    SpellInstance second = Casting.cast(p, Casting.compile("(spell :mana 100 (time-skip 10))"), null, null);
+                    h.assertTrue(second.dead && second.endReason().contains("时间已在加速") && second.mana == second.injected,
+                            "a second skip on the same clock should be refused for free, got " + second.endReason());
+                })
+                .thenExecuteAfter(5, () -> h.assertTrue(dev.logos.runtime.TimeSkipObj.randomTickSpeed(h.getLevel(), 3) > 3, "random ticks should speed up"))
+                .thenWaitUntil(() -> h.assertTrue(run[0].finished(), "the skip is still running"))
+                .thenExecute(() -> {
+                    double spent = run[0].injected - run[0].mana;
+                    h.assertTrue(!run[0].dead && Math.abs(spent - 40) < 1e-6, "10 seconds should cost 40, cost " + spent + " (" + run[0].endReason() + ")");
+                    long pushed = server.clockManager().getTotalTicks(clock) - before[0];
+                    h.assertTrue(pushed >= 200, "the clock should move at least 200 ticks, moved " + pushed);
+                    h.assertTrue(server.clockManager().getRate(clock) == rate, "the clock should get its rate back");
+                    h.assertTrue(dev.logos.runtime.TimeSkipObj.randomTickSpeed(h.getLevel(), 3) == 3, "random ticks should be back to normal");
+                    dev.logos.runtime.Attunement.visit(p, Level.NETHER);
+                    Casting.cast(p, Casting.compile("(spell :mana 200 (blink (in-dimension @the_nether (pos-of caster))))"), null, null);
+                    h.assertTrue(p.level() == nether, "the caster should be in the nether");
+                    run[1] = Casting.cast(p, Casting.compile("(spell :mana 100 (time-skip 5))"), null, null);
+                })
+                .thenExecuteAfter(5, () -> {
+                    h.assertTrue(dev.logos.runtime.TimeSkipObj.randomTickSpeed(nether, 3) > 3, "random ticks in the nether should speed up");
+                    h.assertTrue(dev.logos.runtime.TimeSkipObj.randomTickSpeed(h.getLevel(), 3) == 3, "the overworld's random ticks should not");
+                    h.assertTrue(server.clockManager().getRate(clock) == rate, "a skip in the nether should leave the overworld clock alone");
+                })
+                .thenWaitUntil(() -> h.assertTrue(run[1].finished() && !run[1].dead, "the nether skip should finish, " + run[1].endReason()))
+                .thenSucceed();
+    }
+
     /** A wand charges and casts the selected page; a codex in the off hand extends the list. */
     static void wandCastsSelectedPage(GameTestHelper h) {
         ServerPlayer p = caster(h);

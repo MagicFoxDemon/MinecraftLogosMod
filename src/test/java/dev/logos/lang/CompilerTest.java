@@ -283,6 +283,15 @@ class CompilerTest {
     }
 
     @Test
+    void timeSkipIsPricedPerSecondPushed() {
+        Spell s = Compiler.compile("(spell :mana 300 (time-skip 60))");
+        assertEquals(240, s.profile().estimate(), 1e-9);
+        assertEquals(Intent.UTILITY, s.profile().primary());
+        // The rune pushes at most 36000 seconds, and so does the estimate.
+        assertEquals(144000, Compiler.compile("(spell :mana 300 (time-skip 99999))").profile().estimate(), 1e-9);
+    }
+
+    @Test
     void recursionCostsStability() {
         Spell plain = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1)))");
         Spell rec = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1) (recurse)))");
