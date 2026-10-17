@@ -201,6 +201,35 @@ final class WorldGameTests {
     }
 
     /**
+     * world-weather sets the server's weather for the given time and pays once per change; snow is refused
+     * for free. All in one tick, the weather put back before it can rain or strike other tests.
+     */
+    static void worldWeather(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var server = h.getLevel().getServer();
+        var data = server.getWeatherData();
+        int clear = data.getClearWeatherTime(), rain = data.getRainTime(), thunder = data.getThunderTime();
+        boolean raining = data.isRaining(), thundering = data.isThundering();
+        try {
+            SpellInstance storm = Casting.cast(p, Casting.compile("(spell :mana 300 (world-weather thunder 30))"), null, null);
+            h.assertTrue(!storm.dead && storm.injected - storm.mana == 200, "a storm should cost 200, cost " + (storm.injected - storm.mana) + " (" + storm.endReason() + ")");
+            h.assertTrue(data.isRaining() && data.isThundering() && data.getRainTime() == 600, "it should storm for 600 ticks, rain time " + data.getRainTime());
+            SpellInstance sun = Casting.cast(p, Casting.compile("(spell :mana 300 (world-weather clear))"), null, null);
+            h.assertTrue(!sun.dead && sun.injected - sun.mana == 100, "clearing should cost 100, cost " + (sun.injected - sun.mana));
+            h.assertTrue(!data.isRaining() && !data.isThundering() && data.getClearWeatherTime() == 12000, "it should clear for the default 600 s, clear time " + data.getClearWeatherTime());
+            SpellInstance snow = Casting.cast(p, Casting.compile("(spell :mana 300 (world-weather snow))"), null, null);
+            h.assertTrue(snow.dead && snow.endReason().contains("不能下雪") && snow.mana == snow.injected, "snow should be refused for free, got " + snow.endReason());
+        } finally {
+            data.setClearWeatherTime(clear);
+            data.setRainTime(rain);
+            data.setThunderTime(thunder);
+            data.setRaining(raining);
+            data.setThundering(thundering);
+        }
+        h.succeed();
+    }
+
+    /**
      * time-skip pays 4 per second as it pushes the overworld clock and speeds random ticks there; it stops
      * when its mana runs dry, refuses a second skip on the same clock, and gives the clock its rate back.
      * In the nether, which has no clock, only random ticks speed up. One test, as skips share the clock.

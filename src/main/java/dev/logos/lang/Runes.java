@@ -1020,6 +1020,30 @@ public final class Runes {
                     }
                     return null;
                 });
+        def("world-weather", EFFECT, ACTION).p("weather", WEATHER).opt("seconds", NUM, "600").stab(3)
+                .doc("全域天气：改变整个世界的天气（所有有天气的维度共用同一种天气），持续若干秒（1～1200，默认 600），之后按原版规律自然变化。"
+                        + "按每次改变计费：晴或雨 100 魔力，雷暴 200 魔力。不能下雪，也不能在没有天气的维度施放；被拒绝时不消耗魔力")
+                .exec((n, c) -> {
+                    Weather w = eval(n.arg(0), c) instanceof Weather x ? x : Weather.RAIN;
+                    if (w == Weather.SNOW) {
+                        c.inst().terminate("全域天气不能下雪：原版天气无法让全世界下雪，请用区域天气");
+                        return null;
+                    }
+                    if (!c.level().canHaveWeather()) {
+                        c.inst().terminate("这个维度没有天气");
+                        return null;
+                    }
+                    int ticks = (int) Math.round(clamp(num(n.arg(1), c), 1, 1200) * 20);
+                    if (!c.inst().spend(w == Weather.THUNDER ? 200 : 100, "world-weather")) return null;
+                    var server = c.level().getServer();
+                    switch (w) {
+                        case CLEAR -> server.setWeatherParameters(ticks, 0, false, false);
+                        case RAIN -> server.setWeatherParameters(0, ticks, true, false);
+                        default -> server.setWeatherParameters(0, ticks, true, true);
+                    }
+                    Vfx.sound(c.level(), c.inst().caster.getEyePosition(), net.minecraft.sounds.SoundEvents.BEACON_POWER_SELECT, 1f, 0.7f);
+                    return null;
+                });
         def("time-skip", EFFECT, ACTION).p("seconds", NUM).stab(3)
                 .doc("时间加速：把所在维度的时间向前推进若干秒（最多 36000），越推越快直到上限，临近终点时急刹。"
                         + "有日夜的维度推进日夜，同时加快该维度的随机刻（作物、树苗、冰雪）；没有日夜的维度只加快随机刻。"

@@ -261,6 +261,7 @@
   "logos.rune.toggle-state": "切换方块状态",
   "logos.rune.grow": "生长",
   "logos.rune.time-skip": "时间加速",
+  "logos.rune.world-weather": "全域天气",
   "logos.rune.decay": "衰退",
   "logos.rune.break-block": "破坏方块",
   "logos.rune.set-fire": "纵火",
@@ -460,6 +461,8 @@
   "logos.param.anchor.at": "锚定位置",
   "logos.param.grow.at": "生长中心",
   "logos.param.time-skip.seconds": "推进时长（秒）",
+  "logos.param.world-weather.weather": "天气",
+  "logos.param.world-weather.seconds": "持续（秒）",
   "logos.param.decay.at": "衰退中心",
   "logos.param.beam.radius": "光柱半径（格）",
   "logos.param.field.radius": "领域半径（格）",
@@ -504,6 +507,10 @@
   "dev.logos.lang.ConstructShape.PLANE": "平台",
   "dev.logos.lang.ConstructShape.DISK": "圆盾",
   "dev.logos.lang.ConstructShape.DOME": "穹顶",
+  "dev.logos.lang.Weather.CLEAR": "☀ 晴",
+  "dev.logos.lang.Weather.RAIN": "🌧 雨",
+  "dev.logos.lang.Weather.THUNDER": "⛈ 雷暴",
+  "dev.logos.lang.Weather.SNOW": "❄ 雪",
   "logos.param.projectile.speed": "行进速度",
   "logos.param.beam.trail": "伴生粒子"
 }

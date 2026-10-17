@@ -261,6 +261,7 @@
   "logos.rune.toggle-state": "toggle-state",
   "logos.rune.grow": "grow",
   "logos.rune.time-skip": "time-skip",
+  "logos.rune.world-weather": "world-weather",
   "logos.rune.decay": "decay",
   "logos.rune.break-block": "break-block",
   "logos.rune.set-fire": "set-fire",
@@ -460,6 +461,8 @@
   "logos.param.anchor.at": "Anchor position",
   "logos.param.grow.at": "Growth center",
   "logos.param.time-skip.seconds": "Time to push through (s)",
+  "logos.param.world-weather.weather": "Weather",
+  "logos.param.world-weather.seconds": "Duration (s)",
   "logos.param.decay.at": "Decay center",
   "logos.param.beam.radius": "Beam radius (blocks)",
   "logos.param.field.radius": "Field radius (blocks)",
@@ -504,6 +507,10 @@
   "dev.logos.lang.ConstructShape.PLANE": "Platform",
   "dev.logos.lang.ConstructShape.DISK": "Disk",
   "dev.logos.lang.ConstructShape.DOME": "Dome",
+  "dev.logos.lang.Weather.CLEAR": "☀ Clear",
+  "dev.logos.lang.Weather.RAIN": "🌧 Rain",
+  "dev.logos.lang.Weather.THUNDER": "⛈ Thunder",
+  "dev.logos.lang.Weather.SNOW": "❄ Snow",
   "logos.param.projectile.speed": "Motion speed",
   "logos.param.beam.trail": "Accompanying particle"
 }
