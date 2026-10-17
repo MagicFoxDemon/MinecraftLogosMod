@@ -251,6 +251,34 @@ final class LifeformGameTests {
         healFormHitsMaster(h, "beam");
     }
 
+    /** A beam with no :dir stays on the master it heals, though its body faces away. */
+    static void unaimedBeamHealsMaster(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
+        lf.setNoAi(true);
+        lf.snapTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0); // faces +Z; its master is to its -X
+        lf.core.setItem(0, page("(spell :name \"愈\" :players true :mana 30 (beam (on-hit (heal target 4))))"));
+        p.getFoodData().setFoodLevel(10);
+        p.setHealth(6);
+        h.assertTrue(lf.castSlot(0, p), "it should cast its heal page");
+        h.succeedWhen(() -> h.assertTrue(p.getHealth() >= 10, "the beam should heal its master: " + p.getHealth()));
+    }
+
+    /** A beam with no :dir stays on the foe it was cast at, though its body faces away. */
+    static void unaimedBeamStrikesFoe(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
+        lf.setNoAi(true);
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        husk.setNoAi(true);
+        lf.snapTo(husk.getX(), husk.getY() + 1, husk.getZ() + 4, 0, 0); // faces +Z; the husk is behind it
+        lf.core.setItem(0, page("(spell :name \"灼\" :mana 30 (beam (on-hit (damage target 2))))"));
+        h.assertTrue(lf.castSlot(0, husk), "it should cast its attack page");
+        h.succeedWhen(() -> h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "the beam should strike the husk: " + husk.getHealth()));
+    }
+
     /** A damaging projectile declared a heal still passes through its master: what it does on hit decides, not :intent. */
     static void declaredHealStillSparesMaster(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
