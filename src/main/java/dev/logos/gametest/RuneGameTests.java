@@ -195,6 +195,11 @@ final class RuneGameTests {
         for (var a : List.of(Attributes.MOVEMENT_SPEED, Attributes.JUMP_STRENGTH, Attributes.GRAVITY))
             h.assertTrue(p.getAttributeValue(a) == 0, a.getRegisteredName() + " should be held at 0, is " + p.getAttributeValue(a));
         h.assertTrue(net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p, husk)).isCanceled(), "a stopped player's attack should be refused");
+        // Off the ground a player moves at a fixed air speed, whatever their speed attribute says: the step itself must not run.
+        Vec3 at = p.position();
+        p.setOnGround(false);
+        p.travel(new Vec3(0, 0, 1));
+        h.assertTrue(p.position().distanceTo(at) < 1e-9, "a stopped player should not walk, even in the air; moved " + p.position().distanceTo(at));
         float full = p.getHealth();
         p.hurtServer(h.getLevel(), p.damageSources().magic(), 4);
         h.assertTrue(p.getHealth() == full, "the blow should be kept, health " + p.getHealth() + ", kept " + TimeStop.stored(p));

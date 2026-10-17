@@ -30,7 +30,8 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 /**
  * 时停: one creature's time stands still while the world around it goes on. A mob simply does not
  * tick (no movement, AI, fire or potion clock). A player's movement is their own client's, so
- * instead their speed, jump and gravity are held at zero (attributes sync to that client) and their
+ * instead their speed, jump and gravity are held at zero (attributes sync to that client, which
+ * reads the hold as the sign to skip their movement altogether, see {@link #held}) and their
  * attacks and item uses are refused. Damage taken meanwhile is kept and dealt all at once when time
  * resumes. Server side only, and never saved: a stop that outlives its world simply ends.
  */
@@ -64,6 +65,16 @@ public final class TimeStop {
 
     public static boolean stopped(Entity e) {
         return !e.level().isClientSide() && e instanceof LivingEntity l && STOPPED.containsKey(l);
+    }
+
+    /**
+     * Whether a player's movement is held, on either side. Speed 0 alone does not stop them: in the air
+     * (and with gravity held they never land) a player moves at a fixed air speed, so their movement
+     * step is skipped instead. The hold modifier is synced, so their own client knows too.
+     */
+    public static boolean held(Player p) {
+        AttributeInstance speed = p.getAttribute(Attributes.MOVEMENT_SPEED);
+        return speed != null && speed.getModifier(HOLD) != null;
     }
 
     /** Damage kept for the moment time resumes, summed. */
