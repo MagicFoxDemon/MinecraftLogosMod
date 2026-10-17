@@ -544,12 +544,12 @@ public final class LogosFx {
         }
     }
 
-    /** Draws lasting beams, rays and what they leave, ward spheres, wand charges, fields, and the item models of spell bodies that wear a {@code :look}. */
+    /** Draws lasting beams, rays and what they leave, ward spheres, wand charges, fields, the sky over area weather, and the item models of spell bodies that wear a {@code :look}. */
     public static void submit(SubmitCustomGeometryEvent event) {
         Minecraft mc = Minecraft.getInstance();
         ShaderPackOverlay.begin();
         Level level = mc.level;
-        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && RAYS.isEmpty() && !WardSpheres.any() && !ChargeVisuals.any() && !FieldVisuals.any()
+        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && RAYS.isEmpty() && !WardSpheres.any() && !ChargeVisuals.any() && !FieldVisuals.any() && !AreaWeatherSky.any()
                 && !dev.logos.runtime.ConstructEntity.any() && !AnchorMarkers.showing())) return;
         CameraRenderState cam = event.getLevelRenderState().cameraRenderState;
         Quaternionf toCamera = new Quaternionf(cam.orientation).conjugate();
@@ -563,6 +563,7 @@ public final class LogosFx {
         for (LiveRay r : RAYS) r.visual().submit(level, cam, pt, pose, vfx);
         ChargeVisuals.submit(level, cam, pt, pose, vfx);
         FieldVisuals.submit(level, cam, pt, pose, vfx);
+        AreaWeatherSky.submit(level, cam, pt, pose, vfx);
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
             Trail t = e.getValue();

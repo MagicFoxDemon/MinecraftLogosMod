@@ -119,6 +119,11 @@ public final class AreaWeather {
         return out;
     }
 
+    /** The zones a client knows of in {@code level}'s dimension, for drawing them. */
+    public static List<Zone> known(Level level) {
+        return level.isClientSide() ? zones(level) : List.of();
+    }
+
     private static boolean any(Level level) {
         return level.isClientSide() ? !client.isEmpty() : !SERVER.isEmpty() && SERVER.containsKey(level);
     }
