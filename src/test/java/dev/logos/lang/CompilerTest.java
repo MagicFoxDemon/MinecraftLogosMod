@@ -312,7 +312,9 @@ class CompilerTest {
     void lightningIsAStrikePricedPerBolt() {
         Spell s = Compiler.compile("(spell :mana 50 (lightning (pos-of (foe))))");
         assertEquals(Intent.STRIKE, s.profile().primary());
-        assertEquals(15, s.profile().estimate(), 1e-9);
+        // Estimated at the dry-sky price; rain (40) and storms (20) only lower it.
+        assertEquals(50, s.profile().estimate(), 1e-9);
+        assertTrue(s.profile().assumptions().stream().anyMatch(a -> a.contains("雷暴中 20")));
         assertError("(lightning 3)", "插槽形状不符");
     }
 

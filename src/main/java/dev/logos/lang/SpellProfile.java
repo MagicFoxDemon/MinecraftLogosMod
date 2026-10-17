@@ -282,7 +282,8 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     }
                 }
                 case "lightning" -> {
-                    own = 15 * count(n.arg(0));
+                    own = 50 * count(n.arg(0));
+                    assumptions.add("落雷按晴天每道 50 估算（雨中 40、雷暴中 20）");
                     found.add(group || inGroup || n.arg(0) != null && n.arg(0).type == Type.BLOCKS ? Intent.AREA : Intent.STRIKE);
                 }
                 case "set-fire" -> own = 2 * count(n.arg(0));
