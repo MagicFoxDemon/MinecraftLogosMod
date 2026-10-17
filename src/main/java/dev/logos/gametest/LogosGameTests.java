@@ -38,7 +38,7 @@ public final class LogosGameTests {
             "projectile_impact_expiry", "projectile_impact_wall", "projectile_impact_piercing",
             "fireball_hits_and_bursts", "chain_lightning_bounces", "execute_with_proof_is_cheap", "execute_without_proof_starves",
             "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "config_limits_apply",
-            "world_toggle_state", "world_grow_and_decay", "world_players_flag", "world_items_magnet", "world_nether_step", "world_time_skip", "world_weather_global",
+            "world_toggle_state", "world_grow_and_decay", "world_players_flag", "world_items_magnet", "world_nether_step", "world_time_skip", "world_weather_global", "world_weather_area",
             "world_wand_casts_selected_page", "world_wood_wands_craft",
             "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "world_table_inscribes", "beam_follows_gaze", "world_filter_kinds",
             "construct_stops_movement", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall",
@@ -170,6 +170,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("world_nether_step", () -> WorldGameTests::netherStep);
         FUNCTIONS.register("world_time_skip", () -> WorldGameTests::timeSkip);
         FUNCTIONS.register("world_weather_global", () -> WorldGameTests::worldWeather);
+        FUNCTIONS.register("world_weather_area", () -> WorldGameTests::areaWeather);
         FUNCTIONS.register("world_wand_casts_selected_page", () -> WorldGameTests::wandCastsSelectedPage);
         FUNCTIONS.register("world_wood_wands_craft", () -> WorldGameTests::woodWandsCraft);
         FUNCTIONS.register("wand_charges_then_casts", () -> ChargingGameTests::chargesThenCasts);

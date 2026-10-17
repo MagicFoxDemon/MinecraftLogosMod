@@ -230,6 +230,42 @@ final class WorldGameTests {
     }
 
     /**
+     * Area weather: rain falls inside the zone and nowhere else on its account, a clear zone keeps the rain
+     * off whatever the world does, a snow zone snows and freezes water in any biome, upkeep is paid by area
+     * each second, a zone that cannot pay goes at once, and a finished zone leaves nothing behind.
+     */
+    static void areaWeather(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var level = h.getLevel();
+        BlockPos rainAt = new BlockPos(2, 2, 2), clearAt = new BlockPos(6, 2, 6), snowAt = new BlockPos(2, 2, 7);
+        h.setBlock(snowAt.below(), Blocks.WATER);
+        BlockPos stone = snowAt.east(); // stone under air, next to the water
+        Vec3 rainCenter = Vec3.atCenterOf(h.absolutePos(rainAt));
+        SpellInstance rain = castAt(h, p, "(spell :mana 100 (weather rain :radius 1.5 :life 2))", rainAt);
+        SpellInstance clear = castAt(h, p, "(spell :mana 100 (weather clear :radius 1.5 :life 2))", clearAt);
+        SpellInstance snow = castAt(h, p, "(spell :mana 100 (weather snow :radius 1.5 :life 2))", snowAt);
+        h.assertTrue(dev.logos.runtime.AreaWeather.at(level, rainCenter.x, rainCenter.z) == dev.logos.lang.Weather.RAIN, "the rain zone should stand over its center");
+        h.assertTrue(level.precipitationAt(h.absolutePos(rainAt)) != net.minecraft.world.level.biome.Biome.Precipitation.NONE, "it should rain (or snow, if cold) in the zone");
+        h.assertTrue(dev.logos.runtime.AreaWeather.at(level, rainCenter.x + 30, rainCenter.z) == null, "30 blocks off no zone should stand");
+        h.assertTrue(level.precipitationAt(h.absolutePos(clearAt)) == net.minecraft.world.level.biome.Biome.Precipitation.NONE, "nothing should fall in the clear zone");
+        for (int i = 0; i < 4; i++) {
+            level.tickPrecipitation(h.absolutePos(snowAt));
+            level.tickPrecipitation(h.absolutePos(stone));
+        }
+        h.assertTrue(h.getBlockState(snowAt.below()).is(Blocks.ICE), "a snow zone should freeze still water in any biome");
+        h.assertTrue(h.getBlockState(stone).is(Blocks.SNOW), "a snow zone should lay snow in any biome");
+        SpellInstance poor = castAt(h, p, "(spell :mana 11 (weather thunder :radius 10 :life 30))", new BlockPos(4, 2, 4));
+        h.succeedWhen(() -> {
+            h.assertTrue(poor.dead && poor.endReason().contains("魔力耗尽"), "a storm it cannot keep up should end, got " + poor.endReason());
+            h.assertTrue(rain.finished() && clear.finished() && snow.finished(), "the zones are still up");
+            // 10 to raise, then 0.02 × 1.5² a second for 2 seconds.
+            double spent = rain.injected - rain.mana;
+            h.assertTrue(!rain.dead && Math.abs(spent - (10 + 0.02 * 2.25 * 2)) < 1e-6, "rain should cost 10.09, cost " + spent + " (" + rain.endReason() + ")");
+            h.assertTrue(dev.logos.runtime.AreaWeather.at(level, rainCenter.x, rainCenter.z) == null, "a finished zone should be gone");
+        });
+    }
+
+    /**
      * time-skip pays 4 per second as it pushes the overworld clock and speeds random ticks there; it stops
      * when its mana runs dry, refuses a second skip on the same clock, and gives the clock its rate back.
      * In the nether, which has no clock, only random ticks speed up. One test, as skips share the clock.

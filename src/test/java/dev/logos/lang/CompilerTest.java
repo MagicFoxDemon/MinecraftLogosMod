@@ -300,6 +300,15 @@ class CompilerTest {
     }
 
     @Test
+    void areaWeatherIsPricedByAreaAndTime() {
+        // 10 to raise, then 0.02 × r² a second (a storm twice that) for its life.
+        assertEquals(10 + 0.02 * 64 * 30, Compiler.compile("(spell :mana 300 (weather rain))").profile().estimate(), 1e-9);
+        assertEquals(10 + 0.02 * 256 * 2 * 10, Compiler.compile("(spell :mana 300 (weather thunder :radius 16 :life 10))").profile().estimate(), 1e-9);
+        assertEquals(10 + 0.02 * 48 * 48 * 600, Compiler.compile("(spell :mana 300 (weather snow :radius 99 :life 9999 :follow))").profile().estimate(), 1e-9);
+        assertError("(weather 3)", "插槽形状不符");
+    }
+
+    @Test
     void recursionCostsStability() {
         Spell plain = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1)))");
         Spell rec = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1) (recurse)))");

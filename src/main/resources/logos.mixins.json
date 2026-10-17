@@ -11,6 +11,8 @@
     "EnderDragonMixin",
     "MobMixin",
     "PlayerMixin",
+    "LevelMixin",
+    "EnvironmentAttributeSystemMixin",
     "ServerLevelMixin",
     "LivingEntityMixin",
     "WardenMixin"
@@ -21,6 +23,9 @@
     "ItemStackRenderStateAccessor",
     "LayerRenderStateAccessor",
     "CloudRendererMixin",
+    "WeatherEffectRendererMixin",
+    "SkyWeatherMixin",
+    "FogWeatherMixin",
     "IrisRenderingPipelineMixin"
   ],
   "injectors": {

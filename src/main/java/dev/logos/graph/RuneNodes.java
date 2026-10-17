@@ -701,6 +701,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "weather", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class AreaWeather extends RuneNode {
+        public AreaWeather() {
+            super("weather");
+        }
+    }
+
     @NodeAttribute(name = "decay", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Decay extends RuneNode {
         public Decay() {
@@ -772,6 +779,7 @@ public final class RuneNodes {
         BY_RUNE.put("grow", Grow::new);
         BY_RUNE.put("time-skip", TimeSkip::new);
         BY_RUNE.put("world-weather", WorldWeather::new);
+        BY_RUNE.put("weather", AreaWeather::new);
         BY_RUNE.put("decay", Decay::new);
         BY_RUNE.put("break-block", BreakBlock::new);
         BY_RUNE.put("set-fire", SetFire::new);
