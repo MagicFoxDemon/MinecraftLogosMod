@@ -10,6 +10,7 @@
     "EnderDragonFightAccessor",
     "EnderDragonMixin",
     "MobMixin",
+    "PlayerMixin",
     "ServerLevelMixin",
     "LivingEntityMixin",
     "WardenMixin"
