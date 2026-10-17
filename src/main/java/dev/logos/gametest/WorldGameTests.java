@@ -230,6 +230,35 @@ final class WorldGameTests {
     }
 
     /**
+     * lightning brings a real bolt down: the cow under it is struck, the caster beside it is spared. It costs
+     * 50 under a dry sky, 40 in rain, 20 in a storm; area zones set each sky, whatever the world's weather.
+     */
+    static void lightningStrike(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        p.connection.markClientLoaded();
+        FamiliarGameTests.forceAround(h, 1);
+        Vec3 beside = h.absoluteVec(new Vec3(3.0, 2, 5.5)); // inside the bolt's reach, clear of the fire it lights
+        p.snapTo(beside.x, beside.y, beside.z, 0, 0);
+        var cow = h.spawn(EntityType.COW, new Vec3(5.5, 2, 5.5));
+        cow.setNoAi(true);
+        float full = p.getHealth();
+        // A clear zone over the cow: the dry-sky price, whatever the world is doing. Its upkeep starts next tick.
+        SpellInstance inst = castAt(h, p, "(spell :mana 100 (weather clear :radius 2 :life 1) (lightning here))", new BlockPos(5, 2, 5));
+        h.assertTrue(!inst.dead && inst.injected - inst.mana == 10 + 50, "a bolt under a clear sky should cost 50, spell cost " + (inst.injected - inst.mana));
+        BlockPos wet = new BlockPos(1, 2, 15), stormy = new BlockPos(8, 2, 15);
+        castAt(h, p, "(spell :mana 100 (weather rain :radius 1.5 :life 1))", wet);
+        castAt(h, p, "(spell :mana 100 (weather thunder :radius 1.5 :life 1))", stormy);
+        double inRain = dev.logos.runtime.Lightning.cost(h.getLevel(), h.absolutePos(wet));
+        double inStorm = dev.logos.runtime.Lightning.cost(h.getLevel(), h.absolutePos(stormy));
+        h.assertTrue(inRain == 40 && inStorm == 20, "a bolt should cost 40 in rain and 20 in a storm, costs " + inRain + " and " + inStorm);
+        h.succeedWhen(() -> {
+            h.assertTrue(cow.getHealth() < cow.getMaxHealth() || !cow.isAlive(), "the cow under the bolt should be struck");
+            h.assertTrue(p.getHealth() == full && !p.isOnFire(), "the caster beside it should be spared, health " + p.getHealth());
+        });
+    }
+
+    /**
      * Area weather: rain falls inside the zone and nowhere else on its account, a clear zone keeps the rain
      * off whatever the world does, a snow zone snows and freezes water in any biome, upkeep is paid by area
      * each second, a zone that cannot pay goes at once, and a finished zone leaves nothing behind.

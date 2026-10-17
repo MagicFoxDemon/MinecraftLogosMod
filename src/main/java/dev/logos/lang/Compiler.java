@@ -536,6 +536,7 @@ public final class Compiler {
             Element e = switch (n.rune.name) {
                 case "damage", "damage-all" -> n.args.size() > 2 && n.arg(2).kind == Node.Kind.LIT ? (Element) n.arg(2).value : null;
                 case "ignite", "ignite-all" -> Element.FIRE;
+                case "lightning" -> Element.LIGHTNING;
                 case "freeze", "freeze-all" -> Element.FROST;
                 case "drain", "execute" -> Element.VOID;
                 case "heal", "shield" -> Element.LIFE;

@@ -722,6 +722,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "lightning", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class LightningStrike extends RuneNode {
+        public LightningStrike() {
+            super("lightning");
+        }
+    }
+
     @NodeAttribute(name = "set_fire", group = EFFECT, graphTypes = SpellGraph.class)
     public static class SetFire extends RuneNode {
         public SetFire() {
@@ -782,6 +789,7 @@ public final class RuneNodes {
         BY_RUNE.put("weather", AreaWeather::new);
         BY_RUNE.put("decay", Decay::new);
         BY_RUNE.put("break-block", BreakBlock::new);
+        BY_RUNE.put("lightning", LightningStrike::new);
         BY_RUNE.put("set-fire", SetFire::new);
         BY_RUNE.put("each-block", EachBlock::new);
         BY_RUNE.put("block-is", BlockIs::new);

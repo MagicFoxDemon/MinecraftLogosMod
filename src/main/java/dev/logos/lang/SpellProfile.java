@@ -281,6 +281,11 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                         assumptions.add("生长/腐败按范围内每格地面都有一个对象估算");
                     }
                 }
+                case "lightning" -> {
+                    own = 50 * count(n.arg(0));
+                    assumptions.add("落雷按晴天每道 50 估算（雨中 40、雷暴中 20）");
+                    found.add(group || inGroup || n.arg(0) != null && n.arg(0).type == Type.BLOCKS ? Intent.AREA : Intent.STRIKE);
+                }
                 case "set-fire" -> own = 2 * count(n.arg(0));
                 case "break-block" -> own = 4 * count(n.arg(0));
                 case "if", "each-block", "delay" -> own = 0.5;
