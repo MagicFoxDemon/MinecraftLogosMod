@@ -9,6 +9,7 @@ import dev.logos.lang.ConstructShape;
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
 import dev.logos.lang.Type;
+import dev.logos.lang.Weather;
 
 /**
  * Port types for the spell graph. The node graph toolkit only lets a wire connect when the input's
@@ -42,6 +43,7 @@ public final class LTypes {
     public static TypeHandle ELEMENT;
     public static TypeHandle MOTION;
     public static TypeHandle SHAPE;
+    public static TypeHandle WEATHER;
     public static TypeHandle STATUS;
     public static TypeHandle FLOW;
 
@@ -63,6 +65,8 @@ public final class LTypes {
         TypeHandleHelpers.setCustomDefaultValue(MOTION, () -> Motion.FORWARD);
         SHAPE = handle(ConstructShape.class, "⬡ 形状", 0xFFD9C27A, "⬡");
         TypeHandleHelpers.setCustomDefaultValue(SHAPE, () -> ConstructShape.WALL);
+        WEATHER = handle(Weather.class, "☁ 天气", 0xFF8FB8E0, "☁");
+        TypeHandleHelpers.setCustomDefaultValue(WEATHER, () -> Weather.RAIN);
         NUM = TypeHandles.FLOAT;
         BOOL = TypeHandles.BOOL;
         STATUS = TypeHandles.STRING;
@@ -88,6 +92,7 @@ public final class LTypes {
             case ELEMENT -> ELEMENT;
             case MOTION -> MOTION;
             case SHAPE -> SHAPE;
+            case WEATHER -> WEATHER;
             case STATUS, TEXT, DIMENSION, LOOK, PARTICLE, FILTER, KIND, ANCHOR, CREATURE, MOB_EFFECT -> STATUS;
             case ACTION -> FLOW;
             case NUM, ANY -> NUM;

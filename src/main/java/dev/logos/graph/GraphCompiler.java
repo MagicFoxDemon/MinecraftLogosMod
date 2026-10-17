@@ -30,6 +30,7 @@ import dev.logos.lang.SExpr.Atom;
 import dev.logos.lang.SExpr.ListExpr;
 import dev.logos.lang.Spell;
 import dev.logos.lang.Type;
+import dev.logos.lang.Weather;
 
 /**
  * Compiles a spell graph into Logos syntax, then through the regular {@link Compiler}.
@@ -285,6 +286,7 @@ public final class GraphCompiler {
             case Element e -> atom(owner, e.name().toLowerCase());
             case Motion m -> atom(owner, m.name().toLowerCase());
             case ConstructShape sh -> atom(owner, sh.word());
+            case Weather w -> atom(owner, w.word());
             case String s when want == Type.LOOK -> s.isBlank() ? null : atom(owner, "&" + s.trim().replaceFirst("^&", "").toLowerCase(Locale.ROOT));
             case String s when want == Type.PARTICLE -> s.isBlank() ? null : atom(owner, "%" + s.trim().replaceFirst("^%", "").toLowerCase(Locale.ROOT));
             case String s when want == Type.TEXT || want == Type.FILTER -> s.isBlank() ? null : new SExpr.Str(s.trim().replace("\"", ""), id(owner), 1);

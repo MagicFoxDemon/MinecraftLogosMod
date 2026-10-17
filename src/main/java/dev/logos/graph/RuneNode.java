@@ -14,6 +14,7 @@ import dev.logos.lang.Motion;
 import dev.logos.lang.Rune;
 import dev.logos.lang.Runes;
 import dev.logos.lang.Type;
+import dev.logos.lang.Weather;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -183,6 +184,7 @@ public abstract class RuneNode extends LogosNode {
             case ELEMENT -> defaultSrc != null && Element.parse(defaultSrc) != null ? Element.parse(defaultSrc) : Element.PHYSICAL;
             case MOTION -> defaultSrc != null && Motion.parse(defaultSrc) != null ? Motion.parse(defaultSrc) : Motion.FORWARD;
             case SHAPE -> defaultSrc != null && ConstructShape.parse(defaultSrc) != null ? ConstructShape.parse(defaultSrc) : ConstructShape.WALL;
+            case WEATHER -> defaultSrc != null && Weather.parse(defaultSrc) != null ? Weather.parse(defaultSrc) : Weather.RAIN;
             case STATUS -> "#mark";
             // ❖ an item id / ✧ a particle name typed on the node (mace, portal…); blank = none.
             // ⊙ filters start as a typed id/#tag; wire a (kind …) node in for a kind.

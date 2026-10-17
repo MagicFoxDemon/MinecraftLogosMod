@@ -267,6 +267,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                 case "copy", "recurse" -> own = 3;
                 case "toggle-state" -> own = 5;
                 case "time-skip" -> own = Math.min(argNum(n, 0, 60), 36000) * 4;
+                case "world-weather" -> own = n.arg(0) != null && n.arg(0).value == Weather.THUNDER ? 200 : 100;
                 case "grow", "decay" -> {
                     if (n.arg(0) != null && n.arg(0).type == Type.BLOCKS) own = 2 * count(n.arg(0));
                     else {

@@ -292,6 +292,14 @@ class CompilerTest {
     }
 
     @Test
+    void worldWeatherIsPricedPerChange() {
+        assertEquals(100, Compiler.compile("(spell :mana 300 (world-weather rain))").profile().estimate(), 1e-9);
+        assertEquals(100, Compiler.compile("(spell :mana 300 (world-weather clear 1200))").profile().estimate(), 1e-9);
+        assertEquals(200, Compiler.compile("(spell :mana 300 (world-weather thunder 30))").profile().estimate(), 1e-9);
+        assertError("(world-weather here)", "插槽形状不符");
+    }
+
+    @Test
     void recursionCostsStability() {
         Spell plain = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1)))");
         Spell rec = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1) (recurse)))");

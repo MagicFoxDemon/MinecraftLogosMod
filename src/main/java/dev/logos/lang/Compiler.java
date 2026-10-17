@@ -193,6 +193,8 @@ public final class Compiler {
         }
         ConstructShape shape = ConstructShape.parse(t);
         if (shape != null) return Node.lit(Type.SHAPE, shape, l, c);
+        Weather weather = Weather.parse(t);
+        if (weather != null) return Node.lit(Type.WEATHER, weather, l, c);
         Status st = Status.parse(t);
         if (st != null) return Node.lit(Type.STATUS, st, l, c);
         if (t.startsWith("&")) return look(a);
@@ -565,6 +567,7 @@ public final class Compiler {
         for (Element e : Element.values()) vocab.add(e.name().toLowerCase());
         for (Motion m : Motion.values()) vocab.add(m.name().toLowerCase());
         for (ConstructShape sh : ConstructShape.values()) vocab.add(sh.word());
+        for (Weather w : Weather.values()) vocab.add(w.word());
         String best = null;
         int bestD = 3;
         for (String v : vocab) {
