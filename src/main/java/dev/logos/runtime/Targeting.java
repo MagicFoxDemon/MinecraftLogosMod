@@ -96,6 +96,25 @@ public final class Targeting {
                 .toList();
     }
 
+    /**
+     * {@code found} with the caster added in its place by distance, when a field set this off, the spell was
+     * written to affect players and {@code admits} takes them in: a healing or warding field covers its caster.
+     * Selectors elsewhere never pick the caster.
+     */
+    public static <E extends Entity> List<E> withCaster(Ctx c, List<E> found, Place at, double radius, Predicate<Entity> admits) {
+        SpellInstance inst = c.inst();
+        Entity self = inst.caster;
+        if (!c.vars().containsKey(Ctx.IN_FIELD) || !inst.spell.affectsPlayers()) return found;
+        if (!self.isAlive() || self.isSpectator() || self.level() != at.level() || found.contains(self)) return found;
+        double r = Math.max(0, Math.min(radius, 64));
+        if (center(self).distanceTo(at.pos()) > r + self.getBbWidth() / 2 || !admits.test(self)) return found;
+        List<E> out = new ArrayList<>(found);
+        @SuppressWarnings("unchecked") E e = (E) self;
+        out.add(e);
+        out.sort(Comparator.comparingDouble(x -> center(x).distanceToSqr(at.pos())));
+        return out;
+    }
+
     public static Vec3 center(Entity e) {
         return e.getBoundingBox().getCenter();
     }
