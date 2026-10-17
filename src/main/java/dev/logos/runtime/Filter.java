@@ -19,6 +19,11 @@ public interface Filter {
 
     boolean testBlock(BlockState state);
 
+    /** Whether it admits the spell's own caster where a selector may take them in: {@code (kind players)} then counts them too. */
+    default boolean testSelf(SpellInstance inst, Entity caster) {
+        return test(inst, caster);
+    }
+
     Filter ANY = new Filter() {
         @Override
         public boolean test(SpellInstance inst, Entity e) {
@@ -66,6 +71,11 @@ public interface Filter {
             }
 
             @Override
+            public boolean testSelf(SpellInstance inst, Entity caster) {
+                return k == TargetKind.PLAYERS ? caster instanceof Player : test(inst, caster);
+            }
+
+            @Override
             public boolean testBlock(BlockState state) {
                 return k == TargetKind.ALL;
             }
@@ -77,6 +87,11 @@ public interface Filter {
             @Override
             public boolean test(SpellInstance inst, Entity e) {
                 return fs.stream().anyMatch(f -> f.test(inst, e));
+            }
+
+            @Override
+            public boolean testSelf(SpellInstance inst, Entity caster) {
+                return fs.stream().anyMatch(f -> f.testSelf(inst, caster));
             }
 
             @Override
@@ -94,6 +109,11 @@ public interface Filter {
             }
 
             @Override
+            public boolean testSelf(SpellInstance inst, Entity caster) {
+                return fs.stream().allMatch(f -> f.testSelf(inst, caster));
+            }
+
+            @Override
             public boolean testBlock(BlockState state) {
                 return fs.stream().allMatch(f -> f.testBlock(state));
             }
@@ -105,6 +125,11 @@ public interface Filter {
             @Override
             public boolean test(SpellInstance inst, Entity e) {
                 return base.test(inst, e) && !without.test(inst, e);
+            }
+
+            @Override
+            public boolean testSelf(SpellInstance inst, Entity caster) {
+                return base.testSelf(inst, caster) && !without.testSelf(inst, caster);
             }
 
             @Override

@@ -255,7 +255,7 @@ public final class Runes {
 
         def("field", FORM, ACTION)
                 .kw("at", POS, "here").kw("radius", NUM, "3").kw("life", NUM, "4").kw("every", NUM, "0.5").flag("follow")
-                .on("on-tick", false, "每次脉动").on("on-enter", true, "敌人进入时").on("on-expire", false, "消散时")
+                .on("on-tick", false, "每次脉动").on("on-enter", true, "敌人进入时（只治疗或护盾时己方进入也算，开启 :players 时含施法者自己）").on("on-expire", false, "消散时")
                 .stab(5).doc("领域：持续存在的区域。展开 6 魔力，每次脉动维持 0.5。:follow 让它跟随施法者")
                 .exec((n, c) -> {
                     if (!c.inst().spend(6, "field")) return null;
@@ -369,13 +369,13 @@ public final class Runes {
                             .stream().filter(e -> f.test(c.inst(), e)).toList());
                 });
         def("players", BINDING, ENTITIES).kw("at", POS, "here").kw("radius", NUM, "8")
-                .stab(1).doc("范围内的其他玩家（不含施法者）。只有在启式中开启 :players 的术式才能使用。1 魔力")
+                .stab(1).doc("范围内的其他玩家（不含施法者；在领域里时也包括施法者自己）。只有在启式中开启 :players 的术式才能使用。1 魔力")
                 .exec((n, c) -> {
                     if (!c.inst().spend(1, "players")) return List.of();
                     Place at = place(kw(n, "at"), c);
                     double r = groupRadius(n, c);
-                    return new Group(r, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
-                            e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()));
+                    return new Group(r, Targeting.withCaster(c, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
+                            e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()), at, r, e -> e instanceof Player));
                 });
         def("master", BINDING, ENTITY)
                 .doc("施法者的主人：魔力生命体心核里的术式用它指向召唤它的玩家，例如 (heal (master) 4)。玩家自己施法时就是施法者本人。免费")
@@ -392,14 +392,15 @@ public final class Runes {
                         ? dev.logos.runtime.Familiars.latest(p, text(n.arg(0), c)) : null);
         def("entities", BINDING, ENTITIES).kw("at", POS, "here").kw("radius", NUM, "6").kw("filter", FILTER, "(kind all)")
                 .stab(1).doc("范围内符合筛选的任意实体（不含施法者），如 :filter (kind projectiles) 选出飞行中的箭矢。"
-                        + "其他玩家仍然需要 :players true。2 魔力")
+                        + "其他玩家仍然需要 :players true；开启 :players 的术式在领域里时，筛选包括施法者的话也选上施法者自己。2 魔力")
                 .exec((n, c) -> {
                     if (!c.inst().spend(2, "entities")) return List.of();
                     Place at = place(kw(n, "at"), c);
                     Filter f = filter(kw(n, "filter"), c);
                     double r = groupRadius(n, c);
-                    return new Group(r, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
-                            e -> e.isAlive() && !e.isSpectator() && Targeting.mayAffect(c.inst(), e) && f.test(c.inst(), e)));
+                    return new Group(r, Targeting.withCaster(c, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
+                            e -> e.isAlive() && !e.isSpectator() && Targeting.mayAffect(c.inst(), e) && f.test(c.inst(), e)),
+                            at, r, e -> f.testSelf(c.inst(), e)));
                 });
         def("kind", BINDING, FILTER).p("kind", KIND)
                 .doc("目标种类：" + TargetKind.words() + "。接到任何 :filter 上；只有 all 能筛选方块。免费")

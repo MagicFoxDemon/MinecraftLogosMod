@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import dev.logos.lang.Node;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -20,11 +20,13 @@ public final class FieldObj extends SpellObject {
     private final int every;
     private final boolean follow;
     private final Set<UUID> inside = new HashSet<>();
+    /** Whether its on-enter only heals or wards, so it may greet its own side. */
+    private final boolean helps = Targeting.helpsOnHit(node);
     /** How often clients are reminded the field is there; a client that stops hearing of it lets it go. */
     private static final int HOLD_EVERY = 4;
 
     public FieldObj(Node node, Ctx ctx, Vec3 center, double radius, int life, int every, boolean follow) {
-        super(node, ctx, center, life);
+        super(node, ctx.withVar(Ctx.IN_FIELD, true), center, life);
         this.radius = radius;
         this.every = Math.max(1, every);
         this.follow = follow;
@@ -40,9 +42,13 @@ public final class FieldObj extends SpellObject {
         if (age == 1 || age % HOLD_EVERY == 0) hold();
 
         if (node.events.containsKey("on-enter")) {
-            List<LivingEntity> now = Targeting.enemiesNear(inst, level, pos, radius, false);
+            // A field that only heals or wards on entry greets its own side too, its caster as well if the spell affects players.
+            List<Entity> now = helps
+                    ? Targeting.withCaster(ctx, Targeting.near(inst, level, pos, radius, false, e -> Targeting.mayHit(inst, e, true)),
+                            new Place(level, pos), radius, e -> true)
+                    : Targeting.near(inst, level, pos, radius, false, e -> Targeting.isEnemy(inst, e));
             Set<UUID> ids = new HashSet<>();
-            for (LivingEntity e : now) {
+            for (Entity e : now) {
                 ids.add(e.getUUID());
                 if (inside.add(e.getUUID())) {
                     Vfx.fieldEnter(level, id, Targeting.center(e), node.element, e);

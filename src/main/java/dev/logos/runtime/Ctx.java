@@ -18,6 +18,8 @@ public record Ctx(SpellInstance inst, ServerLevel level, Vec3 here, Vec3 aim, @N
                   double index, int depth) {
     public static final Vec3 UP = new Vec3(0, 1, 0);
     public static final Vec3 DOWN = new Vec3(0, -1, 0);
+    /** Set on what a field sets off, so its selectors may take in its own caster (see {@link Targeting#withCaster}). */
+    public static final String IN_FIELD = "#field";
 
     public Object lookup(String name) {
         return switch (name) {
