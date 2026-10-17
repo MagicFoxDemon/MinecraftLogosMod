@@ -309,6 +309,14 @@ class CompilerTest {
     }
 
     @Test
+    void lightningIsAStrikePricedPerBolt() {
+        Spell s = Compiler.compile("(spell :mana 50 (lightning (pos-of (foe))))");
+        assertEquals(Intent.STRIKE, s.profile().primary());
+        assertEquals(15, s.profile().estimate(), 1e-9);
+        assertError("(lightning 3)", "插槽形状不符");
+    }
+
+    @Test
     void recursionCostsStability() {
         Spell plain = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1)))");
         Spell rec = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1) (recurse)))");

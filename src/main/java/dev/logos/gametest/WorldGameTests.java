@@ -229,6 +229,25 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /** lightning brings a real bolt down for 15: the cow under it is struck, the caster beside it is spared. */
+    static void lightningStrike(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        p.connection.markClientLoaded();
+        FamiliarGameTests.forceAround(h, 1);
+        Vec3 beside = h.absoluteVec(new Vec3(3.0, 2, 5.5)); // inside the bolt's reach, clear of the fire it lights
+        p.snapTo(beside.x, beside.y, beside.z, 0, 0);
+        var cow = h.spawn(EntityType.COW, new Vec3(5.5, 2, 5.5));
+        cow.setNoAi(true);
+        float full = p.getHealth();
+        SpellInstance inst = castAt(h, p, "(spell :mana 50 (lightning here))", new BlockPos(5, 2, 5));
+        h.assertTrue(!inst.dead && inst.injected - inst.mana == 15, "a bolt should cost 15, cost " + (inst.injected - inst.mana));
+        h.succeedWhen(() -> {
+            h.assertTrue(cow.getHealth() < cow.getMaxHealth() || !cow.isAlive(), "the cow under the bolt should be struck");
+            h.assertTrue(p.getHealth() == full && !p.isOnFire(), "the caster beside it should be spared, health " + p.getHealth());
+        });
+    }
+
     /**
      * Area weather: rain falls inside the zone and nowhere else on its account, a clear zone keeps the rain
      * off whatever the world does, a snow zone snows and freezes water in any biome, upkeep is paid by area

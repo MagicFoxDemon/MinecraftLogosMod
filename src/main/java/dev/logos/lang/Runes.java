@@ -21,6 +21,7 @@ import dev.logos.runtime.Effects;
 import dev.logos.runtime.FieldObj;
 import dev.logos.runtime.Group;
 import dev.logos.runtime.Filter;
+import dev.logos.runtime.Lightning;
 import dev.logos.runtime.Limits;
 import dev.logos.runtime.Place;
 import dev.logos.runtime.ProjectileObj;
@@ -1117,6 +1118,19 @@ public final class Runes {
                         if (s.isAir() || hardness < 0 || !mayEdit(c, p)) continue;
                         if (!c.inst().spend(2 + hardness * 2, "break-block")) return null;
                         p.level().destroyBlock(p.block(), true, c.inst().caster);
+                    }
+                    return null;
+                });
+        def("lightning", EFFECT, ACTION).eachBlock("at").stab(2)
+                .doc("落雷：在该位置召下一道闪电，和自然的雷电一样会点火、伤害周围生物，但不会伤到施法者和友方。"
+                        + "可以连接方块群，每处各落一道。每道 15 魔力；没有编辑权限的位置不落雷，也不消耗魔力")
+                .exec((n, c) -> {
+                    for (Place p : places(n.arg(0), c)) {
+                        Place ground = Place.center(p.level(), p.block());
+                        if (!mayEdit(c, ground)) continue;
+                        if (!c.inst().spend(15, "lightning")) return null;
+                        Lightning.strike(c.inst(), p.level(), Vec3.atBottomCenterOf(p.block()));
+                        c.inst().touch(p.level(), ground.pos());
                     }
                     return null;
                 });
