@@ -9,7 +9,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-/** Feeds {@link AreaWeather} the camera every client tick, and forgets every zone on leaving a world. */
+/** Feeds {@link AreaWeather} the camera and {@link AreaWeatherSky} the zones every client tick, and forgets every zone on leaving a world. */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 final class AreaWeatherClient {
     private AreaWeatherClient() {}
@@ -17,11 +17,14 @@ final class AreaWeatherClient {
     @SubscribeEvent
     static void onTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level != null && !mc.isPaused()) AreaWeather.clientTick(mc.level, mc.gameRenderer.getMainCamera().position());
+        if (mc.level == null || mc.isPaused()) return;
+        AreaWeather.clientTick(mc.level, mc.gameRenderer.getMainCamera().position());
+        AreaWeatherSky.tick(mc.level);
     }
 
     @SubscribeEvent
     static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         AreaWeather.clearClient();
+        AreaWeatherSky.clear();
     }
 }
