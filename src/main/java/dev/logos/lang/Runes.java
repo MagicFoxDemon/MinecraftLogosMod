@@ -594,8 +594,8 @@ public final class Runes {
                     return null;
                 });
         def("time-stop", EFFECT, ACTION).each("target").p("seconds", NUM).stab(2)
-                .doc("时停：目标的时间停止（最多 10 秒）。生物完全静止；玩家无法移动、攻击或使用物品。"
-                        + "期间受到的伤害先存下，时停结束时一次性生效。每秒 4 魔力")
+                .doc("时间停止：目标的时间停止（最多 10 秒）。生物完全静止；玩家无法移动、攻击或使用物品。"
+                        + "期间受到的伤害先存下，时间恢复时一次性生效。每秒 4 魔力")
                 .exec((n, c) -> {
                     double s = clamp(num(n.arg(1), c), 0, 10);
                     for (LivingEntity t : living(n.arg(0), c)) {
