@@ -45,7 +45,7 @@ public final class LogosGameTests {
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
             "familiar_dragon_circles", "familiar_dragon_throne",
-            "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects", "rune_shield_marks_ward", "potion_burst_polarity", "rune_group_radius_cost",
+            "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects", "rune_shield_marks_ward", "potion_burst_polarity", "rune_group_radius_cost", "rune_time_stop_mob", "rune_time_stop_player",
             "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies", "alchemy_brews_raw_mash", "alchemy_crafts_gunpowder", "alchemy_crafts_table", "alchemy_bottles_drinkable",
             "process_ferments", "process_designates_and_routes", "process_dissolves_water_bottles", "process_dissolves_from_tank", "process_chains", "process_needs_mana", "process_shows_working", "process_cards_keep_and_remove", "process_pours_bottles_first", "process_says_what_is_missing", "alchemy_table_switch", "powder_settles", "powder_is_eaten", "powder_dissolves_back", "brews_from_base", "brews_from_water", "process_designates_exactly", "process_products_exact", "status_follows_designations", "status_says_outputs_full",
             "alchemy_table_halves", "alchemy_table_automation", "alchemy_table_tank", "alchemy_table_mana", "alchemy_table_bottles", "alchemy_table_free_mana",
@@ -183,6 +183,8 @@ public final class LogosGameTests {
         FUNCTIONS.register("rune_shield_marks_ward", () -> RuneGameTests::shieldMarksWard);
         FUNCTIONS.register("potion_burst_polarity", () -> RuneGameTests::potionBurstPolarity);
         FUNCTIONS.register("rune_group_radius_cost", () -> RuneGameTests::groupRadiusCost);
+        FUNCTIONS.register("rune_time_stop_mob", () -> RuneGameTests::timeStopMob);
+        FUNCTIONS.register("rune_time_stop_player", () -> RuneGameTests::timeStopPlayer);
         FUNCTIONS.register("page_capacity_caps_injection", () -> PageGameTests::capacityCapsInjection);
         FUNCTIONS.register("page_immolation_burns", () -> PageGameTests::immolationBurnsPage);
         FUNCTIONS.register("free_mana_from_leftovers", () -> PageGameTests::freeManaFromLeftovers);

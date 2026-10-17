@@ -176,6 +176,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "time_stop", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class TimeStop extends RuneNode {
+        public TimeStop() {
+            super("time-stop");
+        }
+    }
+
     @NodeAttribute(name = "damage_all", group = EFFECT, graphTypes = SpellGraph.class)
     public static class DamageAll extends RuneNode {
         public DamageAll() {
@@ -779,6 +786,7 @@ public final class RuneNodes {
         BY_RUNE.put("shield", Shield::new);
         BY_RUNE.put("ignite", Ignite::new);
         BY_RUNE.put("freeze", Freeze::new);
+        BY_RUNE.put("time-stop", TimeStop::new);
         BY_RUNE.put("damage-all", DamageAll::new);
         BY_RUNE.put("ignite-all", IgniteAll::new);
         BY_RUNE.put("freeze-all", FreezeAll::new);

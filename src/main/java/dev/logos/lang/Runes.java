@@ -27,6 +27,7 @@ import dev.logos.runtime.SpellInstance;
 import dev.logos.runtime.SpellRuntime;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
+import dev.logos.runtime.TimeStop;
 import dev.logos.runtime.Vfx;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -588,6 +589,19 @@ public final class Runes {
                         StatusData.freeze(t, s);
                         c.inst().affected.add(t.getUUID());
                         Vfx.burst(lv(t), Targeting.center(t), Element.FROST, 12);
+                    }
+                    return null;
+                });
+        def("time-stop", EFFECT, ACTION).each("target").p("seconds", NUM).stab(2)
+                .doc("时停：目标的时间停止（最多 10 秒）。生物完全静止；玩家无法移动、攻击或使用物品。"
+                        + "期间受到的伤害先存下，时停结束时一次性生效。每秒 4 魔力")
+                .exec((n, c) -> {
+                    double s = clamp(num(n.arg(1), c), 0, 10);
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        if (!c.inst().spend(s * 4, "time-stop")) return null;
+                        TimeStop.stop(t, s);
+                        c.inst().affected.add(t.getUUID());
+                        Vfx.burst(lv(t), Targeting.center(t), Element.ARCANE, 12);
                     }
                     return null;
                 });
