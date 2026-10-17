@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.lang.Node;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -58,6 +59,18 @@ public final class BeamObj extends SpellObject {
         return fromNode == null && dirNode == null;
     }
 
+    /**
+     * Where an unwritten {@code :dir} points. A player's gaze is their look; a creature's body turns
+     * with its flight and its look control lags, so it holds the beam on what it cast at (its foe,
+     * or the master it heals) while that lives, and otherwise on where its head faces.
+     */
+    private Vec3 gaze(Vec3 from) {
+        if (inst.caster instanceof Player) return inst.caster.getLookAngle();
+        Entity t = ctx.target();
+        if (t != null && t != inst.caster && t.isAlive() && t.level() == level) return Targeting.center(t).subtract(from);
+        return inst.caster.getViewVector(1f);
+    }
+
     @Override
     protected Vec3 heading() {
         return dir;
@@ -75,7 +88,7 @@ public final class BeamObj extends SpellObject {
             return;
         }
         Vec3 from = fromNode == null ? inst.caster.getEyePosition() : Interp.vec(fromNode, ctx);
-        Vec3 d = dirNode == null ? inst.caster.getLookAngle() : Interp.vec(dirNode, ctx);
+        Vec3 d = dirNode == null ? gaze(from) : Interp.vec(dirNode, ctx);
         if (inst.dead) return;
         if (d.lengthSqr() > 1e-6) dir = d.normalize();
 
