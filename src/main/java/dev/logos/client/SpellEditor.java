@@ -6,8 +6,10 @@ import java.util.List;
 import com.lowdragmc.lowdraglib2.Platform;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
+import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
+import com.lowdragmc.lowdraglib2.gui.ui.Style;
 import com.lowdragmc.lowdraglib2.gui.ui.UI;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
@@ -45,6 +47,7 @@ import dev.logos.lang.LogosError;
 import dev.logos.lang.Node;
 import dev.logos.net.InscribePayload;
 import dev.vfyjxf.taffy.style.FlexDirection;
+import dev.vfyjxf.taffy.style.TaffyDisplay;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
@@ -72,6 +75,8 @@ public final class SpellEditor {
     private final Label status = new Label();
     private final Label overview = new Label();
     private final Selector<SpecialNodes.IntentChoice> intent = new Selector<>();
+    /** The wax seal on the inscribe button: grey while the drawing does not hold. */
+    private final ManuscriptControls.Seal seal = new ManuscriptControls.Seal(() -> this.graph != null && this.graph.result().ok());
     /** Set while the selector is being matched to the graph, so that does not count as the player choosing. */
     private boolean syncingIntent;
     private SpellGraph graph;
@@ -108,6 +113,15 @@ public final class SpellEditor {
                     : new SpellAnnotations.InkRegion((PlacematModel) model);
             if (addElement(element)) element.doCompleteUpdate();
             return element;
+        }
+
+        /** The overview on the right already reports what the log footer would; the footer stays hidden. */
+        @Override
+        protected void updateGraphLogFooter() {
+            super.updateGraphLogFooter();
+            for (UIElement child : canvas.getChildren()) {
+                if (child.hasClass("__node-graph-view_log-footer__")) Style.importantPipeline(child.getLayout(), l -> l.display(TaffyDisplay.NONE));
+            }
         }
 
         @Override
@@ -200,7 +214,7 @@ public final class SpellEditor {
         });
         Button clear = new Button().setText("清空");
         clear.setOnClick(ev -> load(GraphBuilder.empty()));
-        Button inscribe = new Button().setText("🜔 写入术式载页");
+        Button inscribe = new Button().setText("写入术式载页");
         inscribe.setId("inscribe");
         inscribe.setOnClick(ev -> inscribe());
 
@@ -255,12 +269,26 @@ public final class SpellEditor {
         detailsView.layout(l -> l.widthPercent(100).flex(1).minHeight(0));
         detailsView.addScrollViewChild(details);
         inscribe.layout(l -> l.widthPercent(100).flexShrink(0));
+        seal.apply(inscribe);
+        ManuscriptControls.paper(loadTemplate);
+        ManuscriptControls.paper(clear);
+        ManuscriptControls.paper(templates);
+        ManuscriptControls.paper(intent);
         side.addChildren(detailsView, inscribe);
 
         UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW)
                 .widthPercent(100).heightPercent(100).paddingAll(28).gapAll(8));
         root.setId("spell_editor_background");
-        root.style(s -> s.backgroundTexture(new SpellEditorBackground()));
+        SpellEditorBackground parchment = new SpellEditorBackground();
+        // The toolkit builds toolbar parts and menus on the fly; they are dressed as the page is drawn, before their first frame.
+        GuiTexture page = (context, x, y, width, height) -> {
+            parchment.draw(context, x, y, width, height);
+            ManuscriptControls.dressToolbar(editor.getCurrentView().header);
+            ManuscriptControls.dressMenus(root);
+            ManuscriptControls.dressList(templates);
+            ManuscriptControls.dressList(intent);
+        };
+        root.style(s -> s.backgroundTexture(page));
         root.addChildren(editor, side);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)));
@@ -327,5 +355,6 @@ public final class SpellEditor {
             return;
         }
         ClientPacketDistributor.sendToServer(new InscribePayload(table, r.source(), graphTag));
+        seal.stamp();
     }
 }

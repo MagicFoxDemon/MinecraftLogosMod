@@ -51,3 +51,23 @@
 .__manuscript-node__ .__toggle_mark-icon__ {
   color: #3b2614;
 }
+
+// Workbench controls drawn as paper slips, a menu card and a wax seal (ManuscriptControls).
+.manuscript-control .__button_text__,
+.manuscript-control label,
+.manuscript-control text {
+  text-color: #3b2614;
+  text-shadow: false;
+}
+
+.manuscript-control.__disabled__ .__button_text__ {
+  text-color: #9a8466;
+}
+
+.manuscript-control .__selector_button-icon__ {
+  background: sprite(ldlib2:textures/gui/down.png) scale(0.6) color(#7a5a3a);
+}
+
+.manuscript-seal .__button_text__ {
+  text-color: #5a2a10;
+}
