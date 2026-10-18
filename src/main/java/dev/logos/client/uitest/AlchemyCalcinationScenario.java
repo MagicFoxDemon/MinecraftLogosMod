@@ -27,9 +27,9 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
- * Real-client look at the calcining furnace, in Chinese: a blast furnace beside the table, a
- * calcination card burning raw iron next to an alembic for comparison, on the whole bench and in
- * the overview.
+ * Real-client look at the apparatus worked beside the table, in Chinese: with a blast furnace and a
+ * cauldron beside it, the calcining furnace burning raw iron and the purifying cistern next to an
+ * alembic for comparison, on the whole bench and in the overview.
  * Run: {@code gradlew runClient -PldTest=logos_alchemy_calcination}.
  */
 @LDLRegisterClient(name = "logos_alchemy_calcination", group = "logos", registry = UIScenario.REGISTRY,
@@ -62,18 +62,21 @@ public class AlchemyCalcinationScenario implements UIScenario {
                 .clearArea(MAIN.offset(0, 5, 0), 8)
                 .fill(MAIN.offset(-4, -1, -4), MAIN.offset(4, -1, 4), Blocks.SMOOTH_STONE.defaultBlockState())
                 .teleportPlayer(MAIN.getX() + 1.0, MAIN.getY() + 0.5, MAIN.getZ() + 3, 180, 20)
-                .server("a table with a blast furnace beside it, calcining raw iron", sc -> {
+                .server("a table with a blast furnace and a cauldron beside it, calcining raw iron", sc -> {
                     var level = sc.player().level();
                     BlockState main = LogosMod.ALCHEMY_TABLE.get().defaultBlockState().setValue(AlchemyTableBlock.FACING, Direction.SOUTH);
                     level.setBlock(MAIN, main, 3);
                     level.setBlock(AlchemyTableBlock.otherHalf(MAIN, main), main.setValue(AlchemyTableBlock.PART, AlchemyTableBlock.Part.SIDE), 3);
                     level.setBlock(MAIN.north(), Blocks.BLAST_FURNACE.defaultBlockState(), 3);
+                    level.setBlock(MAIN.west(), Blocks.CAULDRON.defaultBlockState(), 3);
                     table = (AlchemyTableBlockEntity) level.getBlockEntity(MAIN);
                     table.setMana(400);
                     ProcessCard calcine = table.addCard(Process.CALCINE, 0, 20);
+                    ProcessCard purify = table.addCard(Process.PURIFY, 400, 30);
                     table.addCard(Process.DISTILL, 200, 30);
                     try (Transaction tx = Transaction.openRoot()) {
                         calcine.inputs().insert(ItemResource.of(Items.RAW_IRON), 16, tx);
+                        purify.inputs().insert(ItemResource.of(LogosMod.TAINTED_MANA_SHARD.get()), 4, tx);
                         tx.commit();
                     }
                 })
@@ -84,6 +87,7 @@ public class AlchemyCalcinationScenario implements UIScenario {
                 .awaitModularUI()
                 .ticks(10)
                 .checkVisible("#card0")
+                .checkVisible("#card1")
                 .click("#tab_storage")
                 .ticks(10)
                 .screenshot("calcination_bench")

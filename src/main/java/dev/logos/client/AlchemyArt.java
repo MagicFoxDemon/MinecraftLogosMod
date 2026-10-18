@@ -186,8 +186,7 @@ public final class AlchemyArt {
             case DISTILL -> alembic(w, h, titleHeight);
             case SETTLE -> tray(w, h, titleHeight);
             case CALCINE -> furnace(w, h, titleHeight);
-            // Washed in a basin of water; drawn as the dissolving basin until purification has art of its own.
-            case PURIFY -> basin(w, h, titleHeight);
+            case PURIFY -> cistern(w, h, titleHeight);
         });
         int level = liquid(process);
         return (GuiTexture) (context, x, y, width, height) -> {
@@ -307,7 +306,6 @@ public final class AlchemyArt {
         return p;
     }
 
-    /** 🝙 The settling tray: a glass tray in an oak frame with brass corners, sediment on its floor and crystals growing in the corners. */
     /**
      * 🜂 The calcining furnace: firebrick walls bound in iron round a dark chamber that glows from
      * below, an iron grate over live coals at its foot, a clay crucible of molten matter on top and
@@ -386,6 +384,77 @@ public final class AlchemyArt {
         return p;
     }
 
+    /**
+     * 🝣 The purifying cistern: a well of clear water in pale dressed stone with pewter corners, its
+     * floor laid with the filter beds (charcoal, sand, gravel); above it a linen cloth stretched in an
+     * oak frame drains through a glass funnel, and a pewter tap at the side lets the clean water out.
+     */
+    private static Manuscript.Plan cistern(float w, float h, float title) {
+        Manuscript.Plan p = new Manuscript.Plan(111);
+        int stone = 0xFFB8B0A0, stoneLit = 0xFFD2CBBB, joint = 0xFF8A8274;
+        int pewter = 0xFF8C969E, pewterLit = 0xFFD0D8DE, pewterDark = 0xFF525C66;
+        // Dressed stone, laid in long courses.
+        p.rect(0, 0, w, h, joint);
+        for (float y = 1, row = 0; y < h - 1; y += 7, row++) {
+            float rowH = Math.min(6, h - 1 - y);
+            for (float x = 1 - (row % 2 == 0 ? 0 : 9); x < w - 1; x += 18) {
+                float bx = Math.max(1, x), bw = Math.min(x + 17, w - 1) - bx;
+                p.rect(bx, y, bw, rowH, p.roll((int) (x * 5 + row * 11), 4) == 0 ? stoneLit : stone);
+                p.rect(bx, y, bw, 1, 0x40FFFFFF);
+            }
+        }
+        // The well of clear water, darker with depth.
+        p.rect(3, 3, w - 6, h - 6, 0xFF2C5466);
+        p.rect(3, 3, w - 6, (h - 6) / 2, 0xFF346274);
+        p.rect(3, 3, 1, h - 6, OUTLINE);
+        p.rect(w - 4, 3, 1, h - 6, OUTLINE);
+        p.rect(5, title + 8, 1, h - title - 26, 0x70FFFFFF);
+        // The filter beds on its floor: charcoal over sand over gravel.
+        p.rect(3, h - 8, w - 6, 2, 0xFF26262A);
+        p.rect(3, h - 6, w - 6, 2, 0xFFD8C890);
+        p.rect(3, h - 6, w - 6, 1, 0xFFEADCA8);
+        p.rect(3, h - 4, w - 6, 1, 0xFF7E786C);
+        for (float x = 5; x < w - 6; x += 5) {
+            p.rect(x + p.roll((int) x, 2), h - 4, 2, 1, 0xFFA8A294);
+            p.rect(x + 2, h - 8 + p.roll((int) x + 7, 2), 1, 1, 0xFF4A4A50);
+        }
+        // Pewter corners.
+        for (float[] c : new float[][]{{0, 0}, {w - 6, 0}, {0, h - 6}, {w - 6, h - 6}}) {
+            p.rect(c[0], c[1], 6, 6, pewter);
+            p.rect(c[0] + 1, c[1] + 1, 4, 1, pewterLit);
+            p.rect(c[0] + 2, c[1] + 3, 2, 2, pewterDark);
+        }
+        // The linen filter in its oak frame, draining through a glass funnel into the well.
+        float cx = Math.round(w / 2);
+        p.rect(cx - 18, -16, 2, 16, OAK_DARK);
+        p.rect(cx + 16, -16, 2, 16, OAK_DARK);
+        p.rect(cx - 20, -18, 40, 3, OAK);
+        p.rect(cx - 20, -18, 40, 1, 0xFF8A5A33);
+        p.rect(cx - 15, -15, 30, 2, 0xFFE8E0C8);
+        p.rect(cx - 12, -13, 24, 1, 0xFFD8CFB4);
+        p.rect(cx - 15, -15, 1, 3, 0xFFC8BEA0);
+        p.rect(cx + 14, -15, 1, 3, 0xFFC8BEA0);
+        for (int i = 0; i < 6; i++) {
+            float half = 11 - 2 * i;
+            p.rect(cx - half, -12 + i, 2 * half, 1, GLASS);
+            p.rect(cx - half, -12 + i, 1, 1, GLASS_EDGE);
+            p.rect(cx + half - 1, -12 + i, 1, 1, GLASS_EDGE);
+        }
+        p.rect(cx - 1, -6, 2, 5, GLASS_EDGE);
+        p.rect(cx - 1, 0, 2, 2, 0xC08FD0EC);
+        // The tap at the side, a clean drop falling from it.
+        p.rect(-8, h - 24, 8, 4, pewter);
+        p.rect(-8, h - 24, 8, 1, pewterLit);
+        p.rect(-8, h - 20, 3, 3, pewterDark);
+        p.rect(-4, h - 28, 2, 4, pewterDark);
+        p.rect(-6, h - 29, 6, 1, pewter);
+        p.rect(-7, h - 15, 2, 3, 0xC08FD0EC);
+        p.rect(-7, h - 10, 2, 2, 0x808FD0EC);
+        nameplate(p, w, title);
+        return p;
+    }
+
+    /** 🝙 The settling tray: a glass tray in an oak frame with brass corners, sediment on its floor and crystals growing in the corners. */
     private static Manuscript.Plan tray(float w, float h, float title) {
         Manuscript.Plan p = new Manuscript.Plan(81);
         p.rect(0, 0, w, h, OAK_DARK);
