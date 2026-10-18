@@ -12,7 +12,6 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.lang.Node;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -60,12 +59,12 @@ public final class BeamObj extends SpellObject {
     }
 
     /**
-     * Where an unwritten {@code :dir} points. A player's gaze is their look; a creature's body turns
-     * with its flight and its look control lags, so it holds the beam on what it cast at (its foe,
-     * or the master it heals) while that lives, and otherwise on where its head faces.
+     * Where an unwritten {@code :dir} points: the caster's look, except for one that {@link AimsAtCastTarget}.
+     * Such a creature's body turns with its flight and its look control lags, so it holds the beam on what
+     * it cast at (its foe, or the master it heals) while that lives, and otherwise on where its head faces.
      */
     private Vec3 gaze(Vec3 from) {
-        if (inst.caster instanceof Player) return inst.caster.getLookAngle();
+        if (!(inst.caster instanceof AimsAtCastTarget)) return inst.caster.getLookAngle();
         Entity t = ctx.target();
         if (t != null && t != inst.caster && t.isAlive() && t.level() == level) return Targeting.center(t).subtract(from);
         return inst.caster.getViewVector(1f);
