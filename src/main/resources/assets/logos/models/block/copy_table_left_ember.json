@@ -1,6 +1,6 @@
 {
   "textures": {
-    "page": "logos:item/spell_ember",
+    "page": "logos:block/inscription_table_page_ember",
     "particle": "logos:block/copy_table"
   },
   "elements": [
