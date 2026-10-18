@@ -40,7 +40,7 @@ public final class LogosGameTests {
             "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "config_limits_apply",
             "world_toggle_state", "world_grow_and_decay", "world_players_flag", "world_items_magnet", "world_nether_step", "world_time_skip", "world_weather_global", "world_weather_area", "world_lightning",
             "world_wand_casts_selected_page", "world_wood_wands_craft",
-            "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "world_table_inscribes", "beam_follows_gaze", "world_filter_kinds",
+            "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "world_table_inscribes", "beam_follows_gaze", "field_heals_caster", "field_spares_caster_without_players", "field_shields_caster_on_enter", "world_filter_kinds",
             "construct_stops_movement", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall",
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
@@ -66,6 +66,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("projectile_impact_piercing", () -> ProjectileImpactGameTests::piercing);
         FUNCTIONS.register("fireball_hits_and_bursts", () -> LogosGameTests::fireball);
         FUNCTIONS.register("beam_follows_gaze", () -> LogosGameTests::beamFollowsGaze);
+        FUNCTIONS.register("field_heals_caster", () -> LogosGameTests::fieldHealsCaster);
+        FUNCTIONS.register("field_spares_caster_without_players", () -> LogosGameTests::fieldSparesCasterWithoutPlayers);
+        FUNCTIONS.register("field_shields_caster_on_enter", () -> LogosGameTests::fieldShieldsCasterOnEnter);
         FUNCTIONS.register("chain_lightning_bounces", () -> LogosGameTests::chainLightning);
         FUNCTIONS.register("execute_with_proof_is_cheap", () -> LogosGameTests::executeProof);
         FUNCTIONS.register("execute_without_proof_starves", () -> LogosGameTests::executeBrute);
@@ -297,6 +300,34 @@ public final class LogosGameTests {
         h.succeedWhen(() -> {
             h.assertTrue(side.getHealth() < side.getMaxHealth(), "the beam did not follow the caster's turn");
         });
+    }
+
+    /** A field written to affect players heals its own caster when its selector takes players in. */
+    private static void fieldHealsCaster(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.getFoodData().setFoodLevel(10); // too hungry to regenerate on its own
+        p.setHealth(6);
+        cast(h, p, "(spell :players true :mana 200 (field :life 2 :every 0.25 (on-tick (heal (entities :filter (kind players)) 2))))");
+        h.succeedWhen(() -> h.assertTrue(p.getHealth() >= 10, "the field should heal its caster: " + p.getHealth()));
+    }
+
+    /** Without :players, a field's selectors still leave its caster out. */
+    private static void fieldSparesCasterWithoutPlayers(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.getFoodData().setFoodLevel(10);
+        p.setHealth(6);
+        SpellInstance inst = cast(h, p, "(spell :mana 200 (field :life 1 :every 0.25 (on-tick (heal (entities) 2))))");
+        h.succeedWhen(() -> {
+            h.assertTrue(inst.finished(), "spell still running");
+            h.assertTrue(p.getHealth() == 6, "the field should not touch its caster without :players: " + p.getHealth());
+        });
+    }
+
+    /** A warding field greets its caster on entry when the spell affects players. */
+    private static void fieldShieldsCasterOnEnter(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        cast(h, p, "(spell :players true :mana 200 (field :life 1 (on-enter (shield target 4))))");
+        h.succeedWhen(() -> h.assertTrue(p.getAbsorptionAmount() >= 4, "the field should shield its caster: " + p.getAbsorptionAmount()));
     }
 
     private static void chainLightning(GameTestHelper h) {
