@@ -184,8 +184,7 @@ public final class AlchemyArt {
             case DISSOLVE -> basin(w, h, titleHeight);
             case DISTILL -> alembic(w, h, titleHeight);
             case SETTLE -> tray(w, h, titleHeight);
-            // A dish in the fire; drawn as the settling tray until calcination has art of its own.
-            case CALCINE -> tray(w, h, titleHeight);
+            case CALCINE -> furnace(w, h, titleHeight);
         });
         int level = liquid(process);
         return (GuiTexture) (context, x, y, width, height) -> {
@@ -306,6 +305,84 @@ public final class AlchemyArt {
     }
 
     /** 🝙 The settling tray: a glass tray in an oak frame with brass corners, sediment on its floor and crystals growing in the corners. */
+    /**
+     * 🜂 The calcining furnace: firebrick walls bound in iron round a dark chamber that glows from
+     * below, an iron grate over live coals at its foot, a clay crucible of molten matter on top and
+     * a short flue trailing smoke.
+     */
+    private static Manuscript.Plan furnace(float w, float h, float title) {
+        Manuscript.Plan p = new Manuscript.Plan(101);
+        int mortar = 0xFF3A2C26, brick = 0xFF7A4434, brickLit = 0xFF8E5440, iron = 0xFF3C3A3E, ironLit = 0xFF6A686E;
+        // Firebrick, laid in courses with the joints staggered.
+        p.rect(0, 0, w, h, mortar);
+        for (float y = 1, row = 0; y < h - 1; y += 5, row++) {
+            float rowH = Math.min(4, h - 1 - y);
+            for (float x = 1 - (row % 2 == 0 ? 0 : 5); x < w - 1; x += 10) {
+                float bx = Math.max(1, x), bw = Math.min(x + 9, w - 1) - bx;
+                p.rect(bx, y, bw, rowH, p.roll((int) (x * 7 + row * 13), 3) == 0 ? brickLit : brick);
+                p.rect(bx, y, bw, 1, 0x30FFFFFF);
+            }
+        }
+        // The chamber: dark, hottest at the bottom.
+        float top = title + 5, bottom = h - 9;
+        p.rect(4, top, w - 8, bottom - top, 0xFF221814);
+        int[] glow = {0x18FF8A30, 0x28FF8A30, 0x40FF9A3A, 0x60FFA640};
+        for (int i = 0; i < glow.length; i++) p.rect(4, bottom - 3 * (glow.length - i), w - 8, 3, glow[i]);
+        p.rect(3, top - 1, w - 6, 1, OUTLINE);
+        p.rect(3, top, 1, bottom - top, OUTLINE);
+        p.rect(w - 4, top, 1, bottom - top, OUTLINE);
+        // The grate and the coals under it.
+        p.rect(3, bottom, w - 6, 6, 0xFF2A1A12);
+        for (float x = 5; x < w - 6; x += 4) {
+            int coal = p.roll((int) x, 3) == 0 ? 0xFFFFD27A : p.roll((int) x + 1, 2) == 0 ? 0xFFE8742A : 0xFFB0401E;
+            p.rect(x, bottom + 3, 3, 2, coal);
+        }
+        p.rect(3, bottom, w - 6, 1, iron);
+        for (float x = 6; x < w - 6; x += 6) p.rect(x, bottom, 1, 3, iron);
+        // Iron bands at the corners, riveted.
+        for (float[] c : new float[][]{{0, 0}, {w - 5, 0}, {0, h - 5}, {w - 5, h - 5}}) {
+            p.rect(c[0], c[1], 5, 5, iron);
+            p.rect(c[0] + 1, c[1] + 1, 3, 1, ironLit);
+            p.rect(c[0] + 2, c[1] + 3, 1, 1, ironLit);
+        }
+        // The firebox under the floor: a brick arch round a mouth of live coals.
+        float cx = Math.round(w / 2);
+        p.rect(cx - 18, h, 36, 12, mortar);
+        p.rect(cx - 17, h, 34, 3, brick);
+        p.rect(cx - 17, h + 4, 8, 7, brickLit);
+        p.rect(cx + 9, h + 4, 8, 7, brick);
+        p.rect(cx - 8, h + 4, 16, 7, 0xFF1A100C);
+        p.rect(cx - 7, h + 5, 14, 1, OUTLINE);
+        p.rect(cx - 7, h + 8, 14, 3, 0xFFB0401E);
+        p.rect(cx - 5, h + 8, 3, 2, 0xFFE8742A);
+        p.rect(cx + 1, h + 9, 4, 2, 0xFFFFD27A);
+        p.rect(cx - 2, h + 6, 3, 2, 0x90FFB34A);
+        p.rect(cx - 19, h + 12, 38, 2, iron);
+        p.rect(cx - 19, h + 12, 38, 1, ironLit);
+        // A clay crucible of molten matter on the furnace top, a tongs leaning on it.
+        p.rect(cx - 11, -10, 22, 10, 0xFF8A5A3A);
+        p.rect(cx - 10, -9, 3, 8, 0xFFA87650);
+        p.rect(cx - 9, -1, 18, 1, 0xFF5A3A24);
+        p.rect(cx - 13, -12, 26, 3, 0xFFB8865A);
+        p.rect(cx - 13, -12, 26, 1, 0xFFD0A070);
+        p.rect(cx - 10, -11, 20, 1, 0xFFE8742A);
+        p.rect(cx - 6, -11, 9, 1, 0xFFFFD27A);
+        p.rect(cx - 3, -14, 2, 2, 0x90FFB34A);
+        p.rect(cx + 2, -17, 1, 2, 0x60FFB34A);
+        for (int i = 0; i < 9; i++) p.rect(cx + 12 + i, -14 + i, 1, 2, i < 2 ? ironLit : iron);
+        // The flue, trailing smoke.
+        p.rect(w - 22, -16, 12, 16, mortar);
+        for (int i = 0; i < 3; i++) p.rect(w - 21 + (i % 2) * 2, -15 + 5 * i, 8, 4, i % 2 == 0 ? brick : brickLit);
+        p.rect(w - 24, -18, 16, 3, iron);
+        p.rect(w - 24, -18, 16, 1, ironLit);
+        p.rect(w - 18, -22, 4, 3, 0x90A8A4A0);
+        p.rect(w - 16, -26, 5, 3, 0x70A8A4A0);
+        p.rect(w - 12, -30, 4, 3, 0x50A8A4A0);
+        p.rect(w - 9, -33, 3, 2, 0x30A8A4A0);
+        nameplate(p, w, title);
+        return p;
+    }
+
     private static Manuscript.Plan tray(float w, float h, float title) {
         Manuscript.Plan p = new Manuscript.Plan(81);
         p.rect(0, 0, w, h, OAK_DARK);
