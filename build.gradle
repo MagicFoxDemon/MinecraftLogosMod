@@ -36,6 +36,11 @@ repositories {
         forRepository { maven { url = "https://api.modrinth.com/maven" } }
         filter { includeGroup "maven.modrinth" }
     }
+    // JEI (optional recipe viewer), from BlameJared's Maven; only the mezz.jei group is looked up there.
+    exclusiveContent {
+        forRepository { maven { url = "https://maven.blamejared.com" } }
+        filter { includeGroup "mezz.jei" }
+    }
     // Add here additional repositories if required by some of the dependencies below.
 }
 
@@ -217,4 +222,8 @@ dependencies {
     implementation "maven.modrinth:geckolib:${geckolib_version}"
     // Iris is optional: compiled against for IrisCompat, never required or bundled.
     compileOnly("maven.modrinth:iris:${iris_version}") { transitive = false }
+    // JEI is optional: the alchemy table's recipes show in it when it is installed. -Pjei adds it to the dev runs.
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+    if (project.hasProperty("jei")) localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 }
