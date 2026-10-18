@@ -1,0 +1,13 @@
+{
+  "type": "logos:page_upgrade",
+  "category": "misc",
+  "group": "echo_spell_page_upgrade",
+  "ingredients": [
+    "logos:crystal_inscribed_page",
+    "minecraft:echo_shard",
+    "logos:adhesive"
+  ],
+  "result": {
+    "id": "logos:echo_inscribed_page"
+  }
+}

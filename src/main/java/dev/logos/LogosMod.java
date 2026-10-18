@@ -216,6 +216,9 @@ public class LogosMod {
             RECIPE_TYPES.register("alchemy", net.minecraft.world.item.crafting.RecipeType::simple);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.alchemy.AlchemyRecipe>> ALCHEMY_SERIALIZER =
             RECIPE_SERIALIZERS.register("alchemy", () -> dev.logos.alchemy.AlchemyRecipe.SERIALIZER);
+    /** Crafting a page into a higher grade, spell kept (type logos:page_upgrade). */
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.PageUpgradeRecipe>> PAGE_UPGRADE_SERIALIZER =
+            RECIPE_SERIALIZERS.register("page_upgrade", () -> dev.logos.item.PageUpgradeRecipe.SERIALIZER);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeBookCategory, net.minecraft.world.item.crafting.RecipeBookCategory> ALCHEMY_BOOK_CATEGORY =
             RECIPE_BOOK_CATEGORIES.register("alchemy", net.minecraft.world.item.crafting.RecipeBookCategory::new);
 
