@@ -351,6 +351,41 @@ final class AlchemyGameTests {
         });
     }
 
+    /** With a blast furnace beside the table, a calcination card burns whatever a furnace smelts, one mana a craft and no fuel. */
+    static void processCalcines(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        h.assertTrue(table.addCard(Process.CALCINE) == null, "a calcination card was laid with no blast furnace beside the table");
+        h.setBlock(SIDE.east(), Blocks.BLAST_FURNACE);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.CALCINE);
+        h.assertTrue(card != null, "no calcination card with a blast furnace beside the table");
+        put(card.inputs(), new ItemStack(Items.RAW_IRON, 2));
+        put(card.inputs(), new ItemStack(Items.COBBLESTONE));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), Items.IRON_INGOT) == 2 && count(card.outputs(), Items.STONE) == 1,
+                    "the card made " + count(card.outputs(), Items.IRON_INGOT) + " iron and " + count(card.outputs(), Items.STONE) + " stone");
+            h.assertTrue(table.mana() == 7, "three crafts left " + table.mana() + " mana");
+        });
+    }
+
+    /** Taking the blast furnace away holds calcination, and says why; putting it back lets it go on. */
+    static void calcineNeedsBlastFurnace(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        h.setBlock(MAIN.west(), Blocks.BLAST_FURNACE);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.CALCINE);
+        put(card.inputs(), new ItemStack(Items.RAW_GOLD));
+        h.setBlock(MAIN.west(), Blocks.AIR);
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(card.status().equals(net.minecraft.network.chat.Component.translatable("logos.alchemy_card.no_furnace")), "the card says " + card.status().getString()))
+                .thenExecute(() -> {
+                    h.assertTrue(count(card.outputs(), Items.GOLD_INGOT) == 0 && table.mana() == 10, "the card worked with no blast furnace");
+                    h.setBlock(MAIN.west(), Blocks.BLAST_FURNACE);
+                })
+                .thenWaitUntil(() -> h.assertTrue(count(card.outputs(), Items.GOLD_INGOT) == 1, "the card did not go on once the furnace was back"))
+                .thenSucceed();
+    }
+
     /** While a card ferments the table says so, and tells clients, so the airlock bubbles; an idle card does not count, and it stops once the materials are gone. */
     static void processShowsWorking(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);
@@ -378,7 +413,7 @@ final class AlchemyGameTests {
     /** At most four cards; cards, designations and routes are saved; a removed card's contents go back to storage and routes to it are undone. */
     static void processCardsKeepAndRemove(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);
-        for (Process p : Process.values()) h.assertTrue(table.addCard(p) != null, "the table refused card " + p);
+        for (Process p : Process.values()) if (p.onTable()) h.assertTrue(table.addCard(p) != null, "the table refused card " + p);
         h.assertTrue(table.addCard(Process.FERMENT) == null, "the table took a fifth card");
         table.cards().get(0).setRoute(Items.SUGAR, 2);
         table.cards().get(0).setDefaultRoute(3);

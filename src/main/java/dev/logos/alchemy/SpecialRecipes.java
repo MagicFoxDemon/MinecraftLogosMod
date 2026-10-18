@@ -8,6 +8,7 @@ import dev.logos.LogosMod;
 import dev.logos.block.AlchemyTableBlock;
 import dev.logos.item.PotionPowderItem;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
@@ -15,6 +16,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
@@ -31,6 +34,8 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
  * <li>Dissolving does whatever a brewing stand does (vanilla's mixes and other mods'): a brewing
  * ingredient and three bottles of the potion it brews from make three of what it brews into. A
  * water base can be water from the tank (or water bottles) filling three empty bottles.</li>
+ * <li>Calcining burns whatever a furnace smelts (vanilla's recipes and other mods'): one of the
+ * thing makes what the furnace would, with no fuel.</li>
  * </ul>
  */
 public final class SpecialRecipes {
@@ -40,7 +45,7 @@ public final class SpecialRecipes {
     private SpecialRecipes() {}
 
     /** The special recipes of {@code process} for the distinct things in {@code available}. */
-    static List<AlchemyRecipe> forThings(Process process, List<ItemResource> available, PotionBrewing brewing) {
+    static List<AlchemyRecipe> forThings(Process process, List<ItemResource> available, ServerLevel level) {
         List<AlchemyRecipe> out = new ArrayList<>();
         List<ItemResource> seen = new ArrayList<>();
         for (ItemResource r : available) {
@@ -62,7 +67,23 @@ public final class SpecialRecipes {
                         List.of(ItemStackTemplate.fromNonEmptyStack(potion))));
             }
         }
-        if (process == Process.DISSOLVE) out.addAll(brewed(seen, brewing));
+        if (process == Process.DISSOLVE) out.addAll(brewed(seen, level.potionBrewing()));
+        if (process == Process.CALCINE) out.addAll(calcined(seen, level));
+        return out;
+    }
+
+    /** For each thing at hand that a furnace smelts, one of it into what the furnace makes of it. */
+    private static List<AlchemyRecipe> calcined(List<ItemResource> things, ServerLevel level) {
+        List<AlchemyRecipe> out = new ArrayList<>();
+        for (ItemResource thing : things) {
+            SingleRecipeInput input = new SingleRecipeInput(thing.toStack(1));
+            level.recipeAccess().getRecipeFor(RecipeType.SMELTING, input, level).ifPresent(recipe -> {
+                ItemStack result = recipe.value().assemble(input);
+                if (result.isEmpty()) return;
+                out.add(new AlchemyRecipe(Process.CALCINE, List.of(new SizedIngredient(DataComponentIngredient.of(true, input.item()), 1)),
+                        Optional.empty(), List.of(ItemStackTemplate.fromNonEmptyStack(result))));
+            });
+        }
         return out;
     }
 

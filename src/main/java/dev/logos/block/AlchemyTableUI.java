@@ -295,6 +295,8 @@ public final class AlchemyTableUI {
                 }
             });
             column.addChild(chip);
+            // Calcination is offered only while a blast furnace stands beside the table (hidden elements are not ticked, so the strip checks).
+            if (!p.onTable()) column.addEventListener(UIEvents.TICK, e -> chip.setDisplay(table.hasBlastFurnace()));
         }
         Label count = new Label();
         count.textStyle(t -> t.adaptiveWidth(true));

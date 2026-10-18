@@ -124,6 +124,8 @@
   "logos.process.dissolve": "Dissolution",
   "logos.process.distill": "Distillation",
   "logos.process.settle": "Settling",
+  "logos.process.calcine": "Calcination",
+  "logos.alchemy_card.no_furnace": "Needs a blast furnace beside the table",
   "logos.alchemy_table.products": "Products",
   "logos.alchemy_table.mana": "Mana %s / %s",
   "logos.alchemy_table.fluid": "%s %s / %s mB",
