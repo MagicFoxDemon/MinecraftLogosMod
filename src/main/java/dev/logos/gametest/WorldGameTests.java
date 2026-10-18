@@ -382,6 +382,23 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /** Paper, an echo shard and adhesive make an echo page; a written crystal page with the same two becomes one and keeps its spell. */
+    static void echoPageUpgradeKeepsSpell(GameTestHelper h) {
+        var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(Items.PAPER), new ItemStack(Items.ECHO_SHARD), new ItemStack(LogosMod.ADHESIVE.get())));
+        ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
+                .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+        h.assertTrue(made.is(dev.logos.item.PageTier.ECHO.blank()), "paper, echo shard and adhesive made " + made);
+        ItemStack crystal = SpellPages.inscribed(dev.logos.item.PageTier.CRYSTAL, "(spell :name \"回响\" :mana 5 (heal caster 1))", null);
+        var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(LogosMod.ADHESIVE.get()), crystal, new ItemStack(Items.ECHO_SHARD)));
+        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+        h.assertTrue(out.is(dev.logos.item.PageTier.ECHO.inscribed()), "the written crystal page became " + out);
+        h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("回响"), "the echo page should keep the spell");
+        h.succeed();
+    }
+
     /** The inscription table writes a spell (and its drawing) onto the page lying on it. */
     static void tableInscribes(GameTestHelper h) {
         ServerPlayer p = caster(h);
