@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.Block;
  * purification a cauldron.
  */
 public enum Process implements StringRepresentable {
-    FERMENT("🝞"), DISSOLVE("🝜"), DISTILL("🝚"), SETTLE("🝙"), CALCINE("🜂"), PURIFY("🝣");
+    FERMENT("🝤"), DISSOLVE("🝡"), DISTILL("🝠"), SETTLE("🝟"), CALCINE("🜂"), PURIFY("🝣");
 
     public static final Codec<Process> CODEC = StringRepresentable.fromEnum(Process::values);
 
