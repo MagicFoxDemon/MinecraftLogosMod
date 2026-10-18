@@ -204,7 +204,7 @@ public final class AlchemyArt {
         brassPlate(p, 3, 3, w - 6, titleHeight);
     }
 
-    /** 🝞 The fermenting crock: oak staves, brass hoops, a lid with its glass airlock and red stopper. */
+    /** 🝤 The fermenting crock: oak staves, brass hoops, a lid with its glass airlock and red stopper. */
     private static Manuscript.Plan crock(float w, float h, float title) {
         Manuscript.Plan p = new Manuscript.Plan(51);
         p.rect(0, 0, w, h, OUTLINE);
@@ -233,7 +233,7 @@ public final class AlchemyArt {
         return p;
     }
 
-    /** 🝜 The brass reaction basin: a deep bowl of dark water inside a riveted brass wall with a rolled lip. */
+    /** 🝡 The brass reaction basin: a deep bowl of dark water inside a riveted brass wall with a rolled lip. */
     private static Manuscript.Plan basin(float w, float h, float title) {
         Manuscript.Plan p = new Manuscript.Plan(61);
         int round = 8;
@@ -266,7 +266,7 @@ public final class AlchemyArt {
         return p;
     }
 
-    /** 🝚 The alembic: a glass flask with rounded shoulders, its neck and arm running out to the right, a burner beneath. */
+    /** 🝠 The alembic: a glass flask with rounded shoulders, its neck and arm running out to the right, a burner beneath. */
     private static Manuscript.Plan alembic(float w, float h, float title) {
         Manuscript.Plan p = new Manuscript.Plan(71);
         int shoulder = 12;
@@ -454,7 +454,7 @@ public final class AlchemyArt {
         return p;
     }
 
-    /** 🝙 The settling tray: a glass tray in an oak frame with brass corners, sediment on its floor and crystals growing in the corners. */
+    /** 🝟 The settling tray: a glass tray in an oak frame with brass corners, sediment on its floor and crystals growing in the corners. */
     private static Manuscript.Plan tray(float w, float h, float title) {
         Manuscript.Plan p = new Manuscript.Plan(81);
         p.rect(0, 0, w, h, OAK_DARK);
