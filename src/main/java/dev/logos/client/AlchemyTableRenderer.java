@@ -41,11 +41,12 @@ public class AlchemyTableRenderer<R extends BlockEntityRenderState & GeoRenderSt
     private static final float SAND = 8.9892f;
     /** The water bone is modelled 6.1 units deep; the tank inside is 10 deep. */
     private static final float WATER_MODELLED = 6.1f, WATER_FULL = 10f;
+    /** Modelled at twice its size. */
+    private static final float SCALE = 0.5f;
 
     public AlchemyTableRenderer(BlockEntityRendererProvider.Context context) {
         super(context, new DefaultedBlockGeoModel<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "alchemy_table")));
-        // Modelled at twice its size.
-        withScale(0.5f);
+        withScale(SCALE);
         withRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
 
@@ -57,11 +58,11 @@ public class AlchemyTableRenderer<R extends BlockEntityRenderState & GeoRenderSt
         state.addGeckolibData(DISTILLING, table.isWorking(Process.DISTILL));
     }
 
-    /** Centred on the seam: half a block over towards the side half. */
+    /** Centred on the seam: half a block over towards the side half, in the already halved model space. */
     @Override
     public void adjustRenderPose(RenderPassInfo<R> info) {
         super.adjustRenderPose(info);
-        info.poseStack().translate(-0.5f, 0, 0);
+        info.poseStack().translate(-0.5f / SCALE, 0, 0);
     }
 
     @Override
