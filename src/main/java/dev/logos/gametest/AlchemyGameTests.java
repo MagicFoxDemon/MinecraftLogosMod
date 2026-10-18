@@ -386,6 +386,140 @@ final class AlchemyGameTests {
                 .thenSucceed();
     }
 
+    private static int bottlesBack(AlchemyTableBlockEntity table, ProcessCard card) {
+        return count(table.items(), Items.GLASS_BOTTLE) + count(card.outputs(), Items.GLASS_BOTTLE);
+    }
+
+    /** Three redstone and a glass bottle distil into a bottle of mercury and a sulfur powder. */
+    static void redstoneDistilsMercury(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISTILL);
+        put(card.inputs(), new ItemStack(Items.REDSTONE, 3));
+        put(card.inputs(), new ItemStack(Items.GLASS_BOTTLE));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.MERCURY_BOTTLE.get()) == 1 && count(card.outputs(), LogosMod.SULFUR_POWDER.get()) == 1,
+                    "the card made " + count(card.outputs(), LogosMod.MERCURY_BOTTLE.get()) + " mercury and " + count(card.outputs(), LogosMod.SULFUR_POWDER.get()) + " sulfur");
+            h.assertTrue(count(card.inputs(), Items.REDSTONE) + count(card.inputs(), Items.GLASS_BOTTLE) == 0, "the materials were not used up");
+        });
+    }
+
+    /** Mercury, saltpeter and sulfur dissolve into philosophers' mercury in the mercury's own bottle, with no water. */
+    static void triaPrimaDissolveIntoPhilosophersMercury(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(LogosMod.MERCURY_BOTTLE.get()));
+        put(card.inputs(), new ItemStack(LogosMod.SALTPETER.get()));
+        put(card.inputs(), new ItemStack(LogosMod.SULFUR_POWDER.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.PHILOSOPHERS_MERCURY.get()) == 1, "no philosophers' mercury was made");
+            h.assertTrue(bottlesBack(table, card) == 0, "a bottle was given back though the mercury's bottle holds the product");
+        });
+    }
+
+    /** Philosophers' mercury settles into rebis, and its bottle goes back to the raw materials. */
+    static void philosophersMercurySettlesIntoRebis(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.SETTLE);
+        put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.REBIS.get()) == 1, "no rebis was settled");
+            h.assertTrue(count(table.items(), Items.GLASS_BOTTLE) == 1, "the bottle did not go back to the raw materials");
+            h.assertTrue(!card.made().contains(ItemResource.of(Items.GLASS_BOTTLE)), "the given-back bottle is listed as a product");
+        });
+    }
+
+    private static ItemStack powder(net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> potion) {
+        return dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(), new PotionContents(potion), 1);
+    }
+
+    /** Philosophers' mercury and three different powders dissolve into one potion of all three effects, rather than one powder back into its potion. */
+    static void conjunctionJoinsPowders(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
+        put(card.inputs(), powder(Potions.SWIFTNESS));
+        put(card.inputs(), powder(Potions.STRENGTH));
+        put(card.inputs(), powder(Potions.NIGHT_VISION));
+        // Bottles and water for the powder-back recipe: it must not win over the conjunction.
+        put(card.inputs(), new ItemStack(Items.GLASS_BOTTLE, 3));
+        h.succeedWhen(() -> {
+            ItemStack potion = ItemStack.EMPTY;
+            for (int i = 0; i < ProcessCard.SLOTS; i++) if (card.outputs().getResource(i).is(Items.POTION)) potion = card.outputs().getResource(i).toStack();
+            h.assertTrue(!potion.isEmpty(), "no potion was made");
+            PotionContents contents = potion.get(DataComponents.POTION_CONTENTS);
+            var effects = new java.util.ArrayList<net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>>();
+            contents.getAllEffects().forEach(e -> effects.add(e.getEffect()));
+            h.assertTrue(effects.size() == 3 && effects.contains(net.minecraft.world.effect.MobEffects.SPEED) && effects.contains(net.minecraft.world.effect.MobEffects.STRENGTH)
+                    && effects.contains(net.minecraft.world.effect.MobEffects.NIGHT_VISION), "the potion holds " + effects);
+            h.assertTrue(contents.customName().equals(java.util.Optional.of(dev.logos.alchemy.SpecialRecipes.CONJUNCTION)), "the potion is not named a conjunction");
+            h.assertTrue(count(card.inputs(), LogosMod.PHILOSOPHERS_MERCURY.get()) + count(card.inputs(), LogosMod.POTION_POWDER.get()) == 0, "the materials were not used up");
+            h.assertTrue(count(card.inputs(), Items.GLASS_BOTTLE) == 3 && table.fluid().getAmount() == 1000, "the powder-back recipe ran too");
+        });
+    }
+
+    /** Purification needs a cauldron beside the table; with philosophers' mercury it makes four tainted shards clean mana shards. */
+    static void purifyCleansTaintedShards(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        h.assertTrue(table.addCard(Process.PURIFY) == null, "a purification card was laid with no cauldron beside the table");
+        h.setBlock(MAIN.north(), Blocks.CAULDRON);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.PURIFY);
+        h.assertTrue(card != null, "no purification card with a cauldron beside the table");
+        put(card.inputs(), new ItemStack(LogosMod.TAINTED_MANA_SHARD.get(), 4));
+        put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.MANA_SHARD.get()) == 4, "the card made " + count(card.outputs(), LogosMod.MANA_SHARD.get()) + " mana shards");
+            h.assertTrue(count(card.inputs(), LogosMod.TAINTED_MANA_SHARD.get()) == 0 && bottlesBack(table, card) == 1, "the shards or the bottle are off");
+            h.assertTrue(AlchemyTableBlockEntity.fuelValue(new ItemStack(LogosMod.MANA_SHARD.get())) == 500, "a mana shard is not 500 mana of fuel");
+        });
+    }
+
+    /** Purification washes as a water cauldron does, a bottle's worth of water each: dye, a banner's top pattern, a shulker box's colour; and concrete powder sets. */
+    static void purifyWashesLikeACauldron(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        h.setBlock(SIDE.south(), Blocks.WATER_CAULDRON);
+        table.setMana(10);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
+        ProcessCard card = table.addCard(Process.PURIFY);
+        ItemStack helmet = new ItemStack(Items.LEATHER_HELMET);
+        helmet.set(DataComponents.DYED_COLOR, new net.minecraft.world.item.component.DyedItemColor(0xFF0000));
+        ItemStack banner = new ItemStack(Items.WHITE_BANNER);
+        var stripe = h.getLevel().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BANNER_PATTERN)
+                .getOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.STRIPE_TOP);
+        banner.set(DataComponents.BANNER_PATTERNS, new net.minecraft.world.level.block.entity.BannerPatternLayers.Builder()
+                .add(stripe, net.minecraft.world.item.DyeColor.RED).add(stripe, net.minecraft.world.item.DyeColor.BLUE).build());
+        put(card.inputs(), helmet);
+        put(card.inputs(), banner);
+        put(card.inputs(), new ItemStack(Items.RED_SHULKER_BOX));
+        put(card.inputs(), new ItemStack(Items.WHITE_CONCRETE_POWDER));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), Items.WHITE_CONCRETE) == 1 && count(card.outputs(), Items.SHULKER_BOX) == 1, "the powder or the box was not washed");
+            ItemStack washedHelmet = ItemStack.EMPTY, washedBanner = ItemStack.EMPTY;
+            for (int i = 0; i < ProcessCard.SLOTS; i++) {
+                ItemStack s = card.outputs().getResource(i).toStack();
+                if (s.is(Items.LEATHER_HELMET)) washedHelmet = s;
+                if (s.is(Items.WHITE_BANNER)) washedBanner = s;
+            }
+            h.assertTrue(!washedHelmet.isEmpty() && !washedHelmet.has(DataComponents.DYED_COLOR), "the helmet kept its dye");
+            h.assertTrue(!washedBanner.isEmpty() && washedBanner.get(DataComponents.BANNER_PATTERNS).layers().size() == 1, "the banner did not lose just its top pattern");
+            h.assertTrue(table.fluid().getAmount() == 0, "four washes left " + table.fluid().getAmount() + " mB");
+        });
+    }
+
+    /** A bottle of mercury is poison: drinking it poisons and sickens, and leaves the glass bottle. */
+    static void mercuryIsPoison(GameTestHelper h) {
+        var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new Vec3(1.5, 2, 1.5), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+        ItemStack left = new ItemStack(LogosMod.MERCURY_BOTTLE.get()).finishUsingItem(h.getLevel(), cow);
+        h.assertTrue(cow.hasEffect(net.minecraft.world.effect.MobEffects.POISON) && cow.hasEffect(net.minecraft.world.effect.MobEffects.NAUSEA), "mercury did no harm");
+        h.assertTrue(left.is(Items.GLASS_BOTTLE), "drinking mercury left " + left);
+        h.succeed();
+    }
+
     /** While a card ferments the table says so, and tells clients, so the airlock bubbles; an idle card does not count, and it stops once the materials are gone. */
     static void processShowsWorking(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);

@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "distill",
+  "ingredients": [
+    { "ingredient": "minecraft:redstone", "count": 3 },
+    { "ingredient": "minecraft:glass_bottle" }
+  ],
+  "results": [
+    { "id": "logos:mercury_bottle" },
+    { "id": "logos:sulfur_powder" }
+  ]
+}

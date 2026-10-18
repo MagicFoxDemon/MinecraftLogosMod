@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "dissolve",
+  "ingredients": [
+    { "ingredient": "logos:mercury_bottle" },
+    { "ingredient": "logos:saltpeter" },
+    { "ingredient": "logos:sulfur_powder" }
+  ],
+  "results": [
+    { "id": "logos:philosophers_mercury" }
+  ]
+}

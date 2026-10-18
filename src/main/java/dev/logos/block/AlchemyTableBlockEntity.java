@@ -31,7 +31,6 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BlastFurnaceBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -149,10 +148,10 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
 
     /**
      * Lays a card of {@code process} on the table at ({@code x}, {@code y}) on its canvas; null when it
-     * already holds {@link #MAX_CARDS}, or for calcination without a blast furnace beside it.
+     * already holds {@link #MAX_CARDS}, or for a process whose block (a blast furnace, a cauldron) is not beside it.
      */
     public @Nullable ProcessCard addCard(Process process, int x, int y) {
-        if (cards.size() >= MAX_CARDS || !process.onTable() && !hasBlastFurnace()) return null;
+        if (cards.size() >= MAX_CARDS || !hasStation(process)) return null;
         ProcessCard card = new ProcessCard(process);
         card.moveTo(x, y);
         card.onChange(this::changed);
@@ -232,10 +231,9 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         // Switched off, or held by a redstone signal: the cards wait where they are.
         Component halt = !table.enabled ? Component.translatable("logos.alchemy_card.switched_off")
                 : table.powered() ? Component.translatable("logos.alchemy_card.redstone") : null;
-        boolean furnace = table.hasBlastFurnace();
         for (ProcessCard card : table.cards) {
-            if (halt != null || !card.process.onTable() && !furnace) {
-                card.pause(halt != null ? halt : Component.translatable("logos.alchemy_card.no_furnace"));
+            if (halt != null || !table.hasStation(card.process)) {
+                card.pause(halt != null ? halt : card.process.missingStation());
                 continue;
             }
             if (card.tick(table) && card.process.onTable()) table.triggerAnim(LEVER + card.process.ordinal(), "press");
@@ -271,12 +269,16 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         return level != null && (level.hasNeighborSignal(worldPosition) || level.hasNeighborSignal(AlchemyTableBlock.otherHalf(worldPosition, getBlockState())));
     }
 
-    /** Whether a blast furnace (vanilla's, or another mod's kind of one) touches either half: calcination is worked in it. */
-    public boolean hasBlastFurnace() {
+    /**
+     * Whether {@code process} can be worked here: always for the table's own apparatus, else while the
+     * block that works it (a blast furnace, a cauldron; vanilla's or another mod's kind of one) touches either half.
+     */
+    public boolean hasStation(Process process) {
+        if (process.onTable()) return true;
         if (level == null) return false;
         for (BlockPos half : List.of(worldPosition, AlchemyTableBlock.otherHalf(worldPosition, getBlockState()))) {
             for (Direction d : Direction.values()) {
-                if (level.getBlockState(half.relative(d)).getBlock() instanceof BlastFurnaceBlock) return true;
+                if (process.worksAt(level.getBlockState(half.relative(d)).getBlock())) return true;
             }
         }
         return false;

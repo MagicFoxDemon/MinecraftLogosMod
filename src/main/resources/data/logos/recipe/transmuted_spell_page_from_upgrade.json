@@ -1,0 +1,13 @@
+{
+  "type": "logos:page_upgrade",
+  "category": "misc",
+  "group": "transmuted_spell_page_upgrade",
+  "ingredients": [
+    "logos:echo_spell_page",
+    "logos:rebis",
+    "logos:adhesive"
+  ],
+  "result": {
+    "id": "logos:transmuted_spell_page"
+  }
+}

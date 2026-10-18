@@ -138,6 +138,9 @@ public class LogosMod {
     /** 被污染的魔力碎片: an unstable fuel; fed to a colossus, it sends it into a mana frenzy. */
     public static final DeferredItem<net.minecraft.world.item.Item> TAINTED_MANA_SHARD = ITEMS.registerSimpleItem("tainted_mana_shard",
             p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    /** 魔力碎片: a tainted shard purified with philosophers' mercury; the same mana, burnt safely. */
+    public static final DeferredItem<net.minecraft.world.item.Item> MANA_SHARD = ITEMS.registerSimpleItem("mana_shard",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
 
     // Alchemy materials: the fermentation line. The alchemy table's processes make most of them.
     /**
@@ -170,6 +173,21 @@ public class LogosMod {
     public static final DeferredItem<net.minecraft.world.item.Item> SALTPETER = ITEMS.registerSimpleItem("saltpeter");
     /** 粘合剂: dissolved clay and raw mash. */
     public static final DeferredItem<net.minecraft.world.item.Item> ADHESIVE = ITEMS.registerSimpleItem("adhesive");
+
+    // The three principles: sulfur, salt (saltpeter) and mercury, joined into philosophers' mercury and settled into rebis.
+    /** 水银瓶: distilled out of redstone, which gives sulfur besides. Raw mercury: poisonous to drink. */
+    public static final DeferredItem<net.minecraft.world.item.Item> MERCURY_BOTTLE = ITEMS.registerSimpleItem("mercury_bottle", p -> drinkable(p,
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 30 * 20, 1),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 20 * 20)));
+    /**
+     * 哲人汞: mercury dissolved with sulfur and saltpeter, the three principles joined. It dissolves up
+     * to three potion powders into one potion of all their effects, purifies tainted mana shards, and settles into rebis.
+     */
+    public static final DeferredItem<net.minecraft.world.item.Item> PHILOSOPHERS_MERCURY = ITEMS.registerSimpleItem("philosophers_mercury",
+            p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    /** 雷比斯: the "double thing" philosophers' mercury settles into; it raises a page to the transmuted grade. */
+    public static final DeferredItem<net.minecraft.world.item.Item> REBIS = ITEMS.registerSimpleItem("rebis",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
     /** 药粉: a potion settled into powder; eaten for the potion's effects, and dissolved back into it. */
     public static final DeferredItem<dev.logos.item.PotionPowderItem> POTION_POWDER = ITEMS.registerItem("potion_powder", dev.logos.item.PotionPowderItem::new,
             p -> p.component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -310,6 +328,7 @@ public class LogosMod {
                 out.accept(DISORDER_CRYSTAL.get());
                 out.accept(MAINTENANCE_KIT.get());
                 out.accept(TAINTED_MANA_SHARD.get());
+                out.accept(MANA_SHARD.get());
                 out.accept(STARTER_CULTURE.get());
                 out.accept(RAW_MASH.get());
                 out.accept(FOUL_BRINE.get());
@@ -317,6 +336,9 @@ public class LogosMod {
                 out.accept(SULFUR_POWDER.get());
                 out.accept(SALTPETER.get());
                 out.accept(ADHESIVE.get());
+                out.accept(MERCURY_BOTTLE.get());
+                out.accept(PHILOSOPHERS_MERCURY.get());
+                out.accept(REBIS.get());
                 out.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
                 out.accept(MANA_LEECH_SPAWN_EGG.get());
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) out.accept(egg.get());

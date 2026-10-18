@@ -45,6 +45,7 @@ public final class AlchemyArt {
             case DISTILL -> 0xFFC0504A;
             case SETTLE -> 0xFF8FBFD6;
             case CALCINE -> 0xFFD8743A;
+            case PURIFY -> 0xFF6FB8E0;
         };
     }
 
@@ -185,6 +186,8 @@ public final class AlchemyArt {
             case DISTILL -> alembic(w, h, titleHeight);
             case SETTLE -> tray(w, h, titleHeight);
             case CALCINE -> furnace(w, h, titleHeight);
+            // Washed in a basin of water; drawn as the dissolving basin until purification has art of its own.
+            case PURIFY -> basin(w, h, titleHeight);
         });
         int level = liquid(process);
         return (GuiTexture) (context, x, y, width, height) -> {
