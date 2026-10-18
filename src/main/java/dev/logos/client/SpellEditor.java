@@ -25,9 +25,11 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.api.graph.Graph;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.itemlibrary.GraphNodeCreationData;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.itemlibrary.NodeModelLibraryItem;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.ICustomNodeModel;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.NodeModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.Model;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.StickyNoteModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.PlacematModel;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wire.WireModel;
 
 import dev.logos.LogosMod;
 import dev.logos.graph.GraphBuilder;
@@ -47,6 +49,7 @@ import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -59,6 +62,8 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * one cast costs against what it injects, and its intent — inferred, or set here by the player.
  */
 public final class SpellEditor {
+    /** Ink and paper for the runes on the canvas; layered over the toolkit theme. */
+    static final Identifier MANUSCRIPT = Identifier.fromNamespaceAndPath(LogosMod.MODID, "lss/manuscript.lss");
     /** Where the inscription table holding the page stands; saving writes into that page. */
     private final BlockPos table;
     /** Grade of the page on the table: the editor warns when the spell injects more than it holds. */
@@ -88,12 +93,17 @@ public final class SpellEditor {
 
         @Override
         public ModelElement createAndAddModelElement(Model model) {
-            if (!(model instanceof StickyNoteModel) && !(model instanceof PlacematModel)) {
+            boolean rune = model instanceof NodeModel && model instanceof ICustomNodeModel custom && custom.getNode() instanceof LogosNode;
+            if (!rune && !(model instanceof WireModel) && !(model instanceof StickyNoteModel) && !(model instanceof PlacematModel)) {
                 return super.createAndAddModelElement(model);
             }
             ModelElement existing = getModelElement(model);
             if (existing != null) return existing;
-            ModelElement element = model instanceof StickyNoteModel note
+            ModelElement element = rune
+                    ? new ManuscriptNode((NodeModel) model, (LogosNode) ((ICustomNodeModel) model).getNode())
+                    : model instanceof WireModel wire
+                    ? new ManuscriptWire(wire)
+                    : model instanceof StickyNoteModel note
                     ? new SpellAnnotations.PaperNote(note)
                     : new SpellAnnotations.InkRegion((PlacematModel) model);
             if (addElement(element)) element.doCompleteUpdate();
@@ -252,7 +262,8 @@ public final class SpellEditor {
         root.setId("spell_editor_background");
         root.style(s -> s.backgroundTexture(new SpellEditorBackground()));
         root.addChildren(editor, side);
-        return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)));
+        return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
+                StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)));
     }
 
     private void refresh() {

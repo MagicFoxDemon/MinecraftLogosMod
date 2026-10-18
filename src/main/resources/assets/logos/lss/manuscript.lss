@@ -1,0 +1,53 @@
+// The spell workbench's runes, drawn on the page rather than boxed on it (see ManuscriptNode).
+// Only rules under .__manuscript-node__ live here, so the side panel keeps the toolkit theme.
+
+.__manuscript-node__ .__node-title-element__,
+.__manuscript-node__ .__node-port-container__,
+.__manuscript-node__ .__in-out-port-container_input__,
+.__manuscript-node__ .__in-out-port-container_output__,
+.__manuscript-node__ .__vertical-port-container__,
+.__manuscript-node__ .__vertical-port-container_inner__,
+.__manuscript-node__ .__port-container__,
+.__manuscript-node__ .__node-option-container__,
+.__manuscript-node__ .__field-value-inspector__ {
+  background: empty;
+}
+
+.__manuscript-node__ label,
+.__manuscript-node__ text {
+  text-color: #3b2614;
+  text-shadow: false;
+}
+
+// Fields draw their own text, so the label rule above never reaches them.
+.__manuscript-node__ text-field {
+  text-color: #3b2614;
+  cursor-color: #3b2614;
+  text-shadow: false;
+  focus-overlay: empty;
+}
+
+// Values are written on a dotted line (ManuscriptMarks), not boxed.
+.__manuscript-node__ selector {
+  focus-overlay: empty;
+}
+
+.__manuscript-node__ .__selector_button-icon__ {
+  background: sprite(ldlib2:textures/gui/down.png) scale(0.6) color(#7a5a3a);
+}
+
+.__manuscript-node__ toggle .__toggle_button__ {
+  base-background: sdf(#66fff8e4, 1, 1, #807a5a3a);
+  hover-background: sdf(#99fff8e4, 1, 1, #3b2614);
+  pressed-background: sdf(#99fff8e4, 1, 1, #3b2614);
+}
+
+.__manuscript-node__ toggle:on .__toggle_button__ {
+  base-background: sdf(#66fff8e4, 1, 1, #3b2614);
+  hover-background: sdf(#99fff8e4, 1, 1, #3b2614);
+  pressed-background: sdf(#99fff8e4, 1, 1, #3b2614);
+}
+
+.__manuscript-node__ .__toggle_mark-icon__ {
+  color: #3b2614;
+}
