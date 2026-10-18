@@ -39,6 +39,7 @@ import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -49,20 +50,23 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * The alchemy table's screen, in two tabs so it fits a 16:9 window at the usual GUI scale. 存储:
- * the storage (raw-material and product areas), the switch, the fuel slot and mana gauge, the tank,
- * and the player's inventory, about a chest's size. 工艺: the four kinds of card above the board where
- * process cards lie, the product node beside it and the hotbar below, filling most of the window. A card on the canvas
- * shows its inputs (designated but empty slots show their item faded), its outputs and its progress,
- * lets one designate an item from storage, and lists the products it has made. A product is wired on
- * by dragging it onto another card or onto the product-area node at the canvas's right; unwired, it
- * stays in the card. Wires are drawn with arrows running along them. A card's title bar drags it
- * about; × takes it off. What a card does is sent to the server as
+ * The alchemy table's screen, one page drawn like the table itself (see {@code client.AlchemyArt}):
+ * the four kinds of card above the bench top where process cards lie, the product crate beside it,
+ * and beside that the storage ledger (raw-material and product areas, the switch, the fuel slot and
+ * mana gauge, the tank, the player's inventory), which its ribbon folds away to give the bench the
+ * page; the hotbar shows under the bench while the ledger is folded. A card on the canvas is drawn
+ * as the apparatus that works its process; it shows its inputs (designated but empty slots show
+ * their item faded), its outputs and its progress, lets one designate an item from storage, and
+ * lists the products it has made. A product is piped on by dragging it onto another card or onto
+ * the product crate at the canvas's right; unwired, it stays in the card. Pipes carry beads along
+ * them. A card's title bar drags it about; × takes it off. What a card does is sent to the server as
  * {@link AlchemyCardPayload}s; the screen follows the table's state as the client sees it.
  */
 public final class AlchemyTableUI {
     /** The board cards lie on; the screen shows as much of it as fits, and it scrolls and pans. */
     public static final int CANVAS_W = 600, CANVAS_H = 400, CARD_W = 140, CARD_H = 136;
+    /** A card's width in the overview, where the board is drawn at half size. */
+    private static final int COMPACT_W = 72;
     /** The product-area node on the canvas's right edge, which products can be wired to. */
     private static final int NODE_W = 52, NODE_H = 64;
     /** The gauges: the pale blue of the hourglass sand, and water blue. */
@@ -71,14 +75,12 @@ public final class AlchemyTableUI {
     private static final int STATUS_COLOUR = 0xFFFFB060;
     /** A designated, empty input slot shows its item under this veil of slot grey. */
     private static final int GHOST = 0xA08B8B8B;
-    /**
-     * Wires: to another card in mana blue, to the product area in brass; the arrows running along
-     * them in white. Plain shapes for now; the look comes with the screen's art (issue #64).
-     */
-    private static final ColorRectTexture WIRE_TO_CARD = new ColorRectTexture(0xFF6FB6E8), WIRE_TO_PRODUCTS = new ColorRectTexture(0xFFD9A441),
-            ARROW = new ColorRectTexture(0xFFFFFFFF), PORT = new ColorRectTexture(0xFFE0E0E0);
-    /** How long an arrow takes to run the length of a wire. */
-    private static final long ARROW_MS = 1400;
+    /** The storage ledger beside the board: nine slots, its margins and room for a scrollbar. */
+    private static final int STORAGE_W = 9 * 18 + 22;
+    /** Ink and paper for the ledger and the controls, shared with the spell workbench. */
+    private static final Identifier MANUSCRIPT = Identifier.fromNamespaceAndPath(dev.logos.LogosMod.MODID, "lss/manuscript.lss");
+    /** A card's title row, which its apparatus's brass nameplate sits under. */
+    private static final int TITLE_H = 16;
 
     private AlchemyTableUI() {}
 
@@ -112,50 +114,68 @@ public final class AlchemyTableUI {
         if (!(player.level().getBlockEntity(holder.pos) instanceof AlchemyTableBlockEntity table)) {
             return ModularUI.of(UI.of(new UIElement()), player);
         }
-        // The 工艺 page: the palette above, the board (scrolling, with the product node beside it), the hotbar below.
+        // The board: the palette of apparatus above, the bench top (scrolling, with the product crate beside it),
+        // and the hotbar below while the storage page is folded away.
         UIElement productsNode = productsNode();
         Canvas canvas = new Canvas(table, holder.pos, productsNode);
         ScrollerView view = new ScrollerView();
         view.setId("canvas_view");
         view.layout(l -> l.flex(1).heightPercent(100));
+        view.style(s -> s.background(IGuiTexture.EMPTY));
+        view.viewPort(v -> v.style(s -> s.background(IGuiTexture.EMPTY)));
         view.addScrollViewChild(canvas);
         canvas.pansIn(view);
-        UIElement work = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flex(1).gapAll(4).alignItems(AlignItems.CENTER).widthPercent(100));
+        productsNode.style(s -> s.background(dev.logos.client.AlchemyArt.crate(ctx -> canvas.cratePipes(ctx, view))));
+        UIElement work = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flex(1).minHeight(0).gapAll(10).alignItems(AlignItems.CENTER).widthPercent(100));
         work.addChildren(view, productsNode);
-        UIElement processPage = new UIElement().layout(l -> l.flex(1).gapAll(4).widthPercent(100));
+        UIElement hotbar = hotbar(player);
+        UIElement processPage = new UIElement().layout(l -> l.flex(1).minWidth(0).heightPercent(100).gapAll(8).paddingTop(8));
         processPage.setId("process_page");
-        processPage.addChildren(palette(table), work, hotbar(player));
+        // The overview: a button beside the palette, or Ctrl and the wheel over the board (down to step back, up to come close).
+        Button zoom = new Button().setText(Component.translatable("logos.alchemy_table.overview"));
+        zoom.setId("zoom_toggle");
+        zoom.setOnClick(e -> canvas.setOverview(!canvas.overview()));
+        dev.logos.client.AlchemyArt.paper(zoom);
+        canvas.onOverview(on -> zoom.setText(Component.translatable(on ? "logos.alchemy_table.detail" : "logos.alchemy_table.overview")));
+        view.addEventListener(UIEvents.MOUSE_WHEEL, e -> {
+            if (!e.isCtrlDown()) return;
+            canvas.setOverview(e.deltaY < 0);
+            e.stopPropagation();
+        }, true);
+        UIElement palette = palette(table);
+        palette.addChild(zoom);
+        processPage.addChildren(palette, work, hotbar);
         canvas.takesDropsOn(processPage);
 
-        // The 存储 page: storage, mana, the tank and the inventory, about a chest's size.
-        UIElement storagePage = storage(table);
+        // Storage, mana, the tank and the inventory, on a ledger page beside the board; its ribbon folds it away.
+        // It scrolls when the window is too short to show it all.
+        ScrollerView ledger = new ScrollerView();
+        ledger.layout(l -> l.widthPercent(100).flex(1).minHeight(0));
+        ledger.style(s -> s.background(IGuiTexture.EMPTY));
+        ledger.viewPort(v -> v.style(s -> s.background(IGuiTexture.EMPTY)));
+        ledger.addScrollViewChild(storage(table));
+        UIElement storagePage = new UIElement();
         storagePage.setId("storage_page");
-
-        UIElement panel = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(6).gapAll(4));
-        Button storageTab = new Button().setText(Component.translatable("logos.alchemy_table.tab_storage"));
-        storageTab.setId("tab_storage");
-        Button processTab = new Button().setText(Component.translatable("logos.alchemy_table.tab_process"));
-        processTab.setId("tab_process");
-        Runnable showStorage = () -> {
-            storagePage.setDisplay(true);
-            processPage.setDisplay(false);
-            panel.layout(l -> l.widthAuto().heightAuto());
-        };
-        storageTab.setOnClick(e -> showStorage.run());
-        // The process page takes most of the window, whatever its size.
-        processTab.setOnClick(e -> {
-            storagePage.setDisplay(false);
-            processPage.setDisplay(true);
-            panel.layout(l -> l.widthPercent(96).heightPercent(94));
+        storagePage.layout(l -> l.width(STORAGE_W).heightPercent(100).paddingAll(4).paddingTop(8).flexShrink(0));
+        storagePage.style(s -> s.background(dev.logos.client.AlchemyArt.ledger()));
+        storagePage.addChild(ledger);
+        dev.logos.client.AlchemyArt.inked(storagePage);
+        boolean[] storageOpen = {true};
+        hotbar.setDisplay(false);
+        UIElement storageTab = dev.logos.client.AlchemyArt.ribbon("logos.alchemy_table.tab_storage", () -> storageOpen[0], () -> {
+            storageOpen[0] = !storageOpen[0];
+            storagePage.setDisplay(storageOpen[0]);
+            hotbar.setDisplay(!storageOpen[0]);
         });
-        UIElement tabs = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3));
-        tabs.addChildren(storageTab, processTab);
-        panel.addChildren(tabs, storagePage, processPage);
-        showStorage.run();
+        storageTab.setId("tab_storage");
+        UIElement ribbons = new UIElement().layout(l -> l.width(16).heightPercent(100).paddingTop(16).flexShrink(0));
+        ribbons.addChild(storageTab);
 
-        UIElement root = new UIElement().layout(l -> l.widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
-        root.addChild(panel);
-        return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
+        UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).widthPercent(100).heightPercent(100).paddingAll(14).gapAll(8));
+        root.style(s -> s.background(dev.logos.client.AlchemyArt.bench()));
+        root.addChildren(processPage, storagePage, ribbons);
+        return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
+                StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)), player);
     }
 
     /** The hotbar, on the process page, for putting things into cards straight from one's hand. */
@@ -174,7 +194,7 @@ public final class AlchemyTableUI {
         UIElement node = new UIElement();
         node.setId("products_node");
         node.layout(l -> l.width(NODE_W).height(NODE_H).paddingAll(2).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
-        node.style(s -> s.background(new ColorRectTexture(0x60D9A441)));
+        node.style(s -> s.background(dev.logos.client.AlchemyArt.crate()));
         Label name = new Label();
         name.setText(Component.translatable("logos.alchemy_table.products_node"));
         name.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
@@ -217,6 +237,7 @@ public final class AlchemyTableUI {
         }).build());
         Button clear = new Button().setText(Component.translatable("logos.alchemy_table.clear_tank"));
         clear.setOnServerClick(e -> table.clearTank());
+        dev.logos.client.AlchemyArt.paper(clear);
         ProgressBar fluidGauge = gauge(() -> (float) table.fluid().getAmount(), AlchemyTableBlockEntity.TANK_CAPACITY, 9 * 18 - 66, FLUID_COLOUR);
         fluidGauge.setId("fluid_gauge");
         UIElement tankRow = row(tank, column(fluidText, row(fluidGauge, clear)));
@@ -225,6 +246,7 @@ public final class AlchemyTableUI {
         Button power = new Button().setText(Component.translatable("logos.alchemy_table.toggle"));
         power.setId("run_switch");
         power.setOnServerClick(e -> table.setEnabled(!table.enabled()));
+        dev.logos.client.AlchemyArt.paper(power);
         Label running = new Label();
         running.setId("run_state");
         running.bind(DataBindingBuilder.componentS2C(() -> Component.translatable(!table.enabled() ? "logos.alchemy_table.stopped"
@@ -256,13 +278,15 @@ public final class AlchemyTableUI {
 
     /** A strip above the board: one card of each process, to drag onto it, and how many are laid. */
     private static UIElement palette(AlchemyTableBlockEntity table) {
-        UIElement column = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(4).alignItems(AlignItems.CENTER));
+        UIElement column = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP).gapAll(4).alignItems(AlignItems.CENTER).widthPercent(100));
         for (Process p : Process.values()) {
-            UIElement chip = new UIElement().layout(l -> l.width(76).height(16).paddingAll(3));
+            // A brass plate, as on the table's front, with the process's alchemical sign and name.
+            UIElement chip = new UIElement().layout(l -> l.height(16).paddingAll(3).paddingLeft(5).paddingRight(5));
             chip.setId("palette_" + p.getSerializedName());
-            chip.style(s -> s.background(new ColorRectTexture(0x40FFFFFF)));
+            chip.style(s -> s.background(dev.logos.client.AlchemyArt.plate(p)));
             Label name = new Label();
             name.setText(Component.literal(p.symbol + " ").append(p.displayName()));
+            name.textStyle(s -> s.textColor(dev.logos.client.AlchemyArt.ENGRAVED).textShadow(false).adaptiveWidth(true));
             name.setAllowHitTest(false);
             chip.addChild(name);
             chip.addEventListener(UIEvents.MOUSE_DOWN, e -> {
@@ -273,6 +297,7 @@ public final class AlchemyTableUI {
             column.addChild(chip);
         }
         Label count = new Label();
+        count.textStyle(t -> t.adaptiveWidth(true));
         count.addEventListener(UIEvents.TICK, e -> count.setText(Component.translatable("logos.alchemy_table.card_count",
                 table.cards().size(), AlchemyTableBlockEntity.MAX_CARDS)));
         column.addChild(count);
@@ -298,6 +323,9 @@ public final class AlchemyTableUI {
         private @Nullable WireDrag drawing;
         /** Where the mouse was while an empty spot of the board is dragged to pan it; null otherwise. */
         private float @Nullable [] panFrom;
+        /** The overview: the board at half size, each card a small apparatus showing what it holds and has made. */
+        private boolean overview;
+        private java.util.function.Consumer<Boolean> overviewChanged = on -> {};
 
         Canvas(AlchemyTableBlockEntity table, BlockPos pos, UIElement productsNode) {
             this.table = table;
@@ -305,7 +333,7 @@ public final class AlchemyTableUI {
             this.productsNode = productsNode;
             setId("canvas");
             layout(l -> l.width(CANVAS_W).height(CANVAS_H));
-            style(s -> s.background(new ColorRectTexture(0x30000000)));
+            style(s -> s.background(dev.logos.client.AlchemyArt.benchTop()));
 
             hint.setText(Component.translatable("logos.alchemy_table.card_hint"));
             hint.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
@@ -313,13 +341,38 @@ public final class AlchemyTableUI {
             hint.setAllowHitTest(false);
             addChild(hint);
 
-            for (int i = 0; i < AlchemyTableBlockEntity.MAX_CARDS; i++) panels.add(new CardPanel(table, pos, i));
+            for (int i = 0; i < AlchemyTableBlockEntity.MAX_CARDS; i++) {
+                panels.add(new CardPanel(table, pos, i, () -> overview, () -> setOverview(false)));
+            }
             panels.forEach(this::addChild);
             // Hidden elements are not ticked, so the always-shown canvas keeps the panels up to date.
             addEventListener(UIEvents.TICK, e -> {
                 panels.forEach(CardPanel::refresh);
                 hint.setDisplay(table.cards().isEmpty());
             });
+        }
+
+        boolean overview() {
+            return overview;
+        }
+
+        /** How large the board is drawn: whole, or half in the overview. Cards keep their places on the table either way. */
+        private float scale() {
+            return overview ? 0.5f : 1f;
+        }
+
+        /** Switches between the whole board and the overview, telling {@code onOverview} (the toggle's label). */
+        void setOverview(boolean on) {
+            if (on == overview) return;
+            overview = on;
+            float s = scale();
+            layout(l -> l.width(CANVAS_W * s).height(CANVAS_H * s));
+            panels.forEach(p -> p.setOverview(on));
+            overviewChanged.accept(on);
+        }
+
+        void onOverview(java.util.function.Consumer<Boolean> changed) {
+            overviewChanged = changed;
         }
 
         /** Drops anywhere on {@code page} (the board, the product node) land here. */
@@ -333,9 +386,10 @@ public final class AlchemyTableUI {
             page.addEventListener(UIEvents.DRAG_PERFORM, e -> {
                 drawing = null;
                 Object dragged = e.dragHandler == null ? null : e.dragHandler.draggingObject;
-                int x = (int) (e.x - getPositionX()), y = (int) (e.y - getPositionY());
-                if (dragged instanceof NewCard n) send(AlchemyCardPayload.add(pos, n.process, x - 20, y - 6));
-                else if (dragged instanceof MovedCard m) send(AlchemyCardPayload.move(pos, m.index, (int) (x - m.dx), (int) (y - m.dy)));
+                // Dropped points are on the board as drawn; the table keeps cards in whole-board places.
+                float s = scale(), x = e.x - getPositionX(), y = e.y - getPositionY();
+                if (dragged instanceof NewCard n) send(AlchemyCardPayload.add(pos, n.process, (int) (x / s) - 20, (int) (y / s) - 6));
+                else if (dragged instanceof MovedCard m) send(AlchemyCardPayload.move(pos, m.index, (int) ((x - m.dx) / s), (int) ((y - m.dy) / s)));
                 else if (dragged instanceof WireDrag w) send(AlchemyCardPayload.route(pos, w.card, w.product, wireTarget(w.card, e.x, e.y)));
             }, true);
         }
@@ -371,6 +425,27 @@ public final class AlchemyTableUI {
         @Override
         protected void drawBackgroundAdditional(IGUIContext ctx) {
             super.drawBackgroundAdditional(ctx);
+            pipes(ctx, false);
+            if (drawing != null && drawing.card < panels.size()) {
+                UIElement port = panels.get(drawing.card).port(drawing.product);
+                if (port != null) dev.logos.client.AlchemyArt.pipe(ctx, port.getPositionX() + port.getSizeWidth(), port.getPositionY() + port.getSizeHeight() / 2,
+                        mouseX, mouseY, dev.logos.client.AlchemyArt.Pipe.LAYING, 0, -1);
+            }
+        }
+
+        /**
+         * The stretch of each pipe to the product crate beyond the board's edge: the board is clipped
+         * to {@code view}, so the crate draws this part, from the view's edge to its funnel.
+         */
+        void cratePipes(IGUIContext ctx, UIElement view) {
+            float left = view instanceof ScrollerView scroller && scroller.verticalScroller.isDisplayed()
+                    ? scroller.verticalScroller.getPositionX() : view.getPositionX() + view.getSizeWidth();
+            dev.logos.client.AlchemyArt.clipped(ctx, left, view.getPositionY(), productsNode.getPositionX() - left, view.getSizeHeight(),
+                    c -> pipes(c, true));
+        }
+
+        /** The laid pipes: between apparatus and to the crate, or ({@code crateOnly}) only those to the crate. */
+        private void pipes(IGUIContext ctx, boolean crateOnly) {
             long now = System.currentTimeMillis();
             for (int i = 0; i < Math.min(panels.size(), table.cards().size()); i++) {
                 ProcessCard card = table.cards().get(i);
@@ -380,49 +455,18 @@ public final class AlchemyTableUI {
                     UIElement port = from.port(product);
                     if (port == null || target == ProcessCard.KEEP) continue;
                     float sx = port.getPositionX() + port.getSizeWidth(), sy = port.getPositionY() + port.getSizeHeight() / 2;
+                    // Products run to the crate through brass, and between apparatus through glass, coloured by what the source works.
+                    int carried = dev.logos.client.AlchemyArt.liquid(card.process);
                     if (target == ProcessCard.PRODUCTS) {
-                        wire(ctx, sx, sy, productsNode.getPositionX(), productsNode.getPositionY() + NODE_H / 2f, WIRE_TO_PRODUCTS, now);
-                    } else if (target >= 0 && target < table.cards().size() && target != i) {
+                        dev.logos.client.AlchemyArt.pipe(ctx, sx, sy, productsNode.getPositionX() - 5, productsNode.getPositionY() + NODE_H / 2f,
+                                dev.logos.client.AlchemyArt.Pipe.BRASS, carried, now);
+                    } else if (!crateOnly && target >= 0 && target < table.cards().size() && target != i) {
                         CardPanel to = panels.get(target);
-                        float tx = to.getPositionX(), ty = to.getPositionY() + 10;
-                        wire(ctx, sx, sy, tx, ty, WIRE_TO_CARD, now);
-                        ctx.drawTexture(PORT, tx - 3, ty - 3, 3, 6);
+                        dev.logos.client.AlchemyArt.pipe(ctx, sx, sy, to.getPositionX(), to.getPositionY() + 10,
+                                dev.logos.client.AlchemyArt.Pipe.GLASS, carried, now);
                     }
                 }
             }
-            if (drawing != null && drawing.card < panels.size()) {
-                UIElement port = panels.get(drawing.card).port(drawing.product);
-                if (port != null) wire(ctx, port.getPositionX() + port.getSizeWidth(), port.getPositionY() + port.getSizeHeight() / 2, mouseX, mouseY, ARROW, -1);
-            }
-        }
-
-        /** A curve from (sx, sy) out to the right and into (tx, ty) from the left, with two arrows running along it ({@code now} below 0: none). */
-        private static void wire(IGUIContext ctx, float sx, float sy, float tx, float ty, ColorRectTexture colour, long now) {
-            float bend = Math.max(30, Math.abs(tx - sx) / 2);
-            int steps = (int) Math.max(12, (Math.abs(tx - sx) + Math.abs(ty - sy)) / 1.5f);
-            for (int k = 0; k <= steps; k++) {
-                float[] p = curve(sx, sy, tx, ty, bend, k / (float) steps);
-                ctx.drawTexture(colour, p[0] - 1, p[1] - 1, 2, 2);
-            }
-            if (now < 0) return;
-            for (float offset : new float[] {0, 0.5f}) {
-                float t = ((now % ARROW_MS) / (float) ARROW_MS + offset) % 1f;
-                float[] p = curve(sx, sy, tx, ty, bend, t), q = curve(sx, sy, tx, ty, bend, Math.min(1, t + 0.01f));
-                float dx = q[0] - p[0], dy = q[1] - p[1], len = (float) Math.max(1e-3, Math.hypot(dx, dy));
-                dx /= len;
-                dy /= len;
-                // An arrowhead pointing along the wire: two short strokes back from its tip.
-                for (int k = 0; k <= 3; k++) {
-                    ctx.drawTexture(ARROW, p[0] - dx * k - dy * k - 1, p[1] - dy * k + dx * k - 1, 2, 2);
-                    ctx.drawTexture(ARROW, p[0] - dx * k + dy * k - 1, p[1] - dy * k - dx * k - 1, 2, 2);
-                }
-            }
-        }
-
-        /** The point at {@code t} on the cubic curve leaving (sx, sy) rightwards and entering (tx, ty) from the left. */
-        private static float[] curve(float sx, float sy, float tx, float ty, float bend, float t) {
-            float u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
-            return new float[] {a * sx + b * (sx + bend) + c * (tx - bend) + d * tx, a * sy + b * sy + c * ty + d * ty};
         }
     }
 
@@ -447,20 +491,39 @@ public final class AlchemyTableUI {
         private final java.util.Map<ItemResource, UIElement> ports = new java.util.HashMap<>();
         /** What the product rows were built for, so they are rebuilt only when that changes. */
         private @Nullable Object productsFor;
+        private final ProgressBar progress = new ProgressBar().setRange(0, ProcessCard.CRAFT_TICKS);
+        /** The process the card's apparatus is drawn for, so it is redrawn only when another card takes the place. */
+        private @Nullable Process drawnAs;
         private final IGuiTexture[] ghosts = new IGuiTexture[ProcessCard.SLOTS];
         private final ItemResource[] ghostItems = new ItemResource[ProcessCard.SLOTS];
+        /** Whether the board is in its overview, and how to leave it (double-clicking a card). */
+        private final java.util.function.BooleanSupplier overview;
+        /** The full card's parts below its title: shown on the whole board. */
+        private final List<UIElement> detail = new ArrayList<>();
+        /** The overview's summary: what the card holds or wants, and what it has made, each as icons with counts. */
+        private final UIElement summary = new UIElement().layout(l -> l.gapAll(2).minHeight(34));
+        private final UIElement materials = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP).gapAll(1));
+        private final UIElement madeIcons = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flexWrap(dev.vfyjxf.taffy.style.FlexWrap.WRAP).gapAll(2));
+        /** In the overview, a mark beside the title when the card is not working; its tooltip says why. */
+        private final Label flag = new Label();
+        private final java.util.Map<ItemResource, UIElement> miniPorts = new java.util.HashMap<>();
+        private @Nullable Object summaryFor;
 
-        CardPanel(AlchemyTableBlockEntity table, BlockPos pos, int index) {
+        CardPanel(AlchemyTableBlockEntity table, BlockPos pos, int index, java.util.function.BooleanSupplier overview, Runnable leaveOverview) {
             this.table = table;
             this.pos = pos;
             this.index = index;
+            this.overview = overview;
+            addEventListener(UIEvents.DOUBLE_CLICK, e -> {
+                if (overview.getAsBoolean()) leaveOverview.run();
+            });
             setId("card" + index);
-            addClass("panel_bg");
             layout(l -> l.positionType(TaffyPosition.ABSOLUTE).width(CARD_W).paddingAll(4).gapAll(3));
 
-            // Title bar: drag it to move the card; × takes the card off.
+            // Title bar, engraved on the apparatus's brass nameplate: drag it to move the card; × takes the card off.
             title.setId("card" + index + "_title");
-            title.layout(l -> l.flex(1));
+            title.layout(l -> l.flex(1).marginLeft(2));
+            title.textStyle(s -> s.textColor(dev.logos.client.AlchemyArt.ENGRAVED).textShadow(false));
             title.addEventListener(UIEvents.MOUSE_DOWN, e -> {
                 float dx = e.x - getPositionX(), dy = e.y - getPositionY();
                 title.startDrag(new MovedCard(index, dx, dy), new ColorRectTexture(0x40FFFFFF));
@@ -468,16 +531,20 @@ public final class AlchemyTableUI {
             Button remove = new Button().setText("×");
             remove.setId("card" + index + "_remove");
             remove.setOnClick(e -> send(AlchemyCardPayload.remove(pos, index)));
-            ProgressBar progress = new ProgressBar().setRange(0, ProcessCard.CRAFT_TICKS);
+            dev.logos.client.AlchemyArt.paper(remove);
             progress.label(l -> l.setText(Component.empty()));
-            progress.bar(b -> b.style(s -> s.background(new ColorRectTexture(MANA_COLOUR))));
             progress.bind(DataBindingBuilder.floatValS2C(() -> {
                 ProcessCard c = card();
                 return c == null ? 0f : (float) c.progress();
             }).build());
             progress.layout(l -> l.width(36).height(12));
+            flag.setText(Component.literal("!"));
+            flag.textStyle(s -> s.textColor(STATUS_COLOUR));
+            flag.setDisplay(false);
             UIElement header = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER));
-            header.addChildren(title, progress, remove);
+            header.addChildren(title, flag, progress, remove);
+            title.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.HOVER_ROLL));
+            title.layout(l -> l.minWidth(0));
 
             // Inputs → outputs.
             UIElement in = grid(new CardSlots(table, index, true), true), out = grid(new CardSlots(table, index, false), false);
@@ -495,16 +562,30 @@ public final class AlchemyTableUI {
             designate.setOnValueChanged(what -> {
                 if (what != null) send(AlchemyCardPayload.designate(pos, index, what));
             });
+            dev.logos.client.AlchemyArt.paper(designate);
             Button clear = new Button().setText(Component.translatable("logos.alchemy_table.clear_designations"));
             clear.setOnClick(e -> send(AlchemyCardPayload.clear(pos, index)));
+            dev.logos.client.AlchemyArt.paper(clear);
             UIElement designateRow = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER));
             designateRow.addChildren(designate, clear);
 
             status.setId("card" + index + "_status");
             status.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true).textColor(STATUS_COLOUR));
             status.layout(l -> l.width(CARD_W - 8));
-            addChildren(header, status, body, designateRow, products);
+            summary.addChildren(materials, madeIcons);
+            summary.setDisplay(false);
+            detail.addAll(List.of(body, designateRow, products));
+            addChildren(header, status, body, designateRow, products, summary);
             setDisplay(false);
+        }
+
+        /** The full card on the whole board, or the small apparatus with its summary in the overview. */
+        void setOverview(boolean on) {
+            layout(l -> l.width(on ? COMPACT_W : CARD_W).paddingAll(on ? 3 : 4));
+            progress.setDisplay(!on);
+            detail.forEach(part -> part.setDisplay(!on));
+            summary.setDisplay(on);
+            summaryFor = null;
         }
 
         private @Nullable ProcessCard card() {
@@ -533,10 +614,23 @@ public final class AlchemyTableUI {
             ProcessCard card = card();
             setDisplay(card != null);
             if (card == null) return;
-            layout(l -> l.left(card.x()).top(card.y()));
+            boolean small = overview.getAsBoolean();
+            float scale = small ? 0.5f : 1f;
+            layout(l -> l.left(card.x() * scale).top(card.y() * scale));
+            if (card.process != drawnAs) {
+                drawnAs = card.process;
+                IGuiTexture apparatus = dev.logos.client.AlchemyArt.vessel(card.process, progress::getNormalizedValue, TITLE_H);
+                style(s -> s.background(apparatus));
+                int liquid = dev.logos.client.AlchemyArt.liquid(card.process);
+                progress.bar(b -> b.style(s -> s.background(new ColorRectTexture(liquid))));
+            }
+            dev.logos.client.AlchemyArt.dressList(designate);
             title.setText(Component.literal(card.process.symbol + " ").append(card.process.displayName()));
             status.setText(card.status());
-            status.setDisplay(!card.status().getString().isEmpty());
+            boolean idle = !card.status().getString().isEmpty();
+            status.setDisplay(idle && !small);
+            flag.setDisplay(idle && small);
+            if (idle) flag.style(st -> st.tooltips(card.status()));
             for (int i = 0; i < ProcessCard.SLOTS; i++) {
                 ItemResource what = card.designated(i);
                 if (what.equals(ghostItems[i])) continue;
@@ -553,11 +647,75 @@ public final class AlchemyTableUI {
             }
             if (!stored.equals(designate.getCandidates())) designate.setCandidates(stored);
             refreshProducts(card);
+            if (small) refreshSummary(card);
         }
 
-        /** Where {@code item}'s wire starts, if the card lists it. */
+        /** Where {@code item}'s wire starts, if the card lists it: its row, or its icon in the overview. */
         @Nullable UIElement port(ItemResource product) {
-            return ports.get(product);
+            return overview.getAsBoolean() ? miniPorts.get(product) : ports.get(product);
+        }
+
+        /**
+         * The overview's two rows. Materials: each thing the card holds or has designated, with how
+         * many it holds; designated but missing ones faded at 0. Products: each thing it has made, with
+         * how many wait in its outputs, and a valve to pipe it on from (drag; right-click unwires).
+         */
+        private void refreshSummary(ProcessCard card) {
+            java.util.Map<ItemResource, int[]> held = new java.util.LinkedHashMap<>();
+            for (int i = 0; i < ProcessCard.SLOTS; i++) {
+                ItemResource in = card.inputs().getResource(i), wanted = card.designated(i);
+                if (!in.isEmpty()) held.computeIfAbsent(in, k -> new int[1])[0] += card.inputs().getAmountAsInt(i);
+                else if (!wanted.isEmpty()) held.computeIfAbsent(wanted, k -> new int[1]);
+            }
+            List<ItemResource> made = card.made();
+            java.util.Map<ItemResource, Integer> waiting = new java.util.HashMap<>();
+            for (int i = 0; i < ProcessCard.SLOTS; i++) {
+                ItemResource out = card.outputs().getResource(i);
+                if (!out.isEmpty()) waiting.merge(out, card.outputs().getAmountAsInt(i), Integer::sum);
+            }
+            List<Object> key = new ArrayList<>();
+            held.forEach((r, n) -> key.add(List.of(r, n[0])));
+            key.add(made);
+            key.add(waiting);
+            if (key.equals(summaryFor)) return;
+            summaryFor = key;
+            for (UIElement child : new ArrayList<>(materials.getChildren())) materials.removeChild(child);
+            held.forEach((r, n) -> materials.addChild(token(r, n[0], n[0] == 0)));
+            for (UIElement child : new ArrayList<>(madeIcons.getChildren())) madeIcons.removeChild(child);
+            miniPorts.clear();
+            java.util.Map<Item, Integer> seen = new java.util.HashMap<>();
+            for (ItemResource product : made) {
+                UIElement icon = token(product, waiting.getOrDefault(product, 0), false);
+                UIElement port = new UIElement().layout(l -> l.width(5).height(5));
+                port.style(st -> st.background(dev.logos.client.AlchemyArt.valve()));
+                port.setAllowHitTest(false);
+                miniPorts.put(product, port);
+                UIElement piece = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).alignItems(AlignItems.CENTER).gapAll(1));
+                int nth = seen.merge(product.getItem(), 1, Integer::sum);
+                String path = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(product.getItem()).getPath();
+                piece.setId("card" + index + "_mini_" + path + (nth > 1 ? "_" + nth : ""));
+                piece.addChildren(icon, port);
+                piece.addEventListener(UIEvents.MOUSE_DOWN, e -> {
+                    if (e.button == 1) send(AlchemyCardPayload.route(pos, index, product, ProcessCard.KEEP));
+                    else piece.startDrag(new WireDrag(index, product), new ItemStackTexture(product.toStack()));
+                });
+                madeIcons.addChild(piece);
+            }
+        }
+
+        /** An item's icon with a count in its corner, as a slot shows it; faded when the card lacks it. */
+        private static UIElement token(ItemResource item, int count, boolean missing) {
+            UIElement token = new UIElement().layout(l -> l.width(16).height(16));
+            IGuiTexture icon = new ItemStackTexture(item.toStack());
+            IGuiTexture shown = missing ? new GuiTextureGroup(icon, new ColorRectTexture(GHOST)) : icon;
+            token.style(st -> st.background(shown).tooltips(item.getHoverName()));
+            Label n = new Label();
+            n.setText(Component.literal(String.valueOf(count)));
+            n.textStyle(t -> t.adaptiveWidth(true).textColor(missing ? STATUS_COLOUR : 0xFFFFFFFF));
+            n.layout(l -> l.positionType(TaffyPosition.ABSOLUTE).right(-1).bottom(-2));
+            n.setAllowHitTest(false);
+            token.addChild(n);
+            return token;
         }
 
         /**
@@ -583,7 +741,7 @@ public final class AlchemyTableUI {
                 where.layout(l -> l.flex(1));
                 where.setAllowHitTest(false);
                 UIElement port = new UIElement().layout(l -> l.width(6).height(6));
-                port.style(s -> s.background(PORT));
+                port.style(s -> s.background(dev.logos.client.AlchemyArt.valve()));
                 port.setAllowHitTest(false);
                 ports.put(product, port);
                 UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER).widthPercent(100));

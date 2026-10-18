@@ -89,9 +89,12 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .server("open it", sc -> BlockUIMenuType.openUI((ServerPlayer) sc.player(), MAIN))
                 .awaitModularUI()
                 .ticks(5)
-                .click("#tab_process")
-                .ticks(5)
+                // One page: the board beside the storage ledger; the ledger's ribbon folds it away.
                 .checkVisible("#process_page")
+                .checkVisible("#storage_page")
+                .screenshot("one_page_storage_open")
+                .click("#tab_storage")
+                .ticks(5)
                 .checkHidden("#storage_page")
                 .checkHidden("#card0")
                 .drag("#palette_ferment", "#canvas_view")
@@ -155,7 +158,13 @@ public class AlchemyCanvasScenario implements UIScenario {
                 .screenshot("canvas_two_cards")
                 .rightClick("#card0_product_starter_culture")
                 .waitUntilServer("right-clicking unwires it", sc -> table.cards().get(0).route(LogosMod.STARTER_CULTURE.get()) == ProcessCard.KEEP)
-                .click("#card1_remove")
+                // × acts on the press, so the card may vanish before a separate release step: press and release at once.
+                .step("take the second card off", ctx -> {
+                    var remove = ctx.el("#card1_remove").as(com.lowdragmc.lowdraglib2.gui.ui.UIElement.class);
+                    float x = remove.getPositionX() + remove.getSizeWidth() / 2, y = remove.getPositionY() + remove.getSizeHeight() / 2;
+                    ctx.input().mouseDown(x, y, 0);
+                    ctx.input().mouseUp(x, y, 0);
+                })
                 .waitUntilServer("the second card is taken off", sc -> table.cards().size() == 1)
                 .ticks(5)
                 .checkHidden("#card1")
