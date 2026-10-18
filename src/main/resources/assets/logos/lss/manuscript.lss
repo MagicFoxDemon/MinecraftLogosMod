@@ -71,3 +71,10 @@
 .manuscript-seal .__button_text__ {
   text-color: #5a2a10;
 }
+
+.manuscript-control text-field {
+  text-color: #3b2614;
+  cursor-color: #3b2614;
+  text-shadow: false;
+  focus-overlay: empty;
+}

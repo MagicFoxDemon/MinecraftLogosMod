@@ -8,14 +8,19 @@ import com.lowdragmc.lowdraglib2.gui.texture.Icons;
 import com.lowdragmc.lowdraglib2.gui.ui.Style;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Menu;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextElement;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
 
+import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
+import net.minecraft.network.chat.Component;
 
 /**
  * The workbench's controls drawn on the same page as the runes: buttons are slips of paper
@@ -103,6 +108,62 @@ final class ManuscriptControls {
             }
             dressEntries(child);
         }
+    }
+
+    /** A text field written on a paper slip. */
+    static void blank(TextField field) {
+        field.addClass(INKED);
+        Style.importantPipeline(field.getStyle(), s -> s.background(new Paper(Slip.REST)));
+    }
+
+    /**
+     * A bookmark ribbon standing out of the page's edge: red chalk while its page is open, plain
+     * paper while it is shut. Its label is written down the ribbon, one character under another.
+     */
+    static UIElement ribbon(String key, BooleanSupplier open, Runnable onClick) {
+        UIElement tab = new UIElement().layout(l -> l.width(16).paddingVertical(5).alignItems(AlignItems.CENTER).gapAll(1));
+        tab.addClass(INKED);
+        Manuscript.Plan[] cache = new Manuscript.Plan[2];
+        float[] size = {-1, -1};
+        tab.style(s -> s.backgroundTexture((GuiTexture) (context, x, y, width, height) -> {
+            float w = Math.round(width), h = Math.round(height);
+            if (cache[0] == null || w != size[0] || h != size[1]) {
+                size[0] = w;
+                size[1] = h;
+                cache[0] = ribbonPlan(w, h, false);
+                cache[1] = ribbonPlan(w, h, true);
+            }
+            cache[open.getAsBoolean() ? 1 : 0].draw(context, Math.round(x), Math.round(y));
+        }));
+        for (char c : Component.translatable(key).getString().toCharArray()) {
+            Label letter = new Label();
+            letter.setText(Component.literal(String.valueOf(c)));
+            letter.textStyle(t -> t.adaptiveWidth(true));
+            tab.addChild(letter);
+        }
+        tab.addEventListener(UIEvents.MOUSE_DOWN, e -> {
+            if (e.button == 0) onClick.run();
+        });
+        return tab;
+    }
+
+    private static Manuscript.Plan ribbonPlan(float w, float h, boolean open) {
+        Manuscript.Plan p = new Manuscript.Plan((int) (w * 7 + h));
+        int fill = open ? 0xFFE7B49A : PAPER, edge = open ? Manuscript.SANGUINE : Manuscript.INK_FADED;
+        p.rect(1, 0, w - 2, h - 4, fill);
+        // A swallowtail cut at the ribbon's foot.
+        for (int i = 0; i < 4; i++) {
+            p.rect(1, h - 4 + i, (w - 2) / 2 - i, 1, fill);
+            p.rect(w / 2 + i, h - 4 + i, (w - 2) / 2 - i, 1, fill);
+            p.rect((w - 2) / 2 - i, h - 4 + i, 1, 1, edge);
+            p.rect(w / 2 + i, h - 4 + i, 1, 1, edge);
+        }
+        p.vStroke(0, 0, h - 4, 0, edge, 1);
+        p.vStroke(w - 1, 0, h - 4, 0, edge, 2);
+        p.hStroke(0, w, 0, 0, edge, 3);
+        p.rect(0, h - 4, 1, 4, edge);
+        p.rect(w - 1, h - 4, 1, 4, edge);
+        return p;
     }
 
     /** A toolbar switch: a paper slip whose icon is inked when on and faint when off. */

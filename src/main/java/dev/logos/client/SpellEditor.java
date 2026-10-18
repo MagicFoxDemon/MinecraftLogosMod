@@ -3,6 +3,8 @@ package dev.logos.client;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.joml.Vector2f;
+
 import com.lowdragmc.lowdraglib2.Platform;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
@@ -26,6 +28,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.ModelElement;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.api.graph.Graph;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.itemlibrary.GraphNodeCreationData;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.itemlibrary.NodeModelLibraryItem;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.command.NodeCommands;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.ICustomNodeModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.NodeModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.Model;
@@ -80,6 +83,13 @@ public final class SpellEditor {
     /** Set while the selector is being matched to the graph, so that does not count as the player choosing. */
     private boolean syncingIntent;
     private SpellGraph graph;
+    /** Every rune, to drag onto the canvas; shares the right of the page with the overview. */
+    private final RuneLibrary library = new RuneLibrary(this::placeInView);
+    /** Which page is open beside the canvas: the overview, the rune library, or neither. */
+    private Shelf shelf = Shelf.OVERVIEW;
+    private UIElement overviewPage;
+
+    private enum Shelf { OVERVIEW, LIBRARY, NONE }
     /** Ticks until the canvas is framed around a freshly loaded graph (node sizes need a layout pass first). */
     private int fitIn = -1;
 
@@ -94,6 +104,18 @@ public final class SpellEditor {
                     .right(8).bottom(28).width(64).height(64));
             navigation.style(s -> s.backgroundTexture(new ColorRectTexture(0x5033261A)));
             canvas.addChild(navigation);
+            graphView.addEventListener(UIEvents.DRAG_PERFORM, event -> {
+                if (event.dragHandler.getDraggingObject() instanceof RuneLibrary.Dragged dragged
+                        && graphView.isMouseOverContent(event.x, event.y)) {
+                    place(dragged.item(), event.x, event.y);
+                }
+            });
+        }
+
+        /** Places a rune where it was dropped, through the toolkit's create-node command so it can be undone. */
+        void place(NodeModelLibraryItem item, float screenX, float screenY) {
+            Vector2f at = snapPosition(getContentViewContainer().worldToLocalLayoutOffset(new Vector2f(screenX, screenY)));
+            dispatchCommand(new NodeCommands.CreateNodeCommand().onGraph(item, at, null));
         }
 
         @Override
@@ -244,6 +266,7 @@ public final class SpellEditor {
         UIElement side = new UIElement()
                 .layout(l -> l.flex(1).minWidth(0).heightPercent(100).gapAll(5));
         side.setId("spell_details");
+        overviewPage = side;
         UIElement details = new UIElement().layout(l -> l.widthPercent(100).gapAll(5).paddingAll(6));
         details.addChildren(
                 new Label().setText(Component.literal("☉ Logos 术式工坊")),
@@ -289,9 +312,33 @@ public final class SpellEditor {
             ManuscriptControls.dressList(intent);
         };
         root.style(s -> s.backgroundTexture(page));
-        root.addChildren(editor, side);
+        library.setDisplay(TaffyDisplay.NONE);
+        // Bookmark ribbons on the page's edge: each opens its page and shuts the other; clicking the open one shuts it.
+        UIElement ribbons = new UIElement().layout(l -> l.width(16).heightPercent(100).gapAll(4).paddingTop(16));
+        ribbons.setId("spell_shelf_tabs");
+        UIElement overviewTab = ManuscriptControls.ribbon("logos.editor.overview", () -> shelf == Shelf.OVERVIEW, () -> toggle(Shelf.OVERVIEW));
+        overviewTab.setId("tab_overview");
+        UIElement libraryTab = ManuscriptControls.ribbon("logos.editor.library", () -> shelf == Shelf.LIBRARY, () -> toggle(Shelf.LIBRARY));
+        libraryTab.setId("tab_library");
+        ribbons.addChildren(overviewTab, libraryTab);
+        root.addChildren(editor, side, library, ribbons);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)));
+    }
+
+    /** Opens {@code page} beside the canvas and shuts the other; asking for the open page again shuts it, giving the canvas the whole width. */
+    private void toggle(Shelf page) {
+        shelf = shelf == page ? Shelf.NONE : page;
+        overviewPage.setDisplay(shelf == Shelf.OVERVIEW ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
+        library.setDisplay(shelf == Shelf.LIBRARY ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
+        if (shelf == Shelf.LIBRARY) library.fill(editor.getCurrentView());
+    }
+
+    /** A double-clicked library rune lands in the middle of what the canvas shows. */
+    private void placeInView(NodeModelLibraryItem item) {
+        if (!(editor.getCurrentView() instanceof SpellGraphView view)) return;
+        var canvas = view.graphView;
+        view.place(item, canvas.getPositionX() + canvas.getSizeWidth() / 2, canvas.getPositionY() + canvas.getSizeHeight() / 2);
     }
 
     private void refresh() {
