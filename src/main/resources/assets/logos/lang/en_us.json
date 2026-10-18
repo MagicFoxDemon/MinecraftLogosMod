@@ -186,6 +186,8 @@
   "key.logos.spell_wheel": "Spell Wheel",
   "key.category.logos.logos": "Logos Spells",
   "logos.editor.note": "Note",
+  "logos.editor.undo": "Undo",
+  "logos.editor.redo": "Redo",
   "logos.node.spell": "spell",
   "logos.node.ctx.caster": "caster",
   "logos.node.ctx.target": "target",

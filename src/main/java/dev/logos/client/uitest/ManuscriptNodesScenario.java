@@ -151,6 +151,36 @@ public class ManuscriptNodesScenario implements UIScenario {
                 .ticks(10)
                 .step("every rune is a manuscript figure", ManuscriptNodesScenario::checkRunes)
                 .screenshot("manuscript_families")
+                .step("the log footer stays hidden", ctx -> ctx.check("the overview replaces the log footer",
+                        ctx.ui().select(".__node-graph-view_log-footer__").noneMatch(e -> e.isDisplayed())))
+                .step("the breadcrumb stays hidden", ctx -> ctx.check("a spell has no subgraphs to navigate",
+                        ctx.ui().select(".__graph-breadcrumb__").noneMatch(e -> e.isDisplayed())))
+                .step("open the context menu on an empty spot", ctx -> {
+                    var canvas = view(ctx).canvas;
+                    float x = canvas.getPositionX() + 40, y = canvas.getPositionY() + 60;
+                    ctx.input().mouseDown(x, y, 1);
+                    ctx.input().mouseUp(x, y, 1);
+                    ctx.put("menu_x", x);
+                    ctx.put("menu_y", y);
+                })
+                .ticks(3)
+                .step("point at the first entry", ctx -> ctx.input().moveTo((float) ctx.get("menu_x") + 20, (float) ctx.get("menu_y") + 8))
+                .ticks(3)
+                .screenshot("manuscript_menu")
+                .step("close the menu", ctx -> {
+                    var canvas = view(ctx).canvas;
+                    ctx.input().mouseDown(canvas.getPositionX() + 300, canvas.getPositionY() + 300, 0);
+                    ctx.input().mouseUp(canvas.getPositionX() + 300, canvas.getPositionY() + 300, 0);
+                })
+                .ticks(2)
+                .click("#inscribe")
+                .ticks(2)
+                .screenshot("manuscript_seal")
+                .click("#templates")
+                .ticks(3)
+                .screenshot("manuscript_dropdown")
+                .click("#templates")
+                .ticks(2)
                 .step("look closely at the first figures", ManuscriptNodesScenario::closeUp)
                 .ticks(3)
                 .screenshot("manuscript_close")
