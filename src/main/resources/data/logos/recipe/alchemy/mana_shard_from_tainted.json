@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "purify",
+  "ingredients": [
+    { "ingredient": "logos:tainted_mana_shard", "count": 4 },
+    { "ingredient": "logos:philosophers_mercury" }
+  ],
+  "results": [
+    { "id": "logos:mana_shard", "count": 4 },
+    { "id": "minecraft:glass_bottle" }
+  ]
+}

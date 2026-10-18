@@ -399,6 +399,23 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /** Paper, rebis and adhesive make a transmuted page; a written echo page with the same two becomes one and keeps its spell. */
+    static void transmutedPageUpgradeKeepsSpell(GameTestHelper h) {
+        var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(Items.PAPER), new ItemStack(LogosMod.REBIS.get()), new ItemStack(LogosMod.ADHESIVE.get())));
+        ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
+                .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+        h.assertTrue(made.is(dev.logos.item.PageTier.TRANSMUTED.blank()), "paper, rebis and adhesive made " + made);
+        ItemStack echo = SpellPages.inscribed(dev.logos.item.PageTier.ECHO, "(spell :name \"炼成\" :mana 5 (heal caster 1))", null);
+        var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(LogosMod.REBIS.get()), echo, new ItemStack(LogosMod.ADHESIVE.get())));
+        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+        h.assertTrue(out.is(dev.logos.item.PageTier.TRANSMUTED.inscribed()), "the written echo page became " + out);
+        h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("炼成"), "the transmuted page should keep the spell");
+        h.succeed();
+    }
+
     /** The inscription table writes a spell (and its drawing) onto the page lying on it. */
     static void tableInscribes(GameTestHelper h) {
         ServerPlayer p = caster(h);

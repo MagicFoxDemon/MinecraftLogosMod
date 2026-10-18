@@ -1,15 +1,26 @@
 package dev.logos.alchemy;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import org.jspecify.annotations.Nullable;
+
+import com.mojang.serialization.JsonOps;
 
 import dev.logos.LogosMod;
 import dev.logos.block.AlchemyTableBlock;
 import dev.logos.item.PotionPowderItem;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
@@ -18,6 +29,11 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ConcretePowderBlock;
+import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
@@ -36,11 +52,16 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
  * water base can be water from the tank (or water bottles) filling three empty bottles.</li>
  * <li>Calcining burns whatever a furnace smelts (vanilla's recipes and other mods'): one of the
  * thing makes what the furnace would, with no fuel.</li>
+ * <li>Dissolving two or three different potion powders with philosophers' mercury gives one potion
+ * (调和药剂) of all their effects, in the mercury's bottle.</li>
+ * <li>Purifying washes whatever a water cauldron washes ({@link #wash}), for a bottle's worth of water.</li>
  * </ul>
  */
 public final class SpecialRecipes {
     /** Bottles brewed at once, as in a brewing stand. */
     private static final int BREW = 3;
+    /** The potion name of a 调和药剂 (item.minecraft.potion.effect.logos_conjunction). */
+    public static final String CONJUNCTION = "logos_conjunction";
 
     private SpecialRecipes() {}
 
@@ -67,9 +88,89 @@ public final class SpecialRecipes {
                         List.of(ItemStackTemplate.fromNonEmptyStack(potion))));
             }
         }
+        // Ahead of the powder-back recipes: given philosophers' mercury and two powders, a card set up for it should not just dissolve one.
+        if (process == Process.DISSOLVE) out.addAll(0, conjoined(seen));
         if (process == Process.DISSOLVE) out.addAll(brewed(seen, level.potionBrewing()));
         if (process == Process.CALCINE) out.addAll(calcined(seen, level));
+        if (process == Process.PURIFY) out.addAll(washed(seen));
         return out;
+    }
+
+    /** For every two or three different potion powders at hand, with philosophers' mercury there too: one potion of all their effects. */
+    private static List<AlchemyRecipe> conjoined(List<ItemResource> things) {
+        if (things.stream().noneMatch(t -> t.is(LogosMod.PHILOSOPHERS_MERCURY.get()))) return List.of();
+        List<ItemResource> powders = things.stream()
+                .filter(t -> t.is(LogosMod.POTION_POWDER.get()) && t.getComponents().get(DataComponents.POTION_CONTENTS) != null).toList();
+        List<AlchemyRecipe> out = new ArrayList<>();
+        for (int a = 0; a < powders.size(); a++) {
+            for (int b = a + 1; b < powders.size(); b++) {
+                out.add(conjunction(List.of(powders.get(a), powders.get(b))));
+                for (int c = b + 1; c < powders.size(); c++) out.add(conjunction(List.of(powders.get(a), powders.get(b), powders.get(c))));
+            }
+        }
+        return out;
+    }
+
+    /** Philosophers' mercury and {@code powders} into a 调和药剂 holding each effect once, the stronger where two share one. */
+    private static AlchemyRecipe conjunction(List<ItemResource> powders) {
+        List<SizedIngredient> takes = new ArrayList<>(List.of(SizedIngredient.of(LogosMod.PHILOSOPHERS_MERCURY.get(), 1)));
+        Map<Holder<MobEffect>, MobEffectInstance> effects = new LinkedHashMap<>();
+        for (ItemResource powder : powders) {
+            takes.add(new SizedIngredient(DataComponentIngredient.of(true, powder.toStack(1)), 1));
+            for (MobEffectInstance e : powder.getComponents().get(DataComponents.POTION_CONTENTS).getAllEffects()) {
+                effects.merge(e.getEffect(), new MobEffectInstance(e), (had, now) -> now.getAmplifier() > had.getAmplifier()
+                        || now.getAmplifier() == had.getAmplifier() && now.getDuration() > had.getDuration() ? now : had);
+            }
+        }
+        ItemStack potion = new ItemStack(Items.POTION);
+        potion.set(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.empty(), List.copyOf(effects.values()), Optional.of(CONJUNCTION)));
+        return new AlchemyRecipe(Process.DISSOLVE, takes, Optional.empty(), List.of(ItemStackTemplate.fromNonEmptyStack(potion)));
+    }
+
+    /** For each thing at hand that a water cauldron washes, one of it washed, for a bottle's worth of water. */
+    private static List<AlchemyRecipe> washed(List<ItemResource> things) {
+        List<AlchemyRecipe> out = new ArrayList<>();
+        for (ItemResource thing : things) {
+            ItemStack clean = wash(thing.toStack(1));
+            if (clean.isEmpty()) continue;
+            out.add(new AlchemyRecipe(Process.PURIFY, List.of(new SizedIngredient(DataComponentIngredient.of(true, thing.toStack(1)), 1)),
+                    Optional.of(SizedFluidIngredient.of(Fluids.WATER, AlchemyTableBlock.BOTTLE)), List.of(ItemStackTemplate.fromNonEmptyStack(clean))));
+        }
+        return out;
+    }
+
+    /**
+     * What washing in a water cauldron makes of one {@code stack}, or empty if it does not wash. As
+     * vanilla's cauldron: dyed things lose their dye (those tagged for it), a banner loses its top
+     * pattern, a coloured shulker box turns plain; and concrete powder sets, as it does in water. It
+     * goes by tags and kinds of block, so other mods' things that join them wash too.
+     */
+    static ItemStack wash(ItemStack stack) {
+        if (stack.has(DataComponents.DYED_COLOR) && stack.is(ItemTags.CAULDRON_CAN_REMOVE_DYE)) {
+            ItemStack clean = stack.copyWithCount(1);
+            clean.remove(DataComponents.DYED_COLOR);
+            return clean;
+        }
+        BannerPatternLayers patterns = stack.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY);
+        if (stack.is(ItemTags.BANNERS) && !patterns.layers().isEmpty()) {
+            ItemStack clean = stack.copyWithCount(1);
+            clean.set(DataComponents.BANNER_PATTERNS, patterns.removeLast());
+            return clean;
+        }
+        Block block = Block.byItem(stack.getItem());
+        if (block instanceof ShulkerBoxBlock box && box.getColor() != null) return stack.transmuteCopy(Blocks.SHULKER_BOX, 1);
+        if (block instanceof ConcretePowderBlock powder) {
+            Block concrete = concreteOf(powder);
+            if (concrete != null && concrete.asItem() != Items.AIR) return stack.transmuteCopy(concrete, 1);
+        }
+        return ItemStack.EMPTY;
+    }
+
+    /** The block a concrete powder sets into: kept private, so read through the block's own codec. */
+    private static @Nullable Block concreteOf(ConcretePowderBlock powder) {
+        return ConcretePowderBlock.CODEC.codec().encodeStart(JsonOps.INSTANCE, powder).result()
+                .map(json -> json.getAsJsonObject().get("concrete").getAsString())
+                .flatMap(id -> BuiltInRegistries.BLOCK.getOptional(Identifier.parse(id))).orElse(null);
     }
 
     /** For each thing at hand that a furnace smelts, one of it into what the furnace makes of it. */
