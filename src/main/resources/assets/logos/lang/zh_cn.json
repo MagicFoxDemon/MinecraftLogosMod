@@ -124,6 +124,8 @@
   "logos.process.dissolve": "溶解",
   "logos.process.distill": "蒸馏",
   "logos.process.settle": "沉淀",
+  "logos.process.calcine": "煅烧",
+  "logos.alchemy_card.no_furnace": "需要炼金术桌旁有高炉",
   "logos.alchemy_table.products": "成品区",
   "logos.alchemy_table.mana": "魔力 %s / %s",
   "logos.alchemy_table.fluid": "%s %s / %s mB",

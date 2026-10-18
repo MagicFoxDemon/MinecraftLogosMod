@@ -44,6 +44,7 @@ public final class AlchemyArt {
             case DISSOLVE -> 0xFF3FA08A;
             case DISTILL -> 0xFFC0504A;
             case SETTLE -> 0xFF8FBFD6;
+            case CALCINE -> 0xFFD8743A;
         };
     }
 
@@ -183,6 +184,8 @@ public final class AlchemyArt {
             case DISSOLVE -> basin(w, h, titleHeight);
             case DISTILL -> alembic(w, h, titleHeight);
             case SETTLE -> tray(w, h, titleHeight);
+            // A dish in the fire; drawn as the settling tray until calcination has art of its own.
+            case CALCINE -> tray(w, h, titleHeight);
         });
         int level = liquid(process);
         return (GuiTexture) (context, x, y, width, height) -> {

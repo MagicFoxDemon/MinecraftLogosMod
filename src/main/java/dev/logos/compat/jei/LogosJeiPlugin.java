@@ -41,6 +41,8 @@ public final class LogosJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         registration.addCraftingStation(AlchemyRecipeCategory.TYPE, LogosMod.ALCHEMY_TABLE_ITEM.get());
+        // Calcination burns whatever a furnace smelts, given a blast furnace beside the table.
+        registration.addCraftingStation(mezz.jei.api.constants.RecipeTypes.SMELTING, LogosMod.ALCHEMY_TABLE_ITEM.get());
     }
 
     @Override
