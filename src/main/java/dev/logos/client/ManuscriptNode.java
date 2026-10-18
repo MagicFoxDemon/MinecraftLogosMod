@@ -143,6 +143,11 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
         return (context, x, y, w, h) -> picture.draw(context, Math.round(x + (w - 9) / 2), Math.round(y + (h - 9) / 2));
     }
 
+    /** A family's wash, for the rune library's entries. */
+    static int wash(Category category) {
+        return Look.of(category).titleWash;
+    }
+
     private static int emblemAccent(Category category) {
         return switch (category) {
             case INVOCATION -> 0xFFC8902A;
