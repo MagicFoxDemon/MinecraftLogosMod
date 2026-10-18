@@ -36,10 +36,10 @@ repositories {
         forRepository { maven { url = "https://api.modrinth.com/maven" } }
         filter { includeGroup "maven.modrinth" }
     }
-    // JEI (optional recipe viewer), from BlameJared's Maven; only the mezz.jei group is looked up there.
+    // JEI (optional recipe viewer), from BlameJared's Maven; only JEI and its config library are looked up there.
     exclusiveContent {
         forRepository { maven { url = "https://maven.blamejared.com" } }
-        filter { includeGroup "mezz.jei" }
+        filter { includeGroup "mezz.jei"; includeGroup "net.mezzdev.config" }
     }
     // Add here additional repositories if required by some of the dependencies below.
 }
