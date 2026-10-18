@@ -2,6 +2,7 @@ package dev.logos.graph;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,13 +24,13 @@ import dev.logos.lang.Status;
 
 /**
  * Lays out a compiled spell as a node graph. Flow runs down a column; each column keeps a lane
- * to its left for value expressions (one sub-lane per nesting level); event and body branches open
- * new columns to the right, far enough out to leave room for their own value lanes.
+ * to its left for value expressions (one sub-lane per nesting level); event, body and then/else branches
+ * open columns side by side to the right, far enough out to leave room for their own value lanes.
  */
 public final class GraphBuilder {
-    /** Measured in graph units at default zoom: a rune node is ~180 wide, a context node ~85. */
-    private static final float NODE_W = 200;
-    private static final float LANE_W = 215;
+    /** Measured in graph units at default zoom: flow nodes reach ~306 wide (beam), value nodes ~268 (enemies), context nodes ~60. */
+    private static final float NODE_W = 310;
+    private static final float LANE_W = 290;
     private static final float GAP_X = 50;
     private static final float GAP_Y = 24;
     private static final float VALUE_GAP_Y = 12;
@@ -37,6 +38,8 @@ public final class GraphBuilder {
     private final SpellGraph graph = new SpellGraph();
     private final Map<String, PortModel> vars = new HashMap<>();
     private float y;
+    /** Right edge of the flow nodes placed so far in the branch being laid out. */
+    private float right;
 
     private GraphBuilder() {}
 
@@ -72,13 +75,25 @@ public final class GraphBuilder {
         if (from != null && to != null) graph.graphModel.createWire(to, from);
     }
 
-    /** Rough rendered height: title, the flow strip, then rows of side-by-side inputs/outputs. */
+    /**
+     * Rendered height, fitted to the editor at default zoom: a title, rows of side-by-side
+     * inputs/outputs, option rows, and a strip for each vertical flow port (▶ above, ▶ below).
+     */
     private static float height(LogosNode n) {
         int in = 0;
         int out = 0;
-        for (PortModel p : n.model().getInputsById().values()) if (!p.getDataTypeHandle().equals(LTypes.FLOW)) in++;
-        for (PortModel p : n.model().getOutputsById().values()) if (!p.getPortId().equals(RuneNode.NEXT)) out++;
-        return 60 + 26 * Math.max(in, out);
+        int flow = 0;
+        for (PortModel p : n.model().getInputsById().values()) {
+            if (p.getPortId().equals(RuneNode.IN)) flow++;
+            else if (!p.getDataTypeHandle().equals(LTypes.FLOW)) in++;
+        }
+        for (PortModel p : n.model().getOutputsById().values()) {
+            if (p.getPortId().equals(RuneNode.NEXT) || p.getPortId().equals(SpellRoot.START)) flow++;
+            else out++;
+        }
+        int rows = Math.max(in, out);
+        int options = n.getNodeOptions().size();
+        return 21 + 16 * rows + (options > 0 ? 4 + 16 * options : 0) + 24 * flow + (rows > 0 && flow > 0 ? 6 : 0);
     }
 
     // ---- lane widths -------------------------------------------------------------------------
@@ -114,10 +129,6 @@ public final class GraphBuilder {
         };
     }
 
-    private float columnFor(List<Node> stmts, float parentX) {
-        return parentX + NODE_W + GAP_X + lanes(stmts) * LANE_W;
-    }
-
     // ---- flow --------------------------------------------------------------------------------
 
     private void chain(List<Node> stmts, PortModel from, float x) {
@@ -151,29 +162,49 @@ public final class GraphBuilder {
 
     private RuneNode statement(Node s, float x) {
         RuneNode n = create(RuneNodes.BY_RUNE.get(s.rune.name).get(), x, y);
+        right = Math.max(right, x + NODE_W);
         float top = y;
         float valuesBottom;
+        Map<PortModel, List<Node>> branches = new LinkedHashMap<>();
         if (s.rune.name.equals("if")) {
             valuesBottom = value(s.arg(0), n.in("cond"), x - LANE_W, top);
-            List<Node> then = flatten(s.arg(1));
-            List<Node> otherwise = s.arg(2) == null ? List.of() : flatten(s.arg(2));
-            List<Node> both = new ArrayList<>(then);
-            both.addAll(otherwise);
-            float bx = columnFor(both, x);
-            y = top;
-            chain(then, n.out("then"), bx);
-            chain(otherwise, n.out("else"), bx);
+            branches.put(n.out("then"), flatten(s.arg(1)));
+            if (s.arg(2) != null) branches.put(n.out("else"), flatten(s.arg(2)));
         } else {
             valuesBottom = arguments(n, s, x, top);
-            List<Node> branches = new ArrayList<>(s.body);
-            s.events.values().forEach(branches::addAll);
-            float bx = columnFor(branches, x);
-            y = top;
-            for (var e : s.events.entrySet()) chain(e.getValue(), n.out(RuneNode.event(e.getKey())), bx);
-            if (!s.body.isEmpty()) chain(s.body, n.out(RuneNode.BODY), bx);
+            for (var e : s.events.entrySet()) branches.put(n.out(RuneNode.event(e.getKey())), e.getValue());
+            if (!s.body.isEmpty()) branches.put(n.out(RuneNode.BODY), s.body);
         }
+        branches.values().removeIf(List::isEmpty);
+        branches(n, top, x, branches);
         y = Math.max(Math.max(y, top + height(n)), valuesBottom) + GAP_Y;
         return n;
+    }
+
+    /**
+     * Lays out a node's event, body or then/else branches side by side to its right, each in its own
+     * column past everything the previous one placed, so no wire has to pass another branch to reach
+     * its target. Wires leave the node's side ports, so when they would cross value lanes or other
+     * branches, all branches start below the node and every wire reaches its target from above.
+     * Leaves {@code y} at the bottom of the lowest branch.
+     */
+    private void branches(RuneNode n, float top, float x, Map<PortModel, List<Node>> branches) {
+        boolean clear = branches.size() == 1 && lanes(branches.values().iterator().next()) == 0;
+        float start = clear ? top : top + height(n) + GAP_Y;
+        float bottom = top;
+        float edge = x + NODE_W;
+        float outer = right;
+        for (var b : branches.entrySet()) {
+            float bx = edge + GAP_X + lanes(b.getValue()) * LANE_W;
+            y = start;
+            right = bx + NODE_W;
+            chain(b.getValue(), b.getKey(), bx);
+            bottom = Math.max(bottom, y);
+            edge = right;
+            outer = Math.max(outer, right);
+        }
+        right = outer;
+        y = bottom;
     }
 
     private static List<Node> flatten(Node action) {
