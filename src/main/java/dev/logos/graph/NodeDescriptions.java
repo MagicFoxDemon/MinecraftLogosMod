@@ -261,7 +261,7 @@ public final class NodeDescriptions {
             Map.entry("shield/param/target", "接受本次效果的存活生物；也可连接实体群，逐个施加并分别付费。"),
             Map.entry("shield/param/amount", "每个目标新增的伤害吸收量；可与已有护盾叠加。"),
             Map.entry("infuse/intro", "把本次法术的魔力渡给目标，为玩家、魔力生命体或巨像补充魔力。"),
-            Map.entry("infuse/note", "每渡 1 点魔力消耗 1.2 魔力。只渡目标还装得下的部分；已满或不能容纳魔力的目标既不受影响，也不花魔力。"
+            Map.entry("infuse/note", "每渡 1 点魔力消耗 1.1 魔力。只渡目标还装得下的部分；已满或不能容纳魔力的目标既不受影响，也不花魔力。"
                     + "渡给其他玩家时，术式仍需开启 :players。"),
             Map.entry("infuse/param/target", "接受魔力的生物：玩家、魔力生命体、巨像这类能容纳魔力的生物；也可连接实体群，逐个渡魔并分别付费。"),
             Map.entry("infuse/param/amount", "每个目标获得的魔力；超出目标上限的部分不会渡出。"),
@@ -436,7 +436,7 @@ public final class NodeDescriptions {
             Map.entry("set-fire/note", "每次成功点火消耗 2 魔力；需要满足火焰放置条件与编辑权限。"),
             Map.entry("set-fire/param/block", "点火的位置；也可连接方块群。位置为空气时尝试原地放火，否则尝试在该方块上方点火。"),
             Map.entry("infuse-block/intro", "把本次法术的魔力灌进能容纳魔力的方块，为炼金术桌这类设备补充魔力。"),
-            Map.entry("infuse-block/note", "每灌 1 点魔力消耗 1.2 魔力。只灌方块还装得下的部分；已满、容纳不了魔力，或没有编辑权限的位置都不灌，也不花魔力。"),
+            Map.entry("infuse-block/note", "每灌 1 点魔力消耗 1.1 魔力。只灌方块还装得下的部分；已满、容纳不了魔力，或没有编辑权限的位置都不灌，也不花魔力。"),
             Map.entry("infuse-block/param/at", "要灌魔的方块位置，炼金术桌的两半都可以；也可连接方块群，每处各灌一次、分别付费。"),
             Map.entry("infuse-block/param/amount", "每个方块获得的魔力；超出方块上限的部分不会灌出。"),
             Map.entry("if/intro", "依据命题选择一条行动分支。成立分支还可将满足要求的条件作为后续处决的证明。"),

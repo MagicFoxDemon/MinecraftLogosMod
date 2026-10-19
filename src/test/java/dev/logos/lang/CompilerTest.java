@@ -309,12 +309,12 @@ class CompilerTest {
     }
 
     @Test
-    void infusingIsUtilityPricedAtOnePointTwoAPoint() {
+    void infusingIsUtilityPricedAtOnePointOneAPoint() {
         Spell s = Compiler.compile("(spell :mana 30 (infuse caster 20))");
         assertEquals(Intent.UTILITY, s.profile().primary());
-        assertEquals(24, s.profile().estimate(), 1e-9);
+        assertEquals(22, s.profile().estimate(), 1e-9);
         Spell block = Compiler.compile("(spell :mana 30 (infuse-block (look-block) 10))");
-        assertEquals(12 + 1, block.profile().estimate(), 1e-9); // look-block itself is 1
+        assertEquals(11 + 1, block.profile().estimate(), 1e-9); // look-block itself is 1
         assertError("(infuse-block caster 10)", "插槽形状不符");
         assertError("(infuse (look-block) 10)", "插槽形状不符");
     }

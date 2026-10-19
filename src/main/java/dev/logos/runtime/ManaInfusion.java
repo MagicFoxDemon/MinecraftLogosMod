@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public final class ManaInfusion {
     /** Mana a spell spends for each point it gives. */
-    public static final double COST = 1.2;
+    public static final double COST = 1.1;
 
     private ManaInfusion() {}
 
