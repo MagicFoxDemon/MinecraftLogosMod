@@ -173,7 +173,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     reach(kwNum(n, "range", 16));
                     own = 3 + events(n, "on-hit", inGroup) * Math.min(kwNum(n, "pierce", 0) + 1, 2);
                 }
-                case "nearest" -> {
+                case "nearest", "nearest-player" -> {
                     own = 1;
                     reach(kwNum(n, "radius", 10));
                 }

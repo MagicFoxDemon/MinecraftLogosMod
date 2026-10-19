@@ -478,7 +478,7 @@ final class RuneEmblems {
                 "#...#...#",
                 ".#..#..#.",
                 "..#####..",
-                "....#...."}, "nearest", "enemies", "players", "entities", "items", "hit-list", "marked",
+                "....#...."}, "nearest", "enemies", "players", "nearest-player", "entities", "items", "hit-list", "marked",
                 "master", "foe", "familiar", "target");
         // A surveyor's stake, for places.
         put(new String[]{

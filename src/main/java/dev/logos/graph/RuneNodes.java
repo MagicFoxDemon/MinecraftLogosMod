@@ -624,6 +624,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "nearest-player", group = BINDING, graphTypes = SpellGraph.class)
+    public static class NearestPlayer extends RuneNode {
+        public NearestPlayer() {
+            super("nearest-player");
+        }
+    }
+
     @NodeAttribute(name = "entities", group = BINDING, graphTypes = SpellGraph.class)
     public static class Entities extends RuneNode {
         public Entities() {
@@ -794,6 +801,7 @@ public final class RuneNodes {
 
     static {
         BY_RUNE.put("players", Players::new);
+        BY_RUNE.put("nearest-player", NearestPlayer::new);
         BY_RUNE.put("items", Items::new);
         BY_RUNE.put("entities", Entities::new);
         BY_RUNE.put("kind", Kind::new);
