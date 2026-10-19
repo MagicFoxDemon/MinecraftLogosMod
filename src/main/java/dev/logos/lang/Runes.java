@@ -379,6 +379,18 @@ public final class Runes {
                     return new Group(r, Targeting.withCaster(c, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
                             e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()), at, r, e -> e instanceof Player));
                 });
+        def("nearest-player", BINDING, ENTITY).kw("at", POS, "here").kw("radius", NUM, "10").flag("fresh")
+                .stab(1).doc("最近的其他玩家（可能为空；不含施法者，在领域里时也包括施法者自己）。启式没有开启 :players 时总是空，也不花魔力。"
+                        + ":fresh 跳过本法术已经影响过的玩家。1 魔力")
+                .exec((n, c) -> {
+                    if (!c.inst().spell.affectsPlayers()) return null;
+                    if (!c.inst().spend(1, "nearest-player")) return null;
+                    Place at = place(kw(n, "at"), c);
+                    double r = num(kw(n, "radius"), c);
+                    var l = Targeting.withCaster(c, Targeting.near(c.inst(), at.level(), at.pos(), r, n.flags.contains("fresh"),
+                            e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()), at, r, e -> e instanceof Player);
+                    return l.isEmpty() ? null : l.getFirst();
+                });
         def("master", BINDING, ENTITY)
                 .doc("施法者的主人：魔力生命体心核里的术式用它指向召唤它的玩家，例如 (heal (master) 4)。玩家自己施法时就是施法者本人。免费")
                 .exec((n, c) -> {

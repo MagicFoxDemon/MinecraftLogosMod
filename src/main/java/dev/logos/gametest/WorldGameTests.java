@@ -108,6 +108,29 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /** nearest-player picks the closest other player, and is empty (and free) without :players. */
+    static void nearestPlayer(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        @SuppressWarnings("removal")
+        ServerPlayer near = h.makeMockServerPlayerInLevel();
+        @SuppressWarnings("removal")
+        ServerPlayer far = h.makeMockServerPlayerInLevel();
+        Vec3 a = h.absoluteVec(new Vec3(2.5, 2, 0.5)), b = h.absoluteVec(new Vec3(6.5, 2, 0.5));
+        near.snapTo(a.x, a.y, a.z, 0, 0);
+        far.snapTo(b.x, b.y, b.z, 0, 0);
+        Status mark = new Status("#seen");
+        SpellInstance off = castAt(h, p, "(spell :mana 20 (mark (nearest-player :radius 8) #seen))", new BlockPos(0, 2, 0));
+        h.assertTrue(StatusData.stacks(near, mark) == 0 && StatusData.stacks(far, mark) == 0, "without :players nearest-player must be empty");
+        h.assertTrue(off.injected - off.mana < 1e-6, "an empty nearest-player without :players should cost nothing, cost " + (off.injected - off.mana));
+        SpellInstance on = castAt(h, p, "(spell :mana 20 :players true (mark (nearest-player :radius 8) #seen))", new BlockPos(0, 2, 0));
+        h.assertTrue(StatusData.stacks(near, mark) == 1, "the nearer player should be marked");
+        h.assertTrue(StatusData.stacks(far, mark) == 0, "only the nearest player should be marked");
+        h.assertTrue(on.injected - on.mana >= 1 - 1e-6, "the search should cost 1, cost " + (on.injected - on.mana));
+        castAt(h, p, "(spell :mana 20 :players true (mark (nearest-player :radius 1) #seen))", new BlockPos(0, 2, 0));
+        h.assertTrue(StatusData.stacks(near, mark) == 1, "nobody within radius 1: the caster is never picked and nothing else is marked");
+        h.succeed();
+    }
+
     /** items selects dropped items, and pull works on them (a magnet). */
     static void itemsMagnet(GameTestHelper h) {
         ServerPlayer p = caster(h);

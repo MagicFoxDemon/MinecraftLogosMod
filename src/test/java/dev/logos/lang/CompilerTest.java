@@ -123,6 +123,9 @@ class CompilerTest {
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");
         assertTrue(s.affectsPlayers());
         assertFalse(Compiler.compile("(heal caster 1)").affectsPlayers());
+        // nearest-player is no error without the switch: it just finds nobody.
+        assertFalse(Compiler.compile("(heal (nearest-player :radius 8 :fresh) 2)").affectsPlayers());
+        assertEquals(Type.ENTITY, Compiler.compile("(spell :players true (heal (nearest-player) 2))").body().getFirst().arg(0).type);
     }
 
     @Test

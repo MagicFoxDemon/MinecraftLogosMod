@@ -170,6 +170,13 @@ public final class NodeDescriptions {
             Map.entry("players/note", "每次求值消耗 1 魔力，即使没有找到对象也会消耗。使用此节点的术式需要开启影响玩家。"),
             Map.entry("players/param/at", "本次搜寻的中心；未连接时取此处。"),
             Map.entry("players/param/radius", "从中心向外搜寻的范围，默认 8 格。"),
+            Map.entry("nearest-player/intro", "寻找范围内最近的其他存活玩家，不包含施法者和旁观者。"),
+            Map.entry("nearest-player/result", "最近的其他玩家；没有找到或术式没有开启影响玩家时为空。"),
+            Map.entry("nearest-player/note", "每次求值消耗 1 魔力，即使没有找到对象也会消耗；术式没有开启影响玩家时直接为空，不消耗魔力。"
+                    + "由领域触发且开启影响玩家时，施法者自己也在候选之内。"),
+            Map.entry("nearest-player/param/at", "本次搜寻的中心；未连接时取此处。"),
+            Map.entry("nearest-player/param/radius", "从中心向外搜寻的范围，默认 10 格。"),
+            Map.entry("nearest-player/param/fresh", "开启后排除本次术式已经施加过效果的玩家，适合避免连锁术式反复作用于同一目标。"),
             Map.entry("entities/intro", "寻找范围内符合条件的实体，包含生物、弹射物和掉落物等，不包含施法者。"),
             Map.entry("entities/result", "合格实体组成的实体群，并保留搜寻半径。"),
             Map.entry("entities/note", "每次求值消耗 2 魔力，即使没有找到对象也会消耗。"),
