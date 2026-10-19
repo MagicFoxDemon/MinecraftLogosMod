@@ -49,9 +49,22 @@ public class AnchorScenario implements UIScenario {
                 })
                 .ticks(10)
                 .screenshot("anchor_markers")
-                .step("open the naming screen", ctx -> ClientHooks.openAnchorName(ORIGIN.offset(1, 0, 2), Direction.UP))
+                .step("open the naming screen", ctx -> ClientHooks.openAnchorName(ORIGIN.offset(1, 0, 2), Direction.UP, false))
                 .ticks(5)
                 .screenshot("anchor_name_screen")
+                .step("open it as a sneaking click does: into the block", ctx -> ClientHooks.openAnchorName(ORIGIN.offset(1, 0, 2), Direction.UP, true))
+                .ticks(5)
+                .screenshot("anchor_name_screen_into")
+                .step("drive an anchor into the block, and one onto its top", ctx -> {
+                    net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(dev.logos.net.AnchorEditPayload.set("炉", ORIGIN.offset(1, 0, 2), Direction.UP, true));
+                    net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(dev.logos.net.AnchorEditPayload.set("炉顶", ORIGIN.offset(1, 0, 2), Direction.UP, false));
+                })
+                .waitUntilServer("the anchors stand in the block's centre and on its top", sc -> {
+                    var into = Anchors.of(sc.player()).get("炉");
+                    var onto = Anchors.of(sc.player()).get("炉顶");
+                    return into != null && into.pos().equals(Vec3.atCenterOf(ORIGIN.offset(1, 0, 2)))
+                            && onto != null && onto.pos().equals(Vec3.atBottomCenterOf(ORIGIN.offset(1, 1, 2)));
+                })
                 .step("open the anchor list", ctx -> ClientHooks.openAnchorList())
                 .ticks(5)
                 .screenshot("anchor_list_screen");

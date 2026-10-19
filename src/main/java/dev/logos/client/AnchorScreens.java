@@ -30,17 +30,25 @@ final class AnchorScreens {
         g.outline(x, y, w, h, 0xFFB57FE0);
     }
 
-    /** Name the anchor being driven into a block face. An existing name moves that anchor here. */
+    /** Name the anchor being driven in, on a block face or into the block itself. An existing name moves that anchor here. */
     static final class Name extends Screen {
         private static final int W = 220, MAX_SHOWN = 8;
         private final BlockPos pos;
         private final Direction face;
+        /** Into the clicked block itself rather than on its face; sneaking when clicking chooses it. */
+        private boolean into;
         private EditBox box;
 
-        Name(BlockPos pos, Direction face) {
+        Name(BlockPos pos, Direction face, boolean into) {
             super(Component.literal("立下锚点"));
             this.pos = pos;
             this.face = face;
+            this.into = into;
+        }
+
+        private Component placeLabel() {
+            BlockPos at = into ? pos : pos.relative(face);
+            return Component.literal((into ? "位置：钉进这个方块 " : "位置：立在这一面外 ") + at.toShortString());
         }
 
         @Override
@@ -56,14 +64,18 @@ final class AnchorScreens {
                 int bx = x + 10 + (i % 4) * 50, by = y + 70 + (i / 4) * 22;
                 addRenderableWidget(Button.builder(Component.literal(n), b -> box.setValue(n)).bounds(bx, by, 48, 20).build());
             }
-            addRenderableWidget(Button.builder(Component.literal("立下"), b -> confirm()).bounds(x + 10, y + 124, (W - 30) / 2, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("取消"), b -> onClose()).bounds(x + 20 + (W - 30) / 2, y + 124, (W - 30) / 2, 20).build());
+            addRenderableWidget(Button.builder(placeLabel(), b -> {
+                into = !into;
+                b.setMessage(placeLabel());
+            }).bounds(x + 10, y + 120, W - 20, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("立下"), b -> confirm()).bounds(x + 10, y + 146, (W - 30) / 2, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("取消"), b -> onClose()).bounds(x + 20 + (W - 30) / 2, y + 146, (W - 30) / 2, 20).build());
         }
 
         private void confirm() {
             String n = Anchors.clean(box.getValue());
             if (n == null) return;
-            ClientPacketDistributor.sendToServer(AnchorEditPayload.set(n, pos, face));
+            ClientPacketDistributor.sendToServer(AnchorEditPayload.set(n, pos, face, into));
             onClose();
         }
 
@@ -80,7 +92,7 @@ final class AnchorScreens {
         public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
             super.extractBackground(g, mouseX, mouseY, a);
             int x = (width - W) / 2, y = height / 2 - 70;
-            panel(g, x, y, W, 152);
+            panel(g, x, y, W, 174);
         }
 
         @Override

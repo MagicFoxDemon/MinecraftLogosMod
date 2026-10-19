@@ -9,7 +9,8 @@ import net.minecraft.world.level.Level;
 
 /**
  * 锚钉: a consumable for anchors. Right-click a block face to drive it in and name the anchor
- * (one nail is spent once the name is confirmed); right-click the air to see your anchors.
+ * (one nail is spent once the name is confirmed): it stands on that face, or, sneaking (or switched
+ * on the naming screen), in the block itself. Right-click the air to see your anchors.
  * The {@code anchor} rune spends a nail from the inventory just the same.
  */
 public final class AnchorNailItem extends Item {
@@ -19,7 +20,7 @@ public final class AnchorNailItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
-        if (ctx.getLevel().isClientSide()) dev.logos.client.ClientHooks.openAnchorName(ctx.getClickedPos(), ctx.getClickedFace());
+        if (ctx.getLevel().isClientSide()) dev.logos.client.ClientHooks.openAnchorName(ctx.getClickedPos(), ctx.getClickedFace(), ctx.isSecondaryUseActive());
         return InteractionResult.SUCCESS;
     }
 

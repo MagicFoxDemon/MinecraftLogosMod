@@ -15,8 +15,8 @@ public final class ClientHooks {
         SpellEditor.openEmitter(pos, emitter);
     }
 
-    public static void openAnchorName(BlockPos pos, net.minecraft.core.Direction face) {
-        net.minecraft.client.Minecraft.getInstance().setScreen(new AnchorScreens.Name(pos, face));
+    public static void openAnchorName(BlockPos pos, net.minecraft.core.Direction face, boolean into) {
+        net.minecraft.client.Minecraft.getInstance().setScreen(new AnchorScreens.Name(pos, face, into));
     }
 
     public static void openAnchorList() {
