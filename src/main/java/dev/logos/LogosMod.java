@@ -192,6 +192,15 @@ public class LogosMod {
     // Albedo, the whitening: blackstone burnt to dead ash, rotted with soul soil, washed white with philosophers' mercury.
     /** 死灰 (caput mortuum): what calcining blackstone leaves, the dead residue the whitening starts from. */
     public static final DeferredItem<net.minecraft.world.item.Item> CAPUT_MORTUUM = ITEMS.registerSimpleItem("caput_mortuum");
+    /** 死灰块: nine caput mortuum; it insulates its chunk against spreading mana (dev.logos.runtime.ManaField). */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.CaputMortuumBlock> CAPUT_MORTUUM_BLOCK = BLOCKS.registerBlock(
+            "caput_mortuum_block", dev.logos.block.CaputMortuumBlock::new,
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.TERRACOTTA_PURPLE).strength(0.6f)
+                    .sound(net.minecraft.world.level.block.SoundType.SAND));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> CAPUT_MORTUUM_BLOCK_ITEM = ITEMS.registerSimpleBlockItem("caput_mortuum_block", CAPUT_MORTUUM_BLOCK);
+    public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.CaputMortuumBlock.Marker>> CAPUT_MORTUUM_BLOCK_BE =
+            BLOCK_ENTITIES.register("caput_mortuum_block", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
+                    dev.logos.block.CaputMortuumBlock.Marker::new, CAPUT_MORTUUM_BLOCK.get()));
     /** 腐殖灵土: dead ash rotted with soul soil. A soil of its own; herbs may be grown in it later. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<net.minecraft.world.level.block.Block> SOUL_HUMUS = BLOCKS.registerSimpleBlock("soul_humus",
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(0.5f)
@@ -372,6 +381,7 @@ public class LogosMod {
                 out.accept(PHILOSOPHERS_MERCURY.get());
                 out.accept(REBIS.get());
                 out.accept(CAPUT_MORTUUM.get());
+                out.accept(CAPUT_MORTUUM_BLOCK_ITEM.get());
                 out.accept(SOUL_HUMUS_ITEM.get());
                 out.accept(CHALK.get());
                 out.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());

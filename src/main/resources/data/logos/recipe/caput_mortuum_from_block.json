@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "logos:caput_mortuum_block"
+  ],
+  "result": {
+    "id": "logos:caput_mortuum",
+    "count": 9
+  }
+}
