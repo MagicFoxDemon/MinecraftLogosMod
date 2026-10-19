@@ -11,6 +11,10 @@ public final class ClientHooks {
         SpellEditor.open(table, page);
     }
 
+    public static void openEmitterEditor(BlockPos pos, dev.logos.block.SpellEmitterBlockEntity emitter) {
+        SpellEditor.openEmitter(pos, emitter);
+    }
+
     public static void openAnchorName(BlockPos pos, net.minecraft.core.Direction face) {
         net.minecraft.client.Minecraft.getInstance().setScreen(new AnchorScreens.Name(pos, face));
     }

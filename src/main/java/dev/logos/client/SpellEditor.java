@@ -37,6 +37,8 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.PlacematModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wire.WireModel;
 
 import dev.logos.LogosMod;
+import dev.logos.block.SpellEmitterBlockEntity;
+import dev.logos.graph.EmitterGraphs;
 import dev.logos.graph.GraphBuilder;
 import dev.logos.graph.GraphCompiler;
 import dev.logos.graph.SpecialNodes;
@@ -48,6 +50,7 @@ import dev.logos.lang.Compiler;
 import dev.logos.lang.Examples;
 import dev.logos.lang.LogosError;
 import dev.logos.lang.Node;
+import dev.logos.net.EmitterEditPayload;
 import dev.logos.net.InscribePayload;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
@@ -60,6 +63,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
@@ -82,6 +86,8 @@ public final class SpellEditor {
     private final ManuscriptControls.Seal seal = new ManuscriptControls.Seal(() -> this.graph != null && this.graph.result().ok());
     /** Set while the selector is being matched to the graph, so that does not count as the player choosing. */
     private boolean syncingIntent;
+    /** Set while 试射 saves, so the save asks the emitter to cast once. */
+    private boolean fireOnSave;
     private SpellGraph graph;
     /** Every rune, to drag onto the canvas; shares the right of the page with the overview. */
     private final RuneLibrary library = new RuneLibrary(this::placeInView);
@@ -171,17 +177,33 @@ public final class SpellEditor {
         }
     }
 
-    private SpellEditor(BlockPos table, PageTier tier) {
+    /**
+     * Set when the page lies in a spell emitter at {@link #table} rather than on an inscription table:
+     * the emitter's node stands in for the invocation, and what it has no place for is kept here.
+     */
+    private final @org.jspecify.annotations.Nullable SpellEmitterBlockEntity emitter;
+    private EmitterGraphs.Kept kept = EmitterGraphs.Kept.DEFAULT;
+
+    private SpellEditor(BlockPos table, PageTier tier, @org.jspecify.annotations.Nullable SpellEmitterBlockEntity emitter) {
         this.table = table;
         this.tier = tier;
+        this.emitter = emitter;
     }
 
     /** Opens the editor for the page on the inscription table at {@code table}, restoring its drawing (or its source). */
     public static void open(BlockPos table, ItemStack page) {
         PageTier tier = SpellPages.tier(page);
-        SpellEditor e = new SpellEditor(table, tier == null ? PageTier.BASIC : tier);
+        SpellEditor e = new SpellEditor(table, tier == null ? PageTier.BASIC : tier, null);
         e.load(initialGraph(page));
         Minecraft.getInstance().setScreen(new ModularUIScreen(e.createUI(), Component.literal("Logos")));
+    }
+
+    /** Opens the editor on the page in the spell emitter at {@code pos}, the emitter's settings in its node. */
+    public static void openEmitter(BlockPos pos, SpellEmitterBlockEntity emitter) {
+        PageTier tier = SpellPages.tier(emitter.page());
+        SpellEditor e = new SpellEditor(pos, tier == null ? PageTier.BASIC : tier, emitter);
+        e.load(initialGraph(emitter.page()));
+        Minecraft.getInstance().setScreen(new ModularUIScreen(e.createUI(), Component.translatable("block.logos.spell_emitter")));
     }
 
     private static SpellGraph initialGraph(ItemStack wand) {
@@ -207,6 +229,11 @@ public final class SpellEditor {
     }
 
     private void load(SpellGraph g) {
+        if (emitter != null) {
+            // A template or a cleared page takes the trigger already set; the emitter's own one the first time.
+            SpecialNodes.EmitterRoot current = graph == null ? null : EmitterGraphs.root(graph, SpecialNodes.EmitterRoot.class);
+            kept = EmitterGraphs.toEmitter(g, current == null ? emitter.mode() : current.mode(), current == null ? emitter.interval() : current.interval());
+        }
         graph = g;
         graph.addListener(this::refresh);
         editor.loadGraph(graph, this::send);
@@ -236,9 +263,17 @@ public final class SpellEditor {
         });
         Button clear = new Button().setText("清空");
         clear.setOnClick(ev -> load(GraphBuilder.empty()));
-        Button inscribe = new Button().setText("写入术式载页");
+        Button inscribe = new Button().setText(emitter == null ? "写入术式载页" : "写入发射器");
         inscribe.setId("inscribe");
         inscribe.setOnClick(ev -> inscribe());
+        // 试射: save, then cast once as soon as the emitter is charged.
+        Button testFire = new Button().setText("试射");
+        testFire.setId("test_fire");
+        testFire.setOnClick(ev -> {
+            fireOnSave = true;
+            inscribe();
+            fireOnSave = false;
+        });
 
         status.setId("status");
         overview.setId("overview");
@@ -269,15 +304,15 @@ public final class SpellEditor {
         overviewPage = side;
         UIElement details = new UIElement().layout(l -> l.widthPercent(100).gapAll(5).paddingAll(6));
         details.addChildren(
-                new Label().setText(Component.literal("☉ Logos 术式工坊")),
+                new Label().setText(Component.literal(emitter == null ? "☉ Logos 术式工坊" : "☉ 术式发射器 · 载页")),
                 new Label().setText(Component.literal("模板")),
                 templates,
                 row,
                 status,
-                new Label().setText(Component.literal("☷ 总览")),
-                new Label().setText(Component.literal("意图（魔力生命体据此决定何时施放）")),
-                intent,
-                overview);
+                new Label().setText(Component.literal("☷ 总览")));
+        // The emitter casts on its own trigger; the intent a lifeform reads stays as the page had it.
+        if (emitter == null) details.addChildren(new Label().setText(Component.literal("意图（魔力生命体据此决定何时施放）")), intent);
+        details.addChild(overview);
         for (UIElement child : details.getChildren()) {
             if (child instanceof Label label) {
                 label.layout(l -> l.widthPercent(100));
@@ -298,6 +333,11 @@ public final class SpellEditor {
         ManuscriptControls.paper(templates);
         ManuscriptControls.paper(intent);
         side.addChildren(detailsView, inscribe);
+        if (emitter != null) {
+            testFire.layout(l -> l.widthPercent(100).flexShrink(0));
+            ManuscriptControls.paper(testFire);
+            side.addChild(testFire);
+        }
 
         UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW)
                 .widthPercent(100).heightPercent(100).paddingAll(28).gapAll(8));
@@ -348,15 +388,17 @@ public final class SpellEditor {
             StringBuilder sb = new StringBuilder("✓ 《" + s.name() + "》成立\n");
             sb.append("注入魔力 ").append(Node.fmt(s.mana())).append(" · 稳定度 ").append(Node.fmt(s.stability())).append('\n');
             if (s.mana() > tier.capacity()) {
-                sb.append("⚠ 台上的载页只能承载 ").append(tier.capacity()).append(" 魔力：可以照常写入，施放时只注入 ").append(tier.capacity())
-                        .append(s.immolate() ? "（持焚式法杖可放大上限，载页焚毁）" : "（已关闭焚式）").append('\n');
+                sb.append(emitter == null ? "⚠ 台上的载页只能承载 " : "⚠ 发射器里的载页只能承载 ").append(tier.capacity())
+                        .append(" 魔力：可以照常写入，施放时只注入 ").append(tier.capacity())
+                        .append(emitter != null ? "（发射器没有焚式）" : s.immolate() ? "（持焚式法杖可放大上限，载页焚毁）" : "（已关闭焚式）").append('\n');
             }
             for (String note : s.notes()) sb.append("∴ ").append(note).append('\n');
             status.setText(Component.literal(sb.toString().strip()));
         } else {
             status.setText(Component.literal("✗ " + r.error()));
         }
-        overview.setText(Component.literal(r.ok() ? overview(r.spell()) : ""));
+        String emitterInfo = emitter == null ? "" : emitterInfo(r.ok() ? r.spell() : null);
+        overview.setText(Component.literal((r.ok() ? overview(r.spell()) + (emitter == null ? "" : "\n\n") : "") + emitterInfo));
         SpecialNodes.SpellRoot root = root();
         SpecialNodes.IntentChoice chosen = root == null ? null : root.option(SpecialNodes.SpellRoot.INTENT, SpecialNodes.IntentChoice.class);
         syncingIntent = true;
@@ -387,6 +429,28 @@ public final class SpellEditor {
         return sb.toString().strip();
     }
 
+    /** The emitter's store, how long one charge takes, and what its trigger does, as set on its node. */
+    private String emitterInfo(dev.logos.lang.@org.jspecify.annotations.Nullable Spell s) {
+        StringBuilder sb = new StringBuilder("⚙ 发射器魔力 ").append((int) emitter.mana()).append(" / ").append((int) SpellEmitterBlockEntity.MAX_MANA)
+                .append("（收集器对准它，或用灌魔补充）\n");
+        if (s != null) {
+            double in = Math.min(s.mana(), tier.capacity());
+            double secs = dev.logos.runtime.Charging.ticks(in, SpellEmitterBlockEntity.FLOW, SpellEmitterBlockEntity.SURGE) / 20.0;
+            sb.append("⌛ 每次注入 ").append(Node.fmt(in)).append("，蓄满约 ").append(String.format("%.1f", secs)).append(" 秒\n");
+        }
+        SpecialNodes.EmitterRoot node = EmitterGraphs.root(graph, SpecialNodes.EmitterRoot.class);
+        SpecialNodes.EmitterMode mode = node == null ? emitter.mode() : node.mode();
+        int every = node == null ? emitter.interval() : node.interval();
+        sb.append("⚑ ").append(switch (mode) {
+            case PULSE -> "红石脉冲：收到信号时施放一次（蓄满后）";
+            case HOLD -> "红石持续：有信号期间，每次蓄满就施放";
+            case TIMED -> "定时：每 " + Math.clamp(every, 1, SpellEmitterBlockEntity.MAX_INTERVAL) + " 秒施放一次，每次另耗 " + Node.fmt(SpellEmitterBlockEntity.AUTO_COST) + " 魔力";
+            case FULL -> "满能即放：每次蓄满就施放，每次另耗 " + Node.fmt(SpellEmitterBlockEntity.AUTO_COST) + " 魔力";
+        });
+        sb.append("\n☉ 从发射器中心施放，没指定方向时朝它面对的方向");
+        return sb.toString();
+    }
+
     /** The inscribe button saves through the editor, so it shares one path with the editor's own save (ctrl+S). */
     private void inscribe() {
         editor.notifySaved();
@@ -401,7 +465,30 @@ public final class SpellEditor {
             player.sendOverlayMessage(Component.literal("✗ 术式无法成立：" + r.error()));
             return;
         }
+        if (emitter != null) {
+            sendToEmitter(graphTag);
+            return;
+        }
         ClientPacketDistributor.sendToServer(new InscribePayload(table, r.source(), graphTag));
+        seal.stamp();
+    }
+
+    /** The page gets its invocation back (cast by hand) before it is written; the emitter keeps the trigger from its node. */
+    private void sendToEmitter(CompoundTag graphTag) {
+        SpecialNodes.EmitterRoot node = EmitterGraphs.root(graph, SpecialNodes.EmitterRoot.class);
+        if (node == null) return;
+        SpellGraph page = new SpellGraph();
+        page.graphModel.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), graphTag));
+        EmitterGraphs.toPage(page, kept);
+        GraphCompiler.Result r = GraphCompiler.compile(page);
+        var player = Minecraft.getInstance().player;
+        if (!r.ok() || player == null) {
+            if (player != null) player.sendOverlayMessage(Component.literal("✗ 术式无法成立：" + r.error()));
+            return;
+        }
+        TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());
+        page.graphModel.serialize(out);
+        ClientPacketDistributor.sendToServer(new EmitterEditPayload(table, r.source(), out.buildResult(), node.mode(), node.interval(), fireOnSave));
         seal.stamp();
     }
 }

@@ -32,6 +32,8 @@ public final class NodeDescriptions {
             if (rune.returns == Type.ACTION) {
                 text.append("\n流程：上方箭头接入行动；下方箭头连接后续行动。");
             }
+        } else if (node instanceof SpecialNodes.EmitterRoot) {
+            for (String id : new String[] {"name", "mana", "players", "mode", "interval", "start"}) line(text, word, id, "");
         } else if (node instanceof SpecialNodes.SpellRoot) {
             for (String id : new String[] {"name", "mana", "trigger", "players", "immolate", "intent", "start"}) line(text, word, id, "");
         } else if (node instanceof SpecialNodes.Remember) {
@@ -62,6 +64,13 @@ public final class NodeDescriptions {
             Map.entry("spell/param/immolate", "允许焚式法杖放大载页承载上限并焚毁载页；主动施放与被动触发都适用。"),
             Map.entry("spell/param/intent", "标明术式的用途，供魔力生命体决定何时施放；自动推测时由节点组合判断。"),
             Map.entry("spell/param/start", "连接本次施放首先执行的行动。"),
+            Map.entry("emitter/intro", "术式发射器本身，在发射器里编辑载页时代替启式：决定术式名、注入魔力，以及发射器何时施放。保存后载页恢复为主动施放的启式，取出来照样能挂在法杖上。"),
+            Map.entry("emitter/param/name", "为术式命名，用于辨认载页与施放记录。"),
+            Map.entry("emitter/param/mana", "每次施放注入的魔力，从发射器的魔力中蓄得；实际注入量受载页承载上限限制，发射器没有焚式。"),
+            Map.entry("emitter/param/players", "开启后，术式可以影响放置者以外的玩家；默认关闭。"),
+            Map.entry("emitter/param/mode", "红石脉冲：收到信号时施放一次；红石持续：有信号期间每次蓄满就施放；定时：每隔若干秒施放；满能即放：每次蓄满就施放。后两种由发射器自己触发，每次另耗 2 魔力。"),
+            Map.entry("emitter/param/interval", "定时模式下两次施放之间的秒数，1～3600；其他模式不用。"),
+            Map.entry("emitter/param/start", "连接每次施放首先执行的行动。此处为发射器中心，瞄准方向为它面对的方向，施法者是放置者的影子。"),
             Map.entry("projectile/intro", "塑成一枚沿指定轨迹飞行的魔弹。魔弹本身负责飞行与碰撞，命中后的效果由事件连接的行动决定。"),
             Map.entry("projectile/note", "初始消耗 4 魔力，行进方式可能另有代价。命中不自带伤害，需要连接伤害、点燃等行动。"),
             Map.entry("projectile/param/from", "魔弹诞生的位置；未连接时取此处。"),

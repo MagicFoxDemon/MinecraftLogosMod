@@ -93,6 +93,63 @@ public final class SpecialNodes {
         }
     }
 
+    /** When a spell emitter lets go of a full charge. */
+    public enum EmitterMode {
+        /** On a redstone pulse, once. */
+        PULSE,
+        /** Each time it is full, while it has a redstone signal. */
+        HOLD,
+        /** Every so many seconds. */
+        TIMED,
+        /** As soon as it is full. */
+        FULL;
+
+        public static EmitterMode of(String name) {
+            for (EmitterMode m : values()) if (m.name().equals(name)) return m;
+            return PULSE;
+        }
+    }
+
+    /**
+     * ☉ The spell emitter itself, standing in for the invocation node while its page is edited in the
+     * emitter: the spell's name, injected mana and whether it may touch players, then the emitter's
+     * trigger. It compiles as an invocation cast by hand; saving puts the page's own invocation back.
+     */
+    @NodeAttribute(name = "emitter", group = INVOCATION, graphTypes = SpellGraph.class, priority = 99)
+    public static class EmitterRoot extends SpellRoot {
+        public static final String MODE = "mode";
+        public static final String INTERVAL = "interval";
+
+        @Override
+        public String word() {
+            return "emitter";
+        }
+
+        @Override
+        public String nameKey() {
+            return "logos.node.emitter";
+        }
+
+        public EmitterMode mode() {
+            EmitterMode m = option(MODE, EmitterMode.class);
+            return m == null ? EmitterMode.PULSE : m;
+        }
+
+        public int interval() {
+            Integer i = option(INTERVAL, Integer.class);
+            return i == null ? 5 : i;
+        }
+
+        @Override
+        public void onDefineOptions(IOptionDefinitionContext context) {
+            context.addOption(NAME, String.class).withDefaultValue("无名术式").withDisplayName(NodeTerms.parameter(word(), NAME));
+            context.addOption(MANA, Integer.class).withDefaultValue(40).withDisplayName(NodeTerms.parameter(word(), MANA));
+            context.addOption(PLAYERS, Boolean.class).withDefaultValue(false).withDisplayName(NodeTerms.parameter(word(), PLAYERS));
+            context.addOption(MODE, EmitterMode.class).withDefaultValue(EmitterMode.PULSE).withDisplayName(NodeTerms.parameter(word(), MODE));
+            context.addOption(INTERVAL, Integer.class).withDefaultValue(5).withDisplayName(NodeTerms.parameter(word(), INTERVAL));
+        }
+    }
+
     /** A value provided by the surrounding event: caster, target, here, aim… */
     public abstract static class ContextValue extends LogosNode {
         private final String name;
