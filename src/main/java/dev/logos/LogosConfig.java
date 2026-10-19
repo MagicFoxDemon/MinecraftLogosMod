@@ -113,6 +113,18 @@ public final class LogosConfig {
             .translation("logos.configuration.timeSkipMaxRandomTicks")
             .defineInRange("timeSkipMaxRandomTicks", 300.0, 1.0, 1000.0);
 
+    public static final ModConfigSpec.DoubleValue MANA_SPREAD_THRESHOLD = BUILDER
+            .comment("Spread mana flows to a neighbouring chunk only while it holds this much more (out of 200 a chunk at most).",
+                    "With 70, one full chunk settles into 200, 130 next to it and 60 two chunks off.")
+            .translation("logos.configuration.manaSpreadThreshold")
+            .defineInRange("manaSpreadThreshold", 70.0, 0.0, 200.0);
+
+    public static final ModConfigSpec.DoubleValue CAPUT_MORTUUM_INSULATION = BUILDER
+            .comment("How much each block of caput mortuum adds to that threshold, between its chunk and each neighbour.",
+                    "Blocks in both chunks count; past 3 in one chunk, more do nothing. With 70, two blocks shut a full chunk off.")
+            .translation("logos.configuration.caputMortuumInsulation")
+            .defineInRange("caputMortuumInsulation", 70.0, 0.0, 200.0);
+
     /** Formula Immolation I, II, III: how many times a page's capacity a burning cast may inject. */
     public static final List<ModConfigSpec.DoubleValue> IMMOLATION_MULTIPLIERS = List.of(
             immolation(1, 2), immolation(2, 3), immolation(3, 5));
@@ -232,6 +244,22 @@ public final class LogosConfig {
 
     public static int chargeMinTicks() {
         return read(CHARGE_MIN_TICKS::getAsInt, 5);
+    }
+
+    public static double manaSpreadThreshold() {
+        try {
+            return MANA_SPREAD_THRESHOLD.getAsDouble();
+        } catch (IllegalStateException e) {
+            return 70.0;
+        }
+    }
+
+    public static double caputMortuumInsulation() {
+        try {
+            return CAPUT_MORTUUM_INSULATION.getAsDouble();
+        } catch (IllegalStateException e) {
+            return 70.0;
+        }
     }
 
     public static double chargeManaScale() {

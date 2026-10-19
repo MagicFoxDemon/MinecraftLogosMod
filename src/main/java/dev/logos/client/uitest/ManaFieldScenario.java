@@ -54,6 +54,8 @@ public class ManaFieldScenario implements UIScenario {
                     level.setBlock(TABLE, table, 3);
                     level.setBlock(AlchemyTableBlock.otherHalf(TABLE, table), table.setValue(AlchemyTableBlock.PART, AlchemyTableBlock.Part.SIDE), 3);
                     level.setBlock(TABLE.above(), LogosMod.MANA_COLLECTOR.get().defaultBlockState().setValue(ManaCollectorBlock.FACING, Direction.DOWN), 3);
+                    // A block of caput mortuum in front, to see it among them.
+                    level.setBlock(ORIGIN.offset(-1, 1, 3), LogosMod.CAPUT_MORTUUM_BLOCK.get().defaultBlockState(), 3);
                     // Fill the air at once rather than wait ten seconds for the spreader.
                     for (int i = 0; i < 60; i++) {
                         ManaField.pour(level, SPREADER, ManaField.CAP);

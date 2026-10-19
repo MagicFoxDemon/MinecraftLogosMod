@@ -59,6 +59,56 @@ final class ManaFieldGameTests {
         });
     }
 
+    /**
+     * Caput mortuum holds mana back: beside a full chunk, a chunk with one block settles at 60 rather
+     * than 130, one with two gets nothing; taking a block away lets the mana in again.
+     */
+    static void caputMortuumInsulates(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        BlockPos center = faraway(h, 380, 1);
+        BlockPos east = center.east(16), north = center.north(16), west = center.west(16);
+        BlockState ash = LogosMod.CAPUT_MORTUUM_BLOCK.get().defaultBlockState();
+        Runnable settle = () -> {
+            for (int i = 0; i < 300; i++) {
+                ManaField.pour(level, center, ManaField.CAP);
+                ManaField.work(level);
+            }
+        };
+        h.startSequence()
+                .thenWaitUntil(() -> assertLoaded(h, center, 1))
+                .thenExecute(() -> {
+                    level.setBlock(east, ash, 3);
+                    level.setBlock(north, ash, 3);
+                    level.setBlock(north.east(2), ash, 3);
+                    h.assertTrue(ManaField.insulation(level.getChunkAt(north)) == 2, "the north chunk counts " + ManaField.insulation(level.getChunkAt(north)) + " blocks");
+                    settle.run();
+                    double e = ManaField.spread(level, east), n = ManaField.spread(level, north), w = ManaField.spread(level, west);
+                    h.assertTrue(Math.abs(w - 130) < 2, "the bare chunk holds " + w + ", not 130");
+                    h.assertTrue(Math.abs(e - 60) < 2, "the chunk with one block holds " + e + ", not 60");
+                    h.assertTrue(n < 1, "the chunk with two blocks still let in " + n);
+                    level.setBlock(east, Blocks.AIR.defaultBlockState(), 3);
+                    settle.run();
+                    h.assertTrue(Math.abs(ManaField.spread(level, east) - 130) < 2, "with its block gone the chunk holds " + ManaField.spread(level, east) + ", not 130");
+                    level.setBlock(north, Blocks.AIR.defaultBlockState(), 3);
+                    level.setBlock(north.east(2), Blocks.AIR.defaultBlockState(), 3);
+                })
+                .thenSucceed();
+    }
+
+    /** Nine caput mortuum press into a block, and the block breaks back into nine. */
+    static void caputMortuumBlockCrafts(GameTestHelper h) {
+        var nine = net.minecraft.world.item.crafting.CraftingInput.of(3, 3,
+                java.util.Collections.nCopies(9, new ItemStack(LogosMod.CAPUT_MORTUUM.get())));
+        ItemStack block = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, nine, h.getLevel())
+                .map(r -> r.value().assemble(nine)).orElse(ItemStack.EMPTY);
+        h.assertTrue(block.is(LogosMod.CAPUT_MORTUUM_BLOCK_ITEM.get()), "nine caput mortuum made " + block);
+        var one = net.minecraft.world.item.crafting.CraftingInput.of(1, 1, java.util.List.of(new ItemStack(LogosMod.CAPUT_MORTUUM_BLOCK_ITEM.get())));
+        ItemStack back = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, one, h.getLevel())
+                .map(r -> r.value().assemble(one)).orElse(ItemStack.EMPTY);
+        h.assertTrue(back.is(LogosMod.CAPUT_MORTUUM.get()) && back.getCount() == 9, "the block broke into " + back);
+        h.succeed();
+    }
+
     /** Collectors in one chunk share its ambient mana: two together take no more than the chunk gives, and neither more than its own limit. */
     static void collectorsShareAmbient(GameTestHelper h) {
         ServerLevel level = h.getLevel();

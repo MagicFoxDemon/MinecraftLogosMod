@@ -8,7 +8,9 @@ import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
+import dev.logos.block.CaputMortuumBlock;
 import dev.logos.net.ManaFieldPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -18,6 +20,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -34,9 +37,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * shared by the collectors there, each taking at most {@link #COLLECTOR_AMBIENT}, so packing
  * collectors into one chunk does not pay.</li>
  * <li><b>Spread</b> mana is what spreaders pour into their chunk, up to {@link #CAP}. It flows into a
- * neighbouring chunk only while the difference is over {@link #THRESHOLD}, so one spreader settles
- * into 200, 130, 60 around it; it flows back where collectors draw a chunk down. It leaks away
- * slowly ({@link #LEAK}) as entropic mana that nothing can collect again.</li>
+ * neighbouring chunk only while the difference is over a threshold ({@link #threshold}): 70, so one
+ * spreader settles into 200, 130, 60 around it, and more for each block of caput mortuum on either
+ * side. It flows back where collectors draw a chunk down, and leaks away slowly ({@link #LEAK}) as
+ * entropic mana that nothing can collect again.</li>
  * </ul>
  * Spread mana is saved with its chunk and stands still while the chunk is unloaded. Clients are told
  * each chunk's level roughly (0 to {@link #LEVELS}) for the motes drifting in it.
@@ -45,8 +49,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class ManaField {
     /** Most spread mana a chunk holds. */
     public static final double CAP = 200;
-    /** Spread mana flows to a neighbouring chunk only while it holds this much more. */
-    public static final double THRESHOLD = 70;
+    /** Past this many blocks of caput mortuum in a chunk, more insulate it no further. */
+    public static final int MAX_INSULATION = 3;
     /** Share of a chunk's spread mana that leaks away each second: 0.5% a minute. */
     public static final double LEAK = 1 - Math.pow(1 - 0.005, 1 / 60.0);
     /** Ambient mana a plain chunk gives each second, shared by its collectors. */
@@ -88,6 +92,23 @@ public final class ManaField {
     private static double mana(LevelChunk chunk) {
         Double mana = chunk.getExistingDataOrNull(LogosMod.MANA_FIELD);
         return mana == null ? 0 : mana;
+    }
+
+    /**
+     * How much more spread mana one of two neighbouring chunks must hold for it to flow into the other:
+     * the configured threshold, raised for each block of caput mortuum in either chunk (both ways).
+     */
+    public static double threshold(LevelChunk a, LevelChunk b) {
+        return LogosConfig.manaSpreadThreshold() + LogosConfig.caputMortuumInsulation() * (insulation(a) + insulation(b));
+    }
+
+    /** Blocks of caput mortuum in a chunk, counted by their markers, at most {@link #MAX_INSULATION}. */
+    public static int insulation(LevelChunk chunk) {
+        int n = 0;
+        for (BlockEntity be : chunk.getBlockEntities().values()) {
+            if (be instanceof CaputMortuumBlock.Marker && ++n >= MAX_INSULATION) break;
+        }
+        return n;
     }
 
     private static @Nullable LevelChunk loaded(ServerLevel level, long chunk) {
@@ -177,7 +198,7 @@ public final class ManaField {
             for (long next : new long[] {ChunkPos.pack(x + 1, z), ChunkPos.pack(x - 1, z), ChunkPos.pack(x, z + 1), ChunkPos.pack(x, z - 1)}) {
                 LevelChunk there = loaded(level, next);
                 if (there == null) continue;
-                double excess = mine - mana(there) - THRESHOLD;
+                double excess = mine - mana(there) - threshold(here, there);
                 if (excess <= 0) continue;
                 delta.merge(key, -excess * FLOW, Double::sum);
                 delta.merge(next, excess * FLOW, Double::sum);
