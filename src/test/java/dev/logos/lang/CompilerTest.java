@@ -26,6 +26,16 @@ class CompilerTest {
     }
 
     /** Intents are read off the runes unless declared; the estimate prices the runes that run. */
+    /** offset takes forward, then optional up and right, all numbers, and is a position. */
+    @Test
+    void offsetIsAPosition() {
+        Compiler.compile("(spell :mana 20 (infuse-block (offset 3 1 -2) 5))");
+        Compiler.compile("(spell :mana 20 (infuse-block (offset 3) 5))");
+        Compiler.compile("(spell :mana 20 (infuse-block (offset 3 0 0 :from (pos-of caster)) 5))");
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell :mana 20 (damage (offset 3 1 0) 5))"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell :mana 20 (infuse-block (offset caster) 5))"));
+    }
+
     @Test
     void intentProfile() {
         assertEquals(Intent.STRIKE, Compiler.compile("(spell :mana 20 (damage (foe) 6))").profile().primary());

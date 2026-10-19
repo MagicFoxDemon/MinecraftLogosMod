@@ -105,7 +105,7 @@ public class SpellEditorLocalizationScenario implements UIScenario {
                             if (rune.word().equals("potion")) ctx.check("potion level is effect level", rune.in("level").getDisplayName().getString().equals("药效等级"));
                         }
                     }
-                    ctx.check("all registered spell nodes are localized", count == view.getGraph().getSupportNodes().size());
+                    ctx.check("all registered spell nodes are localized", count == view.getGraph().getLibrarySupportNodes().size());
                     for (var shape : ConstructShape.values()) {
                         ctx.check("translated shape choice " + shape.name(), Language.getInstance().has("dev.logos.lang.ConstructShape." + shape.name()));
                     }

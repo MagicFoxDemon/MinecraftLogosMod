@@ -113,6 +113,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "offset", group = BINDING, graphTypes = SpellGraph.class)
+    public static class Offset extends RuneNode {
+        public Offset() {
+            super("offset");
+        }
+    }
+
     @NodeAttribute(name = "look_point", group = BINDING, graphTypes = SpellGraph.class)
     public static class LookPoint extends RuneNode {
         public LookPoint() {
@@ -824,6 +831,7 @@ public final class RuneNodes {
         BY_RUNE.put("pos-of", PosOf::new);
         BY_RUNE.put("above", Above::new);
         BY_RUNE.put("ahead", Ahead::new);
+        BY_RUNE.put("offset", Offset::new);
         BY_RUNE.put("look-point", LookPoint::new);
         BY_RUNE.put("toward", Toward::new);
         BY_RUNE.put("random-dir", RandomDir::new);

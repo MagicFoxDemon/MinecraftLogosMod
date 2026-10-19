@@ -43,6 +43,8 @@ import dev.logos.graph.GraphBuilder;
 import dev.logos.graph.GraphCompiler;
 import dev.logos.graph.SpecialNodes;
 import dev.logos.graph.LogosNode;
+import dev.logos.graph.RuneNodes;
+import dev.logos.item.DividersItem;
 import dev.logos.graph.SpellGraph;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
@@ -263,6 +265,9 @@ public final class SpellEditor {
         });
         Button clear = new Button().setText("清空");
         clear.setOnClick(ev -> load(GraphBuilder.empty()));
+        Button paste = new Button().setText("贴入两脚规");
+        paste.setId("paste_dividers");
+        paste.setOnClick(ev -> pasteDividers());
         Button inscribe = new Button().setText(emitter == null ? "写入术式载页" : "写入发射器");
         inscribe.setId("inscribe");
         inscribe.setOnClick(ev -> inscribe());
@@ -296,7 +301,7 @@ public final class SpellEditor {
         });
 
         UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(4).widthPercent(100));
-        row.addChildren(loadTemplate, clear);
+        row.addChildren(loadTemplate, clear, paste);
 
         UIElement side = new UIElement()
                 .layout(l -> l.flex(1).minWidth(0).heightPercent(100).gapAll(5));
@@ -330,6 +335,7 @@ public final class SpellEditor {
         seal.apply(inscribe);
         ManuscriptControls.paper(loadTemplate);
         ManuscriptControls.paper(clear);
+        ManuscriptControls.paper(paste);
         ManuscriptControls.paper(templates);
         ManuscriptControls.paper(intent);
         side.addChildren(detailsView, inscribe);
@@ -372,6 +378,39 @@ public final class SpellEditor {
         overviewPage.setDisplay(shelf == Shelf.OVERVIEW ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         library.setDisplay(shelf == Shelf.LIBRARY ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         if (shelf == Shelf.LIBRARY) library.fill(editor.getCurrentView());
+    }
+
+    /**
+     * Places an offset node holding what the player's dividers measured, in the middle of the canvas,
+     * through the same undoable command as a rune dropped from the library.
+     */
+    private void pasteDividers() {
+        var player = Minecraft.getInstance().player;
+        DividersItem.Measure m = player == null ? null : DividersItem.carried(player);
+        if (m == null) {
+            if (player != null) player.sendOverlayMessage(Component.literal("身上没有量好的两脚规：先右键起点方块，再右键目标方块"));
+            return;
+        }
+        if (!(editor.getCurrentView() instanceof SpellGraphView view)) return;
+        var orphan = GraphNodeCreationData.ofOrphan(graph.graphModel);
+        NodeModelLibraryItem offset = view.itemLibrary.getAllItems()
+                .filter(i -> i instanceof NodeModelLibraryItem e && e.createNode(orphan) instanceof ICustomNodeModel c && c.getNode() instanceof RuneNodes.Offset)
+                .map(i -> (NodeModelLibraryItem) i).findFirst().orElse(null);
+        if (offset == null) return;
+        java.util.Set<Object> before = new java.util.HashSet<>(graph.getNodes());
+        placeInView(offset);
+        for (var n : graph.getNodes()) {
+            if (!(n instanceof RuneNodes.Offset node) || before.contains(n)) continue;
+            int[] values = {m.f(), m.u(), m.r()};
+            String[] ports = {"forward", "up", "right"};
+            for (int i = 0; i < 3; i++) {
+                var port = node.in(ports[i]);
+                if (port != null && port.getEmbeddedValue() != null) port.getEmbeddedValue().setValue((float) values[i]);
+            }
+            var element = view.getModelElement(node.model());
+            if (element != null) element.doCompleteUpdate();
+        }
+        graph.invalidate();
     }
 
     /** A double-clicked library rune lands in the middle of what the canvas shows. */

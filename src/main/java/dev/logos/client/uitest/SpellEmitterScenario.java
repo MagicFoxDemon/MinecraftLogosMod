@@ -94,6 +94,23 @@ public class SpellEmitterScenario implements UIScenario {
                         sc.level().getBlockEntity(EDITED) instanceof SpellEmitterBlockEntity e
                                 && e.page().has(LogosMod.SPELL_GRAPH.get())
                                 && e.page().getOrDefault(LogosMod.SPELL_SOURCE.get(), "").contains(":trigger cast"))
+                .server("hand the player dividers that measured forward 2, up 1, right 1", sc -> {
+                    var dividers = new net.minecraft.world.item.ItemStack(LogosMod.DIVIDERS_ITEM.get());
+                    dividers.set(LogosMod.DIVIDERS.get(), new dev.logos.item.DividersItem.Measure(EDITED, net.minecraft.resources.Identifier.withDefaultNamespace("overworld"),
+                            Direction.EAST, true, 2, 1, 1));
+                    sc.player().getInventory().setItem(8, dividers);
+                })
+                .waitUntil("the client holds the measurement", ctx -> dev.logos.item.DividersItem.carried(ctx.player()) != null)
+                .click("#paste_dividers")
+                .ticks(5)
+                .check("an offset node holds the measurement", ctx -> {
+                    var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
+                    return view.getGraph().getNodes().stream().anyMatch(n -> n instanceof dev.logos.graph.RuneNodes.Offset o
+                            && o.in("forward").getEmbeddedValue().getValue() instanceof Float f && f == 2f
+                            && o.in("up").getEmbeddedValue().getValue() instanceof Float u && u == 1f
+                            && o.in("right").getEmbeddedValue().getValue() instanceof Float r && r == 1f);
+                })
+                .screenshot("emitter_pasted_dividers")
                 .closeScreen()
                 .ticks(5);
     }

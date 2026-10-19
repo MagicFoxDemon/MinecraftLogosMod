@@ -74,6 +74,9 @@ public class LogosMod {
     /** Which spell (index into wand pages + off-hand codex pages) the wand will cast. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SELECTED = COMPONENTS.registerComponentType("selected",
             b -> b.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
+    /** What a pair of dividers has measured. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<dev.logos.item.DividersItem.Measure>> DIVIDERS = COMPONENTS.registerComponentType("dividers",
+            b -> b.persistent(dev.logos.item.DividersItem.Measure.CODEC).networkSynchronized(ByteBufCodecs.fromCodecWithRegistries(dev.logos.item.DividersItem.Measure.CODEC)));
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES =
@@ -125,6 +128,9 @@ public class LogosMod {
     /** 锚钉: spent to set an anchor, by hand or by the anchor rune. Crafted later through alchemy. */
     public static final DeferredItem<dev.logos.item.AnchorNailItem> ANCHOR_NAIL = ITEMS.registerItem("anchor_nail",
             dev.logos.item.AnchorNailItem::new, p -> p.stacksTo(64));
+    /** 两脚规: measures one block from another as forward, up and right, for the offset rune. */
+    public static final DeferredItem<dev.logos.item.DividersItem> DIVIDERS_ITEM = ITEMS.registerItem("dividers",
+            dev.logos.item.DividersItem::new, p -> p.stacksTo(1));
 
     // Alchemical colossus materials. Placeholders for now: their alchemy (recipes, planting) comes later.
     /** 巨像之心: the flower a colossus offers its master. An alchemical material. */
@@ -375,6 +381,7 @@ public class LogosMod {
                 out.accept(SPELL_EMBER.get());
                 out.accept(SPELL_CODEX.get());
                 out.accept(ANCHOR_NAIL.get());
+                out.accept(DIVIDERS_ITEM.get());
                 out.accept(COLOSSUS_HEART.get());
                 out.accept(DISORDER_CRYSTAL.get());
                 out.accept(MAINTENANCE_KIT.get());

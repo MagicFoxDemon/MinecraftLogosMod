@@ -104,7 +104,7 @@ public class SpellEditorDescriptionsScenario implements UIScenario {
                                 !doc.contains(rune.rune().signature()));
                         manifest.add(Map.of("node", node.word(), "name", Component.translatable(node.nameKey()).getString(), "description", doc));
                     }
-                    ctx.check("every supported node described", manifest.size() == view(ctx).getGraph().getSupportNodes().size());
+                    ctx.check("every supported node described", manifest.size() == view(ctx).getGraph().getLibrarySupportNodes().size());
                     ctx.check("description inspection leaves graph intact", graph.getNodeModels().size() == before);
                     try {
                         var output = FMLPaths.GAMEDIR.get().resolve("../build/ldlib2-uitest/description-manifest.json").normalize();

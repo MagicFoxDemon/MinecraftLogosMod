@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    " G ",
+    "C C"
+  ],
+  "key": {
+    "G": "minecraft:gold_nugget",
+    "C": "minecraft:copper_ingot"
+  },
+  "result": {
+    "id": "logos:dividers"
+  }
+}
