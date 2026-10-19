@@ -133,7 +133,7 @@ public class LogosMod {
     /** 失序结晶: left behind when a colossus's mana frenzy burns out. */
     public static final DeferredItem<net.minecraft.world.item.Item> DISORDER_CRYSTAL = ITEMS.registerSimpleItem("disorder_crystal",
             p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
-    /** 维护套件: heals a colossus and mends its scorched shell. */
+    /** 维护套件: heals a colossus and mends its scorched shell; caput mortuum as filler, adhesive as binder, a copper patch. */
     public static final DeferredItem<net.minecraft.world.item.Item> MAINTENANCE_KIT = ITEMS.registerSimpleItem("maintenance_kit", p -> p.stacksTo(16));
     /** 被污染的魔力碎片: an unstable fuel; fed to a colossus, it sends it into a mana frenzy. */
     public static final DeferredItem<net.minecraft.world.item.Item> TAINTED_MANA_SHARD = ITEMS.registerSimpleItem("tainted_mana_shard",

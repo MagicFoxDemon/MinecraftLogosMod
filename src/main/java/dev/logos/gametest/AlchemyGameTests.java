@@ -68,6 +68,16 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
+    /** Two caput mortuum, adhesive and a copper ingot, as filler, binder and patch, make a maintenance kit. */
+    static void craftsMaintenanceKit(GameTestHelper h) {
+        CraftingInput input = CraftingInput.of(2, 2, List.of(new ItemStack(LogosMod.CAPUT_MORTUUM.get()), new ItemStack(Items.COPPER_INGOT),
+                new ItemStack(LogosMod.ADHESIVE.get()), new ItemStack(LogosMod.CAPUT_MORTUUM.get())));
+        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
+                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+        h.assertTrue(out.is(LogosMod.MAINTENANCE_KIT.get()), "caput mortuum, adhesive and copper made " + out);
+        h.succeed();
+    }
+
     /** Glass, a brewing stand and a bottle over copper and a cauldron, on a crafting table, make the alchemy table. */
     static void craftsAlchemyTable(GameTestHelper h) {
         List<ItemStack> grid = List.of(
