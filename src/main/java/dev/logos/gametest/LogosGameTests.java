@@ -48,6 +48,7 @@ public final class LogosGameTests {
             "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects", "rune_shield_marks_ward", "potion_burst_polarity", "rune_group_radius_cost", "rune_time_stop_mob", "rune_time_stop_player",
             "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies", "alchemy_brews_raw_mash", "alchemy_crafts_gunpowder", "alchemy_crafts_maintenance_kit", "alchemy_crafts_table", "alchemy_bottles_drinkable",
             "process_ferments", "process_designates_and_routes", "process_dissolves_water_bottles", "process_dissolves_from_tank", "process_chains", "process_needs_mana", "process_shows_working", "process_cards_keep_and_remove", "process_pours_bottles_first", "process_says_what_is_missing", "alchemy_table_switch", "powder_settles", "powder_is_eaten", "powder_dissolves_back", "brews_from_base", "brews_from_water", "process_designates_exactly", "process_products_exact", "status_follows_designations", "status_says_outputs_full", "process_calcines", "calcine_needs_blast_furnace", "redstone_distils_mercury", "tria_prima_dissolve", "philosophers_mercury_settles", "conjunction_joins_powders", "purify_cleans_tainted_shards", "purify_washes_like_a_cauldron", "mercury_is_poison", "blackstone_calcines_to_caput_mortuum", "caput_mortuum_rots_into_soul_humus", "soul_humus_washes_into_chalk", "soul_humus_drops_itself", "infuse_block_fills_table", "field_settles_into_steps", "collectors_share_ambient", "spreader_feeds_table_through_collector", "caput_mortuum_insulates", "caput_mortuum_block_crafts",
+            "emitter_pulse_casts_once", "emitter_full_casts_and_pays_extra", "emitter_spells_leave_through_itself", "emitter_edit_swaps_the_invocation",
             "alchemy_table_halves", "alchemy_table_automation", "alchemy_table_tank", "alchemy_table_mana", "alchemy_table_bottles", "alchemy_table_free_mana",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
@@ -247,6 +248,10 @@ public final class LogosGameTests {
         FUNCTIONS.register("spreader_feeds_table_through_collector", () -> ManaFieldGameTests::spreaderFeedsTableThroughCollector);
         FUNCTIONS.register("caput_mortuum_insulates", () -> ManaFieldGameTests::caputMortuumInsulates);
         FUNCTIONS.register("caput_mortuum_block_crafts", () -> ManaFieldGameTests::caputMortuumBlockCrafts);
+        FUNCTIONS.register("emitter_pulse_casts_once", () -> SpellEmitterGameTests::pulseCastsOnce);
+        FUNCTIONS.register("emitter_full_casts_and_pays_extra", () -> SpellEmitterGameTests::fullCastsAndPaysExtra);
+        FUNCTIONS.register("emitter_spells_leave_through_itself", () -> SpellEmitterGameTests::spellsLeaveThroughItself);
+        FUNCTIONS.register("emitter_edit_swaps_the_invocation", () -> SpellEmitterGameTests::editSwapsTheInvocation);
         FUNCTIONS.register("alchemy_table_halves", () -> AlchemyGameTests::tableHalvesBreakTogether);
         FUNCTIONS.register("alchemy_table_automation", () -> AlchemyGameTests::tableAutomationIsOneWay);
         FUNCTIONS.register("alchemy_table_tank", () -> AlchemyGameTests::tableTankHoldsOneFluid);

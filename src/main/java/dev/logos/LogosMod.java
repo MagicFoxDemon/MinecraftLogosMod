@@ -263,6 +263,16 @@ public class LogosMod {
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.ManaCollectorBlockEntity>> MANA_COLLECTOR_BE =
             BLOCK_ENTITIES.register("mana_collector", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.ManaCollectorBlockEntity::new, MANA_COLLECTOR.get()));
+    /** 术式发射器: charges the spell on the page it holds from its own mana, and casts it on a trigger. */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.SpellEmitterBlock> SPELL_EMITTER = BLOCKS.registerBlock(
+            "spell_emitter", dev.logos.block.SpellEmitterBlock::new,
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(2.5f).noOcclusion()
+                    .sound(net.minecraft.world.level.block.SoundType.WOOD)
+                    .lightLevel(s -> s.getValue(dev.logos.block.ManaSpreaderBlock.ACTIVE) ? 6 : 0));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> SPELL_EMITTER_ITEM = ITEMS.registerSimpleBlockItem("spell_emitter", SPELL_EMITTER);
+    public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.SpellEmitterBlockEntity>> SPELL_EMITTER_BE =
+            BLOCK_ENTITIES.register("spell_emitter", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
+                    dev.logos.block.SpellEmitterBlockEntity::new, SPELL_EMITTER.get()));
 
     public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeType<?>> RECIPE_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.RECIPE_TYPE, MODID);
@@ -392,6 +402,7 @@ public class LogosMod {
                 out.accept(ALCHEMY_TABLE_ITEM.get());
                 out.accept(MANA_COLLECTOR_ITEM.get());
                 out.accept(MANA_SPREADER_ITEM.get());
+                out.accept(SPELL_EMITTER_ITEM.get());
                 for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
             }).build());
 
@@ -499,6 +510,7 @@ public class LogosMod {
     private void registerPayloads(net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1");
         registrar.playToServer(dev.logos.net.InscribePayload.TYPE, dev.logos.net.InscribePayload.CODEC, dev.logos.net.InscribePayload::handle);
+        registrar.playToServer(dev.logos.net.EmitterEditPayload.TYPE, dev.logos.net.EmitterEditPayload.CODEC, dev.logos.net.EmitterEditPayload::handle);
         registrar.playToClient(dev.logos.net.FxPayload.TYPE, dev.logos.net.FxPayload.CODEC);
         registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
         registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);

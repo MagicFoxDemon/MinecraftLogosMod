@@ -51,6 +51,24 @@ public class SpellGraph extends Graph {
         return List.of();
     }
 
+    /** Edited inside a spell emitter: its library offers the emitter's node, not the invocation node. */
+    private boolean emitter;
+
+    public void emitter(boolean on) {
+        emitter = on;
+    }
+
+    public boolean emitter() {
+        return emitter;
+    }
+
+    /** Each kind of graph offers only its own root to place. */
+    @Override
+    public List<Class<? extends Node>> getLibrarySupportNodes() {
+        Class<?> other = emitter ? SpecialNodes.SpellRoot.class : SpecialNodes.EmitterRoot.class;
+        return getSupportNodes().stream().filter(c -> c != other).toList();
+    }
+
     public void addListener(Runnable r) {
         listeners.add(r);
     }

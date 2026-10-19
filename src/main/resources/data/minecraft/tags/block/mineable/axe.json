@@ -1,6 +1,7 @@
 {
   "values": [
     "logos:mana_spreader",
-    "logos:mana_collector"
+    "logos:mana_collector",
+    "logos:spell_emitter"
   ]
 }
