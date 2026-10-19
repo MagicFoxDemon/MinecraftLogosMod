@@ -472,6 +472,13 @@ public final class Runes {
                     Place p = place(kw(n, "from"), c);
                     return p.moved(p.pos().add(vec(kw(n, "dir"), c).normalize().scale(num(n.arg(0), c))));
                 });
+        def("offset", BINDING, POS).p("forward", NUM).opt("up", NUM, "0").opt("right", NUM, "0").kw("from", POS, "here").kw("dir", DIR, "aim")
+                .doc("相对一个位置的前、上、右若干格。前取方向的水平部分（玩家是视线的水平方向，术式发射器是它的朝向；朝上或朝下的发射器以南为前），上永远是正上方，右在前的右手边。两脚规量出的就是这三个数")
+                .exec((n, c) -> {
+                    Place p = place(kw(n, "from"), c);
+                    Vec3 forward = dev.logos.runtime.Offsets.forward(vec(kw(n, "dir"), c), c.inst().caster.getYRot());
+                    return p.moved(dev.logos.runtime.Offsets.apply(p.pos(), forward, num(n.arg(0), c), num(n.arg(1), c), num(n.arg(2), c)));
+                });
         def("look-point", BINDING, POS).opt("range", NUM, "32").stab(1).doc("施法者视线落点（方块表面前方的空气）。1 魔力")
                 .exec((n, c) -> {
                     if (!c.inst().spend(1, "look-point")) return c.place();
