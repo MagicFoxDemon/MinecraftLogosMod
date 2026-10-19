@@ -2,6 +2,8 @@ package dev.logos.block;
 
 import org.jspecify.annotations.Nullable;
 
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.mojang.serialization.MapCodec;
 
 import dev.logos.LogosMod;
@@ -11,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -33,10 +36,10 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
  * 魔力散布器: puts mana into the air around it (see {@link ManaSpreaderBlockEntity}). Fuel goes in its
- * drawer by hand or by hopper; with an empty hand it says what it holds and how full its chunk's air is.
- * It glows while it has mana to give or its chunk holds some.
+ * drawer by hand or by hopper; with an empty hand it opens its screen: the drawer, what it holds, and a
+ * map of the field in the chunks around it. It glows while it has mana to give or its chunk holds some.
  */
-public class ManaSpreaderBlock extends HorizontalDirectionalBlock implements EntityBlock {
+public class ManaSpreaderBlock extends HorizontalDirectionalBlock implements EntityBlock, BlockUIMenuType.BlockUI {
     public static final MapCodec<ManaSpreaderBlock> CODEC = simpleCodec(ManaSpreaderBlock::new);
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
@@ -94,14 +97,15 @@ public class ManaSpreaderBlock extends HorizontalDirectionalBlock implements Ent
         return InteractionResult.SUCCESS;
     }
 
-    /** What it holds, and how full its chunk's air is. */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof ManaSpreaderBlockEntity spreader) {
-            player.sendOverlayMessage(Component.translatable("logos.mana_spreader.status", (int) spreader.mana(),
-                    (int) Math.round(ManaField.spread(server, pos)), (int) ManaField.CAP).withStyle(ChatFormatting.AQUA));
-        }
+        if (player instanceof ServerPlayer sp) BlockUIMenuType.openUI(sp, pos);
         return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        return ManaDeviceUI.spreader(holder);
     }
 
     /** While lit, a few motes rise slowly from the gap under its lid. */

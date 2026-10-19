@@ -2,6 +2,8 @@ package dev.logos.block;
 
 import org.jspecify.annotations.Nullable;
 
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.mojang.serialization.MapCodec;
 
 import dev.logos.LogosMod;
@@ -11,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -30,9 +33,9 @@ import net.minecraft.world.phys.Vec3;
 /**
  * 魔力收集器: draws mana from the air and passes it to the block it faces (see
  * {@link ManaCollectorBlockEntity}). It faces any of six ways; placed against a block, it faces that
- * block. With an empty hand it says what it holds and what the air of its chunk gives.
+ * block. With an empty hand it opens its screen: what it holds, its chunk's field and a gauge of what it draws.
  */
-public class ManaCollectorBlock extends DirectionalBlock implements EntityBlock {
+public class ManaCollectorBlock extends DirectionalBlock implements EntityBlock, BlockUIMenuType.BlockUI {
     public static final MapCodec<ManaCollectorBlock> CODEC = simpleCodec(ManaCollectorBlock::new);
     /** Ticks a mote takes to drift in to it. */
     public static final int DRAWN_MOTE_LIFE = 40;
@@ -72,11 +75,13 @@ public class ManaCollectorBlock extends DirectionalBlock implements EntityBlock 
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof ManaCollectorBlockEntity collector) {
-            player.sendOverlayMessage(Component.translatable("logos.mana_collector.status", (int) collector.mana(), (int) ManaCollectorBlockEntity.MAX_MANA,
-                    String.format("%.2f", ManaField.ambientRate(server, pos)), (int) Math.round(ManaField.spread(server, pos))).withStyle(ChatFormatting.AQUA));
-        }
+        if (player instanceof ServerPlayer sp) BlockUIMenuType.openUI(sp, pos);
         return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public ModularUI createUI(BlockUIMenuType.BlockUIHolder holder) {
+        return ManaDeviceUI.collector(holder);
     }
 
     /** Now and then a mote drifts in to it: more often the more mana its chunk's air holds. */
