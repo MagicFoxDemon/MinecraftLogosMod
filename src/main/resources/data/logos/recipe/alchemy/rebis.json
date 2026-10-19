@@ -7,5 +7,6 @@
   "results": [
     { "id": "logos:rebis" },
     { "id": "minecraft:glass_bottle" }
-  ]
+  ],
+  "mana": 20
 }

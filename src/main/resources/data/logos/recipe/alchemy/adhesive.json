@@ -8,5 +8,6 @@
   "results": [
     { "id": "logos:adhesive", "count": 2 },
     { "id": "minecraft:glass_bottle" }
-  ]
+  ],
+  "mana": 2
 }

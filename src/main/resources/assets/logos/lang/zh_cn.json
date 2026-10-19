@@ -119,6 +119,8 @@
   "logos.alchemy_card.fluid": "流体",
   "logos.alchemy_card.output_full": "输出格已满",
   "logos.alchemy_card.no_mana": "魔力不足",
+  "logos.alchemy_card.needs_mana": "魔力不足：这一步需要 %s 魔力",
+  "logos.jei.alchemy_mana": "%s 魔力",
   "logos.alchemy_card.idle": "放入或指定原料",
   "logos.process.ferment": "发酵",
   "logos.process.dissolve": "溶解",

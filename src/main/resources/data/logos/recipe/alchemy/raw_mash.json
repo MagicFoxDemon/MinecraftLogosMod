@@ -8,5 +8,6 @@
   "fluid": { "ingredient": "minecraft:water", "amount": 750 },
   "results": [
     { "id": "logos:raw_mash", "count": 3 }
-  ]
+  ],
+  "mana": 1
 }
