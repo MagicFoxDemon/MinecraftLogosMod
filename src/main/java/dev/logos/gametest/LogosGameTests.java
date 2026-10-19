@@ -330,12 +330,12 @@ public final class LogosGameTests {
         h.succeedWhen(() -> h.assertTrue(p.getHealth() >= 10, "the field should heal its caster: " + p.getHealth()));
     }
 
-    /** 渡魔 gives a player mana from the spell at 1.2 a point; a creature that holds no mana takes none, and costs nothing. */
+    /** 渡魔 gives a player mana from the spell at 1.1 a point; a creature that holds no mana takes none, and costs nothing. */
     private static void infuseGivesMana(GameTestHelper h) {
         ServerPlayer p = caster(h);
         mob(h, EntityType.COW, 4.5, 4.5);
         SpellInstance own = cast(h, p, "(spell :mana 50 (infuse caster 20))");
-        h.assertTrue(Math.abs(own.mana - 26) < 1e-6, "giving 20 should cost 24 of 50, left " + own.mana);
+        h.assertTrue(Math.abs(own.mana - 28) < 1e-6, "giving 20 should cost 22 of 50, left " + own.mana);
         h.assertTrue(Math.abs(PlayerMagic.of(p).mana - (10000 - 50 + 20)) < 1e-6, "the caster holds " + PlayerMagic.of(p).mana);
         SpellInstance cow = cast(h, p, "(spell :mana 50 (infuse (nearest :radius 8) 20))");
         h.assertTrue(cow.mana > 48, "a cow holds no mana, yet infusing it cost " + (50 - cow.mana));

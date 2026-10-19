@@ -587,7 +587,7 @@ final class AlchemyGameTests {
         h.succeedWhen(() -> h.assertTrue(dropped(h, LogosMod.SOUL_HUMUS_ITEM.get()).size() == 1, "soul humus did not drop itself"));
     }
 
-    /** 灌魔 fills an alchemy table through its side half, paying 1.2 a point for only what fits; a full table costs nothing. */
+    /** 灌魔 fills an alchemy table through its side half, paying 1.1 a point for only what fits; a full table costs nothing. */
     static void infuseBlockFillsTable(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);
         table.setMana(AlchemyTableBlockEntity.MAX_MANA - 30);
@@ -603,7 +603,7 @@ final class AlchemyGameTests {
         h.assertTrue(filling != null, "the cast was refused");
         h.assertTrue(table.mana() == AlchemyTableBlockEntity.MAX_MANA, "the table holds " + table.mana());
         var full = dev.logos.runtime.Casting.cast(p, dev.logos.runtime.Casting.compile(src), null, null);
-        h.assertTrue(Math.abs(full.mana - filling.mana - 36) < 1e-6, "filling 30 should cost 36 more than infusing a full table, not "
+        h.assertTrue(Math.abs(full.mana - filling.mana - 33) < 1e-6, "filling 30 should cost 33 more than infusing a full table, not "
                 + (full.mana - filling.mana));
         h.succeed();
     }

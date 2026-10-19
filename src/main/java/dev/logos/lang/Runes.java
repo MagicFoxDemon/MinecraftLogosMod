@@ -579,7 +579,7 @@ public final class Runes {
                 });
         def("infuse", EFFECT, ACTION).each("target").p("amount", NUM).stab(2)
                 .doc("渡魔：把本次法术的魔力渡给目标——玩家、魔力生命体、巨像这类能容纳魔力的生物。"
-                        + "只渡目标还装得下的部分，已满或不能容纳魔力的目标不花魔力。每渡 1 点耗 1.2 魔力")
+                        + "只渡目标还装得下的部分，已满或不能容纳魔力的目标不花魔力。每渡 1 点耗 1.1 魔力")
                 .exec((n, c) -> {
                     double amt = Math.max(0, num(n.arg(1), c));
                     for (LivingEntity t : living(n.arg(0), c)) {
@@ -1165,7 +1165,7 @@ public final class Runes {
                 });
         def("infuse-block", EFFECT, ACTION).eachBlock("at").p("amount", NUM).stab(2)
                 .doc("灌魔：把本次法术的魔力灌进该位置能容纳魔力的方块，如炼金术桌（两半都算）。"
-                        + "可以连接方块群，每处各灌一次、分别付费。只灌方块还装得下的部分，已满、容纳不了魔力或没有编辑权限的位置不花魔力。每灌 1 点耗 1.2 魔力")
+                        + "可以连接方块群，每处各灌一次、分别付费。只灌方块还装得下的部分，已满、容纳不了魔力或没有编辑权限的位置不花魔力。每灌 1 点耗 1.1 魔力")
                 .exec((n, c) -> {
                     double amt = Math.max(0, num(n.arg(1), c));
                     for (Place p : places(n.arg(0), c)) {
