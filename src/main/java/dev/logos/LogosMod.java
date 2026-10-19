@@ -245,7 +245,8 @@ public class LogosMod {
             "alchemy_table", dev.logos.block.AlchemyTableBlock::new,
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.WOOD).strength(2.5f).noOcclusion()
                     .sound(net.minecraft.world.level.block.SoundType.WOOD).pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
-    public static final DeferredItem<net.minecraft.world.item.BlockItem> ALCHEMY_TABLE_ITEM = ITEMS.registerSimpleBlockItem("alchemy_table", ALCHEMY_TABLE);
+    public static final DeferredItem<dev.logos.item.AlchemyTableItem> ALCHEMY_TABLE_ITEM = ITEMS.registerItem("alchemy_table",
+            p -> new dev.logos.item.AlchemyTableItem(ALCHEMY_TABLE.get(), p), p -> p.useBlockDescriptionPrefix());
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.AlchemyTableBlockEntity>> ALCHEMY_TABLE_BE =
             BLOCK_ENTITIES.register("alchemy_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.AlchemyTableBlockEntity::new, ALCHEMY_TABLE.get()));
