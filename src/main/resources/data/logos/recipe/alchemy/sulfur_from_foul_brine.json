@@ -7,5 +7,6 @@
   "results": [
     { "id": "logos:sulfur_powder", "count": 2 },
     { "id": "logos:niter_mother_liquor" }
-  ]
+  ],
+  "mana": 3
 }

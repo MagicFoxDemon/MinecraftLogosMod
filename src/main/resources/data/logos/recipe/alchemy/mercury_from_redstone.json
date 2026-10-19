@@ -8,5 +8,6 @@
   "results": [
     { "id": "logos:mercury_bottle" },
     { "id": "logos:sulfur_powder" }
-  ]
+  ],
+  "mana": 3
 }

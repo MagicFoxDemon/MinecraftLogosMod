@@ -10,6 +10,7 @@ import dev.logos.LogosMod;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.PlacementInfo;
@@ -27,28 +28,38 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * One alchemical process step ({@code data/<ns>/recipe/…json}, type {@code logos:alchemy}): what
  * a process card of {@link #process} turns its ingredients (and optionally some fluid, in mB) into.
  * Containers are written out: a bottled product lists the glass bottle it takes, and a bottled
- * ingredient that is used up lists the glass bottle it gives back among the results.
+ * ingredient that is used up lists the glass bottle it gives back among the results. {@code mana}
+ * is what one craft takes from the table (1 if left out): more for the steps that make stronger things.
  * <pre>{@code
  * {"type": "logos:alchemy", "process": "dissolve",
  *  "ingredients": [{"ingredient": "logos:starter_culture"}, {"ingredient": "minecraft:glass_bottle", "count": 3}],
  *  "fluid": {"ingredient": "minecraft:water", "amount": 750},
- *  "results": [{"id": "logos:raw_mash", "count": 3}]}
+ *  "results": [{"id": "logos:raw_mash", "count": 3}], "mana": 1}
  * }</pre>
  */
-public record AlchemyRecipe(Process process, List<SizedIngredient> ingredients, Optional<SizedFluidIngredient> fluid, List<ItemStackTemplate> results)
+public record AlchemyRecipe(Process process, List<SizedIngredient> ingredients, Optional<SizedFluidIngredient> fluid, List<ItemStackTemplate> results, int mana)
         implements Recipe<AlchemyRecipe.Input> {
+    /** Mana a craft takes when the recipe does not say. */
+    public static final int DEFAULT_MANA = 1;
     public static final MapCodec<AlchemyRecipe> MAP_CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
             Process.CODEC.fieldOf("process").forGetter(AlchemyRecipe::process),
             SizedIngredient.NESTED_CODEC.listOf(1, 9).fieldOf("ingredients").forGetter(AlchemyRecipe::ingredients),
             SizedFluidIngredient.CODEC.optionalFieldOf("fluid").forGetter(AlchemyRecipe::fluid),
-            ItemStackTemplate.CODEC.listOf(1, 9).fieldOf("results").forGetter(AlchemyRecipe::results)).apply(i, AlchemyRecipe::new));
+            ItemStackTemplate.CODEC.listOf(1, 9).fieldOf("results").forGetter(AlchemyRecipe::results),
+            ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("mana", DEFAULT_MANA).forGetter(AlchemyRecipe::mana)).apply(i, AlchemyRecipe::new));
     public static final StreamCodec<RegistryFriendlyByteBuf, AlchemyRecipe> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.fromCodec(Process.CODEC), AlchemyRecipe::process,
             SizedIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), AlchemyRecipe::ingredients,
             ByteBufCodecs.optional(SizedFluidIngredient.STREAM_CODEC), AlchemyRecipe::fluid,
             ItemStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), AlchemyRecipe::results,
+            ByteBufCodecs.VAR_INT, AlchemyRecipe::mana,
             AlchemyRecipe::new);
     public static final RecipeSerializer<AlchemyRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
+
+    /** A recipe taking the default mana a craft. */
+    public AlchemyRecipe(Process process, List<SizedIngredient> ingredients, Optional<SizedFluidIngredient> fluid, List<ItemStackTemplate> results) {
+        this(process, ingredients, fluid, results, DEFAULT_MANA);
+    }
 
     /** The items and the fluid on hand, for {@link #matches}; the table itself plans with {@link ProcessCard}. */
     public record Input(List<ItemStack> items, FluidStack fluid) implements RecipeInput {

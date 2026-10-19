@@ -46,7 +46,7 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * with what lies in its own slots and with the designated items in the table's storage. A
  * designation is exact: a potion of swiftness, not just any potion. Like a
  * furnace it starts by itself whenever some recipe of its process can be made, taking two seconds
- * and one mana per craft and the fewest materials. What it makes lands in its outputs and is passed
+ * a craft, the mana its recipe asks, and the fewest materials. What it makes lands in its outputs and is passed
  * on along its routes: kept, put in the product area, or handed to another card's inputs. Empty
  * bottles always go back to the raw-material area.
  */
@@ -54,7 +54,6 @@ public final class ProcessCard {
     public static final int SLOTS = 9;
     /** Two seconds a craft. */
     public static final int CRAFT_TICKS = 40;
-    public static final int MANA_PER_CRAFT = 1;
     /** Where outputs go: left in the card, or put in the table's product area; 0 and up are other cards. */
     public static final int KEEP = -2, PRODUCTS = -1;
     /** Containers given back (empty bottles, buckets) are not routed: they return to the raw-material area. */
@@ -212,7 +211,7 @@ public final class ProcessCard {
     /** One tick: work on the craft if it can be made (else stop), then pass outputs along. True when a craft was finished. */
     public boolean tick(AlchemyTableBlockEntity table) {
         boolean finished = false;
-        working = table.mana() >= MANA_PER_CRAFT && craft(table, false) != null;
+        working = affordable(table) != null;
         // While it cannot work, say why (looked into once a second; it is not needed every tick).
         Component why = working ? Component.empty() : table.getLevel().getGameTime() % 20 == 0 ? diagnose(table) : status;
         if (!why.equals(status)) {
@@ -222,12 +221,20 @@ public final class ProcessCard {
         if (!working) {
             progress = 0;
         } else if (++progress >= CRAFT_TICKS) {
-            finished = craft(table, true) != null;
-            if (finished) table.setMana(table.mana() - MANA_PER_CRAFT);
+            // Made only if the recipe it would make now is still paid for: its mana is what it takes.
+            AlchemyRecipe next = affordable(table);
+            finished = next != null && craft(table, true) != null;
+            if (finished) table.setMana(table.mana() - next.mana());
             progress = 0;
         }
         deliver(table);
         return finished;
+    }
+
+    /** The recipe the card would make now, if the table has the mana that recipe takes; else null. */
+    private @Nullable AlchemyRecipe affordable(AlchemyTableBlockEntity table) {
+        AlchemyRecipe next = craft(table, false);
+        return next != null && table.mana() >= next.mana() ? next : null;
     }
 
     /**
@@ -383,7 +390,9 @@ public final class ProcessCard {
      * than asking for some other recipe's ingredients.
      */
     private Component diagnose(AlchemyTableBlockEntity table) {
-        if (table.mana() < MANA_PER_CRAFT) return Component.translatable("logos.alchemy_card.no_mana");
+        if (table.mana() < AlchemyRecipe.DEFAULT_MANA) return Component.translatable("logos.alchemy_card.no_mana");
+        AlchemyRecipe ready = craft(table, false);
+        if (ready != null && table.mana() < ready.mana()) return Component.translatable("logos.alchemy_card.needs_mana", ready.mana());
         boolean anything = false;
         for (int i = 0; i < SLOTS; i++) anything |= !designated[i].isEmpty();
         if (!anything) return Component.translatable("logos.alchemy_card.idle");

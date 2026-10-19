@@ -119,6 +119,8 @@
   "logos.alchemy_card.fluid": "fluid",
   "logos.alchemy_card.output_full": "Outputs full",
   "logos.alchemy_card.no_mana": "Not enough mana",
+  "logos.alchemy_card.needs_mana": "Not enough mana: this step takes %s",
+  "logos.jei.alchemy_mana": "%s mana",
   "logos.alchemy_card.idle": "Put in or designate materials",
   "logos.process.ferment": "Fermentation",
   "logos.process.dissolve": "Dissolution",

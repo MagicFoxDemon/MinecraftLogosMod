@@ -8,5 +8,6 @@
   "results": [
     { "id": "logos:mana_shard", "count": 4 },
     { "id": "minecraft:glass_bottle" }
-  ]
+  ],
+  "mana": 40
 }

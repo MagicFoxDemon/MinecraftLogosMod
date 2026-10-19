@@ -332,7 +332,7 @@ final class AlchemyGameTests {
             h.assertTrue(count(table.productArea(), LogosMod.SULFUR_POWDER.get()) == 2, "the products hold " + count(table.productArea(), LogosMod.SULFUR_POWDER.get()) + " of 2 sulfur");
             h.assertTrue(count(settle.outputs(), LogosMod.SALTPETER.get()) == 2, "settling made " + count(settle.outputs(), LogosMod.SALTPETER.get()) + " of 2 saltpeter");
             h.assertTrue(count(table.rawArea(), Items.GLASS_BOTTLE) == 1, "the empty bottle did not come back to the raw area");
-            h.assertTrue(table.mana() == 8, "two crafts left " + table.mana() + " mana");
+            h.assertTrue(table.mana() == 6, "a distillation (3) and a settling (1) left " + table.mana() + " mana");
         });
     }
 
@@ -418,17 +418,29 @@ final class AlchemyGameTests {
         });
     }
 
-    /** Philosophers' mercury settles into rebis, and its bottle goes back to the raw materials. */
+    /**
+     * Philosophers' mercury settles into rebis for the 20 mana its recipe asks: with 10 the card waits
+     * and says how much it needs; with 30 it settles, leaving 10, and the bottle goes back to the raw materials.
+     */
     static void philosophersMercurySettlesIntoRebis(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);
         table.setMana(10);
         ProcessCard card = table.addCard(Process.SETTLE);
         put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
-        h.succeedWhen(() -> {
-            h.assertTrue(count(card.outputs(), LogosMod.REBIS.get()) == 1, "no rebis was settled");
-            h.assertTrue(count(table.items(), Items.GLASS_BOTTLE) == 1, "the bottle did not go back to the raw materials");
-            h.assertTrue(!card.made().contains(ItemResource.of(Items.GLASS_BOTTLE)), "the given-back bottle is listed as a product");
-        });
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(card.status().equals(net.minecraft.network.chat.Component.translatable("logos.alchemy_card.needs_mana", 20)),
+                        "the card says " + card.status().getString()))
+                .thenExecute(() -> {
+                    h.assertTrue(count(card.outputs(), LogosMod.REBIS.get()) == 0 && table.mana() == 10, "the card settled without the mana");
+                    table.setMana(30);
+                })
+                .thenWaitUntil(() -> {
+                    h.assertTrue(count(card.outputs(), LogosMod.REBIS.get()) == 1, "no rebis was settled");
+                    h.assertTrue(table.mana() == 10, "settling left " + table.mana() + " mana, not 10");
+                    h.assertTrue(count(table.items(), Items.GLASS_BOTTLE) == 1, "the bottle did not go back to the raw materials");
+                    h.assertTrue(!card.made().contains(ItemResource.of(Items.GLASS_BOTTLE)), "the given-back bottle is listed as a product");
+                })
+                .thenSucceed();
     }
 
     private static ItemStack powder(net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion> potion) {
@@ -438,7 +450,7 @@ final class AlchemyGameTests {
     /** Philosophers' mercury and three different powders dissolve into one potion of all three effects, rather than one powder back into its potion. */
     static void conjunctionJoinsPowders(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);
-        table.setMana(10);
+        table.setMana(20);
         table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
         ProcessCard card = table.addCard(Process.DISSOLVE);
         put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
@@ -459,6 +471,7 @@ final class AlchemyGameTests {
             h.assertTrue(contents.customName().equals(java.util.Optional.of(dev.logos.alchemy.SpecialRecipes.CONJUNCTION)), "the potion is not named a conjunction");
             h.assertTrue(count(card.inputs(), LogosMod.PHILOSOPHERS_MERCURY.get()) + count(card.inputs(), LogosMod.POTION_POWDER.get()) == 0, "the materials were not used up");
             h.assertTrue(count(card.inputs(), Items.GLASS_BOTTLE) == 3 && table.fluid().getAmount() == 1000, "the powder-back recipe ran too");
+            h.assertTrue(table.mana() == 5, "joining three powders left " + table.mana() + " mana, not 5");
         });
     }
 
@@ -467,7 +480,7 @@ final class AlchemyGameTests {
         AlchemyTableBlockEntity table = placeTable(h);
         h.assertTrue(table.addCard(Process.PURIFY) == null, "a purification card was laid with no cauldron beside the table");
         h.setBlock(MAIN.north(), Blocks.CAULDRON);
-        table.setMana(10);
+        table.setMana(50);
         ProcessCard card = table.addCard(Process.PURIFY);
         h.assertTrue(card != null, "no purification card with a cauldron beside the table");
         put(card.inputs(), new ItemStack(LogosMod.TAINTED_MANA_SHARD.get(), 4));
@@ -476,6 +489,7 @@ final class AlchemyGameTests {
             h.assertTrue(count(card.outputs(), LogosMod.MANA_SHARD.get()) == 4, "the card made " + count(card.outputs(), LogosMod.MANA_SHARD.get()) + " mana shards");
             h.assertTrue(count(card.inputs(), LogosMod.TAINTED_MANA_SHARD.get()) == 0 && bottlesBack(table, card) == 1, "the shards or the bottle are off");
             h.assertTrue(AlchemyTableBlockEntity.fuelValue(new ItemStack(LogosMod.MANA_SHARD.get())) == 500, "a mana shard is not 500 mana of fuel");
+            h.assertTrue(table.mana() == 10, "purifying left " + table.mana() + " mana, not 10");
         });
     }
 

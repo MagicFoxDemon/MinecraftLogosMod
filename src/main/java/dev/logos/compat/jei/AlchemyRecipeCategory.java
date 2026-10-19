@@ -20,8 +20,9 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 /**
- * One alchemy recipe in JEI: the process that makes it (its sign and name) above, the materials
- * and any tank fluid on the left, what comes out on the right. Materials are shown with their
+ * One alchemy recipe in JEI: the process that makes it (its sign and name) above, with the mana a
+ * craft takes across from it; the materials and any tank fluid on the left, what comes out on the
+ * right. Materials are shown with their
  * counts, and a used-up bottle given back is listed among the results, as the recipe writes it.
  */
 final class AlchemyRecipeCategory extends AbstractRecipeCategory<RecipeHolder<AlchemyRecipe>> {
@@ -60,6 +61,9 @@ final class AlchemyRecipeCategory extends AbstractRecipeCategory<RecipeHolder<Al
         var process = holder.value().process();
         builder.addText(Component.literal(process.symbol + " ").append(process.displayName()), WIDTH, TOP - 2)
                 .setPosition(0, 0).setColor(INK);
+        // What one craft takes from the table, across from the process name.
+        builder.addText(Component.translatable("logos.jei.alchemy_mana", holder.value().mana()), WIDTH, TOP - 2)
+                .setPosition(0, 0).setTextAlignment(mezz.jei.api.gui.placement.HorizontalAlignment.RIGHT).setColor(INK);
         builder.addRecipeArrowWidget().setPosition(64, TOP + SLOT);
     }
 }

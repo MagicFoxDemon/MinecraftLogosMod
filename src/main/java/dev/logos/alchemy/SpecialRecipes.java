@@ -49,17 +49,21 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
  * <li>Dissolving a potion powder with a bottle's worth of water fills a glass bottle with its potion again.</li>
  * <li>Dissolving does whatever a brewing stand does (vanilla's mixes and other mods'): a brewing
  * ingredient and three bottles of the potion it brews from make three of what it brews into. A
- * water base can be water from the tank (or water bottles) filling three empty bottles.</li>
+ * water base can be water from the tank (or water bottles) filling three empty bottles. A brew takes two mana.</li>
  * <li>Calcining burns whatever a furnace smelts (vanilla's recipes and other mods'): one of the
  * thing makes what the furnace would, with no fuel.</li>
  * <li>Dissolving two or three different potion powders with philosophers' mercury gives one potion
- * (调和药剂) of all their effects, in the mercury's bottle.</li>
+ * (调和药剂) of all their effects, in the mercury's bottle. It takes five mana for each powder.</li>
  * <li>Purifying washes whatever a water cauldron washes ({@link #wash}), for a bottle's worth of water.</li>
  * </ul>
  */
 public final class SpecialRecipes {
     /** Bottles brewed at once, as in a brewing stand. */
     private static final int BREW = 3;
+    /** Mana a brew takes: two, as three bottles come of it. */
+    private static final int BREW_MANA = 2;
+    /** Mana a conjunction takes for each powder joined. */
+    private static final int CONJUNCTION_MANA = 5;
     /** The potion name of a 调和药剂 (item.minecraft.potion.effect.logos_conjunction). */
     public static final String CONJUNCTION = "logos_conjunction";
 
@@ -124,7 +128,7 @@ public final class SpecialRecipes {
         }
         ItemStack potion = new ItemStack(Items.POTION);
         potion.set(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.empty(), List.copyOf(effects.values()), Optional.of(CONJUNCTION)));
-        return new AlchemyRecipe(Process.DISSOLVE, takes, Optional.empty(), List.of(ItemStackTemplate.fromNonEmptyStack(potion)));
+        return new AlchemyRecipe(Process.DISSOLVE, takes, Optional.empty(), List.of(ItemStackTemplate.fromNonEmptyStack(potion)), CONJUNCTION_MANA * powders.size());
     }
 
     /** For each thing at hand that a water cauldron washes, one of it washed, for a bottle's worth of water. */
@@ -198,14 +202,14 @@ public final class SpecialRecipes {
             SizedIngredient takes = new SizedIngredient(DataComponentIngredient.of(true, one), 1);
             if (brewing.hasMix(water, one)) {
                 out.add(new AlchemyRecipe(Process.DISSOLVE, List.of(takes, SizedIngredient.of(Items.GLASS_BOTTLE, BREW)),
-                        Optional.of(SizedFluidIngredient.of(Fluids.WATER, BREW * AlchemyTableBlock.BOTTLE)), brew(brewing, one, water)));
+                        Optional.of(SizedFluidIngredient.of(Fluids.WATER, BREW * AlchemyTableBlock.BOTTLE)), brew(brewing, one, water), BREW_MANA));
             }
             for (ItemResource base : things) {
                 ItemStack from = base.toStack(1);
                 // Water bases are covered above, bottles and all.
                 if (base == ingredient || ItemStack.isSameItemSameComponents(from, water) || !brewing.isInput(from) || !brewing.hasMix(from, one)) continue;
                 out.add(new AlchemyRecipe(Process.DISSOLVE, List.of(takes, new SizedIngredient(DataComponentIngredient.of(true, from), BREW)),
-                        Optional.empty(), brew(brewing, one, from)));
+                        Optional.empty(), brew(brewing, one, from), BREW_MANA));
             }
         }
         return out;
