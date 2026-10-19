@@ -121,6 +121,35 @@ public final class ManaField {
         return chunk == null ? 0 : mana(chunk);
     }
 
+    /** Flow below this (mana a second) is the trickle that makes up for leaking, not spreading. */
+    public static final double SURVEY_FLOW = 0.05;
+
+    /**
+     * The chunks within {@code r} of {@code pos}'s, row by row from the north-west, for a spreader's
+     * screen: first each one's spread mana in tenths (−1 where it is not loaded), then for each the
+     * sides mana is flowing out of it (bits: 1 east, 2 west, 4 south, 8 north). Reads only loaded chunks.
+     */
+    public static int[] survey(ServerLevel level, BlockPos pos, int r) {
+        int side = 2 * r + 1, n = side * side, cx = pos.getX() >> 4, cz = pos.getZ() >> 4;
+        int[] out = new int[2 * n];
+        int[][] steps = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int i = 0; i < n; i++) {
+            int x = cx - r + i % side, z = cz - r + i / side;
+            LevelChunk here = loaded(level, ChunkPos.pack(x, z));
+            if (here == null) {
+                out[i] = -1;
+                continue;
+            }
+            double mine = mana(here);
+            out[i] = (int) Math.round(mine * 10);
+            for (int d = 0; d < 4; d++) {
+                LevelChunk there = loaded(level, ChunkPos.pack(x + steps[d][0], z + steps[d][1]));
+                if (there != null && (mine - mana(there) - threshold(here, there)) * FLOW >= SURVEY_FLOW) out[n + i] |= 1 << d;
+            }
+        }
+        return out;
+    }
+
     /** Sets a loaded chunk's spread mana, keeping it among the worked chunks while it holds any. */
     static void set(ServerLevel level, LevelChunk chunk, double mana) {
         long key = chunk.getPos().pack();

@@ -95,6 +95,30 @@ final class ManaFieldGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * The spreader screen's survey: a full chunk reads 200 (in tenths) and flows out all four sides into
+     * empty neighbours; once settled, nothing reads as flowing any more.
+     */
+    static void surveyShowsFieldAndFlow(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        BlockPos center = faraway(h, 420, 1);
+        h.succeedWhen(() -> {
+            assertLoaded(h, center, 1);
+            ManaField.pour(level, center, ManaField.CAP);
+            int[] s = ManaField.survey(level, center, 1);
+            h.assertTrue(s.length == 18 && s[4] == 2000 && s[5] == 0, "the survey reads " + java.util.Arrays.toString(s));
+            h.assertTrue(s[9 + 4] == 15 && s[9 + 5] == 0, "a full chunk beside empty ones should flow all four ways: " + java.util.Arrays.toString(s));
+            for (int i = 0; i < 300; i++) {
+                ManaField.pour(level, center, ManaField.CAP);
+                ManaField.work(level);
+            }
+            ManaField.pour(level, center, ManaField.CAP);
+            int[] settled = ManaField.survey(level, center, 1);
+            h.assertTrue(java.util.Arrays.stream(settled, 9, 18).allMatch(b -> b == 0), "a settled field still reads as flowing: " + java.util.Arrays.toString(settled));
+            h.assertTrue(Math.abs(settled[5] - 1300) < 20, "the chunk beside it reads " + settled[5] + " tenths, not about 1300");
+        });
+    }
+
     /** Nine caput mortuum press into a block, and the block breaks back into nine. */
     static void caputMortuumBlockCrafts(GameTestHelper h) {
         var nine = net.minecraft.world.item.crafting.CraftingInput.of(3, 3,

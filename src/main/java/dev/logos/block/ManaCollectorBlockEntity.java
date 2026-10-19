@@ -24,6 +24,8 @@ public class ManaCollectorBlockEntity extends BlockEntity implements ManaVessel 
     public static final double PASS = 20;
 
     private double mana;
+    /** What it drew last second from ambient and from spread mana, for its screen's gauge. */
+    private double lastAmbient, lastSpread;
 
     public ManaCollectorBlockEntity(BlockPos pos, BlockState state) {
         super(LogosMod.MANA_COLLECTOR_BE.get(), pos, state);
@@ -32,6 +34,14 @@ public class ManaCollectorBlockEntity extends BlockEntity implements ManaVessel 
     @Override
     public double mana() {
         return mana;
+    }
+
+    public double lastAmbient() {
+        return lastAmbient;
+    }
+
+    public double lastSpread() {
+        return lastSpread;
     }
 
     @Override
@@ -55,6 +65,8 @@ public class ManaCollectorBlockEntity extends BlockEntity implements ManaVessel 
         double ambient = ManaField.drawAmbient(server, pos, room);
         double spread = ManaField.drawSpread(server, pos, room - ambient);
         collector.mana += ambient + spread;
+        collector.lastAmbient = ambient;
+        collector.lastSpread = spread;
         ManaVessel target = ManaInfusion.vesselAt(level, pos.relative(state.getValue(ManaCollectorBlock.FACING)));
         if (target != null && target != collector) collector.mana -= target.receiveMana(Math.min(PASS, collector.mana));
         if (ambient + spread > 0 || target != null) collector.setChanged();

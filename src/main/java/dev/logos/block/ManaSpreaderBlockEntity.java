@@ -43,6 +43,13 @@ public class ManaSpreaderBlockEntity extends BlockEntity implements ManaVessel {
         super(LogosMod.MANA_SPREADER_BE.get(), pos, state);
     }
 
+    /** What it poured into the air last second, for its screen. */
+    private double lastPoured;
+
+    public double lastPoured() {
+        return lastPoured;
+    }
+
     /** The drawer: hoppers and pipes put fuel in here. */
     public ItemStacksResourceHandler fuel() {
         return fuel;
@@ -78,6 +85,7 @@ public class ManaSpreaderBlockEntity extends BlockEntity implements ManaVessel {
             spreader.mana += value;
         }
         double poured = ManaField.pour(server, pos, Math.min(POUR, spreader.mana));
+        spreader.lastPoured = poured;
         if (poured > 0) {
             spreader.mana -= poured;
             spreader.setChanged();
