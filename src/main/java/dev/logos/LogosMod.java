@@ -235,6 +235,26 @@ public class LogosMod {
             BLOCK_ENTITIES.register("alchemy_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.AlchemyTableBlockEntity::new, ALCHEMY_TABLE.get()));
 
+    // Mana in the air (dev.logos.runtime.ManaField): spreaders pour it out, collectors take it in and pass it on.
+    /** 魔力散布器: burns mana fuel into the air of its chunk. */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaSpreaderBlock> MANA_SPREADER = BLOCKS.registerBlock(
+            "mana_spreader", dev.logos.block.ManaSpreaderBlock::new,
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(2.5f).noOcclusion()
+                    .sound(net.minecraft.world.level.block.SoundType.WOOD));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> MANA_SPREADER_ITEM = ITEMS.registerSimpleBlockItem("mana_spreader", MANA_SPREADER);
+    public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.ManaSpreaderBlockEntity>> MANA_SPREADER_BE =
+            BLOCK_ENTITIES.register("mana_spreader", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
+                    dev.logos.block.ManaSpreaderBlockEntity::new, MANA_SPREADER.get()));
+    /** 魔力收集器: draws mana from the air and passes it to the block it faces. */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaCollectorBlock> MANA_COLLECTOR = BLOCKS.registerBlock(
+            "mana_collector", dev.logos.block.ManaCollectorBlock::new,
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(2.5f).noOcclusion()
+                    .sound(net.minecraft.world.level.block.SoundType.WOOD));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> MANA_COLLECTOR_ITEM = ITEMS.registerSimpleBlockItem("mana_collector", MANA_COLLECTOR);
+    public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.ManaCollectorBlockEntity>> MANA_COLLECTOR_BE =
+            BLOCK_ENTITIES.register("mana_collector", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
+                    dev.logos.block.ManaCollectorBlockEntity::new, MANA_COLLECTOR.get()));
+
     public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeType<?>> RECIPE_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.RECIPE_TYPE, MODID);
     public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeSerializer<?>> RECIPE_SERIALIZERS =
@@ -360,6 +380,8 @@ public class LogosMod {
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
                 out.accept(ALCHEMY_TABLE_ITEM.get());
+                out.accept(MANA_COLLECTOR_ITEM.get());
+                out.accept(MANA_SPREADER_ITEM.get());
                 for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
             }).build());
 
@@ -376,6 +398,15 @@ public class LogosMod {
             () -> AttachmentType.builder(() -> new dev.logos.runtime.Anchors()).serialize(dev.logos.runtime.Anchors.CODEC).copyOnDeath().build());
     public static final Supplier<AttachmentType<dev.logos.runtime.Attunement>> ATTUNEMENT = ATTACHMENTS.register("attunement",
             () -> AttachmentType.builder(() -> new dev.logos.runtime.Attunement()).serialize(dev.logos.runtime.Attunement.CODEC).copyOnDeath().build());
+    /** On a chunk: the spread mana in its air (dev.logos.runtime.ManaField); saved only while there is some. */
+    public static final Supplier<AttachmentType<Double>> MANA_FIELD = ATTACHMENTS.register("mana_field",
+            () -> AttachmentType.builder(() -> 0.0).serialize(com.mojang.serialization.Codec.DOUBLE.fieldOf("mana"), v -> v > 0).build());
+
+    public static final DeferredRegister<net.minecraft.core.particles.ParticleType<?>> PARTICLE_TYPES =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.PARTICLE_TYPE, MODID);
+    /** A mote of mana drifting in the air (dev.logos.client.ManaMote). */
+    public static final Supplier<net.minecraft.core.particles.SimpleParticleType> MANA_MOTE =
+            PARTICLE_TYPES.register("mana_mote", () -> new net.minecraft.core.particles.SimpleParticleType(false));
 
     /** Passive spells triggered inside damage events run on the next tick, outside the event. */
     private static final List<Runnable> DEFERRED = new ArrayList<>();
@@ -392,6 +423,7 @@ public class LogosMod {
         TABS.register(modBus);
         COMPONENTS.register(modBus);
         ATTACHMENTS.register(modBus);
+        PARTICLE_TYPES.register(modBus);
         ATTRIBUTES.register(modBus);
         modBus.addListener(this::registerPayloads);
         modBus.addListener((BuildCreativeModeTabContentsEvent e) -> {
@@ -413,6 +445,9 @@ public class LogosMod {
                 var table = dev.logos.block.AlchemyTableBlock.table(level, pos, state);
                 return table == null ? null : table.automation();
             }, ALCHEMY_TABLE.get());
+            // A spreader's drawer takes fuel from hoppers and pipes.
+            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
+                    be instanceof dev.logos.block.ManaSpreaderBlockEntity spreader ? spreader.fuel() : null, MANA_SPREADER.get());
             e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Fluid.BLOCK, (level, pos, state, be, side) -> {
                 var table = dev.logos.block.AlchemyTableBlock.table(level, pos, state);
                 return table == null ? null : table.tank();
@@ -461,6 +496,7 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
         registrar.playToClient(dev.logos.net.ChargePayload.TYPE, dev.logos.net.ChargePayload.CODEC);
         registrar.playToClient(dev.logos.net.AreaWeatherPayload.TYPE, dev.logos.net.AreaWeatherPayload.CODEC);
+        registrar.playToClient(dev.logos.net.ManaFieldPayload.TYPE, dev.logos.net.ManaFieldPayload.CODEC);
         registrar.playToServer(dev.logos.net.AnchorEditPayload.TYPE, dev.logos.net.AnchorEditPayload.CODEC, dev.logos.net.AnchorEditPayload::handle);
         registrar.playToServer(dev.logos.net.AlchemyCardPayload.TYPE, dev.logos.net.AlchemyCardPayload.CODEC, dev.logos.net.AlchemyCardPayload::handle);
     }

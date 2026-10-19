@@ -1,0 +1,50 @@
+{
+  "variants": {
+    "active=false,facing=north": {
+      "model": "logos:block/mana_collector_idle"
+    },
+    "active=true,facing=north": {
+      "model": "logos:block/mana_collector"
+    },
+    "active=false,facing=east": {
+      "model": "logos:block/mana_collector_idle",
+      "y": 90
+    },
+    "active=true,facing=east": {
+      "model": "logos:block/mana_collector",
+      "y": 90
+    },
+    "active=false,facing=south": {
+      "model": "logos:block/mana_collector_idle",
+      "y": 180
+    },
+    "active=true,facing=south": {
+      "model": "logos:block/mana_collector",
+      "y": 180
+    },
+    "active=false,facing=west": {
+      "model": "logos:block/mana_collector_idle",
+      "y": 270
+    },
+    "active=true,facing=west": {
+      "model": "logos:block/mana_collector",
+      "y": 270
+    },
+    "active=false,facing=up": {
+      "model": "logos:block/mana_collector_idle",
+      "x": 270
+    },
+    "active=true,facing=up": {
+      "model": "logos:block/mana_collector",
+      "x": 270
+    },
+    "active=false,facing=down": {
+      "model": "logos:block/mana_collector_idle",
+      "x": 90
+    },
+    "active=true,facing=down": {
+      "model": "logos:block/mana_collector",
+      "x": 90
+    }
+  }
+}

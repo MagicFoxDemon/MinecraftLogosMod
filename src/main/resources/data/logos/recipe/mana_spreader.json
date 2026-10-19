@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "CGC",
+    "SDS",
+    "CPC"
+  ],
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "G": "minecraft:glass",
+    "S": "logos:mana_shard",
+    "D": "logos:adhesive",
+    "P": "minecraft:dark_oak_planks"
+  },
+  "result": {
+    "id": "logos:mana_spreader"
+  }
+}

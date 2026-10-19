@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "PGP",
+    "CAC",
+    "PDP"
+  ],
+  "key": {
+    "P": "minecraft:dark_oak_planks",
+    "G": "minecraft:glass",
+    "C": "minecraft:copper_ingot",
+    "A": "minecraft:amethyst_shard",
+    "D": "logos:adhesive"
+  },
+  "result": {
+    "id": "logos:mana_collector"
+  }
+}

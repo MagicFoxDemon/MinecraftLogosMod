@@ -31,7 +31,13 @@ public final class LogosClient {
         event.register(dev.logos.net.AnchorsPayload.TYPE, (payload, ctx) -> ClientAnchors.receive(payload));
         event.register(dev.logos.net.ChargePayload.TYPE, (payload, ctx) -> ClientCharges.receive(payload));
         event.register(dev.logos.net.AreaWeatherPayload.TYPE, (payload, ctx) -> dev.logos.runtime.AreaWeather.receive(payload));
+        event.register(dev.logos.net.ManaFieldPayload.TYPE, (payload, ctx) -> dev.logos.runtime.ManaField.receive(ctx.player().level(), payload));
         event.register(dev.logos.net.LifeformCorePayload.TYPE, (payload, ctx) -> dev.logos.runtime.Lifeforms.opening(ctx.player(), payload.entityId()));
+    }
+
+    @SubscribeEvent
+    static void onRegisterParticles(net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(LogosMod.MANA_MOTE.get(), ManaMote.Provider::new);
     }
 
     @SubscribeEvent
