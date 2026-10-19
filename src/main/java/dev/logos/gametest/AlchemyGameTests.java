@@ -587,6 +587,27 @@ final class AlchemyGameTests {
         h.succeedWhen(() -> h.assertTrue(dropped(h, LogosMod.SOUL_HUMUS_ITEM.get()).size() == 1, "soul humus did not drop itself"));
     }
 
+    /** 灌魔 fills an alchemy table through its side half, paying 1.2 a point for only what fits; a full table costs nothing. */
+    static void infuseBlockFillsTable(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(AlchemyTableBlockEntity.MAX_MANA - 30);
+        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        PlayerMagic m = PlayerMagic.of(p);
+        m.maxMana = m.mana = 10000;
+        m.trace = false;
+        // South of the side half, facing north: two blocks ahead of the body is the side half.
+        Vec3 at = h.absoluteVec(new Vec3(SIDE.getX() + 0.5, 2, SIDE.getZ() + 2.5));
+        p.snapTo(at.x, at.y, at.z, 180, 0);
+        String src = "(spell :mana 100 (infuse-block (ahead 2 :from (pos-of caster)) 50))";
+        var filling = dev.logos.runtime.Casting.cast(p, dev.logos.runtime.Casting.compile(src), null, null);
+        h.assertTrue(filling != null, "the cast was refused");
+        h.assertTrue(table.mana() == AlchemyTableBlockEntity.MAX_MANA, "the table holds " + table.mana());
+        var full = dev.logos.runtime.Casting.cast(p, dev.logos.runtime.Casting.compile(src), null, null);
+        h.assertTrue(Math.abs(full.mana - filling.mana - 36) < 1e-6, "filling 30 should cost 36 more than infusing a full table, not "
+                + (full.mana - filling.mana));
+        h.succeed();
+    }
+
     /** A bottle of mercury is poison: drinking it poisons and sickens, and leaves the glass bottle. */
     static void mercuryIsPoison(GameTestHelper h) {
         var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new Vec3(1.5, 2, 1.5), net.minecraft.world.entity.EntitySpawnReason.COMMAND);

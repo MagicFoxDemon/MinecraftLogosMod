@@ -155,6 +155,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "infuse", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Infuse extends RuneNode {
+        public Infuse() {
+            super("infuse");
+        }
+    }
+
     @NodeAttribute(name = "shield", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Shield extends RuneNode {
         public Shield() {
@@ -736,6 +743,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "infuse_block", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class InfuseBlock extends RuneNode {
+        public InfuseBlock() {
+            super("infuse-block");
+        }
+    }
+
     @NodeAttribute(name = "each_block", group = LOGIC, graphTypes = SpellGraph.class)
     public static class EachBlock extends RuneNode {
         public EachBlock() {
@@ -791,6 +805,7 @@ public final class RuneNodes {
         BY_RUNE.put("break-block", BreakBlock::new);
         BY_RUNE.put("lightning", LightningStrike::new);
         BY_RUNE.put("set-fire", SetFire::new);
+        BY_RUNE.put("infuse-block", InfuseBlock::new);
         BY_RUNE.put("each-block", EachBlock::new);
         BY_RUNE.put("block-is", BlockIs::new);
         BY_RUNE.put("is", Is::new);
@@ -815,6 +830,7 @@ public final class RuneNodes {
         BY_RUNE.put("damage", Damage::new);
         BY_RUNE.put("drain", Drain::new);
         BY_RUNE.put("heal", Heal::new);
+        BY_RUNE.put("infuse", Infuse::new);
         BY_RUNE.put("shield", Shield::new);
         BY_RUNE.put("ignite", Ignite::new);
         BY_RUNE.put("freeze", Freeze::new);

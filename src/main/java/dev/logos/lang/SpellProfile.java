@@ -195,6 +195,11 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = argNum(n, 1, 4) * 1.5 * count(n.arg(0));
                     found.add(Intent.WARD);
                 }
+                case "infuse", "infuse-block" -> {
+                    own = argNum(n, 1, 10) * dev.logos.runtime.ManaInfusion.COST * count(n.arg(0));
+                    assumptions.add("渡魔、灌魔按目标装得下全部魔力估算；装不下的部分不花魔力");
+                    found.add(Intent.UTILITY);
+                }
                 case "ignite" -> {
                     own = argNum(n, 1, 3) * 0.6 * count(n.arg(0));
                     found.add(group || inGroup ? Intent.AREA : Intent.STRIKE);

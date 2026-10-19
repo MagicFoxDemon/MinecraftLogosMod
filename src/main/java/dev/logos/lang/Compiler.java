@@ -540,6 +540,7 @@ public final class Compiler {
                 case "freeze", "freeze-all" -> Element.FROST;
                 case "drain", "execute" -> Element.VOID;
                 case "heal", "shield" -> Element.LIFE;
+                case "infuse", "infuse-block" -> Element.ARCANE;
                 default -> null;
             };
             if (e != null) counts.merge(e, 1, Integer::sum);

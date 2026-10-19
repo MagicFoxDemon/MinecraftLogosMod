@@ -273,6 +273,17 @@ final class RuneEmblems {
                 "#+++++++#",
                 "#+++++++#",
                 ".#######."}, "heal", "potion");
+        // A drop of mana falling into a bowl that fills: mana given away.
+        put(new String[]{
+                "....#....",
+                "...#+#...",
+                "..#+++#..",
+                "...###...",
+                "....+....",
+                "#...+...#",
+                "#.+++++.#",
+                "#+++++++#",
+                ".#######."}, "infuse", "infuse-block");
         put(new String[]{
                 "#########",
                 "#+++#+++#",
