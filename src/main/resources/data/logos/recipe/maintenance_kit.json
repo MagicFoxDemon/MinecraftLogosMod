@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "logos:caput_mortuum",
+    "logos:caput_mortuum",
+    "logos:adhesive",
+    "minecraft:copper_ingot"
+  ],
+  "result": {
+    "id": "logos:maintenance_kit"
+  }
+}
