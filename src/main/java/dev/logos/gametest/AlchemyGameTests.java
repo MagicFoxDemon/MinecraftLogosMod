@@ -525,6 +525,58 @@ final class AlchemyGameTests {
         });
     }
 
+    /** With a blast furnace beside the table, blackstone calcines into caput mortuum for two mana. */
+    static void blackstoneCalcinesToCaputMortuum(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        h.setBlock(SIDE.east(), Blocks.BLAST_FURNACE);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.CALCINE);
+        put(card.inputs(), new ItemStack(Items.BLACKSTONE));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.CAPUT_MORTUUM.get()) == 1, "no caput mortuum was calcined");
+            h.assertTrue(table.mana() == 8, "calcining left " + table.mana() + " mana, not 8");
+        });
+    }
+
+    /** Caput mortuum, soul soil and starter culture rot into three soul humus for five mana. */
+    static void caputMortuumRotsIntoSoulHumus(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.FERMENT);
+        put(card.inputs(), new ItemStack(LogosMod.CAPUT_MORTUUM.get(), 3));
+        put(card.inputs(), new ItemStack(Items.SOUL_SOIL, 2));
+        put(card.inputs(), new ItemStack(LogosMod.STARTER_CULTURE.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.SOUL_HUMUS_ITEM.get()) == 3, "the card made " + count(card.outputs(), LogosMod.SOUL_HUMUS_ITEM.get()) + " soul humus");
+            h.assertTrue(table.mana() == 5, "rotting left " + table.mana() + " mana, not 5");
+        });
+    }
+
+    /** With a cauldron beside the table, four soul humus, rebis and philosophers' mercury wash white into four chalk, with a bucket's worth of water. */
+    static void soulHumusWashesIntoChalk(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        h.setBlock(MAIN.north(), Blocks.CAULDRON);
+        table.setMana(40);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
+        ProcessCard card = table.addCard(Process.PURIFY);
+        put(card.inputs(), new ItemStack(LogosMod.SOUL_HUMUS_ITEM.get(), 4));
+        put(card.inputs(), new ItemStack(LogosMod.REBIS.get()));
+        put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.CHALK.get()) == 4, "the card made " + count(card.outputs(), LogosMod.CHALK.get()) + " chalk");
+            h.assertTrue(table.fluid().isEmpty() && bottlesBack(table, card) == 1, "the water or the bottle are off");
+            h.assertTrue(table.mana() == 10, "washing left " + table.mana() + " mana, not 10");
+        });
+    }
+
+    /** Soul humus is a block that breaks back into itself, and Soul Speed quickens on it as on soul soil. */
+    static void soulHumusDropsItself(GameTestHelper h) {
+        h.setBlock(MAIN, LogosMod.SOUL_HUMUS.get());
+        h.assertTrue(h.getBlockState(MAIN).is(net.minecraft.tags.BlockTags.SOUL_SPEED_BLOCKS), "Soul Speed does not count soul humus");
+        h.getLevel().destroyBlock(h.absolutePos(MAIN), true);
+        h.succeedWhen(() -> h.assertTrue(dropped(h, LogosMod.SOUL_HUMUS_ITEM.get()).size() == 1, "soul humus did not drop itself"));
+    }
+
     /** A bottle of mercury is poison: drinking it poisons and sickens, and leaves the glass bottle. */
     static void mercuryIsPoison(GameTestHelper h) {
         var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new Vec3(1.5, 2, 1.5), net.minecraft.world.entity.EntitySpawnReason.COMMAND);

@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:caput_mortuum", "count": 3 },
+    { "ingredient": "minecraft:soul_soil", "count": 2 },
+    { "ingredient": "logos:starter_culture" }
+  ],
+  "results": [
+    { "id": "logos:soul_humus", "count": 3 }
+  ],
+  "mana": 5
+}

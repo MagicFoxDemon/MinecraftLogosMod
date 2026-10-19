@@ -1,0 +1,15 @@
+{
+  "type": "logos:alchemy",
+  "process": "purify",
+  "ingredients": [
+    { "ingredient": "logos:soul_humus", "count": 4 },
+    { "ingredient": "logos:rebis" },
+    { "ingredient": "logos:philosophers_mercury" }
+  ],
+  "fluid": { "ingredient": "minecraft:water", "amount": 1000 },
+  "results": [
+    { "id": "logos:chalk", "count": 4 },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 30
+}
