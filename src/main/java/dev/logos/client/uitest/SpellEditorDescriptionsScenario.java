@@ -134,6 +134,11 @@ public class SpellEditorDescriptionsScenario implements UIScenario {
                 .step("select damage description", ctx -> selectResult(ctx, "伤害"))
                 .ticks(5)
                 .screenshot("damage_description")
+                .step("find infuse", ctx -> view(ctx).itemLibrary.searchField.setValue("灌魔", true))
+                .ticks(5)
+                .step("select infuse description", ctx -> selectResult(ctx, "灌魔"))
+                .ticks(5)
+                .screenshot("infuse_block_description")
                 .closeScreen()
                 .step("restore language", ctx -> {
                     var mc = Minecraft.getInstance();

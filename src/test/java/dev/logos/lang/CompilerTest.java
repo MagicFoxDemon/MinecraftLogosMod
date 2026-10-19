@@ -309,6 +309,17 @@ class CompilerTest {
     }
 
     @Test
+    void infusingIsUtilityPricedAtOnePointTwoAPoint() {
+        Spell s = Compiler.compile("(spell :mana 30 (infuse caster 20))");
+        assertEquals(Intent.UTILITY, s.profile().primary());
+        assertEquals(24, s.profile().estimate(), 1e-9);
+        Spell block = Compiler.compile("(spell :mana 30 (infuse-block (look-block) 10))");
+        assertEquals(12 + 1, block.profile().estimate(), 1e-9); // look-block itself is 1
+        assertError("(infuse-block caster 10)", "插槽形状不符");
+        assertError("(infuse (look-block) 10)", "插槽形状不符");
+    }
+
+    @Test
     void lightningIsAStrikePricedPerBolt() {
         Spell s = Compiler.compile("(spell :mana 50 (lightning (pos-of (foe))))");
         assertEquals(Intent.STRIKE, s.profile().primary());

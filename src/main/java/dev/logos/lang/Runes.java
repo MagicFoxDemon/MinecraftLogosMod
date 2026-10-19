@@ -23,6 +23,8 @@ import dev.logos.runtime.Group;
 import dev.logos.runtime.Filter;
 import dev.logos.runtime.Lightning;
 import dev.logos.runtime.Limits;
+import dev.logos.runtime.ManaInfusion;
+import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.Place;
 import dev.logos.runtime.ProjectileObj;
 import dev.logos.runtime.SpellInstance;
@@ -572,6 +574,20 @@ public final class Runes {
                         if (!c.inst().spend(amt * 1.5, "shield")) return null;
                         Effects.shield(t, amt);
                         Vfx.burst(lv(t), t, null, Element.LIFE, Vfx.Burst.WARD);
+                    }
+                    return null;
+                });
+        def("infuse", EFFECT, ACTION).each("target").p("amount", NUM).stab(2)
+                .doc("渡魔：把本次法术的魔力渡给目标——玩家、魔力生命体、巨像这类能容纳魔力的生物。"
+                        + "只渡目标还装得下的部分，已满或不能容纳魔力的目标不花魔力。每渡 1 点耗 1.2 魔力")
+                .exec((n, c) -> {
+                    double amt = Math.max(0, num(n.arg(1), c));
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        double give = Math.min(amt, ManaInfusion.room(t));
+                        if (give <= 0) continue;
+                        if (!c.inst().spend(give * ManaInfusion.COST, "infuse")) return null;
+                        ManaInfusion.give(t, give);
+                        if (t.level() == c.inst().caster.level()) Vfx.line(lv(t), Targeting.center(c.inst().caster), Targeting.center(t), Element.ARCANE);
                     }
                     return null;
                 });
@@ -1144,6 +1160,24 @@ public final class Runes {
                         if (!BaseFireBlock.canBePlacedAt(p.level(), pos, Direction.UP) || !mayEdit(c, Place.center(p.level(), pos))) continue;
                         if (!c.inst().spend(2, "set-fire")) return null;
                         p.level().setBlock(pos, BaseFireBlock.getState(p.level(), pos), Block.UPDATE_ALL);
+                    }
+                    return null;
+                });
+        def("infuse-block", EFFECT, ACTION).eachBlock("at").p("amount", NUM).stab(2)
+                .doc("灌魔：把本次法术的魔力灌进该位置能容纳魔力的方块，如炼金术桌（两半都算）。"
+                        + "可以连接方块群，每处各灌一次、分别付费。只灌方块还装得下的部分，已满、容纳不了魔力或没有编辑权限的位置不花魔力。每灌 1 点耗 1.2 魔力")
+                .exec((n, c) -> {
+                    double amt = Math.max(0, num(n.arg(1), c));
+                    for (Place p : places(n.arg(0), c)) {
+                        Place at = Place.center(p.level(), p.block());
+                        ManaVessel vessel = ManaInfusion.vesselAt(p.level(), p.block());
+                        if (vessel == null || !mayEdit(c, at)) continue;
+                        double give = Math.min(amt, vessel.maxMana() - vessel.mana());
+                        if (give <= 0) continue;
+                        if (!c.inst().spend(give * ManaInfusion.COST, "infuse-block")) return null;
+                        vessel.receiveMana(give);
+                        c.inst().touch(p.level(), at.pos());
+                        if (p.level() == c.inst().caster.level()) Vfx.line(p.level(), Targeting.center(c.inst().caster), at.pos(), Element.ARCANE);
                     }
                     return null;
                 });
