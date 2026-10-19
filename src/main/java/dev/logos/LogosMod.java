@@ -188,6 +188,18 @@ public class LogosMod {
     /** 雷比斯: the "double thing" philosophers' mercury settles into; it raises a page to the transmuted grade. */
     public static final DeferredItem<net.minecraft.world.item.Item> REBIS = ITEMS.registerSimpleItem("rebis",
             p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+
+    // Albedo, the whitening: blackstone burnt to dead ash, rotted with soul soil, washed white with philosophers' mercury.
+    /** 死灰 (caput mortuum): what calcining blackstone leaves, the dead residue the whitening starts from. */
+    public static final DeferredItem<net.minecraft.world.item.Item> CAPUT_MORTUUM = ITEMS.registerSimpleItem("caput_mortuum");
+    /** 腐殖灵土: dead ash rotted with soul soil. A soil of its own; herbs may be grown in it later. */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<net.minecraft.world.level.block.Block> SOUL_HUMUS = BLOCKS.registerSimpleBlock("soul_humus",
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(0.5f)
+                    .sound(net.minecraft.world.level.block.SoundType.SOUL_SOIL));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> SOUL_HUMUS_ITEM = ITEMS.registerSimpleBlockItem("soul_humus", SOUL_HUMUS);
+    /** 白垩: soul humus washed white with rebis and philosophers' mercury; it raises a page to the chalk grade. */
+    public static final DeferredItem<net.minecraft.world.item.Item> CHALK = ITEMS.registerSimpleItem("chalk",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
     /** 药粉: a potion settled into powder; eaten for the potion's effects, and dissolved back into it. */
     public static final DeferredItem<dev.logos.item.PotionPowderItem> POTION_POWDER = ITEMS.registerItem("potion_powder", dev.logos.item.PotionPowderItem::new,
             p -> p.component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -339,6 +351,9 @@ public class LogosMod {
                 out.accept(MERCURY_BOTTLE.get());
                 out.accept(PHILOSOPHERS_MERCURY.get());
                 out.accept(REBIS.get());
+                out.accept(CAPUT_MORTUUM.get());
+                out.accept(SOUL_HUMUS_ITEM.get());
+                out.accept(CHALK.get());
                 out.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
                 out.accept(MANA_LEECH_SPAWN_EGG.get());
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) out.accept(egg.get());

@@ -1,0 +1,11 @@
+{
+  "type": "logos:alchemy",
+  "process": "calcine",
+  "ingredients": [
+    { "ingredient": "minecraft:blackstone" }
+  ],
+  "results": [
+    { "id": "logos:caput_mortuum" }
+  ],
+  "mana": 2
+}
