@@ -370,7 +370,10 @@ public class LogosMod {
             net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT,
                     net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "formula_immolation"));
 
-    public static final Supplier<net.minecraft.world.item.CreativeModeTab> TAB = TABS.register("logos", () -> net.minecraft.world.item.CreativeModeTab.builder()
+    // Four creative tabs: spell supplies, the example spells, the Great Work (alchemy) and spawn eggs.
+    /** 术式用品: wands, pages and the tables and blocks that write, copy and cast them. */
+    public static final DeferredHolder<net.minecraft.world.item.CreativeModeTab, net.minecraft.world.item.CreativeModeTab> TAB = TABS.register("logos",
+            () -> net.minecraft.world.item.CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.logos"))
             .icon(() -> new ItemStack(INSCRIBED_PAGE.get()))
             .displayItems((params, out) -> {
@@ -381,8 +384,31 @@ public class LogosMod {
                 for (PageTier t : PageTier.values()) out.accept(t.blank());
                 out.accept(SPELL_EMBER.get());
                 out.accept(SPELL_CODEX.get());
-                out.accept(ANCHOR_NAIL.get());
+                out.accept(INSCRIPTION_TABLE_ITEM.get());
+                out.accept(COPY_TABLE_ITEM.get());
+                out.accept(SPELL_EMITTER_ITEM.get());
+                out.accept(MANA_COLLECTOR_ITEM.get());
+                out.accept(MANA_SPREADER_ITEM.get());
+            }).build());
+    /** 术式范本: every example spell, written on the page grade that fits it. */
+    public static final DeferredHolder<net.minecraft.world.item.CreativeModeTab, net.minecraft.world.item.CreativeModeTab> EXAMPLES_TAB = TABS.register("logos_examples",
+            () -> net.minecraft.world.item.CreativeModeTab.builder()
+            .title(Component.translatable("itemGroup.logos_examples"))
+            .icon(() -> new ItemStack(PAGES.get(PageTier.CRYSTAL).inscribed().get()))
+            .withTabsBefore(TAB.getKey())
+            .displayItems((params, out) -> {
+                for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
+            }).build());
+    /** 伟大功业: the alchemy table, its materials and products, the dividers and the anchor nail. */
+    public static final DeferredHolder<net.minecraft.world.item.CreativeModeTab, net.minecraft.world.item.CreativeModeTab> OPUS_TAB = TABS.register("logos_opus",
+            () -> net.minecraft.world.item.CreativeModeTab.builder()
+            .title(Component.translatable("itemGroup.logos_opus"))
+            .icon(() -> new ItemStack(PHILOSOPHERS_MERCURY.get()))
+            .withTabsBefore(EXAMPLES_TAB.getKey())
+            .displayItems((params, out) -> {
+                out.accept(ALCHEMY_TABLE_ITEM.get());
                 out.accept(DIVIDERS_ITEM.get());
+                out.accept(ANCHOR_NAIL.get());
                 out.accept(COLOSSUS_HEART.get());
                 out.accept(DISORDER_CRYSTAL.get());
                 out.accept(MAINTENANCE_KIT.get());
@@ -402,16 +428,17 @@ public class LogosMod {
                 out.accept(CAPUT_MORTUUM_BLOCK_ITEM.get());
                 out.accept(SOUL_HUMUS_ITEM.get());
                 out.accept(CHALK.get());
+            }).build());
+    /** 刷怪蛋: the colossus, the mana leech and the five lifeform levels. */
+    public static final DeferredHolder<net.minecraft.world.item.CreativeModeTab, net.minecraft.world.item.CreativeModeTab> SPAWN_EGGS_TAB = TABS.register("logos_spawn_eggs",
+            () -> net.minecraft.world.item.CreativeModeTab.builder()
+            .title(Component.translatable("itemGroup.logos_spawn_eggs"))
+            .icon(() -> new ItemStack(MANA_LIFEFORM_SPAWN_EGGS.getLast().get()))
+            .withTabsBefore(OPUS_TAB.getKey())
+            .displayItems((params, out) -> {
                 out.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
                 out.accept(MANA_LEECH_SPAWN_EGG.get());
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) out.accept(egg.get());
-                out.accept(INSCRIPTION_TABLE_ITEM.get());
-                out.accept(COPY_TABLE_ITEM.get());
-                out.accept(ALCHEMY_TABLE_ITEM.get());
-                out.accept(MANA_COLLECTOR_ITEM.get());
-                out.accept(MANA_SPREADER_ITEM.get());
-                out.accept(SPELL_EMITTER_ITEM.get());
-                for (var e : dev.logos.lang.Examples.ALL.values()) out.accept(dev.logos.item.SpellPages.fitting(e));
             }).build());
 
     public static final Supplier<AttachmentType<StatusData>> STATUS_DATA = ATTACHMENTS.register("status",
