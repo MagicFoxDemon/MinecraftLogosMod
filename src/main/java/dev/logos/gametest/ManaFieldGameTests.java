@@ -1,0 +1,124 @@
+package dev.logos.gametest;
+
+import dev.logos.LogosMod;
+import dev.logos.block.AlchemyTableBlock;
+import dev.logos.block.AlchemyTableBlockEntity;
+import dev.logos.block.ManaCollectorBlock;
+import dev.logos.block.ManaCollectorBlockEntity;
+import dev.logos.block.ManaSpreaderBlock;
+import dev.logos.block.ManaSpreaderBlockEntity;
+import dev.logos.runtime.ManaField;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
+
+/** The mana field (ManaField), the spreader that fills it and the collector that draws on it. */
+final class ManaFieldGameTests {
+    private ManaFieldGameTests() {}
+
+    /**
+     * Chunks {@code away} chunks east of the test, forced loaded {@code reach} chunks around, so other
+     * tests' spreaders and collectors do not touch them. Returns the centre block of the middle chunk.
+     */
+    private static BlockPos faraway(GameTestHelper h, int away, int reach) {
+        BlockPos origin = h.absolutePos(BlockPos.ZERO);
+        int cx = (origin.getX() >> 4) + away, cz = origin.getZ() >> 4;
+        for (int x = -reach; x <= reach; x++) for (int z = -reach; z <= reach; z++) h.getLevel().setChunkForced(cx + x, cz + z, true);
+        return new BlockPos(cx * 16 + 8, 100, cz * 16 + 8);
+    }
+
+    private static void assertLoaded(GameTestHelper h, BlockPos center, int reach) {
+        for (int x = -reach; x <= reach; x++) for (int z = -reach; z <= reach; z++) {
+            h.assertTrue(h.getLevel().getChunkSource().getChunkNow((center.getX() >> 4) + x, (center.getZ() >> 4) + z) != null, "the chunks are still loading");
+        }
+    }
+
+    /** One full chunk settles into 200, 130 next to it and 60 two chunks off (diagonals included), and spreads no further. */
+    static void fieldSettlesIntoSteps(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        BlockPos center = faraway(h, 300, 3);
+        h.succeedWhen(() -> {
+            assertLoaded(h, center, 3);
+            for (int i = 0; i < 300; i++) {
+                ManaField.pour(level, center, ManaField.CAP);
+                ManaField.work(level);
+            }
+            ManaField.pour(level, center, ManaField.CAP);
+            double c0 = ManaField.spread(level, center), c1 = ManaField.spread(level, center.east(16)), diag = ManaField.spread(level, center.offset(16, 0, 16)),
+                    c2 = ManaField.spread(level, center.east(32)), c3 = ManaField.spread(level, center.east(48));
+            h.assertTrue(Math.abs(c0 - 200) < 1e-6, "the full chunk holds " + c0);
+            h.assertTrue(Math.abs(c1 - 130) < 2, "next to it is " + c1 + ", not 130");
+            h.assertTrue(Math.abs(c2 - 60) < 2 && Math.abs(diag - 60) < 2, "two chunks off are " + c2 + " and " + diag + ", not 60");
+            h.assertTrue(c3 < 1, "three chunks off still holds " + c3);
+        });
+    }
+
+    /** Collectors in one chunk share its ambient mana: two together take no more than the chunk gives, and neither more than its own limit. */
+    static void collectorsShareAmbient(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        BlockPos center = faraway(h, 340, 0);
+        BlockPos a = center, b = center.east(2);
+        double[] before = new double[2];
+        h.startSequence()
+                .thenWaitUntil(() -> assertLoaded(h, center, 0))
+                .thenExecute(() -> {
+                    // Facing up into the air: nothing to pass their mana on to.
+                    BlockState collector = LogosMod.MANA_COLLECTOR.get().defaultBlockState().setValue(ManaCollectorBlock.FACING, Direction.UP);
+                    level.setBlock(a, collector, 3);
+                    level.setBlock(b, collector, 3);
+                })
+                .thenIdle(3 * ManaField.PERIOD)
+                .thenExecute(() -> {
+                    before[0] = collector(h, a).mana();
+                    before[1] = collector(h, b).mana();
+                })
+                .thenIdle(ManaField.PERIOD)
+                .thenExecute(() -> {
+                    double ga = collector(h, a).mana() - before[0], gb = collector(h, b).mana() - before[1];
+                    double rate = ManaField.ambientRate(level, a);
+                    h.assertTrue(ga > 0 && gb > 0, "the collectors took in " + ga + " and " + gb);
+                    h.assertTrue(ga <= ManaField.COLLECTOR_AMBIENT + 1e-9 && gb <= ManaField.COLLECTOR_AMBIENT + 1e-9, "one took more than its limit");
+                    h.assertTrue(ga + gb <= rate + 1e-9, "two collectors took " + (ga + gb) + " of a chunk that gives " + rate);
+                    level.setBlock(a, Blocks.AIR.defaultBlockState(), 3);
+                    level.setBlock(b, Blocks.AIR.defaultBlockState(), 3);
+                })
+                .thenSucceed();
+    }
+
+    private static ManaCollectorBlockEntity collector(GameTestHelper h, BlockPos at) {
+        return (ManaCollectorBlockEntity) h.getLevel().getBlockEntity(at);
+    }
+
+    /**
+     * A spreader burns a mana shard into its chunk's air and lights up; a collector placed against an
+     * alchemy table faces it and feeds it from the air.
+     */
+    static void spreaderFeedsTableThroughCollector(GameTestHelper h) {
+        for (int x = 0; x < 6; x++) for (int z = 0; z < 6; z++) h.setBlock(x, 1, z, Blocks.STONE);
+        BlockPos main = new BlockPos(2, 2, 2);
+        BlockState table = LogosMod.ALCHEMY_TABLE.get().defaultBlockState().setValue(AlchemyTableBlock.FACING, Direction.SOUTH);
+        h.setBlock(main, table);
+        table.getBlock().setPlacedBy(h.getLevel(), h.absolutePos(main), table, null, new ItemStack(LogosMod.ALCHEMY_TABLE_ITEM.get()));
+        AlchemyTableBlockEntity tableEntity = (AlchemyTableBlockEntity) h.getBlockEntity(main, AlchemyTableBlockEntity.class);
+        // On top of the table, facing down into it.
+        h.setBlock(main.above(), LogosMod.MANA_COLLECTOR.get().defaultBlockState().setValue(ManaCollectorBlock.FACING, Direction.DOWN));
+        BlockPos spreaderAt = new BlockPos(0, 2, 2);
+        h.setBlock(spreaderAt, LogosMod.MANA_SPREADER.get().defaultBlockState());
+        ManaSpreaderBlockEntity spreader = (ManaSpreaderBlockEntity) h.getBlockEntity(spreaderAt, ManaSpreaderBlockEntity.class);
+        try (Transaction tx = Transaction.openRoot()) {
+            h.assertTrue(spreader.fuel().insert(ItemResource.of(LogosMod.MANA_SHARD.get()), 1, tx) == 1, "the drawer refused a mana shard");
+            tx.commit();
+        }
+        h.succeedWhen(() -> {
+            h.assertTrue(ManaField.spread(h.getLevel(), h.absolutePos(spreaderAt)) > 20, "the chunk's air holds " + ManaField.spread(h.getLevel(), h.absolutePos(spreaderAt)));
+            h.assertTrue(h.getBlockState(spreaderAt).getValue(ManaSpreaderBlock.ACTIVE), "the spreader is not lit");
+            h.assertTrue(tableEntity.mana() > 1, "the table got " + tableEntity.mana() + " mana");
+        });
+    }
+}
