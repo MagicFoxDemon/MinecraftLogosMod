@@ -562,7 +562,7 @@ final class AlchemyGameTests {
         });
     }
 
-    /** With a cauldron beside the table, four soul humus, rebis and philosophers' mercury wash white into four chalk, with a bucket's worth of water. */
+    /** With a cauldron beside the table, four soul humus, rebis, philosophers' mercury and a ghast tear wash white into four chalk, with a bucket's worth of water. */
     static void soulHumusWashesIntoChalk(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);
         h.setBlock(MAIN.north(), Blocks.CAULDRON);
@@ -572,10 +572,50 @@ final class AlchemyGameTests {
         put(card.inputs(), new ItemStack(LogosMod.SOUL_HUMUS_ITEM.get(), 4));
         put(card.inputs(), new ItemStack(LogosMod.REBIS.get()));
         put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
+        put(card.inputs(), new ItemStack(Items.GHAST_TEAR));
         h.succeedWhen(() -> {
             h.assertTrue(count(card.outputs(), LogosMod.CHALK.get()) == 4, "the card made " + count(card.outputs(), LogosMod.CHALK.get()) + " chalk");
             h.assertTrue(table.fluid().isEmpty() && bottlesBack(table, card) == 1, "the water or the bottle are off");
             h.assertTrue(table.mana() == 10, "washing left " + table.mana() + " mana, not 10");
+        });
+    }
+
+    /** An echo shard dissolves in five raw mash into five echo tinctures for four mana; the mash's bottles carry the tincture. */
+    static void echoShardDissolvesIntoTincture(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(Items.ECHO_SHARD));
+        put(card.inputs(), new ItemStack(LogosMod.RAW_MASH.get(), 5));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.ECHO_TINCTURE.get()) == 5, "the card made " + count(card.outputs(), LogosMod.ECHO_TINCTURE.get()) + " echo tincture");
+            h.assertTrue(table.mana() == 6, "dissolving left " + table.mana() + " mana, not 6");
+        });
+    }
+
+    /** Three sculk veins dissolve in one raw mash into one echo tincture for two mana. */
+    static void sculkVeinsDissolveIntoTincture(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(Items.SCULK_VEIN, 3));
+        put(card.inputs(), new ItemStack(LogosMod.RAW_MASH.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.ECHO_TINCTURE.get()) == 1, "the card made " + count(card.outputs(), LogosMod.ECHO_TINCTURE.get()) + " echo tincture");
+            h.assertTrue(table.mana() == 8, "dissolving left " + table.mana() + " mana, not 8");
+        });
+    }
+
+    /** Two caput mortuum rot with philosophers' mercury into raven's head, the blackening, for fifteen mana. */
+    static void caputMortuumRotsIntoRavenHead(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(20);
+        ProcessCard card = table.addCard(Process.FERMENT);
+        put(card.inputs(), new ItemStack(LogosMod.CAPUT_MORTUUM.get(), 2));
+        put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.RAVEN_HEAD.get()) == 1, "the card made " + count(card.outputs(), LogosMod.RAVEN_HEAD.get()) + " raven's head");
+            h.assertTrue(table.mana() == 5, "rotting left " + table.mana() + " mana, not 5");
         });
     }
 

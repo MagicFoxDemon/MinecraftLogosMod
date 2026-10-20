@@ -1,0 +1,20 @@
+{
+  "type": "logos:alchemy",
+  "process": "dissolve",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:echo_shard"
+    },
+    {
+      "ingredient": "logos:raw_mash",
+      "count": 5
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:echo_tincture",
+      "count": 5
+    }
+  ],
+  "mana": 4
+}

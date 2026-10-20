@@ -1,9 +1,12 @@
 {
-  "type": "minecraft:crafting_transmute",
+  "type": "logos:page_upgrade",
   "category": "misc",
   "group": "crystal_spell_page_upgrade",
-  "input": "logos:spell_page",
-  "material": "minecraft:amethyst_shard",
+  "ingredients": [
+    "logos:spell_page",
+    "minecraft:amethyst_shard",
+    "logos:adhesive"
+  ],
   "result": {
     "id": "logos:crystal_spell_page"
   }

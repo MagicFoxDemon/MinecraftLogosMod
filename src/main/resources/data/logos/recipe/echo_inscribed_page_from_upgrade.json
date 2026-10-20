@@ -4,7 +4,7 @@
   "group": "echo_spell_page_upgrade",
   "ingredients": [
     "logos:crystal_inscribed_page",
-    "minecraft:echo_shard",
+    "logos:echo_tincture",
     "logos:adhesive"
   ],
   "result": {

@@ -1,0 +1,19 @@
+{
+  "type": "logos:alchemy",
+  "process": "dissolve",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:sculk_vein",
+      "count": 3
+    },
+    {
+      "ingredient": "logos:raw_mash"
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:echo_tincture"
+    }
+  ],
+  "mana": 2
+}

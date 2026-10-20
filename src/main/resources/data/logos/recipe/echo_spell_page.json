@@ -3,7 +3,7 @@
   "category": "misc",
   "ingredients": [
     "minecraft:paper",
-    "minecraft:echo_shard",
+    "logos:echo_tincture",
     "logos:adhesive"
   ],
   "result": {
