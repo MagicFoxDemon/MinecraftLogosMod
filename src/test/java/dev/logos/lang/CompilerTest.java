@@ -238,6 +238,10 @@ class CompilerTest {
         assertError("(let $a ^家 (anchor $a here))", "直接写成 ^名字");
         assertError("(damage ^家 3)", "插槽形状不符");
         assertError("(blink ^)", "锚点名");
+        // The one moved defaults to the caster; a context target or a group may take its place.
+        assertEquals("caster", Compiler.compile("(blink ^家)").body().getFirst().arg(1).show());
+        Compiler.compile("(ray (on-hit (blink (pos-of caster) target)))");
+        assertEquals(Type.ENTITIES, Compiler.compile("(blink here (enemies))").body().getFirst().arg(1).type);
         // ❦ summon: creature names are written bare.
         assertEquals("minecraft:zombie", Compiler.compile("(summon zombie)").body().getFirst().arg(0).value);
         Compiler.compile("(do (summon minecraft:wither :at (above here 3)) (dismiss (entities :filter (kind living))))");

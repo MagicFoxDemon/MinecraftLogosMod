@@ -252,7 +252,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     found.add(Intent.STRIKE);
                 }
                 case "blink" -> {
-                    own = 2 + 0.5 * 10;
+                    own = (2 + 0.5 * 10) * count(n.arg(1));
                     assumptions.add("瞬移按 10 格估算");
                     found.add(Intent.MOVE);
                 }
