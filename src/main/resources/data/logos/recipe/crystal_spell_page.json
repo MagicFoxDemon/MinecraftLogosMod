@@ -4,7 +4,8 @@
   "ingredients": [
     "minecraft:paper",
     "minecraft:gold_nugget",
-    "minecraft:amethyst_shard"
+    "minecraft:amethyst_shard",
+    "logos:adhesive"
   ],
   "result": {
     "id": "logos:crystal_spell_page"

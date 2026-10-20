@@ -1,0 +1,19 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    {
+      "ingredient": "logos:caput_mortuum",
+      "count": 2
+    },
+    {
+      "ingredient": "logos:philosophers_mercury"
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:raven_head"
+    }
+  ],
+  "mana": 15
+}

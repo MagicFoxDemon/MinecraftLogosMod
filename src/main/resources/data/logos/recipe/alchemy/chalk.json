@@ -4,7 +4,8 @@
   "ingredients": [
     { "ingredient": "logos:soul_humus", "count": 4 },
     { "ingredient": "logos:rebis" },
-    { "ingredient": "logos:philosophers_mercury" }
+    { "ingredient": "logos:philosophers_mercury" },
+    { "ingredient": "minecraft:ghast_tear" }
   ],
   "fluid": { "ingredient": "minecraft:water", "amount": 1000 },
   "results": [

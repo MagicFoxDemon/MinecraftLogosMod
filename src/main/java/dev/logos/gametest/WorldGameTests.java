@@ -405,16 +405,38 @@ final class WorldGameTests {
         h.succeed();
     }
 
-    /** Paper, an echo shard and adhesive make an echo page; a written crystal page with the same two becomes one and keeps its spell. */
-    static void echoPageUpgradeKeepsSpell(GameTestHelper h) {
-        var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
-                new ItemStack(Items.PAPER), new ItemStack(Items.ECHO_SHARD), new ItemStack(LogosMod.ADHESIVE.get())));
+    /** A crystal page needs adhesive too: paper, a gold nugget and amethyst alone make nothing; a written basic page with amethyst and adhesive becomes one and keeps its spell. */
+    static void crystalPageNeedsAdhesive(GameTestHelper h) {
+        var bare = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(Items.PAPER), new ItemStack(Items.GOLD_NUGGET), new ItemStack(Items.AMETHYST_SHARD)));
+        h.assertTrue(h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, bare, h.getLevel()).isEmpty(),
+                "a crystal page was made without adhesive");
+        var blank = net.minecraft.world.item.crafting.CraftingInput.of(2, 2, List.of(
+                new ItemStack(Items.PAPER), new ItemStack(Items.GOLD_NUGGET), new ItemStack(Items.AMETHYST_SHARD), new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
                 .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
-        h.assertTrue(made.is(dev.logos.item.PageTier.ECHO.blank()), "paper, echo shard and adhesive made " + made);
+        h.assertTrue(made.is(dev.logos.item.PageTier.CRYSTAL.blank()), "paper, gold nugget, amethyst and adhesive made " + made);
+        ItemStack basic = SpellPages.inscribed(dev.logos.item.PageTier.BASIC, "(spell :name \"晶辉\" :mana 5 (heal caster 1))", null);
+        var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(Items.AMETHYST_SHARD), basic, new ItemStack(LogosMod.ADHESIVE.get())));
+        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+        h.assertTrue(out.is(dev.logos.item.PageTier.CRYSTAL.inscribed()), "the written basic page became " + out);
+        h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("晶辉"), "the crystal page should keep the spell");
+        h.succeed();
+    }
+
+    /** Paper, echo tincture and adhesive make an echo page and give the bottle back; a written crystal page with the same two becomes one and keeps its spell. */
+    static void echoPageUpgradeKeepsSpell(GameTestHelper h) {
+        var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(Items.PAPER), new ItemStack(LogosMod.ECHO_TINCTURE.get()), new ItemStack(LogosMod.ADHESIVE.get())));
+        var recipe = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel());
+        ItemStack made = recipe.map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+        h.assertTrue(made.is(dev.logos.item.PageTier.ECHO.blank()), "paper, echo tincture and adhesive made " + made);
+        h.assertTrue(recipe.get().value().getRemainingItems(blank).stream().anyMatch(st -> st.is(Items.GLASS_BOTTLE)), "the tincture's bottle was not given back");
         ItemStack crystal = SpellPages.inscribed(dev.logos.item.PageTier.CRYSTAL, "(spell :name \"回响\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
-                new ItemStack(LogosMod.ADHESIVE.get()), crystal, new ItemStack(Items.ECHO_SHARD)));
+                new ItemStack(LogosMod.ADHESIVE.get()), crystal, new ItemStack(LogosMod.ECHO_TINCTURE.get())));
         ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
                 .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.ECHO.inscribed()), "the written crystal page became " + out);
@@ -422,16 +444,17 @@ final class WorldGameTests {
         h.succeed();
     }
 
-    /** Paper, rebis and adhesive make a transmuted page; a written echo page with the same two becomes one and keeps its spell. */
+    /** Paper, raven's head and adhesive make a transmuted page and give the bottle back; a written echo page with the same two becomes one and keeps its spell. */
     static void transmutedPageUpgradeKeepsSpell(GameTestHelper h) {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
-                new ItemStack(Items.PAPER), new ItemStack(LogosMod.REBIS.get()), new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
-                .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
-        h.assertTrue(made.is(dev.logos.item.PageTier.TRANSMUTED.blank()), "paper, rebis and adhesive made " + made);
+                new ItemStack(Items.PAPER), new ItemStack(LogosMod.RAVEN_HEAD.get()), new ItemStack(LogosMod.ADHESIVE.get())));
+        var recipe = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel());
+        ItemStack made = recipe.map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+        h.assertTrue(made.is(dev.logos.item.PageTier.TRANSMUTED.blank()), "paper, raven's head and adhesive made " + made);
+        h.assertTrue(recipe.get().value().getRemainingItems(blank).stream().anyMatch(st -> st.is(Items.GLASS_BOTTLE)), "the raven's head's bottle was not given back");
         ItemStack echo = SpellPages.inscribed(dev.logos.item.PageTier.ECHO, "(spell :name \"炼成\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
-                new ItemStack(LogosMod.REBIS.get()), echo, new ItemStack(LogosMod.ADHESIVE.get())));
+                new ItemStack(LogosMod.RAVEN_HEAD.get()), echo, new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
                 .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.TRANSMUTED.inscribed()), "the written echo page became " + out);

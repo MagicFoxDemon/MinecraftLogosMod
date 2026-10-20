@@ -1,0 +1,18 @@
+{
+  "type": "logos:alchemy",
+  "process": "dissolve",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:sculk"
+    },
+    {
+      "ingredient": "logos:raw_mash"
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:echo_tincture"
+    }
+  ],
+  "mana": 2
+}

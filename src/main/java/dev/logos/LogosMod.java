@@ -179,6 +179,9 @@ public class LogosMod {
     public static final DeferredItem<net.minecraft.world.item.Item> SALTPETER = ITEMS.registerSimpleItem("saltpeter");
     /** 粘合剂: dissolved clay and raw mash. */
     public static final DeferredItem<net.minecraft.world.item.Item> ADHESIVE = ITEMS.registerSimpleItem("adhesive");
+    /** 回响酊: sculk or an echo shard dissolved in raw mash; with adhesive it makes and raises echo pages, and gives its bottle back. */
+    public static final DeferredItem<net.minecraft.world.item.Item> ECHO_TINCTURE = ITEMS.registerSimpleItem("echo_tincture",
+            p -> p.stacksTo(16).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE));
 
     // The three principles: sulfur, salt (saltpeter) and mercury, joined into philosophers' mercury and settled into rebis.
     /** 水银瓶: distilled out of redstone, which gives sulfur besides. Raw mercury: poisonous to drink. */
@@ -191,9 +194,15 @@ public class LogosMod {
      */
     public static final DeferredItem<net.minecraft.world.item.Item> PHILOSOPHERS_MERCURY = ITEMS.registerSimpleItem("philosophers_mercury",
             p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.UNCOMMON));
-    /** 雷比斯: the "double thing" philosophers' mercury settles into; it raises a page to the transmuted grade. */
+    /** 雷比斯: the "double thing" philosophers' mercury settles into; the whitening washes soul humus into chalk with it. */
     public static final DeferredItem<net.minecraft.world.item.Item> REBIS = ITEMS.registerSimpleItem("rebis",
             p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+    /**
+     * 鸦首 (caput corvi): caput mortuum rotted with philosophers' mercury, the blackening. With adhesive it
+     * makes and raises transmuted pages, and gives its bottle back.
+     */
+    public static final DeferredItem<net.minecraft.world.item.Item> RAVEN_HEAD = ITEMS.registerSimpleItem("raven_head",
+            p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.UNCOMMON).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE));
 
     // Albedo, the whitening: blackstone burnt to dead ash, rotted with soul soil, washed white with philosophers' mercury.
     /** 死灰 (caput mortuum): what calcining blackstone leaves, the dead residue the whitening starts from. */
@@ -421,9 +430,11 @@ public class LogosMod {
                 out.accept(SULFUR_POWDER.get());
                 out.accept(SALTPETER.get());
                 out.accept(ADHESIVE.get());
+                out.accept(ECHO_TINCTURE.get());
                 out.accept(MERCURY_BOTTLE.get());
                 out.accept(PHILOSOPHERS_MERCURY.get());
                 out.accept(REBIS.get());
+                out.accept(RAVEN_HEAD.get());
                 out.accept(CAPUT_MORTUUM.get());
                 out.accept(CAPUT_MORTUUM_BLOCK_ITEM.get());
                 out.accept(SOUL_HUMUS_ITEM.get());
