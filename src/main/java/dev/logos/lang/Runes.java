@@ -775,18 +775,22 @@ public final class Runes {
         def("execute", EFFECT, ACTION).p("target", ENTITY).on("on-kill", true, "处决成功时").stab(6)
                 .doc("处决：直接终结生命。代价由证明决定：4×(已证明的生命上界)×(已证明状态的折减)。前提失效会引发悖论反噬")
                 .exec(Runes::execute);
-        def("blink", EFFECT, ACTION).p("pos", POS).stab(2).doc("施法者瞬移到某位置，可以跨维度（配合 in-dimension）。2 + 每格 0.5 魔力，跨维度另加 20")
+        def("blink", EFFECT, ACTION).p("pos", POS).eachOr("target", "caster").stab(2)
+                .doc("把目标瞬移到某位置，可以跨维度（配合 in-dimension）。目标不写时是施法者自己；也可以接 target 或实体群，"
+                        + "其他玩家需要 :players true。每个目标 2 + 每格 0.5 魔力（按它自己走的距离），跨维度另加 20")
                 .exec((n, c) -> {
-                    var caster = c.inst().caster;
                     Place p = place(n.arg(0), c);
-                    boolean cross = p.level() != caster.level();
-                    double cost = 2 + (cross ? 20 : 0.5 * p.pos().distanceTo(caster.position()));
-                    if (!c.inst().spend(cost, "blink")) return null;
-                    Vfx.burst(lv(caster), caster.position().add(0, 1, 0), Element.VOID, 20);
-                    Vec3 to = cross || !standable(p.level(), BlockPos.containing(p.pos())) ? safeSpot(p.level(), p.pos()) : p.pos();
-                    caster.teleport(new TeleportTransition(p.level(), to, Vec3.ZERO, caster.getYRot(), caster.getXRot(), TeleportTransition.DO_NOTHING));
-                    caster.resetFallDistance();
-                    Vfx.sound(p.level(), to, SoundEvents.ENDERMAN_TELEPORT, 0.6f, 1.2f);
+                    for (Entity t : anyEntities(n.arg(1), c)) {
+                        if (c.inst().dead) return null;
+                        boolean cross = p.level() != t.level();
+                        double cost = 2 + (cross ? 20 : 0.5 * p.pos().distanceTo(t.position()));
+                        if (!c.inst().spend(cost, "blink")) return null;
+                        Vfx.burst(lv(t), t.position().add(0, t.getBbHeight() / 2, 0), Element.VOID, 20);
+                        Vec3 to = cross || !standable(p.level(), BlockPos.containing(p.pos())) ? safeSpot(p.level(), p.pos()) : p.pos();
+                        Entity moved = t.teleport(new TeleportTransition(p.level(), to, Vec3.ZERO, t.getYRot(), t.getXRot(), TeleportTransition.DO_NOTHING));
+                        if (moved != null) moved.resetFallDistance();
+                        Vfx.sound(p.level(), to, SoundEvents.ENDERMAN_TELEPORT, 0.6f, 1.2f);
+                    }
                     return null;
                 });
         blockEffects();

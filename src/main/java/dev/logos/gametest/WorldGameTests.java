@@ -192,6 +192,39 @@ final class WorldGameTests {
     }
 
     /**
+     * blink with a target moves that creature (or each one of a group) instead of the caster, charged by its own
+     * distance; another player stays put unless the spell has :players true.
+     */
+    static void blinkTarget(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Vec3 start = p.position();
+        var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new BlockPos(2, 2, 0));
+        Vec3 dest = Vec3.atCenterOf(h.absolutePos(new BlockPos(6, 2, 6)));
+        double dist = cow.position().distanceTo(dest);
+        SpellInstance one = castAt(h, p, "(spell :mana 50 (blink here (nearest :at (pos-of caster) :radius 4)))", new BlockPos(6, 2, 6));
+        h.assertTrue(cow.position().distanceTo(dest) < 0.5, "the cow should land at the place, is at " + cow.position() + " vs " + dest);
+        h.assertTrue(p.position().distanceTo(start) < 1e-6, "the caster must stay put when blink has a target");
+        double spent = one.injected - one.mana;
+        h.assertTrue(Math.abs(spent - (1 + 2 + 0.5 * dist)) < 1e-3, "expected nearest 1 + 2 + 0.5 × " + dist + ", spent " + spent);
+
+        var pig = h.spawn(net.minecraft.world.entity.EntityType.PIG, new BlockPos(1, 2, 2));
+        Vec3 corner = Vec3.atCenterOf(h.absolutePos(new BlockPos(0, 2, 8)));
+        castAt(h, p, "(spell :mana 200 (blink here (enemies :radius 12)))", new BlockPos(0, 2, 8));
+        h.assertTrue(cow.position().distanceTo(corner) < 0.5 && pig.position().distanceTo(corner) < 0.5, "every member of the group should be moved");
+
+        @SuppressWarnings("removal")
+        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        Vec3 at = h.absoluteVec(new Vec3(4.5, 2, 2.5));
+        other.snapTo(at.x, at.y, at.z, 0, 0);
+        Vec3 far = Vec3.atCenterOf(h.absolutePos(new BlockPos(8, 2, 0)));
+        castAt(h, p, "(spell :mana 50 (blink here (entities :at (pos-of caster) :radius 6 :filter (kind all))))", new BlockPos(8, 2, 0));
+        h.assertTrue(other.position().distanceTo(at) < 1e-6, "without :players another player must not be moved");
+        castAt(h, p, "(spell :mana 50 :players true (blink here (players :at (pos-of caster) :radius 6)))", new BlockPos(8, 2, 0));
+        h.assertTrue(other.position().distanceTo(far) < 0.5, "with :players the other player should be moved, is at " + other.position());
+        h.succeed();
+    }
+
+    /**
      * in-dimension refuses a dimension the caster has never been to (free of charge) unless the config
      * allows it; once visited, it maps overworld coordinates into the nether (÷8) and blink lands there, standing.
      */
