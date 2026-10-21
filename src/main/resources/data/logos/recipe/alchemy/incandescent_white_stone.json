@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "calcine",
+  "ingredients": [
+    { "ingredient": "logos:chalk", "count": 4 },
+    { "ingredient": "logos:rebis" }
+  ],
+  "results": [
+    { "id": "logos:incandescent_white_stone" }
+  ],
+  "mana": 10
+}

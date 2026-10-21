@@ -512,6 +512,23 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /** Paper, the firmament stone and adhesive make a firmament page; a written chalk page with the same two becomes one and keeps its spell. */
+    static void firmamentPageUpgradeKeepsSpell(GameTestHelper h) {
+        var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(Items.PAPER), new ItemStack(LogosMod.FIRMAMENT_STONE.get()), new ItemStack(LogosMod.ADHESIVE.get())));
+        ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
+                .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+        h.assertTrue(made.is(dev.logos.item.PageTier.FIRMAMENT.blank()), "paper, the firmament stone and adhesive made " + made);
+        ItemStack chalk = SpellPages.inscribed(dev.logos.item.PageTier.CHALK, "(spell :name \"天穹\" :mana 5 (heal caster 1))", null);
+        var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
+                new ItemStack(LogosMod.FIRMAMENT_STONE.get()), chalk, new ItemStack(LogosMod.ADHESIVE.get())));
+        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+        h.assertTrue(out.is(dev.logos.item.PageTier.FIRMAMENT.inscribed()), "the written chalk page became " + out);
+        h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("天穹"), "the firmament page should keep the spell");
+        h.succeed();
+    }
+
     /** The inscription table writes a spell (and its drawing) onto the page lying on it. */
     static void tableInscribes(GameTestHelper h) {
         ServerPlayer p = caster(h);

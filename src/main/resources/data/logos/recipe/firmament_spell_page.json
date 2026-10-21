@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:paper",
+    "logos:firmament_stone",
+    "logos:adhesive"
+  ],
+  "result": {
+    "id": "logos:firmament_spell_page"
+  }
+}

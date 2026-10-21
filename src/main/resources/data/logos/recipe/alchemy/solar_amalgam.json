@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "dissolve",
+  "ingredients": [
+    { "ingredient": "minecraft:gold_ingot" },
+    { "ingredient": "logos:philosophers_mercury" }
+  ],
+  "results": [
+    { "id": "logos:solar_amalgam" }
+  ],
+  "mana": 10
+}

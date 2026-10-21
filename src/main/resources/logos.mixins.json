@@ -4,6 +4,7 @@
   "package": "dev.logos.mixin",
   "mixins": [
     "AbstractArrowAccessor",
+    "BeaconAccessor",
     "EntityMixin",
     "ServerGamePacketListenerMixin",
     "EnderDragonAccessor",

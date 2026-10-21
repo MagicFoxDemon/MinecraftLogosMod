@@ -148,7 +148,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
 
     /**
      * Lays a card of {@code process} on the table at ({@code x}, {@code y}) on its canvas; null when it
-     * already holds {@link #MAX_CARDS}, or for a process whose block (a blast furnace, a cauldron) is not beside it.
+     * already holds {@link #MAX_CARDS}, or for a process whose block (a blast furnace, a cauldron, a lit beacon) is not beside it.
      */
     public @Nullable ProcessCard addCard(Process process, int x, int y) {
         if (cards.size() >= MAX_CARDS || !hasStation(process)) return null;
@@ -271,14 +271,14 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
 
     /**
      * Whether {@code process} can be worked here: always for the table's own apparatus, else while the
-     * block that works it (a blast furnace, a cauldron; vanilla's or another mod's kind of one) touches either half.
+     * block that works it (a blast furnace, a cauldron, a lit beacon; vanilla's or another mod's kind of one) touches either half.
      */
     public boolean hasStation(Process process) {
         if (process.onTable()) return true;
         if (level == null) return false;
         for (BlockPos half : List.of(worldPosition, AlchemyTableBlock.otherHalf(worldPosition, getBlockState()))) {
             for (Direction d : Direction.values()) {
-                if (process.worksAt(level.getBlockState(half.relative(d)).getBlock())) return true;
+                if (process.worksAt(level, half.relative(d))) return true;
             }
         }
         return false;

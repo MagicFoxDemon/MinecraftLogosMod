@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "sublime",
+  "ingredients": [
+    { "ingredient": "logos:solar_amalgam" }
+  ],
+  "results": [
+    { "id": "logos:solar_blossom", "count": 4 },
+    { "id": "logos:mercury_bottle" }
+  ],
+  "mana": 20
+}

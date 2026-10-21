@@ -1,0 +1,17 @@
+{
+  "type": "logos:alchemy",
+  "process": "dissolve",
+  "ingredients": [
+    { "ingredient": "logos:solar_blossom", "count": 4 },
+    { "ingredient": "minecraft:glowstone_dust", "count": 4 },
+    { "ingredient": "minecraft:quartz", "count": 4 },
+    { "ingredient": "minecraft:nether_star" },
+    { "ingredient": "logos:incandescent_white_stone" },
+    { "ingredient": "minecraft:glass_bottle", "count": 4 }
+  ],
+  "fluid": { "ingredient": "minecraft:water", "amount": 1000 },
+  "results": [
+    { "id": "logos:firmament_liquid", "count": 4 }
+  ],
+  "mana": 60
+}

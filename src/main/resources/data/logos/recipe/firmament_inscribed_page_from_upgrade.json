@@ -1,0 +1,13 @@
+{
+  "type": "logos:page_upgrade",
+  "category": "misc",
+  "group": "firmament_spell_page_upgrade",
+  "ingredients": [
+    "logos:chalk_inscribed_page",
+    "logos:firmament_stone",
+    "logos:adhesive"
+  ],
+  "result": {
+    "id": "logos:firmament_inscribed_page"
+  }
+}

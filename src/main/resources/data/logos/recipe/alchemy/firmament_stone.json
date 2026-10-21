@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "settle",
+  "ingredients": [
+    { "ingredient": "logos:firmament_liquid" }
+  ],
+  "results": [
+    { "id": "logos:firmament_stone" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 20
+}

@@ -33,6 +33,12 @@ public class JeiAlchemyScenario implements UIScenario {
                 .screenshot("jei_alchemy")
                 .step("show how an echo page is made", ctx -> dev.logos.compat.jei.LogosJeiPlugin.showRecipesFor(dev.logos.item.PageTier.ECHO.inscribed()))
                 .ticks(10)
-                .screenshot("jei_echo_page");
+                .screenshot("jei_echo_page")
+                .step("show how solar blossoms are sublimed", ctx -> dev.logos.compat.jei.LogosJeiPlugin.showRecipesFor(dev.logos.LogosMod.SOLAR_BLOSSOM.get()))
+                .ticks(10)
+                .screenshot("jei_solar_blossom")
+                .step("show how firmament liquor is made", ctx -> dev.logos.compat.jei.LogosJeiPlugin.showRecipesFor(dev.logos.LogosMod.FIRMAMENT_LIQUID.get()))
+                .ticks(10)
+                .screenshot("jei_firmament_liquid");
     }
 }
