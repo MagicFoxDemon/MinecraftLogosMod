@@ -548,6 +548,111 @@ final class AlchemyGameTests {
         });
     }
 
+    // ---- citrinitas: the firmament grade -------------------------------------------------------
+
+    /**
+     * Sublimation needs a lit beacon beside the table: an unlit one (nothing under it) will not do.
+     * Once a pyramid lights it, solar amalgam sublimes into four solar blossoms, and its mercury rises
+     * back into the bottle.
+     */
+    static void sublimationNeedsLitBeacon(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        BlockPos beacon = MAIN.north();
+        h.setBlock(beacon, Blocks.BEACON);
+        table.setMana(30);
+        h.assertTrue(table.addCard(Process.SUBLIME) == null, "a sublimation card was laid beside an unlit beacon");
+        ProcessCard[] card = new ProcessCard[1];
+        h.startSequence()
+                .thenExecute(() -> {
+                    for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) h.setBlock(beacon.offset(x, -1, z), Blocks.IRON_BLOCK);
+                })
+                .thenWaitUntil(() -> h.assertTrue(table.hasStation(Process.SUBLIME), "the beacon is not lit yet"))
+                .thenExecute(() -> {
+                    card[0] = table.addCard(Process.SUBLIME);
+                    h.assertTrue(card[0] != null, "no sublimation card beside a lit beacon");
+                    put(card[0].inputs(), new ItemStack(LogosMod.SOLAR_AMALGAM.get()));
+                })
+                .thenWaitUntil(() -> {
+                    h.assertTrue(count(card[0].outputs(), LogosMod.SOLAR_BLOSSOM.get()) == 4, "sublimed " + count(card[0].outputs(), LogosMod.SOLAR_BLOSSOM.get()) + " solar blossoms");
+                    h.assertTrue(count(card[0].outputs(), LogosMod.MERCURY_BOTTLE.get()) + count(table.items(), LogosMod.MERCURY_BOTTLE.get()) == 1, "the mercury did not come back");
+                    h.assertTrue(table.mana() == 10, "sublimating left " + table.mana() + " mana, not 10");
+                })
+                .thenSucceed();
+    }
+
+    /** Gold dissolves in philosophers' mercury into solar amalgam, which keeps the bottle. */
+    static void goldDissolvesIntoAmalgam(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(Items.GOLD_INGOT));
+        put(card.inputs(), new ItemStack(LogosMod.PHILOSOPHERS_MERCURY.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.SOLAR_AMALGAM.get()) == 1, "no solar amalgam was dissolved");
+            h.assertTrue(bottlesBack(table, card) == 0 && table.mana() == 0, "a bottle came back, or the mana is " + table.mana());
+        });
+    }
+
+    /** Four chalk and a rebis calcine together into the incandescent white stone. */
+    static void chalkAndRebisCalcineWhiteStone(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        h.setBlock(SIDE.east(), Blocks.BLAST_FURNACE);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.CALCINE);
+        put(card.inputs(), new ItemStack(LogosMod.CHALK.get(), 4));
+        put(card.inputs(), new ItemStack(LogosMod.REBIS.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.INCANDESCENT_WHITE_STONE.get()) == 1, "no incandescent white stone was calcined");
+            h.assertTrue(count(card.inputs(), LogosMod.CHALK.get()) == 0 && table.mana() == 0, "the chalk or the mana are off");
+        });
+    }
+
+    /**
+     * Solar blossoms, glowstone, quartz, the white stone and a nether star dissolve in a bucket of water
+     * into four bottles of firmament liquor; four bottles of dragon's breath do instead of the star and
+     * the bottles.
+     */
+    static void firmamentLiquidDissolves(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(120);
+        table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(LogosMod.SOLAR_BLOSSOM.get(), 4));
+        put(card.inputs(), new ItemStack(Items.GLOWSTONE_DUST, 4));
+        put(card.inputs(), new ItemStack(Items.QUARTZ, 4));
+        put(card.inputs(), new ItemStack(Items.NETHER_STAR));
+        put(card.inputs(), new ItemStack(LogosMod.INCANDESCENT_WHITE_STONE.get()));
+        put(card.inputs(), new ItemStack(Items.GLASS_BOTTLE, 4));
+        h.startSequence()
+                .thenWaitUntil(() -> {
+                    h.assertTrue(count(card.outputs(), LogosMod.FIRMAMENT_LIQUID.get()) == 4, "dissolved " + count(card.outputs(), LogosMod.FIRMAMENT_LIQUID.get()) + " firmament liquor");
+                    h.assertTrue(table.fluid().getAmount() == 0 && table.mana() == 60, "the water or the mana are off: " + table.fluid().getAmount() + " mB, " + table.mana());
+                })
+                .thenExecute(() -> {
+                    table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
+                    put(card.inputs(), new ItemStack(LogosMod.SOLAR_BLOSSOM.get(), 4));
+                    put(card.inputs(), new ItemStack(Items.GLOWSTONE_DUST, 4));
+                    put(card.inputs(), new ItemStack(Items.QUARTZ, 4));
+                    put(card.inputs(), new ItemStack(Items.DRAGON_BREATH, 4));
+                    put(card.inputs(), new ItemStack(LogosMod.INCANDESCENT_WHITE_STONE.get()));
+                })
+                .thenWaitUntil(() -> h.assertTrue(count(card.outputs(), LogosMod.FIRMAMENT_LIQUID.get()) + count(table.items(), LogosMod.FIRMAMENT_LIQUID.get()) == 8,
+                        "dragon's breath did not dissolve into four more"))
+                .thenSucceed();
+    }
+
+    /** Firmament liquor settles into the firmament stone and gives its bottle back. */
+    static void firmamentLiquidSettles(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(20);
+        ProcessCard card = table.addCard(Process.SETTLE);
+        put(card.inputs(), new ItemStack(LogosMod.FIRMAMENT_LIQUID.get()));
+        h.succeedWhen(() -> {
+            h.assertTrue(count(card.outputs(), LogosMod.FIRMAMENT_STONE.get()) == 1, "no firmament stone settled");
+            h.assertTrue(bottlesBack(table, card) == 1 && table.mana() == 0, "the bottle or the mana are off");
+        });
+    }
+
     /** Caput mortuum, soul soil and starter culture rot into three soul humus for five mana. */
     static void caputMortuumRotsIntoSoulHumus(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);

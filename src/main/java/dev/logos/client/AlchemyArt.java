@@ -46,6 +46,7 @@ public final class AlchemyArt {
             case SETTLE -> 0xFF8FBFD6;
             case CALCINE -> 0xFFD8743A;
             case PURIFY -> 0xFF6FB8E0;
+            case SUBLIME -> 0xFFE8C860;
         };
     }
 
@@ -187,6 +188,7 @@ public final class AlchemyArt {
             case SETTLE -> tray(w, h, titleHeight);
             case CALCINE -> furnace(w, h, titleHeight);
             case PURIFY -> cistern(w, h, titleHeight);
+            case SUBLIME -> aludel(w, h, titleHeight);
         });
         int level = liquid(process);
         return (GuiTexture) (context, x, y, width, height) -> {
@@ -450,6 +452,68 @@ public final class AlchemyArt {
         p.rect(-6, h - 29, 6, 1, pewter);
         p.rect(-7, h - 15, 2, 3, 0xC08FD0EC);
         p.rect(-7, h - 10, 2, 2, 0x808FD0EC);
+        nameplate(p, w, title);
+        return p;
+    }
+
+    /**
+     * 🝞 The aludel: earthenware pots stacked and luted into one tall vessel over a sand bath. Inside,
+     * the vapour rises from a warm floor into a pale top where golden flakes condense on the walls;
+     * above its open crown the beacon's beam carries what is left up to the sky.
+     */
+    private static Manuscript.Plan aludel(float w, float h, float title) {
+        Manuscript.Plan p = new Manuscript.Plan(121);
+        int clay = 0xFF9A6A48, clayLit = 0xFFB4825A, clayDark = 0xFF6E4A32, lute = 0xFFD8C8A8;
+        int gold = 0xFFE8C860, goldLit = 0xFFFFF0A8;
+        // The pots, one above the other, each ring a little lighter at its shoulder; pale luting seals each joint.
+        p.rect(0, 0, w, h, clayDark);
+        float ring = 14;
+        for (float y = 0, n = 0; y < h; y += ring, n++) {
+            float rh = Math.min(ring, h - y);
+            p.rect(1, y + 1, w - 2, rh - 1, n % 2 == 0 ? clay : clayLit);
+            p.rect(1, y + 1, w - 2, 2, 0x30FFFFFF);
+            if (y > 0) {
+                p.rect(0, y - 1, w, 2, lute);
+                p.rect(0, y + 1, w, 1, 0x40000000);
+            }
+        }
+        // The chamber: warm amber at the floor, clearing to a pale gold haze toward the crown.
+        float top = title + 5, bottom = h - 5;
+        p.rect(4, top, w - 8, bottom - top, 0xFF2A2018);
+        int bands = 6;
+        float bh = (bottom - top) / bands;
+        int[] haze = {0x30FFF4C8, 0x28FFE8A8, 0x20FFD890, 0x18F0B060, 0x20E08A40, 0x30D0702A};
+        for (int i = 0; i < bands; i++) p.rect(4, top + i * bh, w - 8, bh + 1, haze[i]);
+        p.rect(3, top - 1, w - 6, 1, OUTLINE);
+        p.rect(3, top, 1, bottom - top, OUTLINE);
+        p.rect(w - 4, top, 1, bottom - top, OUTLINE);
+        // Golden flakes condensed on the cool upper walls.
+        for (int i = 0; i < 14; i++) {
+            float fx = 5 + p.roll(i * 31, (int) Math.max(1, w - 12)), fy = top + 1 + p.roll(i * 31 + 7, (int) Math.max(1, (bottom - top) / 3));
+            p.rect(fx, fy, 2, 1, i % 3 == 0 ? goldLit : gold);
+        }
+        // Brass corners.
+        for (float[] c : new float[][]{{0, 0}, {w - 6, 0}, {0, h - 6}, {w - 6, h - 6}}) {
+            p.rect(c[0], c[1], 6, 6, BRASS);
+            p.rect(c[0] + 1, c[1] + 1, 4, 1, BRASS_LIT);
+            p.rect(c[0] + 2, c[1] + 3, 2, 2, BRASS_DARK);
+        }
+        // The sand bath under it, coals glowing through an iron grate.
+        float cx = Math.round(w / 2);
+        p.rect(cx - 20, h, 40, 5, 0xFFD8C48A);
+        p.rect(cx - 20, h, 40, 1, 0xFFEADCA8);
+        p.rect(cx - 18, h + 5, 36, 6, 0xFF2A1A12);
+        for (float x = cx - 16; x < cx + 16; x += 4) p.rect(x, h + 7, 3, 2, p.roll((int) x, 3) == 0 ? 0xFFFFD27A : 0xFFE8742A);
+        p.rect(cx - 19, h + 11, 38, 2, 0xFF3C3A3E);
+        p.rect(cx - 19, h + 11, 38, 1, 0xFF6A686E);
+        // The open crown, and the beam rising out of it: faint, widening a little as it climbs.
+        p.rect(cx - 12, -5, 24, 5, clayDark);
+        p.rect(cx - 11, -4, 22, 3, clayLit);
+        p.rect(cx - 6, -4, 12, 2, 0xFF2A2018);
+        p.rect(cx - 3, -22, 6, 18, 0x60F4FAFF);
+        p.rect(cx - 1, -30, 2, 26, 0xB0FFFFFF);
+        p.rect(cx - 5, -16, 10, 12, 0x28E8F4FF);
+        for (int i = 0; i < 4; i++) p.rect(cx - 4 + p.roll(i * 13, 8), -26 + 5 * i, 1, 1, goldLit);
         nameplate(p, w, title);
         return p;
     }

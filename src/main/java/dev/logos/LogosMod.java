@@ -224,6 +224,25 @@ public class LogosMod {
     /** 白垩: soul humus washed white with rebis and philosophers' mercury; it raises a page to the chalk grade. */
     public static final DeferredItem<net.minecraft.world.item.Item> CHALK = ITEMS.registerSimpleItem("chalk",
             p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+
+    // Citrinitas, the yellowing: gold in philosophers' mercury sublimed into solar flakes, the white stone
+    // fired yellow, dissolved under the sky into the firmament's liquor, and settled into its stone.
+    /** 日金汞齐: gold dissolved in philosophers' mercury, a silvery paste in its bottle; sublimed, the mercury rises off and leaves the gold. */
+    public static final DeferredItem<net.minecraft.world.item.Item> SOLAR_AMALGAM = ITEMS.registerSimpleItem("solar_amalgam",
+            p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    /** 日华: the golden flakes sublimation leaves of solar amalgam, as fire-gilding leaves gold. */
+    public static final DeferredItem<net.minecraft.world.item.Item> SOLAR_BLOSSOM = ITEMS.registerSimpleItem("solar_blossom",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    /** 炽白之石: rebis and chalk calcined together, the white stone glowing toward yellow; fired again in the reddening. */
+    public static final DeferredItem<net.minecraft.world.item.Item> INCANDESCENT_WHITE_STONE = ITEMS.registerSimpleItem("incandescent_white_stone",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+    /** 天穹灵液: solar flakes and the white stone dissolved with starlight. Drunk, one rises softly and sees by night; settled, it becomes the firmament stone. */
+    public static final DeferredItem<net.minecraft.world.item.Item> FIRMAMENT_LIQUID = ITEMS.registerSimpleItem("firmament_liquid", p -> drinkable(p,
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NIGHT_VISION, 180 * 20),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 60 * 20)).rarity(net.minecraft.world.item.Rarity.RARE));
+    /** 天穹之石: the firmament liquor settled; it raises a page to the firmament grade. */
+    public static final DeferredItem<net.minecraft.world.item.Item> FIRMAMENT_STONE = ITEMS.registerSimpleItem("firmament_stone",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
     /** 药粉: a potion settled into powder; eaten for the potion's effects, and dissolved back into it. */
     public static final DeferredItem<dev.logos.item.PotionPowderItem> POTION_POWDER = ITEMS.registerItem("potion_powder", dev.logos.item.PotionPowderItem::new,
             p -> p.component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -439,6 +458,11 @@ public class LogosMod {
                 out.accept(CAPUT_MORTUUM_BLOCK_ITEM.get());
                 out.accept(SOUL_HUMUS_ITEM.get());
                 out.accept(CHALK.get());
+                out.accept(SOLAR_AMALGAM.get());
+                out.accept(SOLAR_BLOSSOM.get());
+                out.accept(INCANDESCENT_WHITE_STONE.get());
+                out.accept(FIRMAMENT_LIQUID.get());
+                out.accept(FIRMAMENT_STONE.get());
             }).build());
     /** 刷怪蛋: the colossus, the mana leech and the five lifeform levels. */
     public static final DeferredHolder<net.minecraft.world.item.CreativeModeTab, net.minecraft.world.item.CreativeModeTab> SPAWN_EGGS_TAB = TABS.register("logos_spawn_eggs",
