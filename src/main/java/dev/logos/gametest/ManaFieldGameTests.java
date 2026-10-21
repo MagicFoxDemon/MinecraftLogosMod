@@ -61,7 +61,8 @@ final class ManaFieldGameTests {
 
     /**
      * Caput mortuum holds mana back: beside a full chunk, a chunk with one block settles at 60 rather
-     * than 130, one with two gets nothing; taking a block away lets the mana in again.
+     * than 130, one with two gets nothing; taking a block away lets the mana in again. Removing its
+     * support makes it fall, and its marker still insulates after landing.
      */
     static void caputMortuumInsulates(GameTestHelper h) {
         ServerLevel level = h.getLevel();
@@ -91,6 +92,30 @@ final class ManaFieldGameTests {
                     h.assertTrue(Math.abs(ManaField.spread(level, east) - 130) < 2, "with its block gone the chunk holds " + ManaField.spread(level, east) + ", not 130");
                     level.setBlock(north, Blocks.AIR.defaultBlockState(), 3);
                     level.setBlock(north.east(2), Blocks.AIR.defaultBlockState(), 3);
+                })
+                .thenExecute(() -> {
+                    level.setBlock(east.below(4), Blocks.STONE.defaultBlockState(), 3);
+                    level.setBlock(east.below(3), Blocks.AIR.defaultBlockState(), 3);
+                    level.setBlock(east.below(2), Blocks.AIR.defaultBlockState(), 3);
+                    level.setBlock(east.below(), Blocks.STONE.defaultBlockState(), 3);
+                    level.setBlock(east, ash, 3);
+                })
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    h.assertTrue(level.getBlockState(east).is(ash.getBlock()), "supported ash fell");
+                    level.setBlock(east.below(), Blocks.AIR.defaultBlockState(), 3);
+                })
+                .thenWaitUntil(() -> {
+                    h.assertTrue(level.getBlockState(east).isAir(), "unsupported ash did not fall");
+                    h.assertTrue(level.getBlockState(east.below(3)).is(ash.getBlock()), "ash did not land on the floor");
+                    h.assertTrue(level.getBlockEntity(east) == null, "the falling ash left its marker behind");
+                    h.assertTrue(level.getBlockEntity(east.below(3)) instanceof dev.logos.block.CaputMortuumBlock.Marker,
+                            "the landed ash lost its marker");
+                    h.assertTrue(ManaField.insulation(level.getChunkAt(east)) == 1, "the landed ash no longer insulates exactly once");
+                })
+                .thenExecute(() -> {
+                    level.setBlock(east.below(3), Blocks.AIR.defaultBlockState(), 3);
+                    level.setBlock(east.below(4), Blocks.AIR.defaultBlockState(), 3);
                 })
                 .thenSucceed();
     }

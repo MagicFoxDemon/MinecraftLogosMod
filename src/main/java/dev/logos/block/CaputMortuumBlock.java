@@ -6,8 +6,9 @@ import com.mojang.serialization.MapCodec;
 
 import dev.logos.LogosMod;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -17,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * ({@link dev.logos.runtime.ManaField}). Each block carries an empty {@link Marker} so its chunk can
  * count them exactly, however they came or went.
  */
-public class CaputMortuumBlock extends Block implements EntityBlock {
+public class CaputMortuumBlock extends FallingBlock implements EntityBlock {
     public static final MapCodec<CaputMortuumBlock> CODEC = simpleCodec(CaputMortuumBlock::new);
 
     public CaputMortuumBlock(Properties properties) {
@@ -27,6 +28,11 @@ public class CaputMortuumBlock extends Block implements EntityBlock {
     @Override
     protected MapCodec<CaputMortuumBlock> codec() {
         return CODEC;
+    }
+
+    @Override
+    public int getDustColor(BlockState state, BlockGetter level, BlockPos pos) {
+        return state.getMapColor(level, pos).col;
     }
 
     @Override
