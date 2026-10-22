@@ -159,6 +159,11 @@ final class ManuscriptMarks {
         if (type.equals(LTypes.MOTION)) return MOTION;
         if (type.equals(LTypes.SHAPE)) return SHAPE;
         if (type.equals(LTypes.STATUS)) return TEXT;
+        if (type.equals(LTypes.CREATURE)) return ENTITY;
+        if (type.equals(LTypes.DIMENSION)) return POS;
+        if (type.equals(LTypes.LOOK)) return BLOCKS;
+        if (type.equals(LTypes.PARTICLE) || type.equals(LTypes.MOB_EFFECT)) return ELEMENT;
+        if (type.equals(LTypes.KIND) || type.equals(LTypes.FILTER)) return ENTITIES;
         if (type.equals(LTypes.FLOW)) return FLOW;
         return NUM;
     }

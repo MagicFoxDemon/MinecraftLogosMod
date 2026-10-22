@@ -83,7 +83,7 @@ public abstract class RuneNode extends LogosNode {
         return "dim_" + name;
     }
 
-    /** Slots chosen from a fixed list on the node itself (◐ dimension, ◈ kind) rather than wired. */
+    /** Legacy inline choices, retained as defaults for catalogue-connected inputs. */
     public static boolean isOption(Rune.Param p) {
         return p.type() == Type.DIMENSION || p.type() == Type.KIND || p.type() == Type.ANCHOR || p.type() == Type.CREATURE || p.type() == Type.MOB_EFFECT;
     }
@@ -136,7 +136,12 @@ public abstract class RuneNode extends LogosNode {
             context.addOutputPort(OUT, LTypes.of(r.returns, false)).withDisplayName(Component.literal(r.returns.label())).build();
         }
         for (Rune.Param p : r.params) {
-            if (isOption(p)) continue;
+            if (isOption(p)) {
+                // Keep the old option as the unwired fallback, and add a typed connector above it.
+                if (p.type() != Type.ANCHOR) context.addInputPort(p.name(), LTypes.of(p.type(), false))
+                        .withDisplayName(NodeTerms.parameter(word(), p.name())).withoutConfigurator().withoutSerialization().build();
+                continue;
+            }
             if (p.type() == Type.ACTION) {
                 String glyph = p.name().equals("then") ? "✔ " : p.name().equals("else") ? "✘ " : "⤷ ";
                 context.addOutputPort(p.name(), LTypes.FLOW).withDisplayName(Component.literal(glyph).append(NodeTerms.parameter(word(), p.name()))).build();
@@ -166,6 +171,8 @@ public abstract class RuneNode extends LogosNode {
     private static void input(IPortDefinitionContext context, String id, Component label, Type t, boolean broadcast, String defaultSrc, String paramName) {
         var builder = context.addInputPort(id, LTypes.of(t, broadcast))
                 .withDisplayName(label);
+        if (EnumValues.stringPort(t)) builder.withCodec(com.mojang.serialization.Codec.STRING)
+                .withConfigurable(EnumValues.STRING_EDITOR);
         Object def = defaultValue(t, defaultSrc, paramName);
         if (def != null) builder.withDefaultValue(def);
         else builder.withoutConfigurator();

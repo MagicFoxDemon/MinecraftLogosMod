@@ -135,6 +135,7 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
 
     /** A rune's own drawing (or its family's), centred in whatever box it is given; shared with the rune library. */
     static GuiTexture emblem(LogosNode rune) {
+        if (rune instanceof dev.logos.graph.EnumValues.Value value) return EnumPreviews.cardIcon(value.kind, value.value());
         Category category = rune.category();
         String[] own = MathEmblems.of(rune.word());
         if (own == null) own = RuneEmblems.of(rune.word());
@@ -187,7 +188,7 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
     @Override
     protected void buildPartList() {
         parts.add(nodeTittle = new Heading(getModel()));
-        if (getModel() instanceof NodeModel nodeModel) parts.add(nodeOptionContainer = new NodeOptionsInspector(nodeModel));
+        if (getModel() instanceof NodeModel nodeModel) parts.add(nodeOptionContainer = new Choices(nodeModel));
         if (getModel() instanceof PortNodeModel ports) {
             parts.add(topPortContainer = new VerticalPortContainerElement(ports,
                     PortContainerElement.VERTICAL_PORT_FILTER.and(PortContainerElement.INPUT_PORT_FILTER)));
@@ -196,6 +197,43 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
                     PortContainerElement.VERTICAL_PORT_FILTER.and(PortContainerElement.OUTPUT_PORT_FILTER)));
         }
         buildPreviewPart();
+    }
+
+    /** A connected enum port supplies the value; its legacy inline fallback only appears while unwired. */
+    private final class Choices extends NodeOptionsInspector {
+        Choices(NodeModel model) { super(model); }
+
+        @Override public boolean hasModelDependenciesChanged() { return true; }
+
+        @Override public void addModelDependencies() {
+            dependencies.addModelDependency(nodeModel);
+            if (!(rune instanceof dev.logos.graph.RuneNode rn)) return;
+            for (var p : rn.rune().params) {
+                if (!dev.logos.graph.RuneNode.isOption(p)) continue;
+                var port = nodeModel.getInputsById().get(p.name());
+                if (port == null) continue;
+                dependencies.addModelDependency(port);
+                port.getConnectedWires().forEach(dependencies::addModelDependency);
+            }
+        }
+
+        @Override public void updateUIFromModel(ModelUpdateVisitor visitor) {
+            super.updateUIFromModel(visitor);
+            refreshChoices();
+        }
+
+        void refreshChoices() {
+            if (!(rune instanceof dev.logos.graph.RuneNode rn)) return;
+            int row = 0;
+            for (var option : nodeModel.getNodeOptions()) {
+                if (!option.getVisibility().showInNode() || !option.getPortModel().isConfiguratorEnabled()) continue;
+                if (row >= getChildren().size()) break;
+                boolean connected = rn.rune().params.stream().anyMatch(p -> dev.logos.graph.RuneNode.isOption(p)
+                        && dev.logos.graph.RuneNode.option(p).equals(option.getId())
+                        && nodeModel.getInputsById().get(p.name()) != null && nodeModel.getInputsById().get(p.name()).isConnected());
+                Style.importantPipeline(getChildren().get(row++).getLayout(), l -> l.display(connected ? TaffyDisplay.NONE : TaffyDisplay.FLEX));
+            }
+        }
     }
 
     /** A title written in ink after the family's emblem; the glyph the model's title starts with is left out. */
@@ -208,12 +246,14 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
         public void updateUIFromModel(ModelUpdateVisitor visitor) {
             super.updateUIFromModel(visitor);
             if (visitor.hasHint(ChangeHint.STYLE) || visitor.hasHint(ChangeHint.DATA)) {
-                String title = nodeModel.getTitle().getString(), glyph = category.glyph + " ";
-                if (title.startsWith(glyph)) nodeTittle.setText(Component.literal(title.substring(glyph.length())));
+                String title = rune instanceof dev.logos.graph.EnumValues.Value value ? value.title() : nodeModel.getTitle().getString();
+                String glyph = category.glyph + " ";
+                nodeTittle.setText(Component.literal(title.startsWith(glyph) ? title.substring(glyph.length()) : title));
             }
-            if (visitor.hasHint(ChangeHint.STYLE)) {
+            if (visitor.hasHint(ChangeHint.STYLE) || visitor.hasHint(ChangeHint.DATA)) {
                 GuiTexture drawn = emblem(rune);
-                Style.importantPipeline(nodeIcon.getLayout(), l -> l.display(TaffyDisplay.FLEX).width(9).height(9));
+                int size = rune instanceof dev.logos.graph.EnumValues.Value ? 24 : 9;
+                Style.importantPipeline(nodeIcon.getLayout(), l -> l.display(TaffyDisplay.FLEX).width(size).height(size));
                 Style.importantPipeline(nodeIcon.getStyle(), s -> s.background(drawn));
             }
         }
