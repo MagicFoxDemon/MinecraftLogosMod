@@ -14,6 +14,7 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -237,6 +238,42 @@ final class FamiliarGameTests {
         h.assertTrue(apart > 1 && apart < 2.5, "the two riders should sit one behind the other, " + apart + " apart");
         h.assertTrue(p.position().distanceTo(dragon.position()) < 8, "the riders should sit on the dragon");
         h.succeed();
+    }
+
+    /** Jump and sprint change the dragon's actual altitude without holding forward. */
+    static void dragonRiddenAltitude(GameTestHelper h) {
+        dragonRiddenAltitude(h, false);
+    }
+
+    /** Explicit altitude controls win over an opposing gaze while flying forward. */
+    static void dragonRiddenAltitudeForward(GameTestHelper h) {
+        dragonRiddenAltitude(h, true);
+    }
+
+    private static void dragonRiddenAltitude(GameTestHelper h, boolean forward) {
+        ServerPlayer p = master(h);
+        p.setGameMode(GameType.CREATIVE);
+        forceAround(h, 2);
+        var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
+        dragon.snapTo(p.getX(), p.getY() + 60, p.getZ(), 0, 0);
+        h.assertTrue(p.startRiding(dragon, false, true), "the master should mount the dragon");
+        dragon.positionRider(p);
+        p.setXRot(60); // looking down must not defeat the climb key
+        p.setLastClientInput(new Input(forward, false, false, false, true, false, false));
+        double[] startY = {dragon.getY()};
+        boolean[] descending = {false};
+        h.succeedWhen(() -> {
+            h.assertTrue(p.getVehicle() == dragon, "altitude controls must not dismount the rider");
+            if (!descending[0]) {
+                h.assertTrue(dragon.getY() > startY[0] + 2, "holding jump should climb, forward=" + forward);
+                startY[0] = dragon.getY();
+                descending[0] = true;
+                p.setXRot(-60); // looking up must not defeat the descend key
+                p.setLastClientInput(new Input(forward, false, false, false, false, false, true));
+            }
+            h.assertTrue(dragon.getY() < startY[0] - 2, "holding sprint should descend, forward=" + forward);
+            p.setLastClientInput(Input.EMPTY);
+        });
     }
 
     /** A baby familiar does not grow up on its own, but the grow spell still ages it. */

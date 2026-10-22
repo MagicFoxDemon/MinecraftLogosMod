@@ -136,10 +136,18 @@ public final class DragonFamiliar {
 
     /**
      * Its master on its back flies it by their gaze: holding forward, it heads where they look
-     * (looking up climbs, looking down dives); letting go, it circles where it is. No attacks while ridden.
+     * (looking up climbs, looking down dives); letting go, it circles where it is. Jump climbs and
+     * sprint (Ctrl by default) descends, with or without forward held. No attacks while ridden.
      */
     private static final Pilot MASTER_ON_ITS_BACK = dragon -> {
-        if (!(dragon.getFirstPassenger() instanceof net.minecraft.server.level.ServerPlayer rider) || !rider.getLastClientInput().forward()) return null;
+        if (!(dragon.getFirstPassenger() instanceof net.minecraft.server.level.ServerPlayer rider)) return null;
+        var input = rider.getLastClientInput();
+        int vertical = (input.jump() ? 1 : 0) - (input.sprint() ? 1 : 0);
+        if (vertical != 0) {
+            Vec3 motion = dragon.getDeltaMovement();
+            dragon.setDeltaMovement(motion.x, vertical * 0.4, motion.z);
+        }
+        if (!input.forward()) return null;
         return rider.getEyePosition().add(rider.getLookAngle().scale(40));
     };
 
