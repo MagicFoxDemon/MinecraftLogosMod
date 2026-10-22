@@ -1,6 +1,9 @@
 {
   "required": true,
   "minVersion": "0.8",
+  "mixinextras": {
+    "minVersion": "0.5.4"
+  },
   "package": "dev.logos.mixin",
   "mixins": [
     "AbstractArrowAccessor",
@@ -16,7 +19,8 @@
     "EnvironmentAttributeSystemMixin",
     "ServerLevelMixin",
     "LivingEntityMixin",
-    "WardenMixin"
+    "WardenMixin",
+    "WitchMixin"
   ],
   "client": [
     "ItemInHandLayerMixin",

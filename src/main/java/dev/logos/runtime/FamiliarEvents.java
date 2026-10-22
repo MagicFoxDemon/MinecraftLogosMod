@@ -39,14 +39,14 @@ final class FamiliarEvents {
 
     private FamiliarEvents() {}
 
-    /** A familiar never takes a target of its own: only what its master is fighting. */
+    /** Only its master's fight, or its wounded master when a witch is tending them. */
     @SubscribeEvent
     static void onChangeTarget(LivingChangeTargetEvent event) {
         if (!(event.getEntity() instanceof Mob m) || !Familiars.isFamiliar(m)) return;
         if (m instanceof AlchemicalColossus c && c.isBerserk()) return; // a frenzied colossus answers to no one
         LivingEntity wanted = event.getNewAboutToBeSetTarget();
-        LivingEntity ordered = Familiars.orderedTarget(m);
-        if (wanted != null && wanted != ordered) event.setNewAboutToBeSetTarget(ordered);
+        LivingEntity allowed = Familiars.actionTarget(m);
+        if (wanted != null && wanted != allowed) event.setNewAboutToBeSetTarget(allowed);
     }
 
     @SubscribeEvent

@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.Stats;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -33,6 +34,7 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
@@ -380,10 +382,22 @@ public final class Familiars {
         }
     }
 
-    /** The only target a familiar may take: what its master is fighting. */
+    /** What its master is fighting, kept while a witch tends its master. */
     public static @Nullable LivingEntity orderedTarget(Mob m) {
         State s = STATE.get(m);
         return s == null ? null : s.target;
+    }
+
+    /** A witch tends its wounded master with its vanilla ranged goal, then resumes the ordered fight. */
+    public static @Nullable LivingEntity actionTarget(Mob m) {
+        Bond b = bondOf(m);
+        if (m instanceof Witch && b != null && !hasOrders(m)) {
+            Player owner = m.level().getPlayerByUUID(b.owner());
+            if (owner != null && owner.isAlive() && !owner.isSpectator() && owner.getHealth() < owner.getMaxHealth()
+                    && (owner.getHealth() <= 4 || !owner.hasEffect(MobEffects.REGENERATION))
+                    && m.distanceToSqr(owner) <= 10 * 10 && m.hasLineOfSight(owner)) return owner;
+        }
+        return orderedTarget(m);
     }
 
     private static void aim(Mob m, @Nullable LivingEntity target) {
@@ -444,7 +458,8 @@ public final class Familiars {
         }
         hunt(m, owner, s, level);
         LivingEntity current = m.getTarget();
-        if (current != s.target) aim(m, s.target);
+        LivingEntity wanted = actionTarget(m);
+        if (current != wanted) aim(m, wanted);
 
         boolean dragon = m instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon;
         if (s.errand != null) runErrand(m, owner, s, level.getGameTime(), dragon);

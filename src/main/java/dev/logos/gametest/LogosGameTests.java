@@ -44,6 +44,7 @@ public final class LogosGameTests {
             "construct_stops_movement", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall",
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
+            "familiar_witch_heals_master", "familiar_witch_rescues_master", "familiar_witch_attacks_raider", "familiar_witch_potion_rules",
             "familiar_dragon_circles", "familiar_dragon_throne",
             "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects", "rune_shield_marks_ward", "potion_burst_polarity", "rune_group_radius_cost", "rune_time_stop_mob", "rune_time_stop_player",
             "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies", "alchemy_brews_raw_mash", "alchemy_crafts_gunpowder", "alchemy_crafts_maintenance_kit", "alchemy_crafts_table", "alchemy_bottles_drinkable",
@@ -93,6 +94,10 @@ public final class LogosGameTests {
         FUNCTIONS.register("world_blink_target", () -> WorldGameTests::blinkTarget);
         FUNCTIONS.register("familiar_unlock_summon", () -> FamiliarGameTests::unlockAndSummon);
         FUNCTIONS.register("familiar_loyal_targeting", () -> FamiliarGameTests::loyalTargeting);
+        FUNCTIONS.register("familiar_witch_heals_master", () -> FamiliarGameTests::witchHealsMaster);
+        FUNCTIONS.register("familiar_witch_rescues_master", () -> FamiliarGameTests::witchRescuesMaster);
+        FUNCTIONS.register("familiar_witch_attacks_raider", () -> FamiliarGameTests::witchAttacksRaider);
+        FUNCTIONS.register("familiar_witch_potion_rules", () -> FamiliarGameTests::witchPotionRules);
         FUNCTIONS.register("familiar_friendly_fire_credit", () -> FamiliarGameTests::friendlyFireAndCredit);
         FUNCTIONS.register("familiar_drops", () -> FamiliarGameTests::dropsOnlyPickedUp);
         FUNCTIONS.register("familiar_creeper_no_grief", () -> FamiliarGameTests::creeperBreaksNothing);

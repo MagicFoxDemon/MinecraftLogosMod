@@ -5,17 +5,27 @@ import dev.logos.runtime.Familiars;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellInstance;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -80,6 +90,108 @@ final class FamiliarGameTests {
         p.hurtServer(h.getLevel(), p.damageSources().indirectMagic(husk, husk), 1);
         h.assertTrue(z.getTarget() == husk, "it should turn on what attacked its master, has " + z.getTarget());
         h.succeed();
+    }
+
+    /** Without a raid, its vanilla ranged goal throws regeneration at its wounded master. */
+    static void witchHealsMaster(GameTestHelper h) {
+        witchHealsMaster(h, 10);
+    }
+
+    /** At two hearts or less it throws instant healing. */
+    static void witchRescuesMaster(GameTestHelper h) {
+        witchHealsMaster(h, 3);
+    }
+
+    private static void witchHealsMaster(GameTestHelper h, float health) {
+        ServerPlayer p = master(h);
+        p.setGameMode(GameType.CREATIVE);
+        forceAround(h, 1);
+        Witch w = (Witch) summon(h, p, "witch");
+        w.snapTo(h.absoluteVec(new Vec3(5.5, 2, 1.5)));
+        p.setGameMode(GameType.SURVIVAL);
+        p.getFoodData().setFoodLevel(10); // only a potion can restore health
+        p.setHealth(health);
+        boolean[] thrown = {false};
+        h.onEachTick(() -> {
+            for (ThrownSplashPotion potion : h.getLevel().getEntitiesOfClass(ThrownSplashPotion.class, w.getBoundingBox().inflate(12))) {
+                if (potion.getOwner() != w) continue;
+                PotionContents contents = potion.getItem().getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+                h.assertTrue(contents.is(health <= 4 ? Potions.HEALING : Potions.REGENERATION), "the master's potion must heal");
+                thrown[0] = true;
+            }
+        });
+        h.succeedWhen(() -> {
+            // Mock players do not tick regeneration; receiving the effect proves the splash reached them.
+            boolean healed = health <= 4 ? p.getHealth() > health : p.hasEffect(MobEffects.REGENERATION);
+            h.assertTrue(thrown[0] && healed, "the witch should throw a healing potion that reaches its master");
+            h.assertTrue(!p.hasEffect(MobEffects.POISON) && !p.hasEffect(MobEffects.WEAKNESS), "its master must not receive offensive effects");
+        });
+    }
+
+    /** An ordered pillager receives vanilla offensive potions, not raider support. */
+    static void witchAttacksRaider(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        p.setGameMode(GameType.CREATIVE);
+        forceAround(h, 1);
+        Witch w = (Witch) summon(h, p, "witch");
+        w.snapTo(h.absoluteVec(new Vec3(5.5, 2, 1.5)));
+        var raider = h.spawn(EntityType.PILLAGER, new Vec3(5.5, 2, 7.5));
+        raider.setNoAi(true);
+        h.assertTrue(Familiars.order(w, raider), "the witch should accept the pillager as an enemy");
+        h.succeedWhen(() -> {
+            h.assertTrue(raider.hasEffect(MobEffects.POISON), "the witch should throw poison at its raider foe");
+            h.assertTrue(!raider.hasEffect(MobEffects.REGENERATION), "the enemy must not receive regeneration");
+            h.assertTrue(w.getTarget() == raider, "throwing an offensive potion must keep the ordered target");
+        });
+    }
+
+    /** Healing pauses the ordered fight only while needed, and wild witches retain their original potion choices. */
+    static void witchPotionRules(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        p.setGameMode(GameType.CREATIVE);
+        Witch w = (Witch) summon(h, p, "witch");
+        w.setNoAi(true);
+        w.snapTo(h.absoluteVec(new Vec3(5.5, 2, 1.5)));
+        var raider = h.spawn(EntityType.PILLAGER, new Vec3(5.5, 2, 7.5));
+        raider.setNoAi(true);
+        Familiars.order(w, raider);
+        p.setHealth(10);
+        w.setTarget(p);
+        h.assertTrue(w.getTarget() == p && Familiars.orderedTarget(w) == raider, "healing should preserve the fight to resume later");
+        assertWitchPotion(h, w, p, Potions.REGENERATION);
+        p.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 1000));
+        w.setTarget(Familiars.actionTarget(w));
+        h.assertTrue(w.getTarget() == raider, "with regeneration active, the witch should resume the fight");
+        p.setHealth(3);
+        w.setTarget(p);
+        h.assertTrue(w.getTarget() == p, "a critical master still needs instant healing");
+        assertWitchPotion(h, w, p, Potions.HEALING);
+        p.setHealth(p.getMaxHealth());
+        w.setTarget(Familiars.actionTarget(w));
+        h.assertTrue(w.getTarget() == raider, "a healthy master should not distract the witch");
+        raider.setHealth(3);
+        assertWitchPotion(h, w, raider, Potions.HARMING);
+        raider.setHealth(raider.getMaxHealth());
+        assertWitchPotion(h, w, raider, Potions.POISON);
+        raider.snapTo(w.position().add(9, 0, 0));
+        assertWitchPotion(h, w, raider, Potions.SLOWNESS);
+
+        Witch wild = h.spawn(EntityType.WITCH, new Vec3(5.5, 2, 2.5));
+        wild.setNoAi(true);
+        assertWitchPotion(h, wild, raider, Potions.REGENERATION);
+        raider.setHealth(3);
+        assertWitchPotion(h, wild, raider, Potions.HEALING);
+        assertWitchPotion(h, wild, p, Potions.POISON);
+        h.succeed();
+    }
+
+    private static void assertWitchPotion(GameTestHelper h, Witch witch, LivingEntity target, Holder<Potion> expected) {
+        witch.performRangedAttack(target, 1);
+        var thrown = h.getLevel().getEntitiesOfClass(ThrownSplashPotion.class, witch.getBoundingBox().inflate(2), p -> p.getOwner() == witch);
+        h.assertTrue(thrown.size() == 1, "the witch should throw exactly one potion");
+        PotionContents contents = thrown.getFirst().getItem().getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+        h.assertTrue(contents.is(expected), "unexpected potion: " + contents + ", expected " + expected);
+        thrown.forEach(ThrownSplashPotion::discard);
     }
 
     /** No friendly fire; its kills count as its master's, like a tamed wolf's. */
