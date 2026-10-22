@@ -34,7 +34,6 @@ final class EnumLibrary extends UIElement {
     private final TextField search = new TextField();
     private final ScrollerView rows = new ScrollerView();
     private final Label count = new Label();
-    private final UIElement preview = new UIElement();
     private Kind kind = Kind.CREATURE;
     private int page;
 
@@ -57,12 +56,6 @@ final class EnumLibrary extends UIElement {
         search.setTextResponder(value -> { page = 0; rebuild(); });
         search.style(s -> s.tooltips(Component.translatable("logos.enum.search_help")));
         ManuscriptControls.blank(search);
-        preview.setId("enum_preview");
-        preview.layout(l -> l.widthPercent(100).minHeight(49).flexDirection(FlexDirection.ROW).gapAll(4).paddingAll(3));
-        preview.style(s -> s.backgroundTexture((GuiTexture) (context, x, y, w, h) -> {
-            DrawerHelperClient.drawSolidRect(context, x, y, w, h, 0x50C2CFE3);
-            DrawerHelperClient.drawSolidRect(context, x, y + h - 1, w, 1, 0x887A5A3A);
-        }));
         rows.setId("enum_entries");
         rows.layout(l -> l.widthPercent(100).flex(1).minHeight(0));
         rows.style(s -> s.backgroundTexture(IGuiTexture.EMPTY));
@@ -79,7 +72,7 @@ final class EnumLibrary extends UIElement {
         paging.addChildren(previous, count, next);
         Label hint = label(Component.translatable("logos.enum.drag_help"), true);
         hint.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true));
-        addChildren(title, category, search, preview, rows, paging, hint);
+        addChildren(title, category, search, rows, paging, hint);
     }
 
     void open() { rebuild(); }
@@ -97,8 +90,6 @@ final class EnumLibrary extends UIElement {
         for (int i = first; i < Math.min(found.size(), first + PAGE_SIZE); i++) rows.addScrollViewChild(row(found.get(i)));
         if (found.isEmpty()) rows.addScrollViewChild(label(Component.translatable("logos.enum.empty"), true));
         count.setText(Component.literal((page + 1) + " / " + Math.max(1, (found.size() + PAGE_SIZE - 1) / PAGE_SIZE) + "  ·  " + found.size()));
-        preview.clearAllChildren();
-        if (!found.isEmpty()) select(found.get(first));
         ManuscriptControls.dressList(category);
     }
 
@@ -117,7 +108,6 @@ final class EnumLibrary extends UIElement {
         row.style(s -> s.tooltips(Component.literal(entry.name()), Component.literal(entry.id()),
                 Component.translatable(entry.usable() ? "logos.enum.drag_help" : unavailable(entry.kind()))));
         row.addEventListener(UIEvents.MOUSE_ENTER, event -> {
-            select(entry);
             row.style(s -> s.backgroundTexture((GuiTexture) (context, x, y, w, h) ->
                     DrawerHelperClient.drawSolidRect(context, x, y, w, h, 0x70C2CFE3)));
         });
@@ -128,20 +118,6 @@ final class EnumLibrary extends UIElement {
         });
         row.addEventListener(UIEvents.DOUBLE_CLICK, event -> { if (entry.usable()) place.accept(item); });
         return row;
-    }
-
-    private void select(EnumCatalog.Entry entry) {
-        preview.clearAllChildren();
-        UIElement picture = new UIElement().layout(l -> l.width(43).height(43).flexShrink(0));
-        picture.style(s -> s.backgroundTexture(EnumPreviews.icon(entry.kind(), entry.id())));
-        UIElement text = new UIElement().layout(l -> l.flex(1).minWidth(0).gapAll(3));
-        text.addChildren(label(Component.literal(entry.name()), false), label(Component.literal(entry.id()), true));
-        if (!entry.usable()) {
-            Label note = label(Component.translatable(unavailable(entry.kind())), true);
-            note.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true));
-            text.addChild(note);
-        }
-        preview.addChildren(picture, text);
     }
 
     static NodeModelLibraryItem item(EnumCatalog.Entry entry) {
