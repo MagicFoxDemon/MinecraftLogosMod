@@ -93,11 +93,12 @@ public final class SpellEditor {
     private SpellGraph graph;
     /** Every rune, to drag onto the canvas; shares the right of the page with the overview. */
     private final RuneLibrary library = new RuneLibrary(this::placeInView);
+    private final EnumLibrary enums = new EnumLibrary(this::placeInView);
     /** Which page is open beside the canvas: the overview, the rune library, or neither. */
     private Shelf shelf = Shelf.OVERVIEW;
     private UIElement overviewPage;
 
-    private enum Shelf { OVERVIEW, LIBRARY, NONE }
+    private enum Shelf { OVERVIEW, LIBRARY, ENUMS, NONE }
     /** Ticks until the canvas is framed around a freshly loaded graph (node sizes need a layout pass first). */
     private int fitIn = -1;
 
@@ -359,6 +360,7 @@ public final class SpellEditor {
         };
         root.style(s -> s.backgroundTexture(page));
         library.setDisplay(TaffyDisplay.NONE);
+        enums.setDisplay(TaffyDisplay.NONE);
         // Bookmark ribbons on the page's edge: each opens its page and shuts the other; clicking the open one shuts it.
         UIElement ribbons = new UIElement().layout(l -> l.width(16).heightPercent(100).gapAll(4).paddingTop(16));
         ribbons.setId("spell_shelf_tabs");
@@ -366,8 +368,10 @@ public final class SpellEditor {
         overviewTab.setId("tab_overview");
         UIElement libraryTab = ManuscriptControls.ribbon("logos.editor.library", () -> shelf == Shelf.LIBRARY, () -> toggle(Shelf.LIBRARY));
         libraryTab.setId("tab_library");
-        ribbons.addChildren(overviewTab, libraryTab);
-        root.addChildren(editor, side, library, ribbons);
+        UIElement enumTab = ManuscriptControls.ribbon("logos.editor.enums", () -> shelf == Shelf.ENUMS, () -> toggle(Shelf.ENUMS));
+        enumTab.setId("tab_enums");
+        ribbons.addChildren(overviewTab, libraryTab, enumTab);
+        root.addChildren(editor, side, library, enums, ribbons);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)));
     }
@@ -377,7 +381,9 @@ public final class SpellEditor {
         shelf = shelf == page ? Shelf.NONE : page;
         overviewPage.setDisplay(shelf == Shelf.OVERVIEW ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         library.setDisplay(shelf == Shelf.LIBRARY ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
+        enums.setDisplay(shelf == Shelf.ENUMS ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         if (shelf == Shelf.LIBRARY) library.fill(editor.getCurrentView());
+        if (shelf == Shelf.ENUMS) enums.open();
     }
 
     /**

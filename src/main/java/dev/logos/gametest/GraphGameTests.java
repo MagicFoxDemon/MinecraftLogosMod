@@ -45,7 +45,56 @@ final class GraphGameTests {
             GraphCompiler.Result rr = GraphCompiler.compile(reloaded);
             h.assertTrue(rr.ok() && rr.source().equals(r.source()), e.getKey() + ": graph changed after save/load: " + rr.error() + "\n" + rr.source());
         }
+        enumCardsRoundtrip(h);
         h.succeed();
+    }
+
+    /** Registry cards, wired former options and typed inline IDs keep their meaning through graph saves. */
+    private static void enumCardsRoundtrip(GameTestHelper h) {
+        record Case(dev.logos.graph.EnumValues.Kind kind, String source, String rune, String port, String value) {}
+        var cases = java.util.List.of(
+                new Case(dev.logos.graph.EnumValues.Kind.CREATURE, "(summon zombie)", "summon", "creature", "minecraft:skeleton"),
+                new Case(dev.logos.graph.EnumValues.Kind.DIMENSION, "(blink (in-dimension @minecraft:the_nether))", "in-dimension", "dimension", "minecraft:the_end"),
+                new Case(dev.logos.graph.EnumValues.Kind.EFFECT, "(potion caster speed 2)", "potion", "effect", "minecraft:regeneration"),
+                new Case(dev.logos.graph.EnumValues.Kind.KIND, "(glow (entities :filter (kind all)) 1)", "kind", "kind", "hostile"),
+                new Case(dev.logos.graph.EnumValues.Kind.ITEM, "(projectile)", "projectile", RuneNode.kw("look"), "minecraft:diamond_sword"),
+                new Case(dev.logos.graph.EnumValues.Kind.BLOCK, "(construct)", "construct", RuneNode.kw("look"), "minecraft:stone"),
+                new Case(dev.logos.graph.EnumValues.Kind.PARTICLE, "(phantasm %end_rod)", "phantasm", "particle", "minecraft:flame"),
+                new Case(dev.logos.graph.EnumValues.Kind.ELEMENT, "(damage caster 1)", "damage", "element", "fire"),
+                new Case(dev.logos.graph.EnumValues.Kind.MOTION, "(projectile)", "projectile", RuneNode.kw("motion"), "homing"),
+                new Case(dev.logos.graph.EnumValues.Kind.SHAPE, "(construct)", "construct", RuneNode.kw("shape"), "dome"),
+                new Case(dev.logos.graph.EnumValues.Kind.WEATHER, "(weather rain)", "weather", "weather", "snow"));
+        for (Case c : cases) {
+            SpellGraph graph = GraphBuilder.build(Compiler.compile("(spell :mana 1000 " + c.source() + ")"));
+            RuneNode consumer = graph.getNodes().stream().filter(n -> n instanceof RuneNode rn && rn.word().equals(c.rune()))
+                    .map(n -> (RuneNode) n).findFirst().orElseThrow();
+            var card = place(graph, c.kind().create());
+            card.setOption(dev.logos.graph.EnumValues.VALUE, c.value());
+            String unwired = GraphCompiler.compile(graph).source();
+            h.assertTrue(graph.graphModel.isCompatiblePort(card.out(RuneNode.OUT), consumer.in(c.port())), c.kind() + " connector is incompatible");
+            var wire = graph.graphModel.createWire(consumer.in(c.port()), card.out(RuneNode.OUT));
+            GraphCompiler.Result compiled = GraphCompiler.compile(graph);
+            h.assertTrue(compiled.ok() && compiled.source().contains(c.value()), c.kind() + " did not compile: " + compiled.error());
+            var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+            graph.graphModel.serialize(out);
+            SpellGraph loaded = new SpellGraph();
+            loaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING,
+                    h.getLevel().registryAccess(), out.buildResult()));
+            GraphCompiler.Result back = GraphCompiler.compile(loaded);
+            h.assertTrue(back.ok() && back.source().equals(compiled.source()), c.kind() + " changed after saving: " + back.error());
+            graph.graphModel.deleteWire(wire);
+            GraphCompiler.Result disconnected = GraphCompiler.compile(graph);
+            h.assertTrue(disconnected.ok() && disconnected.source().equals(unwired), c.kind() + " lost its original fallback after disconnecting");
+        }
+        SpellGraph graph = new SpellGraph();
+        var creature = place(graph, new dev.logos.graph.EnumValues.Creature());
+        var particle = place(graph, new dev.logos.graph.EnumValues.Particle());
+        var summon = place(graph, new RuneNodes.Summon());
+        var phantasm = place(graph, new RuneNodes.Phantasm());
+        var selector = place(graph, new RuneNodes.Entities());
+        h.assertTrue(!graph.graphModel.isCompatiblePort(creature.out(RuneNode.OUT), phantasm.in("particle")), "creature ID fits a particle input");
+        h.assertTrue(!graph.graphModel.isCompatiblePort(particle.out(RuneNode.OUT), summon.in("creature")), "particle ID fits a creature input");
+        h.assertTrue(graph.graphModel.isCompatiblePort(creature.out(dev.logos.graph.EnumValues.FILTER), selector.in(RuneNode.kw("filter"))), "registry filter connector is incompatible");
     }
 
     /** Wires only snap between compatible slot shapes. */

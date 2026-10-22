@@ -82,6 +82,7 @@ final class RuneLibrary extends UIElement {
             if (!(item instanceof NodeModelLibraryItem entry)
                     || !(entry.createNode(GraphNodeCreationData.ofOrphan(graph)) instanceof ICustomNodeModel model)
                     || !(model.getNode() instanceof LogosNode rune)) continue;
+            if (rune instanceof dev.logos.graph.EnumValues.Value) continue;
             Family family = byFamily.get(rune instanceof SpecialNodes.ContextValue ? "CONTEXT" : rune.category().name());
             if (family == null) continue;
             String name = Component.translatableWithFallback(rune.nameKey(), rune.word()).getString();

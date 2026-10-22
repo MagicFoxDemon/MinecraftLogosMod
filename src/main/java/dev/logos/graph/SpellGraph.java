@@ -37,10 +37,11 @@ public class SpellGraph extends Graph {
 
     @Override
     public @Nullable List<TypeHandle> getSupportTypes() {
-        return List.of(LTypes.ENTITY, LTypes.ENTITIES, LTypes.POS, LTypes.BLOCKS, LTypes.DIR, LTypes.NUM, LTypes.BOOL, LTypes.ELEMENT, LTypes.MOTION, LTypes.SHAPE, LTypes.WEATHER, LTypes.STATUS);
+        return List.of(LTypes.ENTITY, LTypes.ENTITIES, LTypes.POS, LTypes.BLOCKS, LTypes.DIR, LTypes.NUM, LTypes.BOOL, LTypes.ELEMENT, LTypes.MOTION, LTypes.SHAPE, LTypes.WEATHER, LTypes.STATUS,
+                LTypes.CREATURE, LTypes.DIMENSION, LTypes.LOOK, LTypes.PARTICLE, LTypes.MOB_EFFECT, LTypes.KIND, LTypes.FILTER);
     }
 
-    /** Constants live inline on input ports; no free-floating constant or variable nodes. */
+    /** Inline constants and catalogue cards cover literals; the toolkit's untyped variable library stays hidden. */
     @Override
     public @Nullable List<TypeHandle> getLibrarySupportTypes() {
         return List.of();

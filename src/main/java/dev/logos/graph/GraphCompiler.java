@@ -195,6 +195,10 @@ public final class GraphCompiler {
         boolean skipped = false;
         for (Rune.Param p : r.params) {
             if (p.type() == Type.ACTION) continue;
+            if (RuneNode.isOption(p) && p.type() != Type.ANCHOR && n.in(p.name()) != null && n.in(p.name()).isConnected()) {
+                items.add(expr(n.in(p.name()), n, p.type()));
+                continue;
+            }
             if (p.type() == Type.DIMENSION) {
                 String id = n.option(RuneNode.dim(p.name()), String.class);
                 items.add(atom(n, "@" + (id == null || id.isBlank() ? Dimensions.DEFAULT : id.trim())));
@@ -268,6 +272,7 @@ public final class GraphCompiler {
             LogosNode src = LogosNode.of(sources.getFirst());
             if (src == null) return null;
             return switch (src) {
+                case EnumValues.Value value -> enumLiteral(value, sources.getFirst().getPortId(), want);
                 case ContextValue cv -> atom(cv, cv.contextName());
                 case SpecialNodes.AnchorValue av -> atom(av, "^" + av.anchor());
                 case Remember r -> atom(r, var(r));
@@ -305,6 +310,20 @@ public final class GraphCompiler {
         } finally {
             valuePath.remove(n);
         }
+    }
+
+    /** A catalogue card becomes the same literal that a hand-written spell has always used. */
+    private SExpr enumLiteral(EnumValues.Value value, String port, @Nullable Type want) {
+        String key = value.value();
+        if (key.isBlank()) throw new GraphError(value, "枚举值不能为空");
+        if (port.equals(EnumValues.FILTER)) return new SExpr.Str(key, id(value), 1);
+        if (want != null && want != value.kind.type) throw new GraphError(value, "枚举类型不匹配：" + value.kind.type.label() + " → " + want.label());
+        return atom(value, switch (value.kind.type) {
+            case DIMENSION -> "@" + key;
+            case LOOK -> "&" + key;
+            case PARTICLE -> "%" + key;
+            default -> key;
+        });
     }
 
     // ---- helpers -----------------------------------------------------------------------------

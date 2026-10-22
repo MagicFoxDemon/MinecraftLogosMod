@@ -33,6 +33,15 @@ public final class LTypes {
     /** ➚ A direction. */
     public static final class Dir {}
 
+    // Graph-only type tokens: registry IDs themselves are stored using Codec.STRING.
+    public static final class CreatureKey {}
+    public static final class DimensionKey {}
+    public static final class LookKey {}
+    public static final class ParticleKey {}
+    public static final class EffectKey {}
+    public static final class KindKey {}
+    public static final class FilterKey {}
+
     public static TypeHandle ENTITY;
     public static TypeHandle ENTITIES;
     public static TypeHandle POS;
@@ -46,6 +55,7 @@ public final class LTypes {
     public static TypeHandle WEATHER;
     public static TypeHandle STATUS;
     public static TypeHandle FLOW;
+    public static TypeHandle CREATURE, DIMENSION, LOOK, PARTICLE, MOB_EFFECT, KIND, FILTER;
 
     private static boolean initialized;
 
@@ -59,6 +69,13 @@ public final class LTypes {
         POS = handle(Pos.class, "◇ 位置", 0xFF3FA7B5, "◇");
         BLOCKS = handle(Blocks.class, "▦ 方块群", 0xFF5FB55A, "▦");
         DIR = handle(Dir.class, "➚ 方向", 0xFF6FD3E0, "➚");
+        CREATURE = handle(CreatureKey.class, "❦ 生物类型", 0xFF779365, "❦");
+        DIMENSION = handle(DimensionKey.class, "◐ 维度", 0xFF9883AD, "◐");
+        LOOK = handle(LookKey.class, "❖ 外观", 0xFFC49C57, "❖");
+        PARTICLE = handle(ParticleKey.class, "✧ 粒子", 0xFF77AAB7, "✧");
+        MOB_EFFECT = handle(EffectKey.class, "⚗ 药效", 0xFFB089A8, "⚗");
+        KIND = handle(KindKey.class, "◈ 种类", 0xFF779365, "◈");
+        FILTER = handle(FilterKey.class, "⊙ 筛选", 0xFF779365, "⊙");
         ELEMENT = handle(Element.class, "🜂 元素", 0xFFE8B84A, "🜂");
         MOTION = handle(Motion.class, "☿ 运动", 0xFF9FE0EF, "☿");
         TypeHandleHelpers.setCustomDefaultValue(ELEMENT, () -> Element.PHYSICAL);
@@ -93,7 +110,14 @@ public final class LTypes {
             case MOTION -> MOTION;
             case SHAPE -> SHAPE;
             case WEATHER -> WEATHER;
-            case STATUS, TEXT, DIMENSION, LOOK, PARTICLE, FILTER, KIND, ANCHOR, CREATURE, MOB_EFFECT -> STATUS;
+            case CREATURE -> CREATURE;
+            case DIMENSION -> DIMENSION;
+            case LOOK -> LOOK;
+            case PARTICLE -> PARTICLE;
+            case MOB_EFFECT -> MOB_EFFECT;
+            case KIND -> KIND;
+            case FILTER -> FILTER;
+            case STATUS, TEXT, ANCHOR -> STATUS;
             case ACTION -> FLOW;
             case NUM, ANY -> NUM;
         };
