@@ -252,7 +252,7 @@ public final class Compiler {
         String id = e instanceof Atom a ? registryId(a.text()) : null;
         // The mana lifeform is this mod's own creature: written bare, it needs no logos: prefix.
         if ("minecraft:mana_lifeform".equals(id)) id = MANA_LIFEFORM;
-        if (id == null) throw err(e, "summon 需要一个生物名，如 zombie、skeleton、minecraft:wither、模组id:生物名");
+        if (id == null) throw err(e, "需要一个生物名，如 zombie、skeleton、minecraft:wither、模组id:生物名");
         if (!creatureExists.test(id)) throw err(e, "没有叫 " + id + " 的生物");
         return Node.lit(Type.CREATURE, id, e.line(), e.col());
     }
@@ -368,7 +368,9 @@ public final class Compiler {
                 if (raw == null) n.defaulted.add(k.name());
                 continue;
             }
-            Node v = raw != null ? expr(raw, s) : k.defaultSrc() != null ? expr(Reader.read(k.defaultSrc()).getFirst(), s) : null;
+            // An appearance written bare (:look zombie) is a creature's model; &id is an item or block.
+            Node v = raw instanceof Atom la && k.type() == Type.LOOK && la.text().matches("[a-z0-9_.:/-]+") ? creature(raw)
+                    : raw != null ? expr(raw, s) : k.defaultSrc() != null ? expr(Reader.read(k.defaultSrc()).getFirst(), s) : null;
             if (v == null) continue;
             n.kw.put(k.name(), check(r, ":" + k.name(), k.type(), false, v, raw != null ? raw : at));
             if (raw == null) n.defaulted.add(k.name());
@@ -494,6 +496,13 @@ public final class Compiler {
 
     private void postCheck(Node n, Scope s, SExpr at) {
         switch (n.rune.name) {
+            // Only a projectile wears a creature's model; a construct is built of blocks, equip hands over items.
+            case "construct" -> {
+                if (n.kw.get("look") != null && n.kw.get("look").type == Type.CREATURE) throw err(at, "炼成体的 :look 只能是方块，如 &stone");
+            }
+            case "equip" -> {
+                if (n.arg(1) != null && n.arg(1).type == Type.CREATURE) throw err(at, "equip 只能给物品，如 &iron_sword，不能给生物");
+            }
             case "mark", "unmark" -> {
                 Node st = n.arg(1);
                 if (st.kind == Node.Kind.LIT && !((Status) st.value).isMark()) {

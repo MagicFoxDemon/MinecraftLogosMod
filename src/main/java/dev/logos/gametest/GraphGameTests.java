@@ -50,7 +50,22 @@ final class GraphGameTests {
         switchChooseRoundtrip(h);
         formRefsRoundtrip(h);
         constructSizesFollowShape(h);
+        creatureLookRoundtrip(h);
         h.succeed();
+    }
+
+    /** A projectile wearing a creature keeps it through the graph as a creature card on its look; the look id round-trips. */
+    private static void creatureLookRoundtrip(GameTestHelper h) {
+        SpellGraph graph = GraphBuilder.build(Compiler.compile("(spell :mana 20 (projectile :look zombie :size 0.5))"));
+        h.assertTrue(graph.getNodes().stream().anyMatch(n -> n instanceof dev.logos.graph.EnumValues.Creature c && c.value().equals("minecraft:zombie")),
+                "the creature look should become a creature card");
+        GraphCompiler.Result r = GraphCompiler.compile(graph);
+        h.assertTrue(r.ok() && r.source().contains(":look minecraft:zombie"), "the creature look must survive: " + r.error() + " " + r.source());
+        int look = dev.logos.runtime.Vfx.creatureLook("minecraft:zombie");
+        h.assertTrue(look <= -2 && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.byId(dev.logos.runtime.Vfx.creatureOf(look)) == net.minecraft.world.entity.EntityType.ZOMBIE,
+                "a creature look folds below NONE and unfolds to the same type");
+        h.assertTrue(dev.logos.runtime.Vfx.creatureOf(dev.logos.runtime.Vfx.lookId("minecraft:mace")) == -1 && dev.logos.runtime.Vfx.creatureOf(-1) == -1,
+                "item looks and none are not creatures");
     }
 
     /** A construct node shows only the sizes its shape uses (and the shield its circle face), and keeps them through the graph. */

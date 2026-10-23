@@ -201,6 +201,15 @@ class CompilerTest {
     }
 
     @Test
+    void projectilesMayWearACreature() {
+        Node zombie = Compiler.compile("(projectile :look zombie)").body().getFirst().kw.get("look");
+        assertEquals(Type.CREATURE, zombie.type);
+        assertEquals("minecraft:zombie", zombie.value);
+        assertEquals(Type.LOOK, Compiler.compile("(projectile :look &mace)").body().getFirst().kw.get("look").type);
+        assertError("(construct :look zombie)", "只能是方块");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");
@@ -240,7 +249,8 @@ class CompilerTest {
         assertEquals(Compiler.compile("(projectile)").stability(), Compiler.compile("(projectile :look &trident :spin 1)").stability());
         assertFalse(Compiler.compile("(projectile)").body().getFirst().kw.containsKey("look"));
         assertError("(projectile :look &Bad_Id)", "不是物品 id");
-        assertError("(projectile :look fire)", "插槽形状不符");
+        // A bare id is a creature to wear, so an unknown one is refused as no such creature.
+        assertError("(projectile :look fire)", "没有叫 minecraft:fire 的生物");
         assertError("(damage &mace 5)", "插槽形状不符");
     }
 

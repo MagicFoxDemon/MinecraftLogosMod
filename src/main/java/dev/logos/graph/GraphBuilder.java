@@ -277,6 +277,14 @@ public final class GraphBuilder {
         if (input == null || v == null) return vy;
         switch (v.kind) {
             case LIT -> {
+                if (v.type == dev.logos.lang.Type.CREATURE && LTypes.LOOK.equals(input.getDataTypeHandle())) {
+                    // A creature worn as a look: its catalogue card, since the slot's own text means an item.
+                    var card = new EnumValues.Creature();
+                    card.selected((String) v.value);
+                    create(card, x + LANE_W - 140, vy);
+                    wire(card.out(RuneNode.OUT), input);
+                    return vy + height(card) + VALUE_GAP_Y;
+                }
                 if (v.type == dev.logos.lang.Type.ANCHOR) {
                     var av = new SpecialNodes.AnchorValue();
                     create(av, x + LANE_W - 140, vy);

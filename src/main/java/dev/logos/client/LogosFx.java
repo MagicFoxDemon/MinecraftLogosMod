@@ -218,12 +218,14 @@ public final class LogosFx {
     }
 
     /**
-     * ❖ An item model worn by a spell body ({@code :look}). It is drawn facing the camera, its tip
-     * turned along the body's on-screen heading (so a flat sprite never shows its edge, even
-     * flying straight away from the caster), and tumbling {@code spin} turns per second.
+     * ❖ What a spell body wears ({@code :look}): an item model, drawn facing the camera, its tip turned
+     * along the body's on-screen heading (so a flat sprite never shows its edge, even flying straight
+     * away from the caster), and tumbling {@code spin} turns per second; or a creature's model, a
+     * stand-in never added to the world, facing where the body flies and tumbling over its side.
      */
     private static final class Look {
-        final ItemStack stack;
+        final @Nullable ItemStack stack;
+        final @Nullable Entity model;
         final float scale;
         final float spin;
         final long born;
@@ -236,8 +238,9 @@ public final class LogosFx {
         /** Tumble forward over whichever side of the screen the body is heading to. */
         float tumble = -1;
 
-        Look(ItemStack stack, float size, float spin, Vec3 pos, Vec3 heading, long born) {
+        Look(@Nullable ItemStack stack, @Nullable Entity model, float size, float spin, Vec3 pos, Vec3 heading, long born) {
             this.stack = stack;
+            this.model = model;
             this.scale = Math.max(0.5f, Math.min(6f, size * 2.5f));
             this.spin = spin;
             this.prev = this.cur = pos;
@@ -245,11 +248,18 @@ public final class LogosFx {
             this.born = born;
         }
 
-        static @Nullable Look of(FxPayload p, Vec3 pos, long now) {
+        static @Nullable Look of(FxPayload p, Vec3 pos, Level level, long now) {
+            Vec3 heading = new Vec3(p.ax(), p.ay(), p.az());
+            int creature = dev.logos.runtime.Vfx.creatureOf(p.look());
+            if (creature >= 0) {
+                var type = BuiltInRegistries.ENTITY_TYPE.byId(creature);
+                Entity model = type == null ? null : type.create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+                return model == null ? null : new Look(null, model, p.size(), p.spin(), pos, heading, now);
+            }
             if (p.look() < 0) return null;
             Item item = BuiltInRegistries.ITEM.byId(p.look());
             if (item == null || item == Items.AIR) return null;
-            return new Look(new ItemStack(item), p.size(), p.spin(), pos, new Vec3(p.ax(), p.ay(), p.az()), now);
+            return new Look(new ItemStack(item), null, p.size(), p.spin(), pos, heading, now);
         }
 
         void moveTo(Vec3 pos, FxPayload p) {
@@ -280,7 +290,7 @@ public final class LogosFx {
                     if (caster == null && nearCamera(pos)) return;
                     Vec3 offset = caster != null ? CastPoints.of(caster, 1).subtract(from.eye()) : Vec3.ZERO;
                     pos = real.add(offset);
-                    t = new Trail(particle(p.particle()), Look.of(p, pos, level.getGameTime()), pos, level.getGameTime());
+                    t = new Trail(particle(p.particle()), Look.of(p, pos, level, level.getGameTime()), pos, level.getGameTime());
                     t.offset = offset;
                     TRAILS.put(p.id(), t);
                 } else {
@@ -576,6 +586,10 @@ public final class LogosFx {
             if (Math.abs(h.x) > 0.2f) l.tumble = h.x > 0 ? -1 : 1;
             float turned = (float) ((level.getGameTime() - l.born + pt) / 20.0 * l.spin * Math.PI * 2) * l.tumble;
             Vec3 p = l.prev.lerp(l.cur, pt);
+            if (l.model != null) {
+                submitModel(mc, l, p, turned, cam, pt, pose, event.getSubmitNodeCollector());
+                continue;
+            }
             pose.pushPose();
             pose.translate(p.x - cam.pos.x, p.y - cam.pos.y, p.z - cam.pos.z);
             pose.mulPose(cam.orientation);
@@ -586,6 +600,31 @@ public final class LogosFx {
             l.state.submit(pose, event.getSubmitNodeCollector(), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
             pose.popPose();
         }
+    }
+
+    /**
+     * A creature-model look: the stand-in faces the way the body flies, scaled so its larger side is the look's
+     * size, centred on the body, and tumbling {@code turned} over its side. Always fully lit, like an item look.
+     */
+    private static void submitModel(Minecraft mc, Look l, Vec3 p, float turned, CameraRenderState cam, float pt, PoseStack pose, SubmitNodeCollector out) {
+        Entity m = l.model;
+        float yaw = (float) Math.toDegrees(Math.atan2(-l.heading.x, l.heading.z));
+        m.setPos(p);
+        m.setYRot(yaw);
+        m.yRotO = yaw;
+        if (m instanceof net.minecraft.world.entity.LivingEntity le) le.yBodyRot = le.yBodyRotO = le.yHeadRot = le.yHeadRotO = yaw;
+        var state = mc.getEntityRenderDispatcher().extractEntity(m, pt);
+        state.lightCoords = LightCoordsUtil.FULL_BRIGHT;
+        float s = l.scale / Math.max(0.25f, Math.max(m.getBbHeight(), m.getBbWidth()));
+        Vec3 side = new Vec3(l.heading.z, 0, -l.heading.x);
+        side = side.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : side.normalize();
+        pose.pushPose();
+        pose.translate(p.x - cam.pos.x, p.y - cam.pos.y, p.z - cam.pos.z);
+        pose.mulPose(new Quaternionf().rotateAxis(turned, (float) side.x, 0, (float) side.z));
+        pose.scale(s, s, s);
+        pose.translate(0, -m.getBbHeight() / 2, 0);
+        mc.getEntityRenderDispatcher().submit(state, cam, 0, 0, 0, pose, out);
+        pose.popPose();
     }
 
     /**

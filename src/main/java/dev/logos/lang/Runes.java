@@ -190,7 +190,7 @@ public final class Runes {
                 .on("on-hit", true, "命中实体时").on("on-impact", false, "撞上方块时（here 是那个方块）")
                 .on("on-tick", false, "每一刻").on("on-expire", false, "消散时（撞墙/寿命结束/穿透耗尽）")
                 .stab(4).doc("弹丸：在世界中飞行的魔法实体。基础 4 魔力 + 运动符文的代价。"
-                        + ":look &物品 让它显现为那件物品的模型（如 &mace、&fire_charge），:spin 是每秒翻转的圈数；"
+                        + ":look &物品 让它显现为那件物品的模型（如 &mace、&fire_charge；方块物品显示为方块），写生物名则显现为那种生物的模型（如 :look zombie），:spin 是每秒翻转的圈数；"
                         + ":trail %粒子 用那种粒子代替元素尾迹（如 %portal、%end_rod）。外观与拖尾不收魔力，也不改变任何行为")
                 .exec((n, c) -> {
                     var m = motion(kw(n, "motion"), c);
@@ -201,7 +201,7 @@ public final class Runes {
                     var obj = new ProjectileObj(n, c.at(from), from.pos(), vec(kw(n, "dir"), c),
                             clamp(num(kw(n, "speed"), c), 0.1, 4), (int) (clamp(num(kw(n, "life"), c), 0.1, 20) * 20), m,
                             (int) clamp(num(kw(n, "pierce"), c), 0, 99), clamp(num(kw(n, "size"), c), 0.1, 3),
-                            new Vfx.Guise(look == null ? Vfx.NONE : Vfx.lookId(text(look, c)), clamp(num(kw(n, "spin"), c), -10, 10),
+                            new Vfx.Guise(look == null ? Vfx.NONE : look.type == CREATURE ? Vfx.creatureLook(text(look, c)) : Vfx.lookId(text(look, c)), clamp(num(kw(n, "spin"), c), -10, 10),
                                     trail == null ? Vfx.NONE : Vfx.particleId(text(trail, c))));
                     SpellRuntime.spawn(obj);
                     Vfx.sound(from.level(), from.pos(), Vfx.sound(n.element), 0.5f, 1.2f);

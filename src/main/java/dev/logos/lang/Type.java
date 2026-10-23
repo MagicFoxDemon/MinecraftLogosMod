@@ -61,6 +61,8 @@ public enum Type {
         if (this == BLOCKS && actual == POS) return true;
         // A plain "id" or "#tag" string is the simplest filter.
         if (this == FILTER && actual == TEXT) return true;
+        // A creature's model is also an appearance (only a projectile wears one; see the compiler's checks).
+        if (this == LOOK && actual == CREATURE) return true;
         // ^name is read as the place it names.
         if ((this == POS || this == BLOCKS) && actual == ANCHOR) return true;
         if (this == POS && broadcast && actual == BLOCKS) return true;
