@@ -49,10 +49,6 @@ public final class AreaWeatherObj extends SpellObject {
         return UPKEEP_PER_AREA * radius * radius * (kind == Weather.THUNDER ? 2 : 1);
     }
 
-    ServerLevel level() {
-        return level;
-    }
-
     AreaWeather.Zone zone() {
         return new AreaWeather.Zone(id, kind, pos.x, pos.z, radius);
     }

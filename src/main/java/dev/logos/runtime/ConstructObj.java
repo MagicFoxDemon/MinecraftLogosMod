@@ -94,6 +94,11 @@ public final class ConstructObj extends SpellObject {
         Vfx.sound(level, entity.geometry().center, SoundEvents.AMETHYST_CLUSTER_BREAK, 0.8f, 1.2f);
     }
 
+    /** Its shape where it stands now. */
+    public ConstructGeometry geometry() {
+        return entity.geometry();
+    }
+
     @Override
     public void tick() {
         if (++age > life || entity.isRemoved() || health <= 0) {

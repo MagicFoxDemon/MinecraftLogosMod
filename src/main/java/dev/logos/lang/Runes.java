@@ -32,6 +32,7 @@ import dev.logos.runtime.ProjectileObj;
 import dev.logos.runtime.SpellInstance;
 import dev.logos.runtime.SpellObject;
 import dev.logos.runtime.SpellRuntime;
+import dev.logos.runtime.Spots;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
 import dev.logos.runtime.TimeSkipObj;
@@ -519,6 +520,25 @@ public final class Runes {
                 .exec((n, c) -> {
                     Place a = place(n.arg(0), c);
                     return a.moved(a.pos().lerp(vec(n.arg(1), c), num(n.arg(2), c)));
+                });
+        def("spot", BINDING, POS).kw("at", POS, "here").kw("radius", NUM, "4").kw("in", Type.FORM, null)
+                .choice("shape", "ball", "disk", "cube").choice("where", "inside", "surface").flag("ground")
+                .doc("择位：随机取一处位置，每次求值重新抽取。不接 :in 时在 :at 周围 :radius 格内：:shape ball 球、disk 水平圆盘、cube 立方；"
+                        + ":where inside 取内部，surface 取表面（球面、圆盘边缘一圈、立方的六个面）。"
+                        + ":in 接一个形体时在它里面取：领域的内部是它的球，表面是它的法阵平面；炼成体按它的实际形状取内部或表面；其他形体取它所在处，没有形体时取此处。"
+                        + ":ground 把取到的点落到同一竖列最近的可站立处（适合召唤、闪现）。免费")
+                .exec((n, c) -> {
+                    boolean surface = choice(n, "where").equals("surface");
+                    var rand = c.inst().level.getRandom();
+                    Place p;
+                    if (kw(n, "in") != null) {
+                        // No body (its form was refused): here, as pos-of does for a missing entity.
+                        p = eval(kw(n, "in"), c) instanceof SpellObject form ? new Place(form.level(), Spots.in(rand, form, surface)) : c.place();
+                    } else {
+                        Place at = place(kw(n, "at"), c);
+                        p = at.moved(Spots.around(rand, at.pos(), clamp(num(kw(n, "radius"), c), 0, 64), choice(n, "shape"), surface));
+                    }
+                    return n.flags.contains("ground") ? p.moved(safeSpot(p.level(), p.pos())) : p;
                 });
         def("look-point", BINDING, POS).opt("range", NUM, "32").stab(1).doc("施法者视线落点（方块表面前方的空气）。1 魔力")
                 .exec((n, c) -> {

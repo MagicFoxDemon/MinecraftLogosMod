@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.lang.ConstructShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -123,6 +124,32 @@ public final class ConstructGeometry {
         if (shape == ConstructShape.DOME) return d.length() > radius;
         double half = shape == ConstructShape.BOX ? depth / 2 : cell / 2;
         return d.dot(normal()) > half;
+    }
+
+    /**
+     * A random point of it, spread evenly: on its outer surface, or anywhere within it. Thin shapes (wall,
+     * platform, shield) are a sheet one cell thick; a dome's inside is the room under its shell.
+     */
+    public Vec3 sample(RandomSource r, boolean surface) {
+        double t = cell / 2;
+        return switch (shape) {
+            case BOX -> local(surface ? Spots.onBox(r, width, height, depth) : Spots.inBox(r, width, height, depth));
+            case WALL -> local(new Vec3(Spots.span(r, width), Spots.span(r, height), surface ? Spots.side(r) * t : Spots.span(r, cell)));
+            case PLANE -> local(new Vec3(Spots.span(r, width), surface ? Spots.side(r) * t : Spots.span(r, cell), Spots.span(r, depth)));
+            case DISK -> {
+                Vec3 d = Spots.inDisk(r, radius, false);
+                yield local(new Vec3(d.x, d.z, surface ? Spots.side(r) * t : Spots.span(r, cell)));
+            }
+            case DOME -> {
+                Vec3 p = surface ? Spots.onSphere(r, radius) : Spots.inBall(r, radius);
+                yield center.add(p.x, Math.abs(p.y), p.z);
+            }
+        };
+    }
+
+    /** A point given in the local frame (right, up, forward), centred on {@link #center}. */
+    private Vec3 local(Vec3 p) {
+        return center.add(right.scale(p.x)).add(up.scale(p.y)).add(forward.scale(p.z));
     }
 
     /** How much there is of it, for mana: an area, or a volume for a solid box. */
