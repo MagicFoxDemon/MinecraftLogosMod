@@ -37,7 +37,7 @@ public final class LogosGameTests {
     private static final List<String> TESTS = List.of(
             "projectile_impact_expiry", "projectile_impact_wall", "projectile_impact_piercing",
             "fireball_hits_and_bursts", "chain_lightning_bounces", "execute_with_proof_is_cheap", "execute_without_proof_starves",
-            "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "config_limits_apply",
+            "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "context_wire_meanings", "config_limits_apply",
             "world_toggle_state", "world_grow_and_decay", "world_players_flag", "world_nearest_player", "world_blink_target", "world_items_magnet", "world_nether_step", "world_time_skip", "world_weather_global", "world_weather_area", "world_lightning",
             "world_wand_casts_selected_page", "world_wood_wands_craft", "world_crystal_page_needs_adhesive", "world_echo_page_upgrade_keeps_spell", "world_transmuted_page_upgrade_keeps_spell", "world_chalk_page_upgrade_keeps_spell", "world_firmament_page_upgrade_keeps_spell",
             "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "world_table_inscribes", "beam_follows_gaze", "field_heals_caster", "infuse_gives_mana", "field_spares_caster_without_players", "field_shields_caster_on_enter", "world_filter_kinds",
@@ -82,6 +82,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("graph_roundtrip", () -> GraphGameTests::roundtrip);
         FUNCTIONS.register("graph_rejects_bad_wires", () -> GraphGameTests::rejectsBadWires);
         FUNCTIONS.register("graph_errors_point_at_nodes", () -> GraphGameTests::errorsPointAtNodes);
+        FUNCTIONS.register("context_wire_meanings", () -> ContextSourceGameTests::meanings);
         FUNCTIONS.register("config_limits_apply", () -> LogosGameTests::configLimits);
         FUNCTIONS.register("world_toggle_state", () -> WorldGameTests::toggleState);
         FUNCTIONS.register("world_grow_and_decay", () -> WorldGameTests::growAndDecay);

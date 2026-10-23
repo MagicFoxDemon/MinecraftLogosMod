@@ -41,6 +41,7 @@ import dev.logos.block.SpellEmitterBlockEntity;
 import dev.logos.graph.EmitterGraphs;
 import dev.logos.graph.GraphBuilder;
 import dev.logos.graph.GraphCompiler;
+import dev.logos.graph.ContextSources;
 import dev.logos.graph.SpecialNodes;
 import dev.logos.graph.LogosNode;
 import dev.logos.graph.RuneNodes;
@@ -467,6 +468,12 @@ public final class SpellEditor {
     /** Reuses the rune's own help, without interpreting context until a particular use is selected. */
     private void refreshSelection() {
         var selected = editor.getCurrentView().getSelected();
+        if (selected.size() == 1 && selected.iterator().next() instanceof WireModel wire) {
+            var context = ContextSources.analyze(graph, wire);
+            runeDescription.setDisplay(context == null ? TaffyDisplay.NONE : TaffyDisplay.FLEX);
+            runeDescription.setText(context == null ? Component.empty() : Component.literal(ContextWireDetails.describe(context)));
+            return;
+        }
         LogosNode node = selected.size() == 1 && selected.iterator().next() instanceof ICustomNodeModel model
                 && model.getNode() instanceof LogosNode rune ? rune : null;
         runeDescription.setDisplay(node == null ? TaffyDisplay.NONE : TaffyDisplay.FLEX);
