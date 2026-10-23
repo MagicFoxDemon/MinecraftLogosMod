@@ -158,6 +158,14 @@ class CompilerTest {
     }
 
     @Test
+    void waveTakesAShapeAndScales() {
+        Node w = Compiler.compile("(let $w (wave i :shape saw :period 20 :amp 2) (do))").body().getFirst().arg(1);
+        assertEquals("saw", w.kw.get("shape").value);
+        assertEquals("sine", Compiler.compile("(let $w (wave 1) (do))").body().getFirst().arg(1).kw.get("shape").value);
+        assertError("(let $w (wave 1 :shape zigzag) (do))", "sine / triangle / saw / square");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");

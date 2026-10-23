@@ -1389,6 +1389,11 @@ public final class Runes {
 
     // ---- 数 Values ---------------------------------------------------------------------------
 
+    /** The part of {@code t} past its whole cycles, 0~1 (also for negative t). */
+    private static double frac(double t) {
+        return t - Math.floor(t);
+    }
+
     private static void fold(String name, DoubleBinaryOperator op, String doc) {
         def(name, VALUE, NUM).rest("x", NUM).doc(doc).exec((n, c) -> {
             double acc = num(n.args.getFirst(), c);
@@ -1449,6 +1454,23 @@ public final class Runes {
                 .exec((n, c) -> {
                     double lo = num(kw(n, "min"), c), hi = num(kw(n, "max"), c);
                     return Math.clamp(num(n.arg(0), c), Math.min(lo, hi), Math.max(lo, hi));
+                });
+        def("wave", VALUE, NUM).p("x", NUM).choice("shape", "sine", "triangle", "saw", "square")
+                .kw("period", NUM, "1").kw("amp", NUM, "1").kw("phase", NUM, "0")
+                .doc("波：随 x 往复的数，在 -amp~amp 之间。:shape sine 正弦、triangle 三角、saw 锯齿（匀速升起后跌回）、square 方波；"
+                        + ":period 每多少 x 重复一次（默认 1），:phase 把波形提前几分之几个周期。x 接循环序号或时间即可做出律动")
+                .exec((n, c) -> {
+                    double period = num(kw(n, "period"), c);
+                    if (period == 0) return 0.0;
+                    double t = num(n.arg(0), c) / period + num(kw(n, "phase"), c);
+                    // Every shape starts at 0 rising (square at +1) and peaks a quarter cycle in, like sine.
+                    double y = switch (choice(n, "shape")) {
+                        case "triangle" -> 4 * Math.abs(frac(t - 0.25) - 0.5) - 1;
+                        case "saw" -> 2 * frac(t + 0.5) - 1;
+                        case "square" -> frac(t) < 0.5 ? 1 : -1;
+                        default -> Math.sin(2 * Math.PI * t);
+                    };
+                    return num(kw(n, "amp"), c) * y;
                 });
         def("random", VALUE, NUM).opt("max", NUM, "1").kw("min", NUM, "0").flag("whole")
                 .doc("min~max 之间的随机数（默认 0~1，不含 max）。:whole 取整数，两端都可能取到，如 (random 6 :min 1 :whole) 掷骰")
