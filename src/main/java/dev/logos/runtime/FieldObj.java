@@ -32,6 +32,10 @@ public final class FieldObj extends SpellObject {
         this.follow = follow;
     }
 
+    public double radius() {
+        return radius;
+    }
+
     @Override
     public void tick() {
         if (++age > life) {

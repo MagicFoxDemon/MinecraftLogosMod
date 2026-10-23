@@ -59,6 +59,15 @@ public abstract class SpellObject {
         inst.release();
     }
 
+    /** Where it is now. */
+    public Vec3 pos() {
+        return pos;
+    }
+
+    public ServerLevel level() {
+        return level;
+    }
+
     /** How far through its life it is, 0 at birth to 1 at its end (1 once ended, by whatever means). */
     public double progress() {
         return ended || life <= 0 ? 1 : Math.min(1, (double) age / life);

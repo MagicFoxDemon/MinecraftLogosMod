@@ -610,6 +610,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "spot", group = BINDING, graphTypes = SpellGraph.class)
+    public static class Spot extends RuneNode {
+        public Spot() {
+            super("spot");
+        }
+    }
+
     @NodeAttribute(name = "lt", group = VALUE, graphTypes = SpellGraph.class)
     public static class Lt extends RuneNode {
         public Lt() {
@@ -973,6 +980,7 @@ public final class RuneNodes {
         BY_RUNE.put("wave", Wave::new);
         BY_RUNE.put("choose", Choose::new);
         BY_RUNE.put("mix-pos", MixPos::new);
+        BY_RUNE.put("spot", Spot::new);
         BY_RUNE.put("<", Lt::new);
         BY_RUNE.put(">", Gt::new);
         BY_RUNE.put("<=", Le::new);

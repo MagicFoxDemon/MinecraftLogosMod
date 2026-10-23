@@ -192,6 +192,15 @@ class CompilerTest {
     }
 
     @Test
+    void spotSamplesAroundAPlaceOrInAForm() {
+        assertEquals(Type.POS, Compiler.compile("(blink (spot :radius 6 :shape disk :ground))").body().getFirst().arg(0).type);
+        Compiler.compile("(field (on-tick (lightning (spot :in form :where surface))))");
+        Compiler.compile("(let $w (construct) (delay 1 (lightning (spot :in $w))))");
+        assertError("(blink (spot :in caster))", "插槽形状不符");
+        assertError("(blink (spot :shape pyramid))", "ball / disk / cube");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");
