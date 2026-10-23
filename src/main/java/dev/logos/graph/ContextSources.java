@@ -109,6 +109,8 @@ public final class ContextSources {
                         : word.equals("beam") ? Meaning.BEAM_END : Meaning.RAY_END);
                 put(scope, node, "aim", word.equals("beam") ? Meaning.BEAM_AIM : Meaning.RAY_AIM);
             }
+            // A switch's fallback runs where the switch stands.
+            case "switch" -> { }
             case "construct" -> {
                 put(scope, node, "self", Meaning.CONSTRUCT_SELF);
                 put(scope, node, "here", switch (event) {

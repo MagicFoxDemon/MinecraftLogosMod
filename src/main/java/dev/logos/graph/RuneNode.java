@@ -33,6 +33,8 @@ public abstract class RuneNode extends LogosNode {
     public static final String OUT = "out";
     public static final String BODY = "body";
     public static final String COUNT = "count";
+    /** On a rune returning ✱ (choose): which type it chooses among, picked like remember's. */
+    public static final String KIND = "kind";
 
     private static final Map<String, Float> PARAM_HINTS = Map.of(
             "amount", 5f, "seconds", 3f, "strength", 1f, "times", 3f, "count", 3f, "distance", 4f, "stacks", 1f);
@@ -65,6 +67,13 @@ public abstract class RuneNode extends LogosNode {
     @Override
     public String doc() {
         return NodeDescriptions.describe(this);
+    }
+
+    /** What a ✱ slot of a rune returning ✱ carries on this node: its kind option, a number unless set. */
+    public Type slot(Type t) {
+        if (t != Type.ANY || rune().returns != Type.ANY) return t;
+        SpecialNodes.RememberKind k = option(KIND, SpecialNodes.RememberKind.class);
+        return (k == null ? SpecialNodes.RememberKind.NUM : k).type;
     }
 
     public static String kw(String name) {
@@ -100,6 +109,10 @@ public abstract class RuneNode extends LogosNode {
     @Override
     public void onDefineOptions(IOptionDefinitionContext context) {
         Rune r = rune();
+        if (r.returns == Type.ANY) {
+            context.addOption(KIND, SpecialNodes.RememberKind.class).withDefaultValue(SpecialNodes.RememberKind.NUM)
+                    .withDisplayName(NodeTerms.parameter(word(), KIND));
+        }
         for (Rune.Param p : r.params) {
             if (p.type() == Type.DIMENSION) {
                 // Not a port: dimensions are chosen from the registered list, not computed.
@@ -141,7 +154,7 @@ public abstract class RuneNode extends LogosNode {
         if (r.returns == Type.ACTION) {
             context.addInputPort(IN, LTypes.FLOW).withOrientation(PortOrientation.Vertical).withDisplayName(Component.literal("▶")).build();
         } else {
-            context.addOutputPort(OUT, LTypes.of(r.returns, false)).withDisplayName(Component.literal(r.returns.label())).build();
+            context.addOutputPort(OUT, LTypes.of(slot(r.returns), false)).withDisplayName(Component.literal(slot(r.returns).label())).build();
         }
         for (Rune.Param p : r.params) {
             if (isOption(p)) {
@@ -151,12 +164,22 @@ public abstract class RuneNode extends LogosNode {
                 continue;
             }
             if (p.type() == Type.ACTION) {
+                if (p.rest()) {
+                    // Numbered branches, counted from 0 like the index that picks them.
+                    Integer n = option(COUNT, Integer.class);
+                    for (int i = 0; i < Math.max(1, n == null ? 2 : n); i++) {
+                        context.addOutputPort(p.name() + i, LTypes.FLOW).withDisplayName(Component.literal("⤷ ").append(NodeTerms.parameter(word(), p.name())).append(" " + i)).build();
+                    }
+                    continue;
+                }
                 String glyph = p.name().equals("then") ? "✔ " : p.name().equals("else") ? "✘ " : "⤷ ";
                 context.addOutputPort(p.name(), LTypes.FLOW).withDisplayName(Component.literal(glyph).append(NodeTerms.parameter(word(), p.name()))).build();
             } else if (p.rest()) {
                 Integer n = option(COUNT, Integer.class);
                 for (int i = 0; i < Math.max(1, n == null ? 2 : n); i++) {
-                    input(context, p.name() + i, NodeTerms.parameter(word(), p.name()).append(" " + (i + 1)), p.type(), false, null, p.name());
+                    // Values to choose among (✱) are numbered from 0, like the index that picks them.
+                    int shown = p.type() == Type.ANY ? i : i + 1;
+                    input(context, p.name() + i, NodeTerms.parameter(word(), p.name()).append(" " + shown), slot(p.type()), false, null, p.name());
                 }
             } else {
                 input(context, p.name(), NodeTerms.parameter(word(), p.name()), p.type(), p.broadcast(), p.defaultSrc(), p.name());

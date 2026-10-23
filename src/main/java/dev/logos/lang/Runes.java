@@ -1317,6 +1317,17 @@ public final class Runes {
                     else if (n.arg(2) != null) eval(n.arg(2), c);
                     return null;
                 });
+        def("switch", LOGIC, ACTION).p("index", NUM).rest("branch", ACTION)
+                .on("on-other", false, "序号不对应任何分支时").stab(1)
+                .doc("择路：按序号（四舍五入，从 0 数起）只走其中一条分支，如 (switch (random 2 :whole) (do …) (do …) (do …))；"
+                        + "序号小于 0、超过最后一条或不是数时走 on-other。0.5 魔力")
+                .exec((n, c) -> {
+                    if (!c.inst().spend(0.5, "switch")) return null;
+                    int k = branch(num(n.arg(0), c), n.args.size() - 1, false);
+                    if (k < 0) fire(n, "on-other", c);
+                    else eval(n.arg(k + 1), c);
+                    return null;
+                });
         def("each", LOGIC, ACTION).p("targets", ENTITIES).body(true).stab(2)
                 .doc("对每个实体执行（生物、玩家、掉落物都可以），内部 target/here 指向它。每个 0.5 魔力")
                 .exec((n, c) -> {
@@ -1389,6 +1400,21 @@ public final class Runes {
 
     // ---- 数 Values ---------------------------------------------------------------------------
 
+    /** Rounded to the nearest whole number, halves away from zero (2.5 → 3, −2.5 → −3). */
+    private static double nearest(double x) {
+        return Math.signum(x) * Math.floor(Math.abs(x) + 0.5);
+    }
+
+    /**
+     * Which of {@code count} choices an index picks, counting from 0: wrapped round, or -1 when it names none.
+     */
+    private static int branch(double index, int count, boolean wrap) {
+        if (Double.isNaN(index)) return wrap ? 0 : -1;
+        long k = (long) nearest(index);
+        if (wrap) return (int) Math.floorMod(k, (long) count);
+        return k < 0 || k >= count ? -1 : (int) k;
+    }
+
     /** The part of {@code t} past its whole cycles, 0~1 (also for negative t). */
     private static double frac(double t) {
         return t - Math.floor(t);
@@ -1446,8 +1472,18 @@ public final class Runes {
                     return switch (choice(n, "mode")) {
                         case "up" -> Math.ceil(x);
                         case "down" -> Math.floor(x);
-                        default -> Math.signum(x) * Math.floor(Math.abs(x) + 0.5);
+                        default -> nearest(x);
                     };
+                });
+        def("choose", VALUE, ANY).p("index", NUM).rest("value", ANY).flag("wrap")
+                .doc("择值：按序号（四舍五入，从 0 数起）取其中一个值，各个值须是同一种（数、位置、实体……），结果也是这一种；"
+                        + "只求值被选中的那个。序号超出时取最近的一端，:wrap 则绕回开头循环，如配合 i 轮流取值")
+                .exec((n, c) -> {
+                    int count = n.args.size() - 1;
+                    double x = num(n.arg(0), c);
+                    int k = n.flags.contains("wrap") ? branch(x, count, true)
+                            : (int) Math.clamp((long) nearest(Double.isNaN(x) ? 0 : x), 0, count - 1);
+                    return eval(n.arg(k + 1), c);
                 });
         def("clamp", VALUE, NUM).p("x", NUM).kw("min", NUM, "0").kw("max", NUM, "1")
                 .doc("约束：把数限制在 min~max 之间（默认 0~1），低于下限取下限，高于上限取上限；两者写反时互换")

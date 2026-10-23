@@ -51,6 +51,13 @@ public final class Report {
                 }
                 return;
             }
+            case "switch" -> {
+                out.accept(Component.literal(indent).append(tag(n)).append(Component.literal("switch " + n.arg(0).show())));
+                for (int i = 1; i < n.args.size(); i++) {
+                    out.accept(Component.literal(next + "⤷ " + (i - 1) + ":").withStyle(ChatFormatting.LIGHT_PURPLE));
+                    tree(n.arg(i), next + "   ", out);
+                }
+            }
             case "let" -> out.accept(Component.literal(indent).append(tag(n))
                     .append(Component.literal("let " + n.arg(0).value + " = " + n.arg(1).show() + "  ").withStyle(ChatFormatting.WHITE))
                     .append(Component.literal(n.arg(1).type.label()).withStyle(ChatFormatting.DARK_GRAY)));

@@ -369,6 +369,22 @@ public final class Compiler {
             n.kw.put(k.name(), check(r, ":" + k.name(), k.type(), false, v, raw != null ? raw : at));
             if (raw == null) n.defaulted.add(k.name());
         }
+        if (r.returns == Type.ANY) {
+            // It hands back one of its ✱ values: all must be of one type, and that is its own.
+            Type t = null;
+            for (int i = 0; i < n.args.size(); i++) {
+                Rune.Param p = r.params.get(Math.min(i, r.params.size() - 1));
+                if (p.type() != Type.ANY) continue;
+                Node v = n.args.get(i);
+                if (t == null) t = v.type;
+                else if (!t.accepts(v.type, false)) throw err(pos.get(i), r.name + " 的各个值必须是同一种：前面是 " + t.label() + "，这里是 " + v.type.label());
+            }
+            // The kinds a value can be remembered as, so the editor can draw it too.
+            if (!java.util.Set.of(Type.NUM, Type.POS, Type.DIR, Type.ENTITY, Type.ENTITIES).contains(t)) {
+                throw err(at, r.name + " 只能在数、位置、方向、实体或实体群之间选择，这里是 " + t.label());
+            }
+            n.type = t;
+        }
         stability += r.stability * (1 + 0.2 * s.depth());
         for (var e : evRaw.entrySet()) {
             Rune.EventSpec spec = r.events.get(e.getKey());

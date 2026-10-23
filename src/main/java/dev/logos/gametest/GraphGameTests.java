@@ -47,7 +47,25 @@ final class GraphGameTests {
         }
         enumCardsRoundtrip(h);
         choiceRoundtrip(h);
+        switchChooseRoundtrip(h);
         h.succeed();
+    }
+
+    /** switch keeps its numbered branches (an empty one too) and on-other; choose keeps its value type and options. */
+    private static void switchChooseRoundtrip(GameTestHelper h) {
+        String src = "(spell :mana 50 (switch (random 3 :whole) (mark caster #a) (do) (blink (choose i here (above here 2) :wrap)) (on-other (mark caster #o))))";
+        Spell original = Compiler.compile(src);
+        SpellGraph graph = GraphBuilder.build(original);
+        GraphCompiler.Result r = GraphCompiler.compile(graph);
+        h.assertTrue(r.ok(), "switch/choose graph does not compile: " + r.error() + "\n" + r.source());
+        var sw = r.spell().body().getFirst();
+        h.assertTrue(sw.rune.name.equals("switch") && sw.args.size() == 4 && sw.events.containsKey("on-other"),
+                "switch lost branches or on-other:\n" + r.source());
+        h.assertTrue(sw.arg(2).rune.name.equals("do") && sw.arg(2).body.isEmpty(), "the empty middle branch must keep its place:\n" + r.source());
+        var choose = sw.arg(3).body.getFirst().arg(0);
+        h.assertTrue(choose.rune.name.equals("choose") && choose.type == dev.logos.lang.Type.POS && choose.flags.contains("wrap") && choose.args.size() == 3,
+                "choose lost its type, :wrap or options:\n" + r.source());
+        h.assertTrue(Compiler.compile(r.source()).stability() == r.spell().stability(), "regenerated switch source is not stable");
     }
 
     /** A choice keyword becomes the node's dropdown and comes back as the same word; its default is left out. */

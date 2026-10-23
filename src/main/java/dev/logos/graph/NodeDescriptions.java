@@ -14,11 +14,14 @@ public final class NodeDescriptions {
         StringBuilder text = new StringBuilder(TEXT.get(word + "/intro"));
         if (node instanceof RuneNode runeNode) {
             var rune = runeNode.rune();
+            if (rune.returns == Type.ANY) line(text, word, RuneNode.KIND, "");
             for (var param : rune.params) {
                 if (param.rest()) {
                     line(text, word, "argument-count", "");
                     Integer count = node.option(RuneNode.COUNT, Integer.class);
-                    for (int i = 1; i <= Math.max(1, count == null ? 2 : count); i++) {
+                    // Branches and options picked by an index are numbered from 0, like the index.
+                    int first = param.type() == Type.ACTION || param.type() == Type.ANY ? 0 : 1;
+                    for (int i = first; i < first + Math.max(1, count == null ? 2 : count); i++) {
                         line(text, word, param.name(), " " + i);
                     }
                 } else line(text, word, param.name(), "");
@@ -477,6 +480,11 @@ public final class NodeDescriptions {
             Map.entry("if/param/cond", "本次分支判断的命题。"),
             Map.entry("if/param/then", "命题成立时执行的行动。"),
             Map.entry("if/param/else", "命题不成立时执行的行动；可留空。"),
+            Map.entry("switch/intro", "按序号从几条行动分支中只走一条。"),
+            Map.entry("switch/note", "消耗 0.5 魔力。分支数量在节点的数量选项中调整；空着的分支什么也不做。"),
+            Map.entry("switch/param/index", "要走第几条分支，从 0 数起，四舍五入取整；可连接随机整数、取整或波。"),
+            Map.entry("switch/param/branch", "序号等于此编号时执行的行动。"),
+            Map.entry("switch/param/on-other", "序号小于 0、超过最后一条分支或不是数时执行；此处、目标与择路处相同。"),
             Map.entry("each/intro", "对实体群中的每个合格实体依次执行行动。"),
             Map.entry("each/note", "每次执行内部行动前消耗 0.5 魔力，内部行动另计代价。"),
             Map.entry("each/param/targets", "需要遍历的实体群；已失效或不允许影响的对象会被跳过。"),
@@ -582,7 +590,13 @@ public final class NodeDescriptions {
             Map.entry("clamp/param/x", "要约束的数。"),
             Map.entry("clamp/param/min", "允许的最小值，默认 0；与上限写反时两者互换。"),
             Map.entry("clamp/param/max", "允许的最大值，默认 1。"),
-            Map.entry("wave/intro", "随输入往复起伏的数：输入每走过一个周期，波形重复一次。"),
+            Map.entry("choose/intro", "按序号从几个候选中取出一个值。候选须是同一种值，在节点的值类型里选择：数、位置、方向、实体或实体群。"),
+            Map.entry("choose/result", "被选中的候选，类型与候选相同；只有被选中的候选会求值。"),
+            Map.entry("choose/param/kind", "候选与结果的类型。改变后输入输出接口随之改变。"),
+            Map.entry("choose/param/index", "要取第几个候选，从 0 数起，四舍五入取整。超出范围时取最近的一端；开启循环取值则绕回开头。"),
+            Map.entry("choose/param/value", "可供选择的一个候选；编号即对应的序号。"),
+            Map.entry("choose/param/wrap", "开启后序号超出范围时绕回开头循环，例如三个候选时序号 3 取候选 0、序号 −1 取候选 2；配合循环序号即可轮流取值。"),
+            Map.entry("wave/intro","随输入往复起伏的数：输入每走过一个周期，波形重复一次。"),
             Map.entry("wave/result", "在 −振幅 ~ +振幅 之间的数。各波形都从 0 起、向上升，在四分之一周期处到达峰值（方波从 +振幅 起）。"
                     + "需要 0~1 时可接入调和或约束。"),
             Map.entry("wave/param/x", "推动波形前进的数，例如重复的序号、距离或剩余魔力。"),

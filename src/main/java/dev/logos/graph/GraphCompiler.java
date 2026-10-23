@@ -170,6 +170,12 @@ public final class GraphCompiler {
             return new ListExpr(items, id(n), 1);
         }
         arguments(n, items);
+        for (Rune.Param p : r.params) {
+            if (p.type() != Type.ACTION || !p.rest()) continue;
+            // Numbered branches (switch): each becomes one (do …), empty ones too, so their numbers keep their places.
+            Integer count = n.option(RuneNode.COUNT, Integer.class);
+            for (int i = 0; i < Math.max(1, count == null ? 2 : count); i++) items.add(block(n, chain(n.out(p.name() + i))));
+        }
         for (Rune.EventSpec e : r.events.values()) {
             List<SExpr> handler = chain(n.out(RuneNode.event(e.name())));
             if (handler.isEmpty()) continue;
@@ -227,8 +233,8 @@ public final class GraphCompiler {
             if (p.rest()) {
                 Integer count = n.option(RuneNode.COUNT, Integer.class);
                 for (int i = 0; i < Math.max(1, count == null ? 2 : count); i++) {
-                    SExpr e = expr(n.in(p.name() + i), n, p.type());
-                    if (e == null) throw new GraphError(n, "缺少输入 " + p.type().label() + " " + p.name() + (i + 1));
+                    SExpr e = expr(n.in(p.name() + i), n, n.slot(p.type()));
+                    if (e == null) throw new GraphError(n, "缺少输入 " + n.slot(p.type()).label() + " " + p.name() + (i + 1));
                     items.add(e);
                 }
                 continue;

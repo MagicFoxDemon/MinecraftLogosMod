@@ -138,6 +138,17 @@ final class RuneEmblems {
                 ".#.....#.",
                 "+.......#",
                 "........."}, "if");
+        // The way forks three ways; one is taken.
+        put(new String[]{
+                "....#....",
+                "....#....",
+                "....#....",
+                "....#....",
+                "..#.#.#..",
+                ".#..#..#.",
+                "#...#...#",
+                "#...+...#",
+                "........."}, "switch");
         // A loop drawn round each one in turn.
         put(new String[]{
                 ".#######.",

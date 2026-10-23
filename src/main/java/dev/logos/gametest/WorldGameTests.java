@@ -91,6 +91,21 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /** switch runs only the branch its index names, counted from 0; any other index runs on-other. */
+    static void switchBranches(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        String spell = "(switch %s (mark caster #a) (mark caster #b) (on-other (mark caster #o)))";
+        castAt(h, p, String.format(spell, "1"), new BlockPos(0, 2, 0));
+        castAt(h, p, String.format(spell, "0.4"), new BlockPos(0, 2, 0));
+        castAt(h, p, String.format(spell, "2"), new BlockPos(0, 2, 0));
+        castAt(h, p, String.format(spell, "-1"), new BlockPos(0, 2, 0));
+        double a = StatusData.stacks(p, new Status("#a")), b = StatusData.stacks(p, new Status("#b")), o = StatusData.stacks(p, new Status("#o"));
+        h.assertTrue(a == 1 && b == 1 && o == 2, "expected #a 1 (index 0.4), #b 1 (index 1), #o 2 (2 and -1); got " + a + ", " + b + ", " + o);
+        SpellInstance none = castAt(h, p, "(spell :mana 10 (switch 3 (mark caster #a)))", new BlockPos(0, 2, 0));
+        h.assertTrue(Math.abs(none.injected - none.mana - 0.5) < 1e-9, "a switch costs 0.5 even when nothing runs, cost " + (none.injected - none.mana));
+        h.succeed();
+    }
+
     /** Without :players, spells skip other players; with it, they reach them. */
     static void playersFlag(GameTestHelper h) {
         ServerPlayer p = caster(h);

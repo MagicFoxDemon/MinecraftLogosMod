@@ -12,7 +12,8 @@ public final class Node {
     public enum Kind { LIT, CTX, VAR, CALL }
 
     public final Kind kind;
-    public final Type type;
+    /** Fixed by the rune, except one returning ✱ (choose), which takes the type of the values it chooses among. */
+    public Type type;
     public final Object value;
     public final Rune rune;
     public final List<Node> args = new ArrayList<>();

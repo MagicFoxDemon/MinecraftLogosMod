@@ -407,6 +407,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "switch", group = LOGIC, graphTypes = SpellGraph.class)
+    public static class Switch extends RuneNode {
+        public Switch() {
+            super("switch");
+        }
+    }
+
     @NodeAttribute(name = "each", group = LOGIC, graphTypes = SpellGraph.class)
     public static class Each extends RuneNode {
         public Each() {
@@ -579,6 +586,13 @@ public final class RuneNodes {
     public static class Wave extends RuneNode {
         public Wave() {
             super("wave");
+        }
+    }
+
+    @NodeAttribute(name = "choose", group = VALUE, graphTypes = SpellGraph.class)
+    public static class Choose extends RuneNode {
+        public Choose() {
+            super("choose");
         }
     }
 
@@ -923,6 +937,7 @@ public final class RuneNodes {
         BY_RUNE.put("unanchor", Unanchor::new);
         BY_RUNE.put("halt", Halt::new);
         BY_RUNE.put("if", If::new);
+        BY_RUNE.put("switch", Switch::new);
         BY_RUNE.put("each", Each::new);
         BY_RUNE.put("repeat", Repeat::new);
         BY_RUNE.put("delay", Delay::new);
@@ -948,6 +963,7 @@ public final class RuneNodes {
         BY_RUNE.put("round", Round::new);
         BY_RUNE.put("clamp", Clamp::new);
         BY_RUNE.put("wave", Wave::new);
+        BY_RUNE.put("choose", Choose::new);
         BY_RUNE.put("mix-pos", MixPos::new);
         BY_RUNE.put("<", Lt::new);
         BY_RUNE.put(">", Gt::new);
