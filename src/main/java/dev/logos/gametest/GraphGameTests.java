@@ -48,7 +48,26 @@ final class GraphGameTests {
         enumCardsRoundtrip(h);
         choiceRoundtrip(h);
         switchChooseRoundtrip(h);
+        formRefsRoundtrip(h);
         h.succeed();
+    }
+
+    /** A form's or summon's kept body becomes the node's own output wire, and this form becomes its context node. */
+    private static void formRefsRoundtrip(GameTestHelper h) {
+        String[] sources = {
+                "(spell :mana 100 (let $f (field :life 2) (delay 1 (heal caster (life-of $f)))))",
+                "(spell :mana 100 (projectile (on-tick (heal caster (life-of form)))))",
+                "(spell :mana 500 (let $m (summon mana_lifeform) (glow $m 5)))"};
+        for (String src : sources) {
+            SpellGraph graph = GraphBuilder.build(Compiler.compile(src));
+            h.assertTrue(graph.getNodes().stream().noneMatch(n -> n instanceof dev.logos.graph.SpecialNodes.Remember), "a kept body must not become a remember node: " + src);
+            GraphCompiler.Result r = GraphCompiler.compile(graph);
+            h.assertTrue(r.ok(), "graph does not compile: " + r.error() + " for " + src + "\n" + r.source());
+            h.assertTrue(Compiler.compile(r.source()).stability() == r.spell().stability(), "regenerated source is not stable: " + r.source());
+            boolean kept = src.contains("$f") || src.contains("$m");
+            h.assertTrue(!kept || r.source().contains("(let $y"), "the output wire should come back as let: " + r.source());
+            h.assertTrue(kept || r.source().contains("(life-of form)"), "this form should come back as form: " + r.source());
+        }
     }
 
     /** switch keeps its numbered branches (an empty one too) and on-other; choose keeps its value type and options. */

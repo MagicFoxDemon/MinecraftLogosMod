@@ -33,6 +33,8 @@ public abstract class RuneNode extends LogosNode {
     public static final String OUT = "out";
     public static final String BODY = "body";
     public static final String COUNT = "count";
+    /** What an action hands back (a form's 此形, summon's 吾之使魔), for what follows it in the flow. */
+    public static final String YIELD = "yield";
     /** On a rune returning ✱ (choose): which type it chooses among, picked like remember's. */
     public static final String KIND = "kind";
 
@@ -193,6 +195,10 @@ public abstract class RuneNode extends LogosNode {
         }
         if (r.body) {
             context.addOutputPort(BODY, LTypes.FLOW).withDisplayName(Component.literal("⤷ ").append(NodeTerms.parameter(word(), BODY))).build();
+        }
+        if (r.yields != null) {
+            context.addOutputPort(YIELD, LTypes.of(r.yields, false))
+                    .withDisplayName(Component.literal(r.yields.glyph + " ").append(NodeTerms.parameter(word(), YIELD))).build();
         }
         if (r.returns == Type.ACTION) {
             context.addOutputPort(NEXT, LTypes.FLOW).withOrientation(PortOrientation.Vertical).withDisplayName(Component.literal("▶")).build();

@@ -589,6 +589,17 @@ final class RuneEmblems {
                 "..#####..",
                 ".........",
                 "........."}, "self");
+        // Salt, the sign of every form: the body a form made.
+        put(new String[]{
+                "..#####..",
+                ".#.....#.",
+                "#.......#",
+                "#.......#",
+                "#########",
+                "#.......#",
+                "#.......#",
+                ".#.....#.",
+                "..#####.."}, "form");
         // i: the count of the loop.
         put(new String[]{
                 "....#....",

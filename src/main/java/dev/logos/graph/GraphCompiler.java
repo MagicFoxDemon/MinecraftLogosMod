@@ -150,6 +150,18 @@ public final class GraphCompiler {
             if (!(n instanceof RuneNode rn) || rn.rune().returns != Type.ACTION) {
                 throw new GraphError(n, "只有行动节点可以接在流程 ▶ 上");
             }
+            PortModel kept = rn.out(RuneNode.YIELD);
+            if (kept != null && kept.isConnected()) {
+                // Its 此形 / 吾之使魔 is used after it: let keeps what it made for everything that follows.
+                List<SExpr> let = new ArrayList<>();
+                let.add(atom(rn, "let"));
+                let.add(atom(rn, yieldVar(rn)));
+                let.add(statement(rn));
+                let.addAll(chain(rn.out(RuneNode.NEXT)));
+                if (let.size() == 3) throw new GraphError(rn, "「" + rn.title().trim() + "」的输出只能接给它之后的行动；在它自己的事件里请用此形");
+                out.add(new ListExpr(let, id(rn), 1));
+                return;
+            }
             out.add(statement(rn));
             out.addAll(chain(rn.out(RuneNode.NEXT)));
         } finally {
@@ -290,6 +302,7 @@ public final class GraphCompiler {
                 case ContextValue cv -> atom(cv, cv.contextName());
                 case SpecialNodes.AnchorValue av -> atom(av, "^" + av.anchor());
                 case Remember r -> atom(r, var(r));
+                case RuneNode rn when sources.getFirst().getPortId().equals(RuneNode.YIELD) -> atom(rn, yieldVar(rn));
                 case RuneNode rn -> valueCall(rn);
                 default -> throw new GraphError(src, "这个节点不能作为值使用");
             };
@@ -355,6 +368,10 @@ public final class GraphCompiler {
 
     private String var(Remember r) {
         return "$m" + id(r);
+    }
+
+    private String yieldVar(RuneNode n) {
+        return "$y" + id(n);
     }
 
     static String num(float f) {

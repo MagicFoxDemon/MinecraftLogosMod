@@ -37,6 +37,7 @@ public final class LTypes {
     public static final class CreatureKey {}
     public static final class DimensionKey {}
     public static final class LookKey {}
+    public static final class FormKey {}
     public static final class ParticleKey {}
     public static final class EffectKey {}
     public static final class KindKey {}
@@ -55,7 +56,7 @@ public final class LTypes {
     public static TypeHandle WEATHER;
     public static TypeHandle STATUS;
     public static TypeHandle FLOW;
-    public static TypeHandle CREATURE, DIMENSION, LOOK, PARTICLE, MOB_EFFECT, KIND, FILTER;
+    public static TypeHandle CREATURE, DIMENSION, LOOK, PARTICLE, MOB_EFFECT, KIND, FILTER, FORM;
 
     private static boolean initialized;
 
@@ -76,6 +77,7 @@ public final class LTypes {
         MOB_EFFECT = handle(EffectKey.class, "⚗ 药效", 0xFFB089A8, "⚗");
         KIND = handle(KindKey.class, "◈ 种类", 0xFF779365, "◈");
         FILTER = handle(FilterKey.class, "⊙ 筛选", 0xFF779365, "⊙");
+        FORM = handle(FormKey.class, "🜔 形", 0xFFE6E2D3, "🜔");
         ELEMENT = handle(Element.class, "🜂 元素", 0xFFE8B84A, "🜂");
         MOTION = handle(Motion.class, "☿ 运动", 0xFF9FE0EF, "☿");
         TypeHandleHelpers.setCustomDefaultValue(ELEMENT, () -> Element.PHYSICAL);
@@ -117,6 +119,7 @@ public final class LTypes {
             case MOB_EFFECT -> MOB_EFFECT;
             case KIND -> KIND;
             case FILTER -> FILTER;
+            case FORM -> FORM;
             case STATUS, TEXT, ANCHOR -> STATUS;
             case ACTION -> FLOW;
             case NUM, ANY -> NUM;

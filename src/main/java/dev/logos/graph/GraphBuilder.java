@@ -141,6 +141,16 @@ public final class GraphBuilder {
                 chain(flat, prev, x);
                 return;
             }
+            if (s.rune.name.equals("let") && s.arg(1).kind == Node.Kind.CALL && s.arg(1).rune.yields != null && s.arg(1).type == dev.logos.lang.Type.ACTION) {
+                // Keeping what a form or summon made: that node's own 此形 / 吾之使魔 output, not a remember node.
+                RuneNode n = statement(s.arg(1), x);
+                wire(prev, n.in(RuneNode.IN));
+                vars.put((String) s.arg(0).value, n.out(RuneNode.YIELD));
+                List<Node> rest = new ArrayList<>(s.body);
+                rest.addAll(stmts.subList(i + 1, stmts.size()));
+                chain(rest, n.out(RuneNode.NEXT), x);
+                return;
+            }
             if (s.rune.name.equals("let")) {
                 Remember r = create(new Remember(), x, y);
                 r.setOption(Remember.KIND, RememberKind.of(s.arg(1).type));
@@ -312,6 +322,7 @@ public final class GraphBuilder {
             case "up" -> new SpecialNodes.Up();
             case "down" -> new SpecialNodes.Down();
             case "self" -> new SpecialNodes.Self();
+            case "form" -> new SpecialNodes.Form();
             default -> new SpecialNodes.Index();
         };
     }

@@ -1,6 +1,8 @@
 package dev.logos.lang;
 
 import static dev.logos.lang.Category.*;
+// FORM is also a type (🜔, a body a form made): bare FORM is the family, Type.FORM the type.
+import static dev.logos.lang.Category.FORM;
 import static dev.logos.lang.Type.*;
 import static dev.logos.runtime.Interp.*;
 
@@ -28,6 +30,7 @@ import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.Place;
 import dev.logos.runtime.ProjectileObj;
 import dev.logos.runtime.SpellInstance;
+import dev.logos.runtime.SpellObject;
 import dev.logos.runtime.SpellRuntime;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
@@ -179,7 +182,7 @@ public final class Runes {
     // ---- 盐 Salt / Form ----------------------------------------------------------------------
 
     private static void forms() {
-        def("projectile", FORM, ACTION)
+        def("projectile", FORM, ACTION).yields(Type.FORM)
                 .kw("from", POS, "here").kw("dir", DIR, "aim").kw("speed", NUM, "1.2").kw("life", NUM, "3")
                 .kw("motion", Type.MOTION, "forward").kw("pierce", NUM, "0").kw("size", NUM, "0.3")
                 .kw("look", LOOK, null).kw("spin", NUM, "0").kw("trail", PARTICLE, null)
@@ -194,16 +197,17 @@ public final class Runes {
                     Place from = place(kw(n, "from"), c);
                     Node look = kw(n, "look");
                     Node trail = kw(n, "trail");
-                    SpellRuntime.spawn(new ProjectileObj(n, c.at(from), from.pos(), vec(kw(n, "dir"), c),
+                    var obj = new ProjectileObj(n, c.at(from), from.pos(), vec(kw(n, "dir"), c),
                             clamp(num(kw(n, "speed"), c), 0.1, 4), (int) (clamp(num(kw(n, "life"), c), 0.1, 20) * 20), m,
                             (int) clamp(num(kw(n, "pierce"), c), 0, 99), clamp(num(kw(n, "size"), c), 0.1, 3),
                             new Vfx.Guise(look == null ? Vfx.NONE : Vfx.lookId(text(look, c)), clamp(num(kw(n, "spin"), c), -10, 10),
-                                    trail == null ? Vfx.NONE : Vfx.particleId(text(trail, c)))));
+                                    trail == null ? Vfx.NONE : Vfx.particleId(text(trail, c))));
+                    SpellRuntime.spawn(obj);
                     Vfx.sound(from.level(), from.pos(), Vfx.sound(n.element), 0.5f, 1.2f);
-                    return null;
+                    return c.inst().dead ? null : obj;
                 });
 
-        def("beam", FORM, ACTION)
+        def("beam", FORM, ACTION).yields(Type.FORM)
                 .kw("from", POS, null).kw("dir", DIR, null).kw("radius", NUM, "0.5").kw("range", NUM, "24")
                 .kw("life", NUM, "2").kw("every", NUM, "0.25").kw("trail", PARTICLE, null)
                 .on("on-enter", true, "实体进入光柱时（每个实体一次）").on("on-hit", true, "每次脉动，对光柱里的每个实体")
@@ -216,14 +220,15 @@ public final class Runes {
                 .exec((n, c) -> {
                     if (!c.inst().spend(6, "beam")) return null;
                     Node trail = kw(n, "trail");
-                    SpellRuntime.spawn(new BeamObj(n, c, clamp(num(kw(n, "radius"), c), 0.1, 4), clamp(num(kw(n, "range"), c), 1, 64),
+                    var obj = new BeamObj(n, c, clamp(num(kw(n, "radius"), c), 0.1, 4), clamp(num(kw(n, "range"), c), 1, 64),
                             (int) (clamp(num(kw(n, "life"), c), 0.05, 30) * 20), (int) Math.round(clamp(num(kw(n, "every"), c), 0.05, 10) * 20),
-                            kw(n, "from"), kw(n, "dir"), trail == null ? Vfx.NONE : Vfx.particleId(text(trail, c))));
+                            kw(n, "from"), kw(n, "dir"), trail == null ? Vfx.NONE : Vfx.particleId(text(trail, c)));
+                    SpellRuntime.spawn(obj);
                     Vfx.sound(c.level(), c.inst().caster.getEyePosition(), net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, 0.8f, 1.6f);
-                    return null;
+                    return c.inst().dead ? null : obj;
                 });
 
-        def("construct", FORM, ACTION)
+        def("construct", FORM, ACTION).yields(Type.FORM)
                 .kw("shape", SHAPE, "wall").kw("at", POS, "(ahead 3)").kw("facing", DIR, "aim")
                 .kw("width", NUM, "5").kw("height", NUM, "3").kw("depth", NUM, "1").kw("radius", NUM, "3")
                 .kw("life", NUM, "10").kw("every", NUM, "1").kw("solid", FILTER, "(kind all)").kw("look", LOOK, null)
@@ -269,20 +274,21 @@ public final class Runes {
                     if (to != null) obj.moveTo(place(to, c).pos(), clamp(num(kw(n, "speed"), c), 0.01, 2));
                     at.level().addFreshEntity(e);
                     Vfx.sound(at.level(), g.center, SoundEvents.AMETHYST_BLOCK_RESONATE, 1f, 1.2f);
-                    return null;
+                    return obj;
                 });
 
-        def("field", FORM, ACTION)
+        def("field", FORM, ACTION).yields(Type.FORM)
                 .kw("at", POS, "here").kw("radius", NUM, "3").kw("life", NUM, "4").kw("every", NUM, "0.5").flag("follow")
                 .on("on-tick", false, "每次脉动").on("on-enter", true, "敌人进入时（只治疗或护盾时己方进入也算，开启 :players 时含施法者自己）").on("on-expire", false, "消散时")
                 .stab(5).doc("领域：持续存在的区域。展开 6 魔力，每次脉动维持 0.5。:follow 让它跟随施法者")
                 .exec((n, c) -> {
                     if (!c.inst().spend(6, "field")) return null;
                     Place at = place(kw(n, "at"), c);
-                    SpellRuntime.spawn(new FieldObj(n, c.at(at), at.pos(), clamp(num(kw(n, "radius"), c), 0.5, 16),
+                    var obj = new FieldObj(n, c.at(at), at.pos(), clamp(num(kw(n, "radius"), c), 0.5, 16),
                             (int) (clamp(num(kw(n, "life"), c), 0.05, 30) * 20), (int) Math.round(clamp(num(kw(n, "every"), c), 0.05, 10) * 20),
-                            n.flags.contains("follow")));
-                    return null;
+                            n.flags.contains("follow"));
+                    SpellRuntime.spawn(obj);
+                    return c.inst().dead ? null : obj;
                 });
 
         def("ray", FORM, ACTION)
@@ -841,7 +847,7 @@ public final class Runes {
                     return null;
                 });
         blockEffects();
-        def("summon", EFFECT, ACTION).p("creature", CREATURE).kw("at", POS, "(ahead 2)").kw("name", TEXT, null)
+        def("summon", EFFECT, ACTION).yields(ENTITY).p("creature", CREATURE).kw("at", POS, "(ahead 2)").kw("name", TEXT, null)
                 .kw("hunt", FILTER, null).kw("radius", NUM, null).kw("level", NUM, "1").kw("mana", NUM, null).stab(3)
                 .doc("召唤一只你击杀过足够多次的生物作为使魔（普通生物 " + dev.logos.runtime.Familiars.NORMAL_KILLS + " 次，Boss "
                         + dev.logos.runtime.Familiars.BOSS_KILLS + " 次），存在一个游戏日。它保留自己的攻击方式，只攻击你在战斗的对象，"
@@ -863,12 +869,13 @@ public final class Runes {
                             dev.logos.runtime.Familiars.setStance(dev.logos.runtime.Familiars.latest(sp, null),
                                     hunt == null ? null : filter(hunt, c), c.inst(), radius == null ? null : num(radius, c));
                         }
-                        return null;
+                        return why == null ? dev.logos.runtime.Familiars.latest(sp, null) : null;
                     }
                     String why = dev.logos.runtime.Familiars.summon(c.inst(), sp, type, at.level(), at.pos(), name == null ? null : text(name, c),
                             hunt == null ? null : filter(hunt, c), radius == null ? null : num(radius, c));
                     if (why != null) c.inst().terminate(why);
-                    return null;
+                    // The one just called: summon's 吾之使魔 output.
+                    return why == null ? dev.logos.runtime.Familiars.latest(sp, null) : null;
                 });
         def("dismiss", EFFECT, ACTION).eachOr("target", "(familiar)")
                 .doc("遣散你的使魔：它掉落自己捡起的东西后消失。不连目标时遣散最后召唤的那只；对不是你使魔的对象无效。免费")
@@ -1459,6 +1466,10 @@ public final class Runes {
         def("count", VALUE, NUM).p("targets", ENTITIES).doc("实体数量").exec((n, c) -> (double) entities(n.arg(0), c).size());
         def("mana-left", VALUE, NUM).doc("本次法术剩余的魔力").exec((n, c) -> c.inst().mana);
         def("depth", VALUE, NUM).doc("当前递归层数").exec((n, c) -> (double) c.depth());
+        def("life-of", VALUE, NUM).p("form", Type.FORM)
+                .doc("形之寿：一个形体（魔弹、光柱、炼成体、领域）走过了自己寿命的几分，0 是刚展开，1 是寿终；已经消散的也是 1。"
+                        + "形体事件里接 form（此形），形体之后接它的「此形」输出。配合调和、波可让效果随寿命变化。免费")
+                .exec((n, c) -> eval(n.arg(0), c) instanceof SpellObject o ? o.progress() : 1.0);
         def("mix", VALUE, NUM).p("a", NUM).p("b", NUM).p("alpha", NUM)
                 .doc("调和：按比例 alpha 在 a、b 之间取值，0 是 a，1 是 b，0.5 是正中；小于 0 或大于 1 时沿同一条直线越过两端")
                 .exec((n, c) -> {

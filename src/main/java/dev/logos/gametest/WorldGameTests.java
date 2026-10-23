@@ -106,6 +106,30 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /**
+     * life-of reads a form's life through the form's own output (kept by let) and, inside its events, through form;
+     * summon hands back the familiar it called.
+     */
+    static void formRefs(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Status half = new Status("#half"), done = new Status("#done"), end = new Status("#end");
+        castAt(h, p, "(spell :mana 100 (let $f (field :life 2 :radius 1)"
+                + " (delay 1 (if (and (> (life-of $f) 0.4) (< (life-of $f) 0.6)) (mark caster #half)))"
+                + " (delay 3 (if (= (life-of $f) 1) (mark caster #done)))))", new BlockPos(6, 2, 6));
+        castAt(h, p, "(spell :mana 100 (projectile :dir up :speed 0.05 :life 0.5 (on-expire (if (= (life-of form) 1) (mark caster #end)))))",
+                new BlockPos(6, 3, 2));
+        castAt(h, p, "(spell :mana 500 (let $m (summon mana_lifeform :at (pos-of caster) :mana 60) (glow $m 5)))", new BlockPos(0, 2, 0));
+        var lf = dev.logos.runtime.Familiars.latest(p, null);
+        h.assertTrue(lf != null && lf.hasEffect(net.minecraft.world.effect.MobEffects.GLOWING), "summon's output should be the familiar it called, and glow");
+        lf.discard();
+        FamiliarGameTests.forceAround(h, 1);
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.stacks(p, end) == 1, "the projectile's on-expire should read its own life as 1");
+            h.assertTrue(StatusData.stacks(p, half) == 1, "halfway through, the field's life should read about 0.5");
+            h.assertTrue(StatusData.stacks(p, done) == 1, "after it ended, the field's life should read 1");
+        });
+    }
+
     /** Without :players, spells skip other players; with it, they reach them. */
     static void playersFlag(GameTestHelper h) {
         ServerPlayer p = caster(h);

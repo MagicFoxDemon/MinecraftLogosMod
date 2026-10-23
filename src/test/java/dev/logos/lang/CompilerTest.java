@@ -178,6 +178,20 @@ class CompilerTest {
     }
 
     @Test
+    void formsAndSummonHandBackWhatTheyMade() {
+        assertError("(heal caster (life-of form))", "此形");
+        Compiler.compile("(projectile (on-tick (heal caster (life-of form))))");
+        // Nested events that make no body still know the outer one.
+        Compiler.compile("(field (on-enter (each (enemies) (heal caster (life-of form)))))");
+        Node let = Compiler.compile("(let $f (field :life 2) (delay 1 (heal caster (life-of $f))))").body().getFirst();
+        assertEquals(Type.ACTION, let.arg(1).type);
+        assertEquals(Type.FORM, let.body.getFirst().body.getFirst().arg(1).arg(0).type);
+        assertEquals(Type.ENTITY, Compiler.compile("(let $m (summon zombie) (glow $m 5))").body().getFirst().body.getFirst().arg(0).type);
+        assertError("(let $x (heal caster 1) (do))", "不能记住行动");
+        assertError("(blink (life-of (projectile)))", "");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");
