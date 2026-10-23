@@ -115,7 +115,7 @@ public final class GraphBuilder {
 
     private static int argDepth(Node s) {
         int d = 0;
-        for (Node a : s.args) d = Math.max(d, depth(a));
+        for (Node a : s.args) if (a.type != dev.logos.lang.Type.ACTION) d = Math.max(d, depth(a));
         for (var e : s.kw.entrySet()) if (!s.defaulted.contains(e.getKey())) d = Math.max(d, depth(e.getValue()));
         return d;
     }
@@ -172,6 +172,10 @@ public final class GraphBuilder {
             if (s.arg(2) != null) branches.put(n.out("else"), flatten(s.arg(2)));
         } else {
             valuesBottom = arguments(n, s, x, top);
+            int restAt = s.rune.params.size() - 1;
+            if (restAt >= 0 && s.rune.params.get(restAt).rest() && s.rune.params.get(restAt).type() == dev.logos.lang.Type.ACTION) {
+                for (int i = restAt; i < s.args.size(); i++) branches.put(n.out(s.rune.params.get(restAt).name() + (i - restAt)), flatten(s.args.get(i)));
+            }
             for (var e : s.events.entrySet()) branches.put(n.out(RuneNode.event(e.getKey())), e.getValue());
             if (!s.body.isEmpty()) branches.put(n.out(RuneNode.BODY), s.body);
         }
@@ -216,8 +220,10 @@ public final class GraphBuilder {
     /** Sets options and fills inputs; returns the bottom of the value nodes placed for them. */
     private float arguments(RuneNode n, Node s, float x, float top) {
         Rune r = s.rune;
-        boolean rest = r.params.stream().anyMatch(Rune.Param::rest);
-        if (rest) n.setOption(RuneNode.COUNT, s.args.size());
+        // The repeated slot, if any, is the last; its values are numbered from where it starts.
+        int restAt = r.params.stream().anyMatch(Rune.Param::rest) ? r.params.size() - 1 : -1;
+        if (restAt >= 0) n.setOption(RuneNode.COUNT, s.args.size() - restAt);
+        if (r.returns == dev.logos.lang.Type.ANY) n.setOption(RuneNode.KIND, RememberKind.of(s.type));
         for (String f : s.flags) n.setOption(RuneNode.flag(f), true);
         for (var e : s.kw.entrySet()) {
             Rune.Kw k = r.keywords.get(e.getKey());
@@ -225,7 +231,10 @@ public final class GraphBuilder {
         }
         float vy = top;
         for (int i = 0; i < s.args.size(); i++) {
-            Rune.Param p = rest ? r.params.getFirst() : r.params.get(i);
+            boolean repeated = restAt >= 0 && i >= restAt;
+            Rune.Param p = r.params.get(repeated ? restAt : i);
+            // Branches (switch) are laid out by statement(), not filled in as values.
+            if (p.type() == dev.logos.lang.Type.ACTION) continue;
             if (p.type() == dev.logos.lang.Type.DIMENSION) {
                 n.setOption(RuneNode.dim(p.name()), (String) s.args.get(i).value);
                 continue;
@@ -242,7 +251,7 @@ public final class GraphBuilder {
                 n.setOption(RuneNode.option(p), ((dev.logos.lang.TargetKind) s.args.get(i).value).word);
                 continue;
             }
-            vy = value(s.args.get(i), n.in(rest ? p.name() + i : p.name()), x - LANE_W, vy);
+            vy = value(s.args.get(i), n.in(repeated ? p.name() + (i - restAt) : p.name()), x - LANE_W, vy);
         }
         for (var e : s.kw.entrySet()) {
             if (s.defaulted.contains(e.getKey())) continue;

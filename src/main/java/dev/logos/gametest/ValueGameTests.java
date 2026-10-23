@@ -101,4 +101,21 @@ final class ValueGameTests {
         h.assertTrue(v.num("(wave 3 :period 0)") == 0, "period 0 gives 0");
         h.succeed();
     }
+
+    /** choose picks by index from 0, held to the nearest end or wrapped round, and only evaluates what it picks. */
+    static void choose(GameTestHelper h) {
+        Values v = new Values(h);
+        h.assertTrue(v.num("(choose 0 10 20 30)") == 10 && v.num("(choose 1.6 10 20 30)") == 30, "index from 0, rounded");
+        h.assertTrue(v.num("(choose 7 10 20 30)") == 30 && v.num("(choose -2 10 20 30)") == 10, "out of range holds to the nearest end");
+        h.assertTrue(v.num("(choose 3 10 20 30 :wrap)") == 10 && v.num("(choose -1 10 20 30 :wrap)") == 30, ":wrap goes round");
+        Vec3 here = h.absoluteVec(new Vec3(1.5, 2, 1.5));
+        Vec3 up = ((Place) v.value("(choose 1 here (above here 3))")).pos();
+        h.assertTrue(up.distanceTo(here.add(0, 3, 0)) < 1e-9, "choose works on places too, got " + up);
+        // Only the chosen option runs: the unchosen look-point would cost 1 mana.
+        var spell = Casting.compile("(let $v (choose 0 here (look-point)) (do))");
+        var inst = new SpellInstance(spell, v.caster(), h.getLevel(), 1000, 1);
+        Interp.eval(spell.body().getFirst().arg(1), new Ctx(inst, h.getLevel(), here, new Vec3(0, 0, 1), null, Map.of(), 0, 0));
+        h.assertTrue(inst.mana == 1000, "the unchosen option must not be evaluated, mana " + inst.mana);
+        h.succeed();
+    }
 }

@@ -166,6 +166,18 @@ class CompilerTest {
     }
 
     @Test
+    void switchAndChoose() {
+        Node sw = Compiler.compile("(switch (random 2 :whole) (heal caster 1) (do) (on-other (heal caster 2)))").body().getFirst();
+        assertEquals(3, sw.args.size());
+        assertTrue(sw.events.containsKey("on-other"));
+        assertEquals(Type.POS, Compiler.compile("(blink (choose 1 here (look-point)))").body().getFirst().arg(0).type);
+        assertEquals(Type.NUM, Compiler.compile("(heal caster (choose i 1 2 3 :wrap))").body().getFirst().arg(1).type);
+        assertError("(heal caster (choose 0 1 here))", "同一种");
+        assertError("(heal caster (choose 0 fire fire))", "只能在");
+        assertError("(blink (choose 0 1 2))", "插槽形状不符");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");

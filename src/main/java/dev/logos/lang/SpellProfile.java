@@ -297,7 +297,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                 }
                 case "set-fire" -> own = 2 * count(n.arg(0));
                 case "break-block" -> own = 4 * count(n.arg(0));
-                case "if", "each-block", "delay" -> own = 0.5;
+                case "if", "switch", "each-block", "delay" -> own = 0.5;
                 default -> own = 0;
             }
             switch (r) {
