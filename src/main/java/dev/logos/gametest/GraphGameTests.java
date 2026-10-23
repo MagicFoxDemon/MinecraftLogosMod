@@ -49,7 +49,41 @@ final class GraphGameTests {
         choiceRoundtrip(h);
         switchChooseRoundtrip(h);
         formRefsRoundtrip(h);
+        constructSizesFollowShape(h);
         h.succeed();
+    }
+
+    /** A construct node shows only the sizes its shape uses (and the shield its circle face), and keeps them through the graph. */
+    private static void constructSizesFollowShape(GameTestHelper h) {
+        SpellGraph graph = GraphBuilder.build(Compiler.compile("(spell :mana 100 (construct :shape disk :radius 5 :sigil))"));
+        var node = graph.getNodes().stream().filter(n -> n instanceof dev.logos.graph.RuneNodes.Construct).map(n -> (dev.logos.graph.RuneNodes.Construct) n).findFirst().orElseThrow();
+        h.assertTrue(!RuneNode.hidden(node.in(RuneNode.kw("radius"))) && RuneNode.hidden(node.in(RuneNode.kw("width"))) && RuneNode.hidden(node.in(RuneNode.kw("height"))),
+                "a shield shows its radius only");
+        h.assertTrue(Boolean.TRUE.equals(node.option(RuneNode.flag("sigil"), Boolean.class)), "a shield offers its circle face");
+        GraphCompiler.Result r = GraphCompiler.compile(graph);
+        h.assertTrue(r.ok() && r.source().contains(":radius 5") && r.source().contains(":sigil"), "the shield's sizes must survive: " + r.source());
+        node.in(RuneNode.kw("shape")).getEmbeddedValue().setValue(dev.logos.lang.ConstructShape.WALL);
+        node.model().defineNode();
+        h.assertTrue(!RuneNode.hidden(node.in(RuneNode.kw("width"))) && !RuneNode.hidden(node.in(RuneNode.kw("height")))
+                && RuneNode.hidden(node.in(RuneNode.kw("radius"))) && RuneNode.hidden(node.in(RuneNode.kw("depth"))), "a wall shows width and height only");
+        // The shield's radius is kept, hidden: switching back brings it back.
+        GraphCompiler.Result wall = GraphCompiler.compile(graph);
+        h.assertTrue(wall.ok() && !wall.source().contains(":radius"), "a wall drops the shield's radius: " + wall.source());
+        node.in(RuneNode.kw("shape")).getEmbeddedValue().setValue(dev.logos.lang.ConstructShape.DISK);
+        node.model().defineNode();
+        h.assertTrue(GraphCompiler.compile(graph).source().contains(":radius 5"), "back to a shield, its radius 5 returns");
+        // Saved and reloaded (as the wand stores it), the shield still hides the wall's sizes.
+        var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+        graph.graphModel.serialize(out);
+        SpellGraph reloaded = new SpellGraph();
+        reloaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(
+                net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
+        var again = reloaded.getNodes().stream().filter(n -> n instanceof dev.logos.graph.RuneNodes.Construct).map(n -> (dev.logos.graph.RuneNodes.Construct) n).findFirst().orElseThrow();
+        h.assertTrue(!RuneNode.hidden(again.in(RuneNode.kw("radius"))) && RuneNode.hidden(again.in(RuneNode.kw("width"))), "after save/load a shield still shows its radius only");
+        h.assertTrue(GraphCompiler.compile(reloaded).source().contains(":radius 5"), "after save/load the radius is kept");
+        SpellGraph box = GraphBuilder.build(Compiler.compile("(spell :mana 100 (construct :shape box :width 2 :height 6 :depth 4))"));
+        GraphCompiler.Result b = GraphCompiler.compile(box);
+        h.assertTrue(b.ok() && b.source().contains(":width 2") && b.source().contains(":height 6") && b.source().contains(":depth 4"), "a box keeps all three: " + b.source());
     }
 
     /** A form's or summon's kept body becomes the node's own output wire, and this form becomes its context node. */

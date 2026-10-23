@@ -45,7 +45,7 @@ public final class ConstructEntity extends Entity {
     /** Follow mode: the hold distance (x) for walls and shields, else the offset from the caster's feet. */
     private static final EntityDataAccessor<org.joml.Vector3fc> FOLLOW = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
 
-    private static final int SNAP = 1, ONE_WAY = 2, SOLID_CASTER = 4, SOLID_OTHERS = 8, FOLLOWS = 16;
+    private static final int SNAP = 1, ONE_WAY = 2, SOLID_CASTER = 4, SOLID_OTHERS = 8, FOLLOWS = 16, SIGIL = 32;
 
     /** Every construct currently in a level, on either side; collision queries walk this short list. */
     private static final List<ConstructEntity> LIVE = new CopyOnWriteArrayList<>();
@@ -161,6 +161,16 @@ public final class ConstructEntity extends Entity {
 
     public boolean oneWay() {
         return (entityData.get(FLAGS) & ONE_WAY) != 0;
+    }
+
+    /** Whether a shield is drawn as its element's magic circle instead of glass (only a disk wears it). */
+    public boolean sigil() {
+        return (entityData.get(FLAGS) & SIGIL) != 0;
+    }
+
+    public void sigil(boolean on) {
+        byte f = entityData.get(FLAGS);
+        entityData.set(FLAGS, (byte) (on ? f | SIGIL : f & ~SIGIL));
     }
 
     public Element element() {

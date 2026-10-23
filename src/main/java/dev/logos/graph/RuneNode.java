@@ -1,8 +1,16 @@
 package dev.logos.graph;
 
+import java.util.List;
 import java.util.Map;
 
+import org.jspecify.annotations.Nullable;
+
+import com.lowdragmc.lowdraglib2.configurator.IConfigurable;
+import com.lowdragmc.lowdraglib2.configurator.ui.SelectorConfigurator;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.api.port.PortModelOptions;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.api.port.PortOrientation;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.api.type.ITypeConfigurable;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.PortModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.definition.IOptionDefinitionContext;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.definition.IPortDefinitionContext;
 
@@ -187,8 +195,18 @@ public abstract class RuneNode extends LogosNode {
                 input(context, p.name(), NodeTerms.parameter(word(), p.name()), p.type(), p.broadcast(), p.defaultSrc(), p.name());
             }
         }
+        PortModel shape = null;
         for (Rune.Kw k : r.keywords.values()) {
-            if (!k.flag() && !k.choice()) input(context, kw(k.name()), NodeTerms.parameter(word(), k.name()), k.type(), false, k.defaultSrc(), k.name());
+            if (k.flag() || k.choice()) continue;
+            if (k.type() == Type.SHAPE) {
+                // Picking a shape redraws the node with only the sizes that shape uses.
+                shape = (PortModel) context.addInputPort(kw(k.name()), LTypes.of(k.type(), false)).withDisplayName(NodeTerms.parameter(word(), k.name()))
+                        .withDefaultValue(defaultValue(k.type(), k.defaultSrc(), k.name())).withConfigurable(shapeSelector()).build();
+                continue;
+            }
+            PortModel port = input(context, kw(k.name()), NodeTerms.parameter(word(), k.name()), k.type(), false, k.defaultSrc(), k.name());
+            // Kept but hidden, so a size set for another shape is not lost on the way.
+            if (shape != null && unused(shape, k.name())) port.setOptions(PortModelOptions.HIDDEN);
         }
         for (Rune.EventSpec e : r.events.values()) {
             context.addOutputPort(event(e.name()), LTypes.FLOW).withDisplayName(Component.literal("☽ ").append(NodeTerms.event(word(), e.name()))).build();
@@ -205,7 +223,43 @@ public abstract class RuneNode extends LogosNode {
         }
     }
 
-    private static void input(IPortDefinitionContext context, String id, Component label, Type t, boolean broadcast, String defaultSrc, String paramName) {
+    /**
+     * A construct keyword its shape does not use (a shield's width, a wall's radius), hidden on the node.
+     * While the shape is computed rather than picked, nothing is hidden.
+     */
+    private static boolean unused(PortModel shape, String keyword) {
+        if (!ConstructShape.SHAPED.contains(keyword)) return false;
+        ConstructShape s = picked(shape);
+        return s != null && !s.uses(keyword);
+    }
+
+    /** Whether this port is a construct size its shape hides; the graph compiler leaves those out. */
+    public static boolean hidden(@Nullable PortModel port) {
+        return port != null && port.getOptions() == PortModelOptions.HIDDEN;
+    }
+
+    /** The picked shape: the inline choice, or a shape card wired in; null when something else computes it. */
+    private static @Nullable ConstructShape picked(PortModel port) {
+        if (port.isConnected()) {
+            return LogosNode.of(port.getConnectedPorts().getFirst()) instanceof EnumValues.Value v && v.kind == EnumValues.Kind.SHAPE
+                    ? ConstructShape.parse(v.value()) : null;
+        }
+        return port.getEmbeddedValue() != null && port.getEmbeddedValue().getValue() instanceof ConstructShape s ? s : null;
+    }
+
+    /** The shape dropdown; a new pick redefines the node so its size inputs follow. */
+    private ITypeConfigurable shapeSelector() {
+        return (value, type) -> IConfigurable.create(group -> {
+            ConstructShape initial = value.getValue() instanceof ConstructShape s ? s : ConstructShape.WALL;
+            group.addConfigurator(new SelectorConfigurator<>("", () -> value.getValue() instanceof ConstructShape s ? s : initial, s -> {
+                value.setValue(s);
+                model().defineNode();
+            }, initial, value.forceUpdate(), List.of(ConstructShape.values()),
+                    s -> Component.translatable("dev.logos.lang.ConstructShape." + s.name()).getString()));
+        });
+    }
+
+    private static PortModel input(IPortDefinitionContext context, String id, Component label, Type t, boolean broadcast, String defaultSrc, String paramName) {
         var builder = context.addInputPort(id, LTypes.of(t, broadcast))
                 .withDisplayName(label);
         if (EnumValues.stringPort(t)) builder.withCodec(com.mojang.serialization.Codec.STRING)
@@ -213,7 +267,7 @@ public abstract class RuneNode extends LogosNode {
         Object def = defaultValue(t, defaultSrc, paramName);
         if (def != null) builder.withDefaultValue(def);
         else builder.withoutConfigurator();
-        builder.build();
+        return (PortModel) builder.build();
     }
 
     /** The inline constant an unwired input starts with, or null if the slot can only be wired. */

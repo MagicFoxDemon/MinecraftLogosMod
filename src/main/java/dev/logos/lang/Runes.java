@@ -233,7 +233,7 @@ public final class Runes {
                 .kw("shape", SHAPE, "wall").kw("at", POS, "(ahead 3)").kw("facing", DIR, "aim")
                 .kw("width", NUM, "5").kw("height", NUM, "3").kw("depth", NUM, "1").kw("radius", NUM, "3")
                 .kw("life", NUM, "10").kw("every", NUM, "1").kw("solid", FILTER, "(kind all)").kw("look", LOOK, null)
-                .kw("to", POS, null).kw("speed", NUM, "0.2").flag("snap").flag("one-way").flag("deflect").flag("follow")
+                .kw("to", POS, null).kw("speed", NUM, "0.2").flag("snap").flag("one-way").flag("deflect").flag("follow").flag("sigil")
                 .on("on-block", true, "挡下实体或弹射物时（target 是被挡下的东西，here 是接触点）")
                 .on("on-stand", true, "有实体站上来时（每次站上来触发一次）")
                 .on("on-pass", true, "有东西穿过时（没被它挡住的生物进入时、弹射物飞过时，各一次；aim 是穿过的方向）")
@@ -242,7 +242,7 @@ public final class Runes {
                 .stab(5).doc("炼成体：把魔力凝成有形之物——box 方块、wall 墙、plane 平台、disk 圆盾、dome 穹顶。"
                         + ":solid ⊙ 决定挡住谁（默认全部，含施法者），也挡下弹射物、其他法术的弹丸与光柱、以及身后的爆炸；"
                         + "可以站在上面，也能贴着它放方块（放下的方块留在世界里）。:one-way 只挡从正面来的（平台是从上方，穹顶是从外面），"
-                        + ":deflect 把弹射物反弹回去，:snap 对齐方块网格，:look &方块 显现为那种方块。"
+                        + ":deflect 把弹射物反弹回去，:snap 对齐方块网格，:look &方块 显现为那种方块，:sigil 让圆盾显现为元素的法阵（只对 disk 有效）。"
                         + ":follow 跟着施法者（墙和圆盾随视线转动，其余随身平移）；:to 位置 以 :speed 格/刻 移过去，站在上面的会被一起带走，到达时 on-arrive；"
                         + "事件里 self 就是这个炼成体，可以 (move self 位置) 再走、(halt self) 停下。"
                         + "展开 4 + 0.3×面积（方块按体积），每秒维持 0.2 + 0.02×面积，每挡下一次 0.5。"
@@ -267,6 +267,7 @@ public final class Runes {
                     }
                     e.setup(shape, at.pos(), facing, w, h, d, r, snap, n.flags.contains("one-way"), n.element, lookBlock, c.inst().caster.getId(),
                             n.flags.contains("follow") ? c.inst().caster : null);
+                    e.sigil(n.flags.contains("sigil") && shape == ConstructShape.DISK);
                     ConstructObj obj = new ConstructObj(n, c.at(at), e, filter(kw(n, "solid"), c), n.flags.contains("deflect"),
                             (int) (clamp(num(kw(n, "life"), c), 0.5, 120) * 20), (int) Math.round(clamp(num(kw(n, "every"), c), 0.05, 10) * 20));
                     SpellRuntime.spawn(obj);

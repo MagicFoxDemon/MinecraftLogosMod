@@ -274,6 +274,8 @@ public final class GraphCompiler {
                 continue;
             }
             PortModel port = n.in(RuneNode.kw(k.name()));
+            // A size the construct's shape does not use stays on the node, hidden, and out of the spell.
+            if (RuneNode.hidden(port)) continue;
             SExpr e = expr(port, n, k.type());
             if (e == null) continue;
             // An unwired constant equal to the keyword's default adds nothing; leave it out to keep the source readable.
