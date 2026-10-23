@@ -81,4 +81,24 @@ final class ValueGameTests {
         h.assertTrue(v.num("(clamp 12 :min 2 :max 10)") == 10 && v.num("(clamp 5 :min 10 :max 2)") == 5, "clamp to given bounds, swapped when reversed");
         h.succeed();
     }
+
+    /** Every waveform starts at 0 rising and peaks a quarter cycle in (square holds +amp, then -amp); period, amp and phase scale it. */
+    static void wave(GameTestHelper h) {
+        Values v = new Values(h);
+        String[][] cases = {
+                // shape, value at 0, 0.25, 0.5, 0.75 of a cycle
+                {"sine", "0", "1", "0", "-1"}, {"triangle", "0", "1", "0", "-1"},
+                {"saw", "0", "0.5", "-1", "-0.5"}, {"square", "1", "1", "-1", "-1"}};
+        for (String[] c : cases) {
+            for (int k = 0; k < 4; k++) {
+                double got = v.num("(wave " + (k * 0.25) + " :shape " + c[0] + ")");
+                h.assertTrue(Math.abs(got - Double.parseDouble(c[k + 1])) < 1e-9, c[0] + " at " + (k * 0.25) + " should be " + c[k + 1] + ", got " + got);
+            }
+        }
+        h.assertTrue(Math.abs(v.num("(wave 5 :period 20 :amp 3)") - 3) < 1e-9, "period 20, amp 3: a quarter period in peaks at 3");
+        h.assertTrue(Math.abs(v.num("(wave 0 :phase 0.25)") - 1) < 1e-9, "phase 0.25 starts at the peak");
+        h.assertTrue(Math.abs(v.num("(wave -0.25 :shape triangle)") + 1) < 1e-9, "negative x keeps cycling");
+        h.assertTrue(v.num("(wave 3 :period 0)") == 0, "period 0 gives 0");
+        h.succeed();
+    }
 }
