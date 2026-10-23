@@ -99,6 +99,91 @@ final class RuneGameTests {
         h.succeed();
     }
 
+    /** Every slot is used in order, without requiring the item to be conventional armour. */
+    static void equipOrder(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.getInventory().clearContent();
+        p.getAbilities().instabuild = true;
+        var zombie = mob(h, EntityType.ZOMBIE);
+        EquipmentSlot[] slots = {EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND, EquipmentSlot.HEAD,
+                EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+        for (EquipmentSlot slot : slots) zombie.setItemSlot(slot, ItemStack.EMPTY);
+        ItemStack material = new ItemStack(Items.STONE, 7);
+        var name = net.minecraft.network.chat.Component.literal("授装试验");
+        material.set(DataComponents.CUSTOM_NAME, name);
+        p.getInventory().setItem(10, material);
+        for (int i = 0; i < slots.length; i++) {
+            var inst = equip(p, zombie, "minecraft:stone", 20, false);
+            h.assertTrue(!inst.dead && inst.mana == 12, "successful equip costs exactly eight mana");
+            h.assertTrue(material.getCount() == 6 - i, "one real item is consumed even in creative mode");
+            for (int j = 0; j < slots.length; j++) {
+                ItemStack worn = zombie.getItemBySlot(slots[j]);
+                h.assertTrue(j <= i ? worn.is(Items.STONE) && worn.getCount() == 1 && name.equals(worn.get(DataComponents.CUSTOM_NAME))
+                        : worn.isEmpty(), "equip must fill only the first empty slot: " + slots[j]);
+            }
+        }
+        var full = equip(p, zombie, "minecraft:stone", 20, false);
+        h.assertTrue(!full.dead && full.mana == 20 && material.getCount() == 1, "full equipment consumes neither item nor mana");
+        h.succeed();
+    }
+
+    /** Failure is side-effect free; an actual transferred sword keeps durability and enchantments. */
+    static void equipMaterials(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.getInventory().clearContent();
+        var zombie = mob(h, EntityType.ZOMBIE);
+        zombie.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        var missing = equip(p, zombie, "minecraft:stone", 20, false);
+        h.assertTrue(!missing.dead && missing.mana == 20 && zombie.getMainHandItem().isEmpty(), "missing item must not create equipment or charge mana");
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        sword.setDamageValue(17);
+        sword.enchant(h.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.UNBREAKING), 2);
+        var enchantments = sword.getEnchantments();
+        p.getInventory().setItem(12, sword);
+        var poor = equip(p, zombie, "minecraft:iron_sword", 7, false);
+        h.assertTrue(poor.dead && sword.getCount() == 1 && zombie.getMainHandItem().isEmpty(), "mana failure must not consume or equip the item");
+        var success = equip(p, zombie, "minecraft:iron_sword", 20, false);
+        ItemStack worn = zombie.getMainHandItem();
+        h.assertTrue(!success.dead && p.getInventory().getItem(12).isEmpty(), "successful equip consumes the source sword");
+        h.assertTrue(worn.getDamageValue() == 17 && worn.getEnchantments().equals(enchantments), "transfer must retain durability and enchantments");
+        // Non-player casters have no material inventory and must not fabricate the requested item.
+        zombie.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        var nonPlayer = dev.logos.runtime.Casting.castAs(zombie,
+                dev.logos.lang.Compiler.compile("(spell :mana 20 (equip caster &minecraft:stone))"), 20, 0, null, null);
+        h.assertTrue(!nonPlayer.dead && nonPlayer.mana == 20 && zombie.getMainHandItem().isEmpty(), "non-player casting cannot create materials");
+        h.succeed();
+    }
+
+    /** Groups pay per real item, and other players remain protected by the spell's players flag. */
+    static void equipGroupsAndPlayers(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.getInventory().clearContent();
+        var zombie = mob(h, EntityType.ZOMBIE);
+        var husk = mob(h, EntityType.HUSK);
+        zombie.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        husk.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        p.getInventory().setItem(10, new ItemStack(Items.STONE));
+        var group = Casting.castAs(p, dev.logos.lang.Compiler.compile("(spell :mana 100 (equip (enemies :radius 6) &minecraft:stone))"), 100, 0, null, null);
+        int equipped = (zombie.getMainHandItem().is(Items.STONE) ? 1 : 0) + (husk.getMainHandItem().is(Items.STONE) ? 1 : 0);
+        h.assertTrue(equipped == 1 && group.mana == 90 && p.getInventory().getItem(10).isEmpty(), "one material equips exactly one group member; selector costs two, equip eight");
+        @SuppressWarnings("removal")
+        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        other.getInventory().clearContent();
+        p.getInventory().setItem(10, new ItemStack(Items.STONE));
+        var protectedPlayer = equip(p, other, "minecraft:stone", 20, false);
+        h.assertTrue(protectedPlayer.mana == 20 && other.getMainHandItem().isEmpty() && p.getInventory().getItem(10).getCount() == 1,
+                "players=false protects other players without consuming materials");
+        var allowed = equip(p, other, "minecraft:stone", 20, true);
+        h.assertTrue(allowed.mana == 12 && other.getMainHandItem().is(Items.STONE) && p.getInventory().getItem(10).isEmpty(),
+                "players=true allows an inventory-backed transfer");
+        h.succeed();
+    }
+
+    private static dev.logos.runtime.SpellInstance equip(ServerPlayer p, net.minecraft.world.entity.LivingEntity target, String item, double mana, boolean players) {
+        return Casting.castAs(p, dev.logos.lang.Compiler.compile("(spell :trigger attack :mana 20 :players " + players + " (equip target &" + item + "))"),
+                mana, 0, target, null);
+    }
+
     /**
      * damage-all pays 3× the single price up to radius 5, then × (r / 5)^1.5 for the radius of the
      * selector that gathered its group — through a variable too; a radius past 64 searches and costs as 64.

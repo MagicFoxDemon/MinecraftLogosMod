@@ -76,6 +76,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class Runes {
     private static final Map<String, Rune> RUNES = new LinkedHashMap<>();
+    private static final List<EquipmentSlot> EQUIPMENT_ORDER = List.of(EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND,
+            EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET);
 
     private Runes() {}
 
@@ -123,8 +125,7 @@ public final class Runes {
 
     /** What disarm takes first: main hand, off hand, then head, chest, legs, feet; armour bound by a curse stays. */
     private static EquipmentSlot disarmSlot(LivingEntity t) {
-        for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND, EquipmentSlot.HEAD,
-                EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+        for (EquipmentSlot slot : EQUIPMENT_ORDER) {
             ItemStack s = t.getItemBySlot(slot);
             if (s.isEmpty()) continue;
             if (slot.isArmor() && net.minecraft.world.item.enchantment.EnchantmentHelper.has(s,
@@ -132,6 +133,22 @@ public final class Runes {
             return slot;
         }
         return null;
+    }
+
+    /** Equip fills the first empty slot, even when the item would normally belong in another slot. */
+    private static EquipmentSlot emptyEquipmentSlot(LivingEntity t) {
+        for (EquipmentSlot slot : EQUIPMENT_ORDER) if (t.getItemBySlot(slot).isEmpty()) return slot;
+        return null;
+    }
+
+    /** The same inventory search as anchor nails; the actual stack keeps its components when transferred. */
+    private static ItemStack equipmentMaterial(ServerPlayer caster, net.minecraft.world.item.Item item) {
+        var inventory = caster.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (!stack.isEmpty() && stack.is(item)) return stack;
+        }
+        return ItemStack.EMPTY;
     }
 
     /**
@@ -704,6 +721,30 @@ public final class Runes {
                         c.inst().affected.add(t.getUUID());
                         Vfx.sound(lv(t), Targeting.center(t), SoundEvents.ITEM_BREAK.value(), 0.6f, 1.6f);
                         Vfx.burst(lv(t), t, c.inst().caster.level() == t.level() ? c.inst().caster.getEyePosition() : null, Element.PHYSICAL, Vfx.Burst.FORCE);
+                    }
+                    return null;
+                });
+        def("equip", EFFECT, ACTION).each("target").p("item", LOOK).stab(2)
+                .doc("授装：从施法者背包取出一个指定物品，强制装备到目标的第一个空位。"
+                        + "依次检查主手、副手、头、胸、腿、脚，不覆盖已有装备，也不限制物品通常适用的栏位。"
+                        + "每个成功目标消耗一件实物和 8 魔力；保留物品附魔、耐久等数据，创造模式也需要实物。"
+                        + "没有空位、没有材料或施法者不是玩家时跳过，不消耗魔力")
+                .exec((n, c) -> {
+                    if (!(c.inst().caster instanceof ServerPlayer caster)) return null;
+                    Identifier id = Identifier.tryParse(text(n.arg(1), c));
+                    var item = id == null ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+                    if (item == null) return null;
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        EquipmentSlot slot = emptyEquipmentSlot(t);
+                        if (slot == null) continue;
+                        ItemStack material = equipmentMaterial(caster, item);
+                        if (material.isEmpty()) return null;
+                        if (!c.inst().spend(8, "equip")) return null;
+                        t.setItemSlot(slot, material.split(1));
+                        caster.getInventory().setChanged();
+                        c.inst().affected.add(t.getUUID());
+                        Vfx.sound(lv(t), Targeting.center(t), SoundEvents.ARMOR_EQUIP_GENERIC.value(), 0.6f, 1.2f);
+                        Vfx.burst(lv(t), t, caster.level() == t.level() ? caster.getEyePosition() : null, Element.PHYSICAL, Vfx.Burst.FORCE);
                     }
                     return null;
                 });

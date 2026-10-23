@@ -304,6 +304,8 @@
   "logos.rune.damage-all": "damage-all",
   "logos.rune.ignite-all": "ignite-all",
   "logos.rune.freeze-all": "freeze-all",
+  "logos.rune.equip": "equip",
+  "logos.param.equip.item": "Item to equip",
   "logos.rune.disarm": "disarm",
   "logos.rune.potion": "potion",
   "logos.rune.push": "push",

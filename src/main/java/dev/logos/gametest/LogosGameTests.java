@@ -45,7 +45,7 @@ public final class LogosGameTests {
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
             "familiar_dragon_circles", "familiar_dragon_throne", "familiar_dragon_ridden_altitude", "familiar_dragon_ridden_altitude_forward",
-            "passive_codex_without_wand", "rune_disarm_order", "rune_potion_effects", "rune_shield_marks_ward", "potion_burst_polarity", "rune_group_radius_cost", "rune_time_stop_mob", "rune_time_stop_player",
+            "passive_codex_without_wand", "rune_disarm_order", "rune_equip_order", "rune_equip_materials", "rune_equip_groups_players", "rune_potion_effects", "rune_shield_marks_ward", "potion_burst_polarity", "rune_group_radius_cost", "rune_time_stop_mob", "rune_time_stop_player",
             "page_capacity_caps_injection", "page_immolation_burns", "free_mana_from_leftovers", "free_mana_gathered", "copy_table_copies", "alchemy_brews_raw_mash", "alchemy_crafts_gunpowder", "alchemy_crafts_maintenance_kit", "alchemy_crafts_table", "alchemy_bottles_drinkable",
             "process_ferments", "process_designates_and_routes", "process_dissolves_water_bottles", "process_dissolves_from_tank", "process_chains", "process_needs_mana", "process_shows_working", "process_cards_keep_and_remove", "process_pours_bottles_first", "process_says_what_is_missing", "alchemy_table_switch", "powder_settles", "powder_is_eaten", "powder_dissolves_back", "brews_from_base", "brews_from_water", "process_designates_exactly", "process_products_exact", "status_follows_designations", "status_says_outputs_full", "process_calcines", "calcine_needs_blast_furnace", "redstone_distils_mercury", "tria_prima_dissolve", "philosophers_mercury_settles", "conjunction_joins_powders", "purify_cleans_tainted_shards", "purify_washes_like_a_cauldron", "mercury_is_poison", "blackstone_calcines_to_caput_mortuum", "sublimation_needs_lit_beacon", "gold_dissolves_into_amalgam", "chalk_and_rebis_calcine_white_stone", "firmament_liquid_dissolves", "firmament_liquid_settles", "caput_mortuum_rots_into_soul_humus", "soul_humus_washes_into_chalk", "echo_shard_dissolves_into_tincture", "sculk_veins_dissolve_into_tincture", "caput_mortuum_rots_into_raven_head", "soul_humus_drops_itself", "infuse_block_fills_table", "field_settles_into_steps", "collectors_share_ambient", "spreader_feeds_table_through_collector", "caput_mortuum_insulates", "caput_mortuum_block_crafts", "survey_shows_field_and_flow",
             "emitter_pulse_casts_once", "emitter_full_casts_and_pays_extra", "emitter_spells_leave_through_itself", "emitter_edit_swaps_the_invocation", "offset_follows_the_facing", "dividers_measure_from_the_emitter",
@@ -200,6 +200,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("world_table_inscribes", () -> WorldGameTests::tableInscribes);
         FUNCTIONS.register("passive_codex_without_wand", () -> RuneGameTests::codexPassiveWithoutWand);
         FUNCTIONS.register("rune_disarm_order", () -> RuneGameTests::disarmOrder);
+        FUNCTIONS.register("rune_equip_order", () -> RuneGameTests::equipOrder);
+        FUNCTIONS.register("rune_equip_materials", () -> RuneGameTests::equipMaterials);
+        FUNCTIONS.register("rune_equip_groups_players", () -> RuneGameTests::equipGroupsAndPlayers);
         FUNCTIONS.register("rune_potion_effects", () -> RuneGameTests::potionEffects);
         FUNCTIONS.register("rune_shield_marks_ward", () -> RuneGameTests::shieldMarksWard);
         FUNCTIONS.register("potion_burst_polarity", () -> RuneGameTests::potionBurstPolarity);

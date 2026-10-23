@@ -57,6 +57,7 @@ final class GraphGameTests {
                 new Case(dev.logos.graph.EnumValues.Kind.DIMENSION, "(blink (in-dimension @minecraft:the_nether))", "in-dimension", "dimension", "minecraft:the_end"),
                 new Case(dev.logos.graph.EnumValues.Kind.EFFECT, "(potion caster speed 2)", "potion", "effect", "minecraft:regeneration"),
                 new Case(dev.logos.graph.EnumValues.Kind.KIND, "(glow (entities :filter (kind all)) 1)", "kind", "kind", "hostile"),
+                new Case(dev.logos.graph.EnumValues.Kind.ITEM, "(equip caster &minecraft:stone)", "equip", "item", "minecraft:diamond_sword"),
                 new Case(dev.logos.graph.EnumValues.Kind.ITEM, "(projectile)", "projectile", RuneNode.kw("look"), "minecraft:diamond_sword"),
                 new Case(dev.logos.graph.EnumValues.Kind.BLOCK, "(construct)", "construct", RuneNode.kw("look"), "minecraft:stone"),
                 new Case(dev.logos.graph.EnumValues.Kind.PARTICLE, "(phantasm %end_rod)", "phantasm", "particle", "minecraft:flame"),

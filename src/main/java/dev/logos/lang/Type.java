@@ -21,7 +21,7 @@ public enum Type {
     SHAPE("⬡", "形状"),
     /** A {@link Weather}: clear, rain, thunder, snow. */
     WEATHER("☁", "天气"),
-    /** What a spell body looks like: an item id. Purely cosmetic, never changes behaviour. */
+    /** A registered item id: used as a form's appearance, or as equip's inventory-backed material. */
     LOOK("❖", "外观"),
     /** A registered particle type, by name. Purely cosmetic, never changes behaviour. */
     PARTICLE("✧", "粒子"),
