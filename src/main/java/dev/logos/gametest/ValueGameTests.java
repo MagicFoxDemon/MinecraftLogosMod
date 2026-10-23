@@ -70,4 +70,15 @@ final class ValueGameTests {
         h.assertTrue(past.distanceTo(here.add(0, -8, 0)) < 1e-9, "mix-pos -1 lies beyond a, got " + past);
         h.succeed();
     }
+
+    /** round rounds half away from zero, or up, or down; clamp holds a number within its bounds, 0~1 by default. */
+    static void roundClamp(GameTestHelper h) {
+        Values v = new Values(h);
+        h.assertTrue(v.num("(round 2.5)") == 3 && v.num("(round -2.5)") == -3 && v.num("(round 2.4)") == 2, "round to nearest, half away from zero");
+        h.assertTrue(v.num("(round 2.1 :mode up)") == 3 && v.num("(round -2.1 :mode up)") == -2, "round up");
+        h.assertTrue(v.num("(round 2.9 :mode down)") == 2 && v.num("(round -2.1 :mode down)") == -3, "round down");
+        h.assertTrue(v.num("(clamp 1.7)") == 1 && v.num("(clamp -3)") == 0 && v.num("(clamp 0.4)") == 0.4, "clamp to 0~1 by default");
+        h.assertTrue(v.num("(clamp 12 :min 2 :max 10)") == 10 && v.num("(clamp 5 :min 10 :max 2)") == 5, "clamp to given bounds, swapped when reversed");
+        h.succeed();
+    }
 }

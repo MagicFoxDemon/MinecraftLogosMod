@@ -247,6 +247,14 @@ public final class GraphCompiler {
                 if (Boolean.TRUE.equals(n.option(RuneNode.flag(k.name()), Boolean.class))) items.add(atom(n, ":" + k.name()));
                 continue;
             }
+            if (k.choice()) {
+                String word = n.option(RuneNode.choice(k.name()), String.class);
+                if (word != null && !word.equals(k.defaultSrc()) && k.choices().contains(word)) {
+                    items.add(atom(n, ":" + k.name()));
+                    items.add(atom(n, word));
+                }
+                continue;
+            }
             PortModel port = n.in(RuneNode.kw(k.name()));
             SExpr e = expr(port, n, k.type());
             if (e == null) continue;

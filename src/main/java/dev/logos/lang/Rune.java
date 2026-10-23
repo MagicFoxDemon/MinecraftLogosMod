@@ -20,8 +20,15 @@ public final class Rune {
     /** Positional slot. {@code defaultSrc == null} means required. */
     public record Param(String name, Type type, String defaultSrc, boolean broadcast, boolean rest) {}
 
-    /** Keyword slot. {@code defaultSrc == null} means absent unless written. Flags take no value. */
-    public record Kw(String name, Type type, String defaultSrc, boolean flag) {}
+    /**
+     * Keyword slot. {@code defaultSrc == null} means absent unless written. Flags take no value. A choice takes
+     * one of {@code choices}, written bare (:mode up); the first is its default.
+     */
+    public record Kw(String name, Type type, String defaultSrc, boolean flag, List<String> choices) {
+        public boolean choice() {
+            return !choices.isEmpty();
+        }
+    }
 
     /** An event this rune emits; its handler is written as {@code (on-xxx stmt...)}. */
     public record EventSpec(String name, boolean bindsTarget, String doc) {}
@@ -78,12 +85,18 @@ public final class Rune {
     }
 
     public Rune kw(String name, Type type, String def) {
-        keywords.put(name, new Kw(name, type, def, false));
+        keywords.put(name, new Kw(name, type, def, false, List.of()));
         return this;
     }
 
     public Rune flag(String name) {
-        keywords.put(name, new Kw(name, Type.BOOL, null, true));
+        keywords.put(name, new Kw(name, Type.BOOL, null, true, List.of()));
+        return this;
+    }
+
+    /** A keyword picked from a fixed list of words, shown as a dropdown on the node; the first word is the default. */
+    public Rune choice(String name, String... words) {
+        keywords.put(name, new Kw(name, Type.TEXT, words[0], false, List.of(words)));
         return this;
     }
 
@@ -126,7 +139,7 @@ public final class Rune {
             sb.append(p.defaultSrc() == null ? t : "[" + t + "]");
         }
         for (Kw k : keywords.values()) {
-            sb.append(" [:").append(k.name()).append(k.flag() ? "" : " " + k.type().glyph).append(']');
+            sb.append(" [:").append(k.name()).append(k.flag() ? "" : k.choice() ? " " + String.join("|", k.choices()) : " " + k.type().glyph).append(']');
         }
         for (EventSpec e : events.values()) sb.append(" (").append(e.name()).append(" …)");
         if (body) sb.append(" 行动…");
