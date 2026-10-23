@@ -31,6 +31,7 @@ public record Ctx(SpellInstance inst, ServerLevel level, Vec3 here, Vec3 aim, @N
             case "down" -> DOWN;
             case "i" -> index;
             case "self" -> vars.get("self");
+            case "form" -> vars.get("form");
             default -> null;
         };
     }

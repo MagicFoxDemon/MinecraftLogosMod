@@ -554,6 +554,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "life_of", group = VALUE, graphTypes = SpellGraph.class)
+    public static class LifeOf extends RuneNode {
+        public LifeOf() {
+            super("life-of");
+        }
+    }
+
     @NodeAttribute(name = "random", group = VALUE, graphTypes = SpellGraph.class)
     public static class Random extends RuneNode {
         public Random() {
@@ -958,6 +965,7 @@ public final class RuneNodes {
         BY_RUNE.put("count", Count::new);
         BY_RUNE.put("mana-left", ManaLeft::new);
         BY_RUNE.put("depth", Depth::new);
+        BY_RUNE.put("life-of", LifeOf::new);
         BY_RUNE.put("random", Random::new);
         BY_RUNE.put("mix", Mix::new);
         BY_RUNE.put("round", Round::new);

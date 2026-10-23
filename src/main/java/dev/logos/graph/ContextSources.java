@@ -28,7 +28,7 @@ public final class ContextSources {
         PROJECTILE_POSITION, PROJECTILE_CONTACT, PROJECTILE_AIM, HIT_TARGET, IMPACT_BLOCK,
         FIELD_POSITION, ENTER_TARGET, ENTITY_CENTER, BEAM_END, BEAM_AIM, RAY_END, RAY_AIM,
         CONSTRUCT_POSITION, CONSTRUCT_CONTACT, CONSTRUCT_SELF, CONSTRUCT_NORMAL,
-        CONSTRUCT_TARGET, PASS_POSITION, PASS_AIM, KILLED_TARGET, UNKNOWN
+        CONSTRUCT_TARGET, PASS_POSITION, PASS_AIM, KILLED_TARGET, FORM_SELF, NO_FORM, UNKNOWN
     }
 
     public record Binding(Meaning meaning, LogosNode source) {}
@@ -55,6 +55,7 @@ public final class ContextSources {
         put(scope, root, "here", root instanceof SpecialNodes.EmitterRoot ? Meaning.EMITTER_POSITION : Meaning.CAST_POSITION);
         put(scope, root, "target", Meaning.CAST_TARGET);
         put(scope, root, "self", Meaning.NO_SELF);
+        put(scope, root, "form", Meaning.NO_FORM);
         put(scope, root, "i", Meaning.ZERO_INDEX);
         put(scope, root, "up", Meaning.UP);
         put(scope, root, "down", Meaning.DOWN);
@@ -95,6 +96,8 @@ public final class ContextSources {
         }
         if (!output.startsWith("ev_")) return scope;
         String event = output.substring(3);
+        // Every body-making form names its body in its own events.
+        if (node.rune() != null && node.rune().yields == Type.FORM) put(scope, node, "form", Meaning.FORM_SELF);
         boolean hit = event.equals("on-hit");
         boolean enter = event.equals("on-enter");
         boolean impact = event.equals("on-impact");

@@ -28,6 +28,7 @@ public final class NodeDescriptions {
             }
             for (var keyword : rune.keywords.values()) line(text, word, keyword.name(), "");
             if (rune.body) line(text, word, RuneNode.BODY, "");
+            if (rune.yields != null) line(text, word, RuneNode.YIELD, "");
             for (var event : rune.events.values()) {
                 text.append("\n").append(NodeTerms.event(word, event.name()).getString()).append("：")
                         .append(field(word, event.name()));
@@ -90,6 +91,7 @@ public final class NodeDescriptions {
             Map.entry("projectile/param/on-impact", "撞上方块时执行；此处为撞击方块的位置。"),
             Map.entry("projectile/param/on-tick", "魔弹存续期间每游戏刻执行一次；此处随魔弹移动。"),
             Map.entry("projectile/param/on-expire", "寿命结束、碰撞或穿透次数耗尽而消散时执行；此处为消散位置。术式整体熄灭时不会执行此事件。"),
+            Map.entry("projectile/param/yield", "这一枚魔弹。接给这个形体之后的行动，指的就是这一次造出的这个形体，例如交给形之寿；在它自己的事件里请改用上下文「此形」。"),
             Map.entry("beam/intro", "维持一道具有厚度的光柱，周期性触发命中与脉动事件。光柱会被方块及阻挡它的炼成体截住。"),
             Map.entry("beam/note", "初始消耗 6 魔力，每次脉动另消耗 0.3＋0.05×半径×射程。光柱本身不施加伤害。"),
             Map.entry("beam/param/from", "光柱起点；留空时持续跟随施法者眼部位置，连接后每刻重新读取该位置。"),
@@ -104,6 +106,7 @@ public final class NodeDescriptions {
             Map.entry("beam/param/on-tick", "每次脉动执行一次；此处为当时光柱的尽头。"),
             Map.entry("beam/param/on-impact", "每次脉动时若被方块挡住则执行；此处为阻挡方块的位置。"),
             Map.entry("beam/param/on-expire", "光柱消散时执行；此处为最后的尽头。术式整体熄灭时不会执行此事件。"),
+            Map.entry("beam/param/yield", "这一道光柱。接给这个形体之后的行动，指的就是这一次造出的这个形体，例如交给形之寿；在它自己的事件里请改用上下文「此形」。"),
             Map.entry("construct/intro", "炼成可阻挡、承载或移动的实体结构。可作为墙壁、平台、盾面或穹顶，并在接触和移动时触发行动。"),
             Map.entry("construct/note", "上述事件中，可用此炼成体节点取得结构本身。展开消耗 4＋0.3×面积的魔力（方块按体积），每秒维持消耗 0.2＋0.02×面积，每次阻挡消耗 0.5。承受能力为展开代价的两倍，受到攻击会扣减，耗尽则碎裂。"),
             Map.entry("construct/param/shape", "选择方块、墙、平台、圆盾或穹顶；决定哪些尺寸参数生效，默认墙。"),
@@ -129,6 +132,7 @@ public final class NodeDescriptions {
             Map.entry("construct/param/on-arrive", "结构到达目的地时执行；此处为结构中心。"),
             Map.entry("construct/param/on-tick", "按脉动间隔执行；此处为结构中心。"),
             Map.entry("construct/param/on-expire", "结构消散时执行；此处为最后的中心位置。术式整体熄灭时不会执行此事件。"),
+            Map.entry("construct/param/yield", "这一个炼成体（形体本身，不是它的结构实体）。接给这个形体之后的行动，指的就是这一次造出的这个形体，例如交给形之寿；在它自己的事件里请改用上下文「此形」。"),
             Map.entry("field/intro", "在一定范围内维持领域，侦知敌人进入并周期性执行行动。领域本身不造成伤害。"),
             Map.entry("field/note", "初始消耗 6 魔力，每次脉动另消耗 0.5 魔力。"),
             Map.entry("field/param/at", "领域初始中心；未连接时取此处。"),
@@ -139,6 +143,7 @@ public final class NodeDescriptions {
             Map.entry("field/param/on-tick", "每次脉动执行一次；此处为领域中心。若需影响域内实体，可在这里连接范围搜寻。"),
             Map.entry("field/param/on-enter", "敌人进入领域时执行；目标为进入者，此处为其中心。离开后重新进入可以再次触发。"),
             Map.entry("field/param/on-expire", "领域消散时执行；此处为最后的领域中心。术式整体熄灭时不会执行此事件。"),
+            Map.entry("field/param/yield", "这一片领域。接给这个形体之后的行动，指的就是这一次造出的这个形体，例如交给形之寿；在它自己的事件里请改用上下文「此形」。"),
             Map.entry("ray/intro", "瞬间投出一条射线，在同一次执行中处理沿途命中和终点事件。适合立即触发的远距术式。"),
             Map.entry("ray/note", "发出射线消耗 3 魔力；命中效果需通过事件另行连接。"),
             Map.entry("ray/param/from", "射线起点；未连接时取此处。"),
@@ -376,6 +381,7 @@ public final class NodeDescriptions {
             Map.entry("summon/note", "普通使魔按生命上限×2 收费，存续一个 Minecraft 日。魔力生命体长期存在，初始魔力须满足该等级的最低需求，并可在心核装载术式载页。"),
             Map.entry("summon/param/creature", "要召唤的生物注册名；普通生物需要满足此前击杀该种生物的要求，魔力生命体不需要。"),
             Map.entry("summon/param/at", "使魔出现的位置；默认在此处沿朝向前方 2 格。"),
+            Map.entry("summon/param/yield", "这一次召唤出的使魔本身，接给之后的行动，例如 (glow 吾之使魔 5)；召唤失败时为空。"),
             Map.entry("summon/param/name", "赋予使魔的名字，便于吾之使魔节点以后按名取得它；可留空。"),
             Map.entry("summon/param/hunt", "使魔主动搜寻并攻击的对象筛选；留空时采用其默认行为。"),
             Map.entry("summon/param/radius", "猎杀的搜寻与战斗活动半径；与猎杀对象配合，留空时采用默认范围。"),
@@ -596,6 +602,10 @@ public final class NodeDescriptions {
             Map.entry("choose/param/index", "要取第几个候选，从 0 数起，四舍五入取整。超出范围时取最近的一端；开启循环取值则绕回开头。"),
             Map.entry("choose/param/value", "可供选择的一个候选；编号即对应的序号。"),
             Map.entry("choose/param/wrap", "开启后序号超出范围时绕回开头循环，例如三个候选时序号 3 取候选 0、序号 −1 取候选 2；配合循环序号即可轮流取值。"),
+            Map.entry("life-of/intro", "读出一个形体走过了自己寿命的几分。"),
+            Map.entry("life-of/result", "0 到 1 的数：0 是刚展开，1 是寿终；已经消散的形体也是 1。"),
+            Map.entry("life-of/param/form", "要读的形体：在形体事件里接上下文「此形」，在形体之后接它的「此形」输出。"),
+            Map.entry("life-of/note", "免费。配合调和或波可以让效果随形体的寿命渐变，例如魔弹越飞越强。"),
             Map.entry("wave/intro","随输入往复起伏的数：输入每走过一个周期，波形重复一次。"),
             Map.entry("wave/result", "在 −振幅 ~ +振幅 之间的数。各波形都从 0 起、向上升，在四分之一周期处到达峰值（方波从 +振幅 起）。"
                     + "需要 0~1 时可接入调和或约束。"),
@@ -669,6 +679,9 @@ public final class NodeDescriptions {
             Map.entry("self/intro", "取得正在触发事件的炼成体本身。"),
             Map.entry("self/result", "仅在炼成体事件中提供的结构实体，可交给移动炼成体或停住炼成体。"),
             Map.entry("self/note", "无输入参数；取值由所在行动的上下文提供。"),
+            Map.entry("form/intro", "取得正在触发事件的那个形体本身：魔弹、光柱、炼成体或领域。"),
+            Map.entry("form/result", "仅在形体事件中提供的形体，可交给形之寿；嵌套在其中、自己不造形体的事件仍指外层那个。"),
+            Map.entry("form/note", "无输入参数；取值由所在行动的上下文提供。要在形体之后引用它，请接形体节点的「此形」输出。"),
             Map.entry("i/intro", "取得重复行动当前轮次的序号。"),
             Map.entry("i/result", "重复内部当前轮次，从 0 开始；第一轮为 0，第二轮为 1。"),
             Map.entry("i/note", "无输入参数；取值由所在行动的上下文提供。"),

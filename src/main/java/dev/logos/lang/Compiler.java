@@ -43,25 +43,26 @@ public final class Compiler {
         CONTEXT.put("down", Type.DIR);
         CONTEXT.put("i", Type.NUM);
         CONTEXT.put("self", Type.ENTITY);
+        CONTEXT.put("form", Type.FORM);
     }
 
     /** Lexical scope: which context values exist here and what has been proven. */
-    record Scope(boolean hasTarget, Map<String, Type> vars, List<Fact> facts, int depth, boolean hasSelf) {
+    record Scope(boolean hasTarget, Map<String, Type> vars, List<Fact> facts, int depth, boolean hasSelf, boolean hasForm) {
         Scope enter(boolean bindsTarget) {
             List<Fact> f = bindsTarget ? facts.stream().filter(x -> !x.key().equals("target")).toList() : facts;
-            return new Scope(hasTarget || bindsTarget, vars, f, depth + 1, hasSelf);
+            return new Scope(hasTarget || bindsTarget, vars, f, depth + 1, hasSelf, hasForm);
         }
 
         Scope withVar(String name, Type type) {
             Map<String, Type> v = new HashMap<>(vars);
             v.put(name, type);
-            return new Scope(hasTarget, v, facts.stream().filter(x -> !x.key().equals(name)).toList(), depth, hasSelf);
+            return new Scope(hasTarget, v, facts.stream().filter(x -> !x.key().equals(name)).toList(), depth, hasSelf, hasForm);
         }
 
         Scope withFacts(List<Fact> more) {
             List<Fact> f = new ArrayList<>(facts);
             f.addAll(more);
-            return new Scope(hasTarget, vars, f, depth, hasSelf);
+            return new Scope(hasTarget, vars, f, depth, hasSelf, hasForm);
         }
     }
 
@@ -136,7 +137,7 @@ public final class Compiler {
             }
             if (bodyRaw.isEmpty()) throw err(l, "术式没有任何行动");
         }
-        Scope root = new Scope(!trigger.equals("cast"), Map.of(), List.of(), 0, false);
+        Scope root = new Scope(!trigger.equals("cast"), Map.of(), List.of(), 0, false, false);
         List<Node> body = statements(bodyRaw, root);
         if (recursive) notes.add("含有递归 (recurse)：每层递归都会重新支付魔力，最多 " + LogosConfig.maxRecursion() + " 层（配置 maxRecursion）");
         return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src, SpellProfile.of(body, declared));
@@ -176,6 +177,9 @@ public final class Compiler {
             }
             if (t.equals("self") && !s.hasSelf()) {
                 throw err(a, "这里没有 self：只有在炼成体 (construct) 的事件里，self 才指那个炼成体");
+            }
+            if (t.equals("form") && !s.hasForm()) {
+                throw err(a, "这里没有此形 (form)：只有在魔弹、光柱、炼成体、领域的事件里，form 才指那个形体；在形体之后使用请接它的「此形」输出");
             }
             return Node.ctx(t, CONTEXT.get(t), l, c);
         }
@@ -389,8 +393,9 @@ public final class Compiler {
         for (var e : evRaw.entrySet()) {
             Rune.EventSpec spec = r.events.get(e.getKey());
             Scope inner = s.enter(spec.bindsTarget());
-            // Inside a construct's events, self names that construct.
-            if (r.name.equals("construct")) inner = new Scope(inner.hasTarget(), inner.vars(), inner.facts(), inner.depth(), true);
+            // Inside a form's events, form names that body; inside a construct's, self also names its entity.
+            if (r.yields == Type.FORM) inner = new Scope(inner.hasTarget(), inner.vars(), inner.facts(), inner.depth(),
+                    inner.hasSelf() || r.name.equals("construct"), true);
             n.events.put(e.getKey(), statements(e.getValue(), inner));
         }
         if (!bodyRaw.isEmpty()) n.body.addAll(statements(bodyRaw, r.bodyBindsTarget ? s.enter(true) : s));
@@ -421,12 +426,14 @@ public final class Compiler {
             throw err(l, "let 的写法: (let $名字 值 行动…)");
         }
         Node value = expr(items.get(2), s);
-        if (value.type == Type.ACTION) throw err(items.get(2), "let 只能记住值，不能记住行动");
+        // An action that hands something back (a form's body, a summoned familiar) is kept as that.
+        Type kept = value.type == Type.ACTION && value.kind == Node.Kind.CALL && value.rune.yields != null ? value.rune.yields : value.type;
+        if (kept == Type.ACTION) throw err(items.get(2), "let 只能记住值，不能记住行动（形体与召唤除外：它们记住造出的形体或使魔）");
         Rune r = Runes.get("let");
         Node n = Node.call(r, Type.ACTION, l.line(), l.col());
         n.args.add(Node.lit(Type.TEXT, name.text(), name.line(), name.col()));
         n.args.add(value);
-        n.body.addAll(statements(items.subList(3, items.size()), s.withVar(name.text(), value.type)));
+        n.body.addAll(statements(items.subList(3, items.size()), s.withVar(name.text(), kept)));
         stability += r.stability;
         return n;
     }

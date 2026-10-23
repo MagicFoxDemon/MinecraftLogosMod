@@ -281,6 +281,14 @@ public final class SpecialNodes {
         }
     }
 
+    /** 此形: inside a form's events, the body that form made. */
+    @NodeAttribute(name = "ctx_form", group = CONTEXT, graphTypes = SpellGraph.class)
+    public static class Form extends ContextValue {
+        public Form() {
+            super("form", Type.FORM);
+        }
+    }
+
     @NodeAttribute(name = "ctx_i", group = CONTEXT, graphTypes = SpellGraph.class)
     public static class Index extends ContextValue {
         public Index() {

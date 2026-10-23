@@ -24,7 +24,8 @@ public abstract class SpellObject {
         this.inst = ctx.inst();
         this.level = ctx.level();
         this.node = node;
-        this.ctx = ctx;
+        // Its events know it as form (此形).
+        this.ctx = ctx.withVar("form", this);
         this.pos = pos;
         this.life = life;
     }
@@ -56,6 +57,11 @@ public abstract class SpellObject {
         onEnded();
         inst.objects--;
         inst.release();
+    }
+
+    /** How far through its life it is, 0 at birth to 1 at its end (1 once ended, by whatever means). */
+    public double progress() {
+        return ended || life <= 0 ? 1 : Math.min(1, (double) age / life);
     }
 
     boolean isEnded() {

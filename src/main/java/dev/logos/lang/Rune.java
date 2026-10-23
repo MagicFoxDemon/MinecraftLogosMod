@@ -41,6 +41,11 @@ public final class Rune {
     public final Map<String, EventSpec> events = new LinkedHashMap<>();
     public boolean body;
     public boolean bodyBindsTarget;
+    /**
+     * What an action hands back besides acting: the body a form made (🜔) or the familiar summon called (○).
+     * {@code (let $x (projectile …) …)} keeps it; on the node it is an extra output. Null for none.
+     */
+    public Type yields;
     public double stability;
     public String doc = "";
     public Exec exec;
@@ -102,6 +107,11 @@ public final class Rune {
 
     public Rune on(String event, boolean bindsTarget, String doc) {
         events.put(event, new EventSpec(event, bindsTarget, doc));
+        return this;
+    }
+
+    public Rune yields(Type type) {
+        this.yields = type;
         return this;
     }
 
