@@ -1422,8 +1422,17 @@ public final class Runes {
         def("count", VALUE, NUM).p("targets", ENTITIES).doc("实体数量").exec((n, c) -> (double) entities(n.arg(0), c).size());
         def("mana-left", VALUE, NUM).doc("本次法术剩余的魔力").exec((n, c) -> c.inst().mana);
         def("depth", VALUE, NUM).doc("当前递归层数").exec((n, c) -> (double) c.depth());
-        def("random", VALUE, NUM).opt("max", NUM, "1").doc("0~max 的随机数")
-                .exec((n, c) -> c.inst().level.getRandom().nextDouble() * num(n.arg(0), c));
+        def("random", VALUE, NUM).opt("max", NUM, "1").kw("min", NUM, "0").flag("whole")
+                .doc("min~max 之间的随机数（默认 0~1，不含 max）。:whole 取整数，两端都可能取到，如 (random 6 :min 1 :whole) 掷骰")
+                .exec((n, c) -> {
+                    double lo = num(kw(n, "min"), c), hi = num(n.arg(0), c);
+                    var rng = c.inst().level.getRandom();
+                    if (!n.flags.contains("whole")) return lo + rng.nextDouble() * (hi - lo);
+                    long a = (long) Math.ceil(Math.min(lo, hi)), b = (long) Math.floor(Math.max(lo, hi));
+                    // No whole number between the bounds: the nearest one to them.
+                    if (b < a) return (double) Math.round((lo + hi) / 2);
+                    return (double) (a + (long) (rng.nextDouble() * (b - a + 1)));
+                });
         compare("<", (a, b) -> a < b);
         compare(">", (a, b) -> a > b);
         compare("<=", (a, b) -> a <= b);
