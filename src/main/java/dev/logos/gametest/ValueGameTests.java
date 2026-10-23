@@ -7,6 +7,7 @@ import java.util.Set;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Ctx;
 import dev.logos.runtime.Interp;
+import dev.logos.runtime.Place;
 import dev.logos.runtime.SpellInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
@@ -54,6 +55,19 @@ final class ValueGameTests {
         }
         h.assertTrue(faces.size() == 6, "every face from 1 to 6 should come up in 400 rolls, saw " + faces);
         h.assertTrue(v.num("(random 0.8 :min 0.2 :whole)") == 1, "no whole number between 0.2 and 0.8: the nearest is 1");
+        h.succeed();
+    }
+
+    /** mix and mix-pos give a at 0, b at 1, and keep going along the same line beyond either end. */
+    static void mix(GameTestHelper h) {
+        Values v = new Values(h);
+        h.assertTrue(v.num("(mix 2 10 0)") == 2 && v.num("(mix 2 10 1)") == 10 && v.num("(mix 2 10 0.25)") == 4, "mix inside [0, 1]");
+        h.assertTrue(v.num("(mix 0 10 1.5)") == 15 && v.num("(mix 0 10 -0.5)") == -5, "mix past either end stays on the line");
+        Vec3 here = h.absoluteVec(new Vec3(1.5, 2, 1.5));
+        Vec3 mid = ((Place) v.value("(mix-pos here (above here 8) 0.5)")).pos();
+        h.assertTrue(mid.distanceTo(here.add(0, 4, 0)) < 1e-9, "mix-pos 0.5 is the midpoint, got " + mid);
+        Vec3 past = ((Place) v.value("(mix-pos here (above here 8) -1)")).pos();
+        h.assertTrue(past.distanceTo(here.add(0, -8, 0)) < 1e-9, "mix-pos -1 lies beyond a, got " + past);
         h.succeed();
     }
 }

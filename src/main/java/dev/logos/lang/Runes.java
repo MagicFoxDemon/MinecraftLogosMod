@@ -508,6 +508,12 @@ public final class Runes {
                     Vec3 forward = dev.logos.runtime.Offsets.forward(vec(kw(n, "dir"), c), c.inst().caster.getYRot());
                     return p.moved(dev.logos.runtime.Offsets.apply(p.pos(), forward, num(n.arg(0), c), num(n.arg(1), c), num(n.arg(2), c)));
                 });
+        def("mix-pos", BINDING, POS).p("a", POS).p("b", POS).p("alpha", NUM)
+                .doc("位置调和：按比例 alpha 在 a、b 两处之间取位置，0 是 a，1 是 b，0.5 是连线中点；小于 0 或大于 1 时沿连线越过两端。结果在 a 的维度")
+                .exec((n, c) -> {
+                    Place a = place(n.arg(0), c);
+                    return a.moved(a.pos().lerp(vec(n.arg(1), c), num(n.arg(2), c)));
+                });
         def("look-point", BINDING, POS).opt("range", NUM, "32").stab(1).doc("施法者视线落点（方块表面前方的空气）。1 魔力")
                 .exec((n, c) -> {
                     if (!c.inst().spend(1, "look-point")) return c.place();
@@ -1422,6 +1428,12 @@ public final class Runes {
         def("count", VALUE, NUM).p("targets", ENTITIES).doc("实体数量").exec((n, c) -> (double) entities(n.arg(0), c).size());
         def("mana-left", VALUE, NUM).doc("本次法术剩余的魔力").exec((n, c) -> c.inst().mana);
         def("depth", VALUE, NUM).doc("当前递归层数").exec((n, c) -> (double) c.depth());
+        def("mix", VALUE, NUM).p("a", NUM).p("b", NUM).p("alpha", NUM)
+                .doc("调和：按比例 alpha 在 a、b 之间取值，0 是 a，1 是 b，0.5 是正中；小于 0 或大于 1 时沿同一条直线越过两端")
+                .exec((n, c) -> {
+                    double a = num(n.arg(0), c);
+                    return a + (num(n.arg(1), c) - a) * num(n.arg(2), c);
+                });
         def("random", VALUE, NUM).opt("max", NUM, "1").kw("min", NUM, "0").flag("whole")
                 .doc("min~max 之间的随机数（默认 0~1，不含 max）。:whole 取整数，两端都可能取到，如 (random 6 :min 1 :whole) 掷骰")
                 .exec((n, c) -> {
