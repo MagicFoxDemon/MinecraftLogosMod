@@ -83,6 +83,7 @@ public final class SpellEditor {
     private final GraphEditorView editor = new GraphEditorView(SpellGraphView::new);
     private final Label status = new Label();
     private final Label overview = new Label();
+    private final Label runeDescription = new Label();
     private final Selector<SpecialNodes.IntentChoice> intent = new Selector<>();
     /** The wax seal on the inscribe button: grey while the drawing does not hold. */
     private final ManuscriptControls.Seal seal = new ManuscriptControls.Seal(() -> this.graph != null && this.graph.result().ok());
@@ -104,6 +105,14 @@ public final class SpellEditor {
 
     /** A spell canvas needs navigation, but not the toolkit's variable and appearance panels. */
     private static final class SpellGraphView extends GraphView {
+        private Runnable selectionChanged = () -> {};
+
+        @Override
+        public void endBatchSelection() {
+            super.endBatchSelection();
+            selectionChanged.run();
+        }
+
         private SpellGraphView() {
             header.style(s -> s.backgroundTexture(IGuiTexture.EMPTY));
             graphView.graphViewStyle(s -> s.gridLineColor(0x183E2918).gridAccentColor(0x303E2918));
@@ -240,6 +249,7 @@ public final class SpellEditor {
         graph = g;
         graph.addListener(this::refresh);
         editor.loadGraph(graph, this::send);
+        ((SpellGraphView) editor.getCurrentView()).selectionChanged = this::refreshSelection;
         fitIn = 3;
         refresh();
     }
@@ -283,7 +293,9 @@ public final class SpellEditor {
 
         status.setId("status");
         overview.setId("overview");
-        for (Label l : List.of(status, overview)) {
+        runeDescription.setId("selected_rune_description");
+        runeDescription.setDisplay(TaffyDisplay.NONE);
+        for (Label l : List.of(status, overview, runeDescription)) {
             l.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true).textColor(0xFF392719).textShadow(false));
             l.layout(x -> x.widthPercent(100));
         }
@@ -318,7 +330,7 @@ public final class SpellEditor {
                 new Label().setText(Component.literal("☷ 总览")));
         // The emitter casts on its own trigger; the intent a lifeform reads stays as the page had it.
         if (emitter == null) details.addChildren(new Label().setText(Component.literal("意图（魔力生命体据此决定何时施放）")), intent);
-        details.addChild(overview);
+        details.addChildren(runeDescription, overview);
         for (UIElement child : details.getChildren()) {
             if (child instanceof Label label) {
                 label.layout(l -> l.widthPercent(100));
@@ -427,6 +439,7 @@ public final class SpellEditor {
     }
 
     private void refresh() {
+        refreshSelection();
         GraphCompiler.Result r = graph.result();
         if (r.ok()) {
             var s = r.spell();
@@ -449,6 +462,15 @@ public final class SpellEditor {
         syncingIntent = true;
         intent.setValue(chosen == null ? SpecialNodes.IntentChoice.AUTO : chosen, false);
         syncingIntent = false;
+    }
+
+    /** Reuses the rune's own help, without interpreting context until a particular use is selected. */
+    private void refreshSelection() {
+        var selected = editor.getCurrentView().getSelected();
+        LogosNode node = selected.size() == 1 && selected.iterator().next() instanceof ICustomNodeModel model
+                && model.getNode() instanceof LogosNode rune ? rune : null;
+        runeDescription.setDisplay(node == null ? TaffyDisplay.NONE : TaffyDisplay.FLEX);
+        runeDescription.setText(node == null ? Component.empty() : Component.literal(node.title() + "\n\n" + node.doc()));
     }
 
     private SpecialNodes.@org.jspecify.annotations.Nullable SpellRoot root() {
