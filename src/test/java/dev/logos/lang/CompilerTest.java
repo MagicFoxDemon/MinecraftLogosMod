@@ -130,6 +130,15 @@ class CompilerTest {
     }
 
     @Test
+    void randomTakesBoundsAndWholeMode() {
+        Node old = Compiler.compile("(let $r (random 5) (do))").body().getFirst().arg(1);
+        assertEquals("5", old.arg(0).show());
+        Node die = Compiler.compile("(let $r (random 6 :min 1 :whole) (do))").body().getFirst().arg(1);
+        assertEquals("1", die.kw.get("min").show());
+        assertTrue(die.flags.contains("whole"));
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");

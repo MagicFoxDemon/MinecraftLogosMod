@@ -476,6 +476,8 @@
   "logos.param.count": "数量",
   "logos.param.times": "重复次数",
   "logos.param.max": "上限",
+  "logos.param.min": "下限",
+  "logos.param.whole": "取整数",
   "logos.param.value": "值",
   "logos.param.cond": "命题",
   "logos.param.then": "成立时",

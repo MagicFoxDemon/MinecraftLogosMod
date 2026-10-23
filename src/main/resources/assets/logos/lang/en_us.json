@@ -476,6 +476,8 @@
   "logos.param.count": "Count",
   "logos.param.times": "Repetitions",
   "logos.param.max": "Upper bound",
+  "logos.param.min": "Lower bound",
+  "logos.param.whole": "Whole numbers",
   "logos.param.value": "Value",
   "logos.param.cond": "Proposition",
   "logos.param.then": "If true",
