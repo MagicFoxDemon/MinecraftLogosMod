@@ -46,7 +46,28 @@ final class GraphGameTests {
             h.assertTrue(rr.ok() && rr.source().equals(r.source()), e.getKey() + ": graph changed after save/load: " + rr.error() + "\n" + rr.source());
         }
         enumCardsRoundtrip(h);
+        choiceRoundtrip(h);
         h.succeed();
+    }
+
+    /** A choice keyword becomes the node's dropdown and comes back as the same word; its default is left out. */
+    private static void choiceRoundtrip(GameTestHelper h) {
+        for (String mode : new String[] {"up", "down", "nearest"}) {
+            String src = "(spell :mana 10 (heal caster (round 2.5 :mode " + mode + ")))";
+            SpellGraph graph = GraphBuilder.build(Compiler.compile(src));
+            GraphCompiler.Result r = GraphCompiler.compile(graph);
+            h.assertTrue(r.ok(), "round :mode " + mode + ": graph does not compile: " + r.error());
+            boolean written = r.source().contains(":mode " + mode);
+            h.assertTrue(mode.equals("nearest") ? !written && !r.source().contains(":mode") : written,
+                    "round :mode " + mode + " did not survive the graph:\n" + r.source());
+            var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
+                    net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+            graph.graphModel.serialize(out);
+            SpellGraph reloaded = new SpellGraph();
+            reloaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(
+                    net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
+            h.assertTrue(GraphCompiler.compile(reloaded).source().equals(r.source()), "round :mode " + mode + " changed after save/load");
+        }
     }
 
     /** Registry cards, wired former options and typed inline IDs keep their meaning through graph saves. */

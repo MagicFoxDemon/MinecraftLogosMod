@@ -561,6 +561,20 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "round", group = VALUE, graphTypes = SpellGraph.class)
+    public static class Round extends RuneNode {
+        public Round() {
+            super("round");
+        }
+    }
+
+    @NodeAttribute(name = "clamp", group = VALUE, graphTypes = SpellGraph.class)
+    public static class Clamp extends RuneNode {
+        public Clamp() {
+            super("clamp");
+        }
+    }
+
     @NodeAttribute(name = "mix_pos", group = BINDING, graphTypes = SpellGraph.class)
     public static class MixPos extends RuneNode {
         public MixPos() {
@@ -924,6 +938,8 @@ public final class RuneNodes {
         BY_RUNE.put("depth", Depth::new);
         BY_RUNE.put("random", Random::new);
         BY_RUNE.put("mix", Mix::new);
+        BY_RUNE.put("round", Round::new);
+        BY_RUNE.put("clamp", Clamp::new);
         BY_RUNE.put("mix-pos", MixPos::new);
         BY_RUNE.put("<", Lt::new);
         BY_RUNE.put(">", Gt::new);

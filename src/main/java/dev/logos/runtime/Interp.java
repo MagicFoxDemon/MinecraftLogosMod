@@ -125,4 +125,9 @@ public final class Interp {
     public static Node kw(Node n, String name) {
         return n.kw.get(name);
     }
+
+    /** The word picked for a choice keyword; always present, its default when not written. */
+    public static String choice(Node n, String name) {
+        return (String) n.kw.get(name).value;
+    }
 }

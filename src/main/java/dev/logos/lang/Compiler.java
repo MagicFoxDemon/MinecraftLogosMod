@@ -357,6 +357,13 @@ public final class Compiler {
         for (Rune.Kw k : r.keywords.values()) {
             if (k.flag()) continue;
             SExpr raw = kwRaw.get(k.name());
+            if (k.choice()) {
+                String word = raw == null ? k.defaultSrc() : raw instanceof Atom a ? a.text() : "";
+                if (!k.choices().contains(word)) throw err(raw, r.name + " 的 :" + k.name() + " 只能是 " + String.join(" / ", k.choices()));
+                n.kw.put(k.name(), Node.lit(Type.TEXT, word, (raw != null ? raw : at).line(), (raw != null ? raw : at).col()));
+                if (raw == null) n.defaulted.add(k.name());
+                continue;
+            }
             Node v = raw != null ? expr(raw, s) : k.defaultSrc() != null ? expr(Reader.read(k.defaultSrc()).getFirst(), s) : null;
             if (v == null) continue;
             n.kw.put(k.name(), check(r, ":" + k.name(), k.type(), false, v, raw != null ? raw : at));

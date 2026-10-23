@@ -74,7 +74,11 @@ public final class Node {
             case CALL -> {
                 StringBuilder sb = new StringBuilder("(").append(rune.name);
                 for (Node a : args) sb.append(' ').append(a.show());
-                for (var e : kw.entrySet()) if (!defaulted.contains(e.getKey())) sb.append(" :").append(e.getKey()).append(' ').append(e.getValue().show());
+                for (var e : kw.entrySet()) {
+                    if (defaulted.contains(e.getKey())) continue;
+                    Rune.Kw spec = rune.keywords.get(e.getKey());
+                    sb.append(" :").append(e.getKey()).append(' ').append(spec != null && spec.choice() ? e.getValue().value : e.getValue().show());
+                }
                 for (String f : flags) sb.append(" :").append(f);
                 if (!body.isEmpty() || !events.isEmpty()) sb.append(" …");
                 yield sb.append(')').toString();

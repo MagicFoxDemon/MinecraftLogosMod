@@ -1434,6 +1434,22 @@ public final class Runes {
                     double a = num(n.arg(0), c);
                     return a + (num(n.arg(1), c) - a) * num(n.arg(2), c);
                 });
+        def("round", VALUE, NUM).p("x", NUM).choice("mode", "nearest", "up", "down")
+                .doc("取整：:mode nearest 四舍五入（.5 远离 0），up 向上取整，down 向下取整")
+                .exec((n, c) -> {
+                    double x = num(n.arg(0), c);
+                    return switch (choice(n, "mode")) {
+                        case "up" -> Math.ceil(x);
+                        case "down" -> Math.floor(x);
+                        default -> Math.signum(x) * Math.floor(Math.abs(x) + 0.5);
+                    };
+                });
+        def("clamp", VALUE, NUM).p("x", NUM).kw("min", NUM, "0").kw("max", NUM, "1")
+                .doc("约束：把数限制在 min~max 之间（默认 0~1），低于下限取下限，高于上限取上限；两者写反时互换")
+                .exec((n, c) -> {
+                    double lo = num(kw(n, "min"), c), hi = num(kw(n, "max"), c);
+                    return Math.clamp(num(n.arg(0), c), Math.min(lo, hi), Math.max(lo, hi));
+                });
         def("random", VALUE, NUM).opt("max", NUM, "1").kw("min", NUM, "0").flag("whole")
                 .doc("min~max 之间的随机数（默认 0~1，不含 max）。:whole 取整数，两端都可能取到，如 (random 6 :min 1 :whole) 掷骰")
                 .exec((n, c) -> {

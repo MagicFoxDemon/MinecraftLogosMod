@@ -146,6 +146,18 @@ class CompilerTest {
     }
 
     @Test
+    void choiceKeywordsTakeOneOfTheirWords() {
+        Node plain = Compiler.compile("(let $r (round 3) (do))").body().getFirst().arg(1);
+        assertEquals("nearest", plain.kw.get("mode").value);
+        assertEquals("(round 3)", plain.show());
+        Node up = Compiler.compile("(let $r (round 3 :mode up) (do))").body().getFirst().arg(1);
+        assertEquals("(round 3 :mode up)", up.show());
+        assertError("(let $r (round 2.5 :mode sideways) (do))", "nearest / up / down");
+        assertError("(let $r (round 2.5 :mode (random)) (do))", ":mode");
+        assertTrue(Runes.get("round").signature().contains("[:mode nearest|up|down]"));
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");

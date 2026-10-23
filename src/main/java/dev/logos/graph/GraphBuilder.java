@@ -219,6 +219,10 @@ public final class GraphBuilder {
         boolean rest = r.params.stream().anyMatch(Rune.Param::rest);
         if (rest) n.setOption(RuneNode.COUNT, s.args.size());
         for (String f : s.flags) n.setOption(RuneNode.flag(f), true);
+        for (var e : s.kw.entrySet()) {
+            Rune.Kw k = r.keywords.get(e.getKey());
+            if (k != null && k.choice()) n.setOption(RuneNode.choice(k.name()), (String) e.getValue().value);
+        }
         float vy = top;
         for (int i = 0; i < s.args.size(); i++) {
             Rune.Param p = rest ? r.params.getFirst() : r.params.get(i);

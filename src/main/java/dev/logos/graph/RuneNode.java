@@ -75,6 +75,10 @@ public abstract class RuneNode extends LogosNode {
         return "flag_" + name;
     }
 
+    public static String choice(String name) {
+        return "choice_" + name;
+    }
+
     public static String event(String name) {
         return "ev_" + name;
     }
@@ -124,6 +128,10 @@ public abstract class RuneNode extends LogosNode {
             if (k.flag()) {
                 context.addOption(flag(k.name()), Boolean.class).withDefaultValue(false).withDisplayName(NodeTerms.parameter(word(), k.name()));
             }
+            if (k.choice()) {
+                context.addOption(choice(k.name()), String.class).withDefaultValue(k.defaultSrc())
+                        .withConfigurable(Choices.selector(word(), k)).withDisplayName(NodeTerms.parameter(word(), k.name()));
+            }
         }
     }
 
@@ -155,7 +163,7 @@ public abstract class RuneNode extends LogosNode {
             }
         }
         for (Rune.Kw k : r.keywords.values()) {
-            if (!k.flag()) input(context, kw(k.name()), NodeTerms.parameter(word(), k.name()), k.type(), false, k.defaultSrc(), k.name());
+            if (!k.flag() && !k.choice()) input(context, kw(k.name()), NodeTerms.parameter(word(), k.name()), k.type(), false, k.defaultSrc(), k.name());
         }
         for (Rune.EventSpec e : r.events.values()) {
             context.addOutputPort(event(e.name()), LTypes.FLOW).withDisplayName(Component.literal("☽ ").append(NodeTerms.event(word(), e.name()))).build();
