@@ -304,6 +304,8 @@
   "logos.rune.damage-all": "群体伤害",
   "logos.rune.ignite-all": "群体点燃",
   "logos.rune.freeze-all": "群体冻结",
+  "logos.rune.equip": "授装",
+  "logos.param.equip.item": "授予物品",
   "logos.rune.disarm": "缴械",
   "logos.rune.potion": "药水效果",
   "logos.rune.push": "推离",

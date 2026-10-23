@@ -229,6 +229,10 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = 8;
                     found.add(Intent.CONTROL);
                 }
+                case "equip" -> {
+                    own = 8 * count(n.arg(0));
+                    found.add(Intent.UTILITY);
+                }
                 case "potion" -> {
                     String id = String.valueOf(n.arg(1) == null ? "" : n.arg(1).value).replace("minecraft:", "");
                     double level = argNum(n, 3, 1);

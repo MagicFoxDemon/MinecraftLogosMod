@@ -218,6 +218,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "equip", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Equip extends RuneNode {
+        public Equip() {
+            super("equip");
+        }
+    }
+
     @NodeAttribute(name = "disarm", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Disarm extends RuneNode {
         public Disarm() {
@@ -855,6 +862,7 @@ public final class RuneNodes {
         BY_RUNE.put("ignite-all", IgniteAll::new);
         BY_RUNE.put("freeze-all", FreezeAll::new);
         BY_RUNE.put("disarm", Disarm::new);
+        BY_RUNE.put("equip", Equip::new);
         BY_RUNE.put("potion", Potion::new);
         BY_RUNE.put("push", Push::new);
         BY_RUNE.put("pull", Pull::new);

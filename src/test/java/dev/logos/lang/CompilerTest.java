@@ -12,6 +12,18 @@ import org.junit.jupiter.api.Test;
 
 class CompilerTest {
     @Test
+    void equipRequiresItemAndEntityTypes() {
+        Spell single = Compiler.compile("(spell :mana 20 (equip caster &minecraft:stone))");
+        assertEquals(8, single.profile().estimate(), 1e-6);
+        assertEquals(Intent.UTILITY, single.profile().primary());
+        Compiler.compile("(spell :mana 100 (equip (enemies) &minecraft:iron_sword))");
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell (equip caster))"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell (equip here &minecraft:stone))"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell (equip caster \"minecraft:stone\"))"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell (equip caster %flame))"));
+    }
+
+    @Test
     void allExamplesCompile() {
         for (Map.Entry<String, String> e : Examples.ALL.entrySet()) {
             try {

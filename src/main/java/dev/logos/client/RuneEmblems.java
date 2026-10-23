@@ -229,6 +229,17 @@ final class RuneEmblems {
                 "..#.#....",
                 ".#...#...",
                 "#........"}, "damage", "damage-all", "drain", "execute", "disarm");
+        // A breastplate receiving a piece of equipment, in the same ink as disarm's blade.
+        put(new String[]{
+                ".##...##.",
+                "#..#.#..#",
+                "#...#...#",
+                ".#.....#.",
+                ".#..+..#.",
+                ".#.+++.#.",
+                ".#..+..#.",
+                ".#.....#.",
+                "..#####.."}, "equip");
         // A flame.
         put(new String[]{
                 "....#....",
