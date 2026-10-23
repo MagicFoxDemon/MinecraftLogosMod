@@ -12,6 +12,20 @@ import org.junit.jupiter.api.Test;
 
 class CompilerTest {
     @Test
+    void mathRunesHaveDistinctNumberAndPositionTypes() {
+        for (String expression : List.of("random", "(random 6)", "(random 6 :min 2 :kind \"integer\")",
+                "(round -1.5 :mode \"up\")", "(clamp 4)", "(clamp -2 :min -1 :max 5)",
+                "(lerp 10 20 1.5)", "(lerp-pos here (above here 10) -1)")) {
+            Spell spell = Compiler.compile("(spell :mana 20 (echo " + expression + "))");
+            assertEquals(0, spell.profile().estimate(), 1e-6, expression);
+        }
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell (echo (lerp here here 0.5)))"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell (echo (lerp-pos 1 2 0.5)))"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell (echo (lerp 1 2 here)))"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell (echo (round here)))"));
+    }
+
+    @Test
     void equipRequiresItemAndEntityTypes() {
         Spell single = Compiler.compile("(spell :mana 20 (equip caster &minecraft:stone))");
         assertEquals(8, single.profile().estimate(), 1e-6);

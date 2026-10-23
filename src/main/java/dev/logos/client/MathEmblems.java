@@ -165,6 +165,50 @@ final class MathEmblems {
                 "#.+...+.#",
                 "#.......#",
                 "#########"}, "random");
+        // A stepped rule: a fraction settling onto an integer mark.
+        put(new String[]{
+                ".......#.",
+                ".....###.",
+                ".....#...",
+                "...###...",
+                "...#.....",
+                ".###.....",
+                ".#.......",
+                ".........",
+                "+.+.+.+.+"}, "round");
+        // A measured span held between two boundary pillars.
+        put(new String[]{
+                ".##...##.",
+                ".#.....#.",
+                ".#.....#.",
+                ".#..+..#.",
+                ".#+++++#.",
+                ".#..+..#.",
+                ".#.....#.",
+                ".#.....#.",
+                ".##...##."}, "clamp");
+        // Two extremes and the proportion held between them.
+        put(new String[]{
+                ".........",
+                "....#....",
+                "...#+#...",
+                "....#....",
+                "+#######+",
+                "....#....",
+                "...#+#...",
+                "....#....",
+                "........."}, "lerp");
+        // A point travelling between two compass marks.
+        put(new String[]{
+                ".......+.",
+                "......+#+",
+                ".....#.+.",
+                "....#....",
+                "...#+#...",
+                "....#....",
+                ".+.#.....",
+                "+#+......",
+                ".+......."}, "lerp-pos");
         // Dividers pricking two points.
         put(new String[]{
                 "....#....",

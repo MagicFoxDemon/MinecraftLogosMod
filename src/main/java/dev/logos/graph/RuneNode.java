@@ -35,7 +35,7 @@ public abstract class RuneNode extends LogosNode {
     public static final String COUNT = "count";
 
     private static final Map<String, Float> PARAM_HINTS = Map.of(
-            "amount", 5f, "seconds", 3f, "strength", 1f, "times", 3f, "count", 3f, "distance", 4f, "stacks", 1f);
+            "amount", 5f, "seconds", 3f, "strength", 1f, "times", 3f, "count", 3f, "distance", 4f, "stacks", 1f, "alpha", 0.5f);
 
     private final String runeName;
 
@@ -168,11 +168,13 @@ public abstract class RuneNode extends LogosNode {
         }
     }
 
-    private static void input(IPortDefinitionContext context, String id, Component label, Type t, boolean broadcast, String defaultSrc, String paramName) {
+    private void input(IPortDefinitionContext context, String id, Component label, Type t, boolean broadcast, String defaultSrc, String paramName) {
         var builder = context.addInputPort(id, LTypes.of(t, broadcast))
                 .withDisplayName(label);
         if (EnumValues.stringPort(t)) builder.withCodec(com.mojang.serialization.Codec.STRING)
                 .withConfigurable(EnumValues.STRING_EDITOR);
+        if (word().equals("random") && paramName.equals("kind")) builder.withConfigurable(MathChoices.RANDOM);
+        if (word().equals("round") && paramName.equals("mode")) builder.withConfigurable(MathChoices.ROUND);
         Object def = defaultValue(t, defaultSrc, paramName);
         if (def != null) builder.withDefaultValue(def);
         else builder.withoutConfigurator();
@@ -195,7 +197,9 @@ public abstract class RuneNode extends LogosNode {
             case STATUS -> "#mark";
             // ❖ an item id / ✧ a particle name typed on the node (mace, portal…); blank = none.
             // ⊙ filters start as a typed id/#tag; wire a (kind …) node in for a kind.
-            case TEXT, LOOK, PARTICLE, FILTER -> "";
+            case TEXT -> defaultSrc != null && defaultSrc.startsWith("\"") && defaultSrc.endsWith("\"")
+                    ? defaultSrc.substring(1, defaultSrc.length() - 1) : "";
+            case LOOK, PARTICLE, FILTER -> "";
             default -> null;
         };
     }

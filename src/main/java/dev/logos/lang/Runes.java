@@ -1422,8 +1422,31 @@ public final class Runes {
         def("count", VALUE, NUM).p("targets", ENTITIES).doc("实体数量").exec((n, c) -> (double) entities(n.arg(0), c).size());
         def("mana-left", VALUE, NUM).doc("本次法术剩余的魔力").exec((n, c) -> c.inst().mana);
         def("depth", VALUE, NUM).doc("当前递归层数").exec((n, c) -> (double) c.depth());
-        def("random", VALUE, NUM).opt("max", NUM, "1").doc("0~max 的随机数")
-                .exec((n, c) -> c.inst().level.getRandom().nextDouble() * num(n.arg(0), c));
+        def("random", VALUE, NUM).opt("max", NUM, "1").kw("min", NUM, "0").kw("kind", TEXT, "\"real\"")
+                .doc("掷签：在两界之间抽取一个数，可选小数或整数。整数包含两端，区间内没有整数时返回 0。免费")
+                .exec((n, c) -> ScalarMath.random(num(kw(n, "min"), c), num(n.arg(0), c),
+                        text(kw(n, "kind"), c).equals("integer"), c.inst().level.getRandom().nextDouble()));
+        def("round", VALUE, NUM).p("value", NUM).kw("mode", TEXT, "\"nearest\"")
+                .doc("归整：将数值归为整数，可选四舍五入、向上取整或向下取整。四舍五入遇到正负半数均远离零。免费")
+                .exec((n, c) -> ScalarMath.round(num(n.arg(0), c), text(kw(n, "mode"), c)));
+        def("clamp", VALUE, NUM).p("value", NUM).kw("min", NUM, "0").kw("max", NUM, "1")
+                .doc("限界：将数值限制在两界之内，默认 0～1；两界颠倒时自动交换。免费")
+                .exec((n, c) -> ScalarMath.clamp(num(n.arg(0), c), num(kw(n, "min"), c), num(kw(n, "max"), c)));
+        def("lerp", VALUE, NUM).p("a", NUM).p("b", NUM).p("alpha", NUM)
+                .doc("调和：按进度在两个数值之间取值。0 为始值，1 为终值；进度超出两端时沿同一规律外推。免费")
+                .exec((n, c) -> ScalarMath.lerp(num(n.arg(0), c), num(n.arg(1), c), num(n.arg(2), c)));
+        def("lerp-pos", VALUE, POS).p("a", POS).p("b", POS).p("alpha", NUM)
+                .doc("渡位：按进度在两个同维度的位置之间取点。0 为起点，1 为终点，超出两端时沿直线延伸。免费")
+                .exec((n, c) -> {
+                    Place a = place(n.arg(0), c), b = place(n.arg(1), c);
+                    if (a.level() != b.level()) {
+                        c.inst().terminate("渡位的起点与终点必须位于同一维度");
+                        return null;
+                    }
+                    double alpha = num(n.arg(2), c);
+                    return a.moved(new Vec3(ScalarMath.lerp(a.pos().x, b.pos().x, alpha),
+                            ScalarMath.lerp(a.pos().y, b.pos().y, alpha), ScalarMath.lerp(a.pos().z, b.pos().z, alpha)));
+                });
         compare("<", (a, b) -> a < b);
         compare(">", (a, b) -> a > b);
         compare("<=", (a, b) -> a <= b);

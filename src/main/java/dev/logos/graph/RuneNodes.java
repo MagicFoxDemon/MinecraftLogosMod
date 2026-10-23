@@ -547,6 +547,34 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "round", group = VALUE, graphTypes = SpellGraph.class)
+    public static class Round extends RuneNode {
+        public Round() {
+            super("round");
+        }
+    }
+
+    @NodeAttribute(name = "clamp", group = VALUE, graphTypes = SpellGraph.class)
+    public static class Clamp extends RuneNode {
+        public Clamp() {
+            super("clamp");
+        }
+    }
+
+    @NodeAttribute(name = "lerp", group = VALUE, graphTypes = SpellGraph.class)
+    public static class Lerp extends RuneNode {
+        public Lerp() {
+            super("lerp");
+        }
+    }
+
+    @NodeAttribute(name = "lerp_pos", group = VALUE, graphTypes = SpellGraph.class)
+    public static class LerpPos extends RuneNode {
+        public LerpPos() {
+            super("lerp-pos");
+        }
+    }
+
     @NodeAttribute(name = "random", group = VALUE, graphTypes = SpellGraph.class)
     public static class Random extends RuneNode {
         public Random() {
@@ -909,6 +937,10 @@ public final class RuneNodes {
         BY_RUNE.put("mana-left", ManaLeft::new);
         BY_RUNE.put("depth", Depth::new);
         BY_RUNE.put("random", Random::new);
+        BY_RUNE.put("round", Round::new);
+        BY_RUNE.put("clamp", Clamp::new);
+        BY_RUNE.put("lerp", Lerp::new);
+        BY_RUNE.put("lerp-pos", LerpPos::new);
         BY_RUNE.put("<", Lt::new);
         BY_RUNE.put(">", Gt::new);
         BY_RUNE.put("<=", Le::new);
