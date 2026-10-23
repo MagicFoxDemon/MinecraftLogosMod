@@ -84,7 +84,7 @@ public final class NodeDescriptions {
             Map.entry("projectile/param/motion", "选择直行、弧线、追踪、游走、回旋或环绕等行进轨迹；默认直行。"),
             Map.entry("projectile/param/pierce", "命中实体后还能继续穿透的次数，范围 0～99；默认 0，即首次命中便消散。"),
             Map.entry("projectile/param/size", "控制魔弹的视觉大小和命中判定尺度，范围 0.1～3，默认 0.3。"),
-            Map.entry("projectile/param/look", "用指定物品的模型显示魔弹；只改变外观，不改变轨迹或伤害。"),
+            Map.entry("projectile/param/look", "用指定物品的模型显示魔弹（方块物品显示为方块），或接生物卡片显示为那种生物的模型，朝着飞行方向；只改变外观，不改变轨迹或伤害。模型大小随魔弹尺寸。"),
             Map.entry("projectile/param/spin", "模型每秒自旋的圈数，范围 −10～10；正负值决定旋转方向，默认 0。"),
             Map.entry("projectile/param/trail", "指定魔弹拖曳的粒子；留空时使用元素原有尾迹。"),
             Map.entry("projectile/param/on-hit", "命中实体时执行；目标为被命中者，此处为其中心。"),

@@ -34,9 +34,10 @@ public final class LTypes {
     public static final class Dir {}
 
     // Graph-only type tokens: registry IDs themselves are stored using Codec.STRING.
-    public static final class CreatureKey {}
+    /** A creature card also fits an appearance slot: a projectile may wear its model. */
+    public static final class CreatureKey extends LookKey {}
     public static final class DimensionKey {}
-    public static final class LookKey {}
+    public static class LookKey {}
     public static final class FormKey {}
     public static final class ParticleKey {}
     public static final class EffectKey {}

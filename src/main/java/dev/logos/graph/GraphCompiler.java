@@ -346,7 +346,7 @@ public final class GraphCompiler {
         String key = value.value();
         if (key.isBlank()) throw new GraphError(value, "枚举值不能为空");
         if (port.equals(EnumValues.FILTER)) return new SExpr.Str(key, id(value), 1);
-        if (want != null && want != value.kind.type) throw new GraphError(value, "枚举类型不匹配：" + value.kind.type.label() + " → " + want.label());
+        if (want != null && !want.accepts(value.kind.type, false)) throw new GraphError(value, "枚举类型不匹配：" + value.kind.type.label() + " → " + want.label());
         return atom(value, switch (value.kind.type) {
             case DIMENSION -> "@" + key;
             case LOOK -> "&" + key;

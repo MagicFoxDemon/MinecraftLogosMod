@@ -58,6 +58,21 @@ public final class Vfx {
         return BuiltInRegistries.ITEM.getOptional(key).map(BuiltInRegistries.ITEM::getId).orElse(NONE);
     }
 
+    /**
+     * A creature's model as a look: its entity type's raw id folded below {@link #NONE} (-2 is the first),
+     * so it rides in the same field as an item look; {@link #creatureOf} unfolds it.
+     */
+    public static int creatureLook(String id) {
+        Identifier key = Identifier.tryParse(id);
+        if (key == null) return NONE;
+        return BuiltInRegistries.ENTITY_TYPE.getOptional(key).map(t -> -2 - BuiltInRegistries.ENTITY_TYPE.getId(t)).orElse(NONE);
+    }
+
+    /** The entity type's raw id in a creature look, or -1 for an item look or none. */
+    public static int creatureOf(int look) {
+        return look <= -2 ? -2 - look : -1;
+    }
+
     /** The raw registry id of the particle type named {@code id}, or {@link #NONE}. */
     public static int particleId(String id) {
         Identifier key = Identifier.tryParse(id);
