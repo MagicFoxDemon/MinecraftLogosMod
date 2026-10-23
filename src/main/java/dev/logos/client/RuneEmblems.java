@@ -501,7 +501,7 @@ final class RuneEmblems {
                 "....#....",
                 "..#####..",
                 ".#.....#.",
-                "#.......#"}, "pos-of", "above", "ahead", "look-point", "look-block", "in-dimension", "here", "^");
+                "#.......#"}, "pos-of", "above", "ahead", "mix-pos", "look-point", "look-block", "in-dimension", "here", "^");
         // The stake set off along a carpenter's square: so far forward, so far up.
         put(new String[]{
                 "#....###.",

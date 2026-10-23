@@ -139,6 +139,13 @@ class CompilerTest {
     }
 
     @Test
+    void mixTakesNumbersOrPlaces() {
+        assertEquals(Type.NUM, Compiler.compile("(let $m (mix 0 10 (random)) (do))").body().getFirst().arg(1).type);
+        assertEquals(Type.POS, Compiler.compile("(blink (mix-pos here (look-point) 0.5))").body().getFirst().arg(0).type);
+        assertError("(blink (mix-pos here 3 0.5))", "");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");
