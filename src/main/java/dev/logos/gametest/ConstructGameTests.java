@@ -84,6 +84,20 @@ final class ConstructGameTests {
         return abs.z - h.absoluteVec(Vec3.ZERO).z;
     }
 
+    /** :sigil gives a shield its magic-circle face; other shapes ignore it. */
+    static void sigilOnlyOnShields(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        castAt(h, p, "(spell :mana 200 (construct :shape disk :radius 1.5 :sigil :at here))", new BlockPos(2, 3, 2));
+        castAt(h, p, "(spell :mana 200 (construct :shape wall :width 2 :height 2 :sigil :at here))", new BlockPos(6, 3, 6));
+        var all = dev.logos.runtime.ConstructEntity.near(h.getLevel(), new net.minecraft.world.phys.AABB(h.absolutePos(BlockPos.ZERO)).inflate(16));
+        h.assertTrue(all.size() == 2, "expected two constructs, found " + all.size());
+        for (var c : all) {
+            boolean disk = c.geometry().shape == dev.logos.lang.ConstructShape.DISK;
+            h.assertTrue(c.sigil() == disk, (disk ? "the shield should" : "the wall should not") + " wear the circle face");
+        }
+        h.succeed();
+    }
+
     /** A creature walking into a wall stops at it: the cells join the game's own entity collisions. */
     static void wallStopsMovement(GameTestHelper h) {
         ServerPlayer p = caster(h);

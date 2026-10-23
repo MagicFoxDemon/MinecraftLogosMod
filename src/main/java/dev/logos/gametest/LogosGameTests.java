@@ -41,7 +41,7 @@ public final class LogosGameTests {
             "world_toggle_state", "world_grow_and_decay", "world_players_flag", "world_nearest_player", "value_random", "value_mix", "value_round_clamp", "value_wave", "value_choose", "value_spot_around", "value_spot_in", "world_switch", "world_form_refs", "world_blink_target", "world_items_magnet", "world_nether_step", "world_time_skip", "world_weather_global", "world_weather_area", "world_lightning",
             "world_wand_casts_selected_page", "world_wood_wands_craft", "world_crystal_page_needs_adhesive", "world_echo_page_upgrade_keeps_spell", "world_transmuted_page_upgrade_keeps_spell", "world_chalk_page_upgrade_keeps_spell", "world_firmament_page_upgrade_keeps_spell",
             "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "world_table_inscribes", "beam_follows_gaze", "field_heals_caster", "infuse_gives_mana", "field_spares_caster_without_players", "field_shields_caster_on_enter", "world_filter_kinds",
-            "construct_stops_movement", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall",
+            "construct_stops_movement", "construct_sigil", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall",
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
             "familiar_dragon_circles", "familiar_dragon_throne", "familiar_dragon_ridden_altitude", "familiar_dragon_ridden_altitude_forward",
@@ -178,6 +178,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("colossus_rider_sheltered", () -> ColossusGameTests::riderSheltered);
         FUNCTIONS.register("colossus_jumps_off", () -> ColossusGameTests::jumpsOff);
         FUNCTIONS.register("construct_stops_movement", () -> ConstructGameTests::wallStopsMovement);
+        FUNCTIONS.register("construct_sigil", () -> ConstructGameTests::sigilOnlyOnShields);
         FUNCTIONS.register("construct_one_way_arrows", () -> ConstructGameTests::oneWayStopsArrows);
         FUNCTIONS.register("construct_shields_explosion", () -> ConstructGameTests::wallShieldsExplosion);
         FUNCTIONS.register("construct_platform_stands", () -> ConstructGameTests::platformHoldsAndStands);

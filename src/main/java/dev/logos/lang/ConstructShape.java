@@ -25,6 +25,20 @@ public enum ConstructShape {
         return name().toLowerCase(Locale.ROOT);
     }
 
+    /** The construct keywords that only some shapes use: their sizes, and the shield's magic-circle face. */
+    public static final java.util.Set<String> SHAPED = java.util.Set.of("width", "height", "depth", "radius", "sigil");
+
+    /** Whether this shape uses that keyword of {@link #SHAPED}; the editor hides the rest. */
+    public boolean uses(String keyword) {
+        return switch (this) {
+            case BOX -> keyword.equals("width") || keyword.equals("height") || keyword.equals("depth");
+            case WALL -> keyword.equals("width") || keyword.equals("height");
+            case PLANE -> keyword.equals("width") || keyword.equals("depth");
+            case DISK -> keyword.equals("radius") || keyword.equals("sigil");
+            case DOME -> keyword.equals("radius");
+        };
+    }
+
     public static ConstructShape parse(String s) {
         for (ConstructShape v : values()) if (v.word().equals(s)) return v;
         return null;

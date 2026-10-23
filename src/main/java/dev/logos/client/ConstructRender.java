@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.LogosMod;
+import dev.logos.lang.Element;
 import dev.logos.runtime.ConstructEntity;
 import dev.logos.runtime.ConstructGeometry;
 import net.minecraft.client.Minecraft;
@@ -32,7 +33,11 @@ final class ConstructRender {
 
     private ConstructRender() {}
 
-    static void submit(Minecraft mc, Level level, CameraRenderState cam, float pt, PoseStack pose, SubmitNodeCollector out) {
+    /** Each element's field dress, whose circles a shield wearing {@code :sigil} shows. */
+    private static final java.util.Map<Element, FieldStyle> SIGILS = new java.util.EnumMap<>(Element.class);
+
+    /** {@code vfx} goes through {@link ShaderPackOverlay}, for the magic-circle shields drawn like field circles. */
+    static void submit(Minecraft mc, Level level, CameraRenderState cam, float pt, PoseStack pose, SubmitNodeCollector out, SubmitNodeCollector vfx) {
         for (ConstructEntity c : ConstructEntity.near(level, new AABB(cam.pos, cam.pos).inflate(128))) {
             ConstructGeometry g = c.geometry();
             // A travelling construct moves in tick steps; draw it where it is between them. (Followers track the caster directly.)
@@ -54,12 +59,39 @@ final class ConstructRender {
                 }
                 continue;
             }
+            if (c.sigil() && g.shape == dev.logos.lang.ConstructShape.DISK) {
+                sigil(c, g, eye, fade, (c.tickCount + pt) / 20f, pose, vfx);
+                continue;
+            }
             int rgb = LogosFx.coreColor(c.element());
             int front = argb(c.oneWay() ? 0.62f : 0.42f, fade, rgb);
             int other = argb(c.oneWay() ? 0.22f : 0.42f, fade, rgb);
             Mesh mesh = new Mesh(g, eye, front, other);
             out.submitCustomGeometry(pose, RenderTypes.beaconBeam(TEXTURE, true), mesh::render);
         }
+    }
+
+    /**
+     * A shield as its element's magic circle, in the shield's own plane: a soft glow and a dark underlay behind, the field's outer,
+     * middle and inner circles turning against each other. A one-way shield burns a little brighter.
+     */
+    private static void sigil(ConstructEntity c, ConstructGeometry g, Vec3 eye, float fade, float seconds, PoseStack pose, SubmitNodeCollector out) {
+        FieldStyle s = SIGILS.computeIfAbsent(c.element(), e -> FieldVisual.create(e) instanceof FieldCore core ? core.style() : FieldStyle.of(e));
+        Vec3 mid = g.center.subtract(eye);
+        float r = (float) g.radius, a = fade * (c.oneWay() ? 1f : .85f);
+        out.submitCustomGeometry(pose, ChargeParts.add("heal/glow"), (p, buf) ->
+                ChargeParts.flat(p, buf, mid, g.right, g.up, r * 1.15f, 0, ChargeParts.argb(.35f * a, s.deep())));
+        // Blended in the deep shade under the glowing lines, so the colour holds against a bright sky.
+        out.submitCustomGeometry(pose, ChargeParts.blend(s.outer()), (p, buf) ->
+                ChargeParts.flat(p, buf, mid, g.right, g.up, r, seconds * .35f, ChargeParts.argb(.6f * a, s.deep())));
+        out.submitCustomGeometry(pose, ChargeParts.blend(s.inner()), (p, buf) ->
+                ChargeParts.flat(p, buf, mid, g.right, g.up, r * .5f, seconds * .8f, ChargeParts.argb(.5f * a, s.deep())));
+        out.submitCustomGeometry(pose, ChargeParts.add(s.outer()), (p, buf) ->
+                ChargeParts.flat(p, buf, mid, g.right, g.up, r, seconds * .35f, ChargeParts.argb(.95f * a, s.main())));
+        out.submitCustomGeometry(pose, ChargeParts.add(s.middle()), (p, buf) ->
+                ChargeParts.flat(p, buf, mid, g.right, g.up, r * .78f, -seconds * .5f, ChargeParts.argb(.7f * a, s.main())));
+        out.submitCustomGeometry(pose, ChargeParts.add(s.inner()), (p, buf) ->
+                ChargeParts.flat(p, buf, mid, g.right, g.up, r * .5f, seconds * .8f, ChargeParts.argb(.9f * a, s.light())));
     }
 
     private static int argb(float alpha, float fade, int rgb) {

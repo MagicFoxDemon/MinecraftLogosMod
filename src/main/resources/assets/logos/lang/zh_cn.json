@@ -455,6 +455,7 @@
   "logos.param.one-way": "单向阻挡",
   "logos.param.deflect": "反弹弹射物",
   "logos.param.follow": "随施法者",
+  "logos.param.construct.sigil": "法阵外观",
   "logos.param.fresh": "排除已影响者",
   "logos.param.target": "目标",
   "logos.param.targets": "目标群",

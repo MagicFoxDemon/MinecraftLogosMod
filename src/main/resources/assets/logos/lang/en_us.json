@@ -455,6 +455,7 @@
   "logos.param.one-way": "One-way blocking",
   "logos.param.deflect": "Deflect projectiles",
   "logos.param.follow": "Follow caster",
+  "logos.param.construct.sigil": "Magic circle face",
   "logos.param.fresh": "Exclude affected",
   "logos.param.target": "Target",
   "logos.param.targets": "Targets",

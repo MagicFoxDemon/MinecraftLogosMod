@@ -558,7 +558,7 @@ public final class LogosFx {
         SubmitNodeCollector vfx = ShaderPackOverlay.collector(event.getSubmitNodeCollector());
         for (Beam b : BEAMS.values()) submitBeam(mc, level, b, cam, pt, pose,
                 b.dedicated() ? vfx : event.getSubmitNodeCollector());
-        ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector());
+        ConstructRender.submit(mc, level, cam, pt, pose, event.getSubmitNodeCollector(), vfx);
         WardSpheres.submit(mc, cam, pt, pose, vfx);
         for (LiveRay r : RAYS) r.visual().submit(level, cam, pt, pose, vfx);
         ChargeVisuals.submit(level, cam, pt, pose, vfx);

@@ -54,6 +54,11 @@ public class FieldCore implements FieldVisual {
         this.style = style;
     }
 
+    /** How this element dresses its field; constructs borrow its circles for a shield's magic-circle face. */
+    public FieldStyle style() {
+        return style;
+    }
+
     @Override
     public final boolean legacy() { return false; }
 
