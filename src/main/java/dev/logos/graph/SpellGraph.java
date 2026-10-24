@@ -37,7 +37,7 @@ public class SpellGraph extends Graph {
 
     @Override
     public @Nullable List<TypeHandle> getSupportTypes() {
-        return List.of(LTypes.ENTITY, LTypes.ENTITIES, LTypes.POS, LTypes.BLOCKS, LTypes.DIR, LTypes.NUM, LTypes.BOOL, LTypes.ELEMENT, LTypes.MOTION, LTypes.SHAPE, LTypes.WEATHER, LTypes.FORM, LTypes.STATUS,
+        return List.of(LTypes.ENTITY, LTypes.ENTITIES, LTypes.POS, LTypes.BLOCKS, LTypes.DIR, LTypes.NUM, LTypes.BOOL, LTypes.ELEMENT, LTypes.MOTION, LTypes.SHAPE, LTypes.WEATHER, LTypes.FORM, LTypes.BODY, LTypes.STATUS,
                 LTypes.CREATURE, LTypes.DIMENSION, LTypes.LOOK, LTypes.PARTICLE, LTypes.MOB_EFFECT, LTypes.KIND, LTypes.FILTER);
     }
 

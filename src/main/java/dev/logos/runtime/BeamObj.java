@@ -37,6 +37,10 @@ public final class BeamObj extends SpellObject {
     /** What one on-hit deals, so a construct that stops it takes as much (and a void one may pass it). */
     private final double hitDamage = Constructs.hitDamage(node);
     private Vec3 dir;
+    /** Where it last came out from: what pos-of reads. */
+    private Vec3 start;
+    /** Set by move, halt or turn: from then on its start and direction no longer follow the caster or its :from/:dir. */
+    private Vec3 heldFrom, heldDir;
 
     public BeamObj(Node node, Ctx ctx, double radius, double range, int life, int every, @Nullable Node fromNode, @Nullable Node dirNode, int trail) {
         super(node, ctx, ctx.here(), life);
@@ -47,6 +51,7 @@ public final class BeamObj extends SpellObject {
         this.dirNode = dirNode;
         this.trail = trail;
         this.dir = ctx.aim();
+        this.start = ctx.here();
     }
 
     /** Mana per pulse: a wider, longer tube costs more to hold. */
@@ -55,7 +60,7 @@ public final class BeamObj extends SpellObject {
     }
 
     private boolean anchored() {
-        return fromNode == null && dirNode == null;
+        return fromNode == null && dirNode == null && heldFrom == null && heldDir == null;
     }
 
     /**
@@ -76,18 +81,46 @@ public final class BeamObj extends SpellObject {
     }
 
     @Override
+    public Vec3 position() {
+        return start;
+    }
+
+    /** Comes out from {@code to} from now on, still pointing where it pointed. */
+    @Override
+    public void moveTo(Vec3 to, double ignored) {
+        heldFrom = to;
+        if (heldDir == null) heldDir = dir;
+    }
+
+    /** Holds its start and direction where they are now. */
+    @Override
+    public void halt() {
+        heldFrom = start;
+        heldDir = dir;
+    }
+
+    /** Points {@code dir} from now on, from where it comes out now. */
+    @Override
+    public void turn(Vec3 d) {
+        if (d.lengthSqr() < 1e-6) return;
+        if (heldFrom == null) heldFrom = start;
+        heldDir = d.normalize();
+    }
+
+    @Override
     protected void onEnded() {
         Vfx.beamEnd(level, id, pos, node.element);
     }
 
     @Override
     public void tick() {
-        if (++age > life || inst.caster.isRemoved() || (fromNode == null && inst.caster.level() != level)) {
+        if (++age > life || inst.caster.isRemoved() || (fromNode == null && heldFrom == null && inst.caster.level() != level)) {
             end();
             return;
         }
-        Vec3 from = fromNode == null ? inst.caster.getEyePosition() : Interp.vec(fromNode, ctx);
-        Vec3 d = dirNode == null ? gaze(from) : Interp.vec(dirNode, ctx);
+        Vec3 from = heldFrom != null ? heldFrom : fromNode == null ? inst.caster.getEyePosition() : Interp.vec(fromNode, ctx);
+        Vec3 d = heldDir != null ? heldDir : dirNode == null ? gaze(from) : Interp.vec(dirNode, ctx);
+        start = from;
         if (inst.dead) return;
         if (d.lengthSqr() > 1e-6) dir = d.normalize();
 

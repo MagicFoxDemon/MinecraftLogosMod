@@ -18,8 +18,11 @@ import dev.logos.lang.Weather;
  * entity set never fits a single-entity slot.
  */
 public final class LTypes {
+    /** ◍ Either a creature or a form's body: a slot that takes both (pos-of, move…) is typed by this. */
+    public static class Body {}
+
     /** ◎ A set of entities. */
-    public static class Entities {}
+    public static class Entities extends Body {}
 
     /** ○ One entity. */
     public static class Entity extends Entities {}
@@ -38,7 +41,7 @@ public final class LTypes {
     public static final class CreatureKey extends LookKey {}
     public static final class DimensionKey {}
     public static class LookKey {}
-    public static final class FormKey {}
+    public static final class FormKey extends Body {}
     public static final class ParticleKey {}
     public static final class EffectKey {}
     public static final class KindKey {}
@@ -57,7 +60,7 @@ public final class LTypes {
     public static TypeHandle WEATHER;
     public static TypeHandle STATUS;
     public static TypeHandle FLOW;
-    public static TypeHandle CREATURE, DIMENSION, LOOK, PARTICLE, MOB_EFFECT, KIND, FILTER, FORM;
+    public static TypeHandle CREATURE, DIMENSION, LOOK, PARTICLE, MOB_EFFECT, KIND, FILTER, FORM, BODY;
 
     private static boolean initialized;
 
@@ -79,6 +82,7 @@ public final class LTypes {
         KIND = handle(KindKey.class, "◈ 种类", 0xFF779365, "◈");
         FILTER = handle(FilterKey.class, "⊙ 筛选", 0xFF779365, "⊙");
         FORM = handle(FormKey.class, "🜔 形", 0xFFE6E2D3, "🜔");
+        BODY = handle(Body.class, "◍ 形或实体", 0xFFE0A88F, "◍");
         ELEMENT = handle(Element.class, "🜂 元素", 0xFFE8B84A, "🜂");
         MOTION = handle(Motion.class, "☿ 运动", 0xFF9FE0EF, "☿");
         TypeHandleHelpers.setCustomDefaultValue(ELEMENT, () -> Element.PHYSICAL);
@@ -121,6 +125,7 @@ public final class LTypes {
             case KIND -> KIND;
             case FILTER -> FILTER;
             case FORM -> FORM;
+            case BODY -> BODY;
             case STATUS, TEXT, ANCHOR -> STATUS;
             case ACTION -> FLOW;
             case NUM, ANY -> NUM;

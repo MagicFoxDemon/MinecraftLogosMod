@@ -340,6 +340,28 @@ final class RuneEmblems {
                 "..#...#..",
                 "........."};
         put(lift, "launch");
+        // An arc swung round to a new heading.
+        put(new String[]{
+                "..####...",
+                ".#....#..",
+                "#......#.",
+                "#.....###",
+                "#......#.",
+                ".#.......",
+                "..#......",
+                "...#+....",
+                "........."}, "turn");
+        // A circle broken into motes: the body let go.
+        put(new String[]{
+                "..#.#.#..",
+                ".+.....#.",
+                "#.......+",
+                "....+....",
+                "#.......#",
+                "...+.....",
+                ".#.....+.",
+                "..#.+.#..",
+                "........."}, "disperse");
         // A doorway with sparks: here, then there.
         put(new String[]{
                 "..#####..",
@@ -566,7 +588,7 @@ final class RuneEmblems {
                 "...#.#...",
                 "....#....",
                 ".........",
-                "........."}, "toward", "random-dir", "aim");
+                "........."}, "toward", "random-dir", "aim", "dir-of");
         String[] up = {
                 "....#....",
                 "...###...",

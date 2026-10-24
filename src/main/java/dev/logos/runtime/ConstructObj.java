@@ -122,17 +122,26 @@ public final class ConstructObj extends SpellObject {
     }
 
     /** Sets it travelling to {@code dest} (its centre), {@code speed} blocks per tick. */
+    @Override
     public void moveTo(Vec3 dest, double speed) {
         this.target = dest;
         this.speed = Math.max(0.01, speed);
     }
 
+    @Override
     public void halt() {
         target = null;
     }
 
-    public boolean owns(SpellInstance i) {
-        return i == inst;
+    /** Turns a wall or shield (or any shape's front) to face {@code dir}; one held up by its caster keeps following their gaze. */
+    @Override
+    public void turn(Vec3 dir) {
+        entity.face(dir);
+    }
+
+    @Override
+    public Vec3 facing() {
+        return entity.geometry().normal();
     }
 
     /**

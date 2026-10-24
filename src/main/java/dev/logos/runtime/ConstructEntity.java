@@ -89,6 +89,13 @@ public final class ConstructEntity extends Entity {
         updateFollow();
     }
 
+    /** Server: faces {@code dir} from now on; the shape is rebuilt around its centre on both sides. */
+    public void face(Vec3 dir) {
+        if (dir.lengthSqr() < 1e-6) return;
+        Vec3 d = dir.normalize();
+        entityData.set(FACING, new Vector3f((float) d.x, (float) d.y, (float) d.z));
+    }
+
     private ConstructShape shape() {
         return ConstructShape.values()[Math.floorMod(entityData.get(SHAPE), ConstructShape.values().length)];
     }

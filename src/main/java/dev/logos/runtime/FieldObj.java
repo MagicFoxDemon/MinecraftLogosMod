@@ -18,7 +18,10 @@ public final class FieldObj extends SpellObject {
 
     private final double radius;
     private final int every;
-    private final boolean follow;
+    private boolean follow;
+    /** Where move sends its centre, gliding {@link #glide} blocks a tick; null while it stays put. */
+    private Vec3 dest;
+    private double glide;
     private final Set<UUID> inside = new HashSet<>();
     /** Whether its on-enter only heals or wards, so it may greet its own side. */
     private final boolean helps = Targeting.helpsOnHit(node);
@@ -32,6 +35,20 @@ public final class FieldObj extends SpellObject {
         this.follow = follow;
     }
 
+    /** Glides its centre to {@code to}; one that followed its caster stays where it is sent. */
+    @Override
+    public void moveTo(Vec3 to, double speed) {
+        follow = false;
+        dest = to;
+        glide = Math.max(0.01, speed);
+    }
+
+    @Override
+    public void halt() {
+        follow = false;
+        dest = null;
+    }
+
     public double radius() {
         return radius;
     }
@@ -43,6 +60,11 @@ public final class FieldObj extends SpellObject {
             return;
         }
         if (follow && inst.caster.level() == level) pos = inst.caster.position().add(0, 1, 0);
+        if (dest != null) {
+            Vec3 step = dest.subtract(pos);
+            pos = step.length() <= glide ? dest : pos.add(step.normalize().scale(glide));
+            if (pos.equals(dest)) dest = null;
+        }
         if (age == 1 || age % HOLD_EVERY == 0) hold();
 
         if (node.events.containsKey("on-enter")) {
