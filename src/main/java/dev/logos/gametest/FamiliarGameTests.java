@@ -353,6 +353,9 @@ final class FamiliarGameTests {
                 flying[0] = true;
                 p.setLastClientInput(new Input(true, false, false, false, false, false, false));
             }
+            // On the move it glides: not in a sitting phase (hovering is one), whose wings beat hard and fast.
+            var flyingPhase = dragon.getPhaseManager().getCurrentPhase();
+            h.assertTrue(!flyingPhase.isSitting(), "flying forward it should glide, not stay in " + flyingPhase.getPhase());
             Vec3 moved = dragon.position().subtract(held[0]);
             h.assertTrue(moved.z > 10 && Math.abs(moved.x) < 3, "holding forward it should fly where its rider looks (+z), moved " + moved);
             p.setLastClientInput(Input.EMPTY);

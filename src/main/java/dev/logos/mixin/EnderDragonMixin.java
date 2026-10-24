@@ -2,17 +2,23 @@ package dev.logos.mixin;
 
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+
 import dev.logos.runtime.DragonFamiliar;
 import dev.logos.runtime.Familiars;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * A familiar dragon's wings and head sweep past its master's side instead of through them. Damage
@@ -20,9 +26,18 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
  * <p>
  * And its flight nodes ring its fight origin: vanilla builds them around the world's 0,0 (where the
  * End's portal stands) whatever the origin, so a familiar would fly off there however it was recentred.
+ * <p>
+ * And with its master on its back it is flown by them (see {@code DragonFamiliar.flyRidden}): its phase
+ * then only sets its look, and vanilla's flight step, given no point to fly to, leaves it be.
  */
 @Mixin(EnderDragon.class)
 abstract class EnderDragonMixin {
+    @WrapOperation(method = "aiStep", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/boss/enderdragon/phases/DragonPhaseInstance;getFlyTargetLocation()Lnet/minecraft/world/phys/Vec3;"))
+    private @Nullable Vec3 logos$riderFlies(DragonPhaseInstance phase, Operation<Vec3> original) {
+        return DragonFamiliar.flownByRider((EnderDragon) (Object) this) ? null : original.call(phase);
+    }
+
     @Inject(method = "knockBack", at = @At("HEAD"))
     private void logos$spareMasterFromWings(ServerLevel level, List<Entity> entities, CallbackInfo ci) {
         DragonFamiliar.spare((EnderDragon) (Object) this, entities);

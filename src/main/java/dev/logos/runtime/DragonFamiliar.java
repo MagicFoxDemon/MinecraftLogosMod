@@ -57,7 +57,7 @@ public final class DragonFamiliar {
     public static final double CALM_LEASH = 100, LOST = 160;
     private static final double RECENTRE = 32;
     /** On its back: top speed and climb in blocks a tick, how much of the way to them it closes each tick, and its turn in degrees a tick. */
-    private static final double RIDDEN_SPEED = 0.9, CLIMB = 0.5, EASE = 0.25;
+    private static final double RIDDEN_SPEED = 1.2, CLIMB = 0.5, EASE = 0.25;
     private static final float TURN = 8;
     private static final int FIRE_COOLDOWN = 20, BREATH_MAX = 100, BREATH_RESTART = 20;
     private static final double BREATH_RANGE = 14, BREATH_CONE = Math.cos(Math.toRadians(20));
@@ -173,7 +173,7 @@ public final class DragonFamiliar {
         }
     }
 
-    /** Whether its master on its back is flying it: then its own flight step stands aside (see {@code DragonHoverPhaseMixin}). */
+    /** Whether its master on its back is flying it: then its own flight step stands aside, whatever its phase (see {@code EnderDragonMixin}). */
     public static boolean flownByRider(EnderDragon d) {
         return !PILOTS.containsKey(d) && d.getFirstPassenger() instanceof Player p && FamiliarRiding.isMaster(d, p);
     }
@@ -185,8 +185,6 @@ public final class DragonFamiliar {
      * the gaze. It turns to face where its rider faces.
      */
     private static void flyRidden(EnderDragon d, ServerPlayer rider) {
-        EnderDragonPhaseManager pm = d.getPhaseManager();
-        if (pm.getCurrentPhase().getPhase() != EnderDragonPhase.HOVERING) pm.setPhase(EnderDragonPhase.HOVERING);
         var input = rider.getLastClientInput();
         float yaw = rider.getYRot() * Mth.DEG_TO_RAD;
         Vec3 ahead = new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw)), left = new Vec3(Mth.cos(yaw), 0, Mth.sin(yaw));
@@ -198,6 +196,15 @@ public final class DragonFamiliar {
         want = want.scale(RIDDEN_SPEED);
         int vertical = (input.jump() ? 1 : 0) - (input.sprint() ? 1 : 0);
         if (vertical != 0) want = new Vec3(want.x, vertical * CLIMB, want.z);
+        // The phase is only its look: hovering beats its wings hard and bows its head, as a perched dragon
+        // does, so on the move it is charging (a point ahead it never reaches), and glides as it flies.
+        EnderDragonPhaseManager pm = d.getPhaseManager();
+        if (want.equals(Vec3.ZERO)) {
+            if (pm.getCurrentPhase().getPhase() != EnderDragonPhase.HOVERING) pm.setPhase(EnderDragonPhase.HOVERING);
+        } else {
+            if (pm.getCurrentPhase().getPhase() != EnderDragonPhase.CHARGING_PLAYER) pm.setPhase(EnderDragonPhase.CHARGING_PLAYER);
+            pm.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(d.position().add(want.normalize().scale(40)));
+        }
         // It gathers speed and slows to a hover over a few ticks rather than at once.
         Vec3 v = d.getDeltaMovement();
         v = v.add(want.subtract(v).scale(EASE));
