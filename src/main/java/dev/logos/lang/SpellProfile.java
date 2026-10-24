@@ -255,6 +255,10 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     assumptions.add("处决的代价由证明决定，按 10 点生命、没有折减估算");
                     found.add(Intent.STRIKE);
                 }
+                case "end-all" -> {
+                    own = 2;
+                    assumptions.add("万咒皆终按熄灭一个已耗尽的术式估算；实际要付被熄灭术式剩下的魔力");
+                }
                 case "blink" -> {
                     own = (2 + 0.5 * 10) * count(n.arg(1));
                     assumptions.add("瞬移按 10 格估算");

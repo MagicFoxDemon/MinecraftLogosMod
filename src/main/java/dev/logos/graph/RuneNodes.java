@@ -407,6 +407,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "end_all", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class EndAll extends RuneNode {
+        public EndAll() {
+            super("end-all");
+        }
+    }
+
     @NodeAttribute(name = "copy", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Copy extends RuneNode {
         public Copy() {
@@ -974,6 +981,7 @@ public final class RuneNodes {
         BY_RUNE.put("halt", Halt::new);
         BY_RUNE.put("turn", Turn::new);
         BY_RUNE.put("disperse", Disperse::new);
+        BY_RUNE.put("end-all", EndAll::new);
         BY_RUNE.put("if", If::new);
         BY_RUNE.put("switch", Switch::new);
         BY_RUNE.put("each", Each::new);
