@@ -467,6 +467,17 @@ final class RuneEmblems {
                 "#########",
                 ".........",
                 "........."}, "toggle-state");
+        // A pointing hand, reaching for a button on a wall.
+        put(new String[]{
+                ".........",
+                "........#",
+                "..###...#",
+                "######.##",
+                "#.###...#",
+                "#.###...#",
+                "..##....#",
+                "........#",
+                "........."}, "use-block");
         // A sprout, and a skull.
         put(new String[]{
                 ".....##..",

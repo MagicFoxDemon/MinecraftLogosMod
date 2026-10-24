@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleBinaryOperator;
 
+import dev.logos.block.SpellEmitterBlockEntity;
 import dev.logos.LogosConfig;
 import dev.logos.runtime.AreaWeatherObj;
 import dev.logos.runtime.BeamObj;
@@ -46,6 +47,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
@@ -69,10 +72,13 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
 /**
  * The rune lexicon. Deliberately orthogonal: there is no "fireball" or "chain lightning" here,
@@ -1160,6 +1166,61 @@ public final class Runes {
                         // Same flags as the debug stick: tell clients, skip neighbour/shape updates.
                         p.level().setBlock(p.block(), state.cycle(prop), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
                         Vfx.burst(p.level(), p.pos(), Element.ARCANE, 6);
+                    }
+                    return null;
+                });
+        def("use-block", EFFECT, ACTION).eachBlock("block").kw("item", LOOK, null).stab(2)
+                .doc("无形之手：像施法者对着该方块按一下右键——按下按钮、扳动拉杆、开关门和活板门、调中继器……"
+                        + "不会为施法者打开箱子、熔炉之类的界面。默认空手；:item 指定拿着某物品使用，背包里要有这件物品，"
+                        + "用掉了就真的扣掉（骨粉、打火石的耐久、装满水的桶换回来的空桶都算）。术式发射器没有背包，总是空手。"
+                        + "从朝向施法者的那一面点。每次起了作用 2 魔力，没起作用不消耗；施法者不是玩家时无效")
+                .exec((n, c) -> {
+                    if (!(c.inst().caster instanceof ServerPlayer caster)) return null;
+                    Node itemNode = kw(n, "item");
+                    net.minecraft.world.item.Item item = null;
+                    if (itemNode != null && !(caster instanceof SpellEmitterBlockEntity.Shadow)) {
+                        Identifier id = Identifier.tryParse(text(itemNode, c));
+                        item = id == null ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+                        if (item == null) return null;
+                    }
+                    var inventory = caster.getInventory();
+                    for (Place p : places(n.arg(0), c)) {
+                        if (!mayEdit(c, p)) continue;
+                        if (2 > c.inst().mana + 1e-9) {
+                            c.inst().spend(2, "use-block");
+                            return null;
+                        }
+                        int slot = -1;
+                        if (item != null) {
+                            for (int i = 0; i < inventory.getContainerSize() && slot < 0; i++) {
+                                if (inventory.getItem(i).is(item)) slot = i;
+                            }
+                            if (slot < 0) return null;
+                        }
+                        // A stand-in clicks for them: it opens no screens, and hands back whatever it ends up holding.
+                        FakePlayer hand = FakePlayerFactory.get(p.level(), caster.getGameProfile());
+                        hand.snapTo(caster.getX(), caster.getY(), caster.getZ(), caster.getYRot(), caster.getXRot());
+                        hand.setYHeadRot(caster.getYHeadRot());
+                        if (hand.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) hand.setGameMode(GameType.SURVIVAL);
+                        hand.getInventory().clearContent();
+                        ItemStack held = slot < 0 ? ItemStack.EMPTY : inventory.removeItemNoUpdate(slot);
+                        hand.setItemInHand(InteractionHand.MAIN_HAND, held);
+                        Vec3 centre = Vec3.atCenterOf(p.block());
+                        Direction face = Direction.getApproximateNearest(caster.getEyePosition().subtract(centre));
+                        BlockHitResult hit = new BlockHitResult(centre.add(face.getUnitVec3().scale(0.5)), face, p.block(), false);
+                        InteractionResult result = hand.gameMode.useItemOn(hand, p.level(), held, InteractionHand.MAIN_HAND, hit);
+                        ItemStack back = hand.getMainHandItem();
+                        hand.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                        if (slot >= 0 && inventory.getItem(slot).isEmpty()) inventory.setItem(slot, back);
+                        else if (!back.isEmpty()) inventory.placeItemBackInInventory(back);
+                        for (int i = 0; i < hand.getInventory().getContainerSize(); i++) {
+                            ItemStack extra = hand.getInventory().removeItemNoUpdate(i);
+                            if (!extra.isEmpty()) inventory.placeItemBackInInventory(extra);
+                        }
+                        inventory.setChanged();
+                        if (!result.consumesAction()) continue;
+                        c.inst().spend(2, "use-block");
+                        Vfx.burst(p.level(), hit.getLocation(), Element.ARCANE, 4);
                     }
                     return null;
                 });

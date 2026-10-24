@@ -799,6 +799,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "use_block", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class UseBlock extends RuneNode {
+        public UseBlock() {
+            super("use-block");
+        }
+    }
+
     @NodeAttribute(name = "grow", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Grow extends RuneNode {
         public Grow() {
@@ -910,6 +917,7 @@ public final class RuneNodes {
         BY_RUNE.put("look-block", LookBlock::new);
         BY_RUNE.put("in-dimension", InDimension::new);
         BY_RUNE.put("toggle-state", ToggleState::new);
+        BY_RUNE.put("use-block", UseBlock::new);
         BY_RUNE.put("grow", Grow::new);
         BY_RUNE.put("time-skip", TimeSkip::new);
         BY_RUNE.put("world-weather", WorldWeather::new);
