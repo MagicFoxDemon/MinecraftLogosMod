@@ -13,7 +13,7 @@ import dev.logos.graph.RuneNodes;
 import dev.logos.item.SpellPages;
 import net.minecraft.core.BlockPos;
 
-/** 隔空使用 sits among the sulfur (change) runes with its block and item, and compiles back. */
+/** 无形之手 sits among the sulfur (change) runes with its block and item, and compiles back. */
 @LDLRegisterClient(name = "logos_use_block", group = "logos", registry = UIScenario.REGISTRY,
         environment = RegistrationEnvironment.DEV_ONLY)
 public class UseBlockScenario implements UIScenario {
@@ -23,7 +23,7 @@ public class UseBlockScenario implements UIScenario {
     @Override
     public void define(ScenarioBuilder s) {
         s.step("open a remote-use page", ctx -> ClientHooks.openTableEditor(BlockPos.ZERO, SpellPages.fitting(
-                        "(spell :name \"隔空使用\" :mana 50 (use-block (look-block) :item &minecraft:bone_meal))")))
+                        "(spell :name \"无形之手\" :mana 50 (use-block (look-block) :item &minecraft:bone_meal))")))
                 .awaitModularUI().ticks(10)
                 .step("the node is there and compiles back", ctx -> {
                     var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
