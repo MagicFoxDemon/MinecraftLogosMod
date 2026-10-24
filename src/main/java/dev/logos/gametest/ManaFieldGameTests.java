@@ -144,6 +144,35 @@ final class ManaFieldGameTests {
         });
     }
 
+    /**
+     * Free mana left a minute seeps into its chunk's air, taken from itself, until the chunk holds the
+     * spread threshold (70); younger free mana does not, and nothing is lost on the way.
+     */
+    static void freeManaSeepsIntoField(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        BlockPos center = faraway(h, 460, 0);
+        net.minecraft.world.phys.AABB around = new net.minecraft.world.phys.AABB(center).inflate(8);
+        double threshold = dev.logos.LogosConfig.manaSpreadThreshold();
+        h.startSequence()
+                .thenWaitUntil(() -> assertLoaded(h, center, 0))
+                .thenExecute(() -> dev.logos.runtime.FreeManaEntity.release(level, center.getCenter(), 1000))
+                .thenIdle(2 * ManaField.PERIOD)
+                .thenExecute(() -> {
+                    h.assertTrue(ManaField.spread(level, center) == 0, "free mana under a minute old seeped " + ManaField.spread(level, center));
+                    level.getEntitiesOfClass(dev.logos.runtime.FreeManaEntity.class, around).forEach(e -> e.setAge(dev.logos.runtime.FreeManaEntity.SEEP_AFTER));
+                })
+                .thenWaitUntil(() -> h.assertTrue(ManaField.spread(level, center) >= threshold - 0.5, "the chunk holds " + ManaField.spread(level, center)))
+                .thenIdle(3 * ManaField.PERIOD)
+                .thenExecute(() -> {
+                    double air = ManaField.spread(level, center);
+                    double free = level.getEntitiesOfClass(dev.logos.runtime.FreeManaEntity.class, around).stream().mapToDouble(dev.logos.runtime.FreeManaEntity::amount).sum();
+                    h.assertTrue(air <= threshold + 1e-6, "seeping went past the threshold: " + air);
+                    h.assertTrue(Math.abs(air + free - 1000) < 1, "the free mana and the air hold " + free + " + " + air + ", not 1000");
+                    level.getEntitiesOfClass(dev.logos.runtime.FreeManaEntity.class, around).forEach(net.minecraft.world.entity.Entity::discard);
+                })
+                .thenSucceed();
+    }
+
     /** Nine caput mortuum press into a block, and the block breaks back into nine. */
     static void caputMortuumBlockCrafts(GameTestHelper h) {
         var nine = net.minecraft.world.item.crafting.CraftingInput.of(3, 3,

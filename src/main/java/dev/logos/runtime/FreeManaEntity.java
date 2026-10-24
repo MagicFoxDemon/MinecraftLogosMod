@@ -29,7 +29,8 @@ import net.minecraft.world.phys.Vec3;
  * 游离魔力: what a spell leaves of its pool when it ends. A natural end sets all of it free; an
  * extinguished spell leaves its entropic mana, of which only the page's recovery share returns.
  * It hovers where the spell last acted, merges with nearby free mana, drifts to players like
- * experience does, and is gathered at their free-mana efficiency.
+ * experience does, and is gathered at their free-mana efficiency. Left unclaimed a minute, it
+ * slowly seeps into the air of its chunk, up to the spread threshold.
  */
 public final class FreeManaEntity extends Entity {
     private static final EntityDataAccessor<Float> AMOUNT = SynchedEntityData.defineId(FreeManaEntity.class, EntityDataSerializers.FLOAT);
@@ -42,6 +43,10 @@ public final class FreeManaEntity extends Entity {
     /** A spell that ended farther than this from its caster (or nowhere known) leaves its mana near the caster instead. */
     private static final double KNOWN_END_RANGE = 24;
     private static final int SCATTER_RANGE = 12;
+    /** Left unclaimed this long, it begins to seep into its chunk's air. */
+    public static final int SEEP_AFTER = 1200;
+    /** The share of itself it gives the air each second while it seeps. */
+    public static final double SEEP_SHARE = 0.02;
 
     private int age;
     private @Nullable Player following;
@@ -133,10 +138,39 @@ public final class FreeManaEntity extends Entity {
             discard();
             return;
         }
-        if ((tickCount + getId()) % 20 == 0) mergeNearby();
+        if ((tickCount + getId()) % 20 == 0) {
+            mergeNearby();
+            if (age >= SEEP_AFTER && following == null) seep();
+            if (!isAlive()) return;
+        }
         follow();
         move(MoverType.SELF, getDeltaMovement());
         setDeltaMovement(getDeltaMovement().scale(following != null ? 0.92 : 0.85));
+    }
+
+    /**
+     * Unclaimed a minute, it seeps into the air of its chunk ({@link ManaField}), a share of itself
+     * each second and taken from itself, while the chunk holds less than the spread threshold: enough
+     * to linger where it was spent, never enough to spread on to the neighbours.
+     */
+    private void seep() {
+        if (!(level() instanceof ServerLevel level)) return;
+        double room = dev.logos.LogosConfig.manaSpreadThreshold() - ManaField.spread(level, blockPosition());
+        if (room <= 0) return;
+        double share = amount() * SEEP_SHARE;
+        // The last crumbs go in whole rather than dwindling forever.
+        if (amount() - share < MIN_RELEASE) share = amount();
+        double given = ManaField.pour(level, blockPosition(), Math.min(share, room));
+        if (given <= 0) return;
+        double left = amount() - given;
+        level.sendParticles(LogosMod.MANA_MOTE.get(), getX(), getY() + getBbHeight() / 2, getZ(), 0, 0, -0.03, 0, 1);
+        if (left <= 1e-4) discard();
+        else setAmount(left);
+    }
+
+    /** How long it has been free, in ticks; tests set it to skip the wait. */
+    public void setAge(int ticks) {
+        age = ticks;
     }
 
     /** Free mana close together becomes one. */
