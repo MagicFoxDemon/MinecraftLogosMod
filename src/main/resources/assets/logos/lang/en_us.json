@@ -334,6 +334,8 @@
   "logos.rune.sic": "sic",
   "logos.rune.stance": "stance",
   "logos.rune.toggle-state": "toggle-state",
+  "logos.rune.use-block": "use block",
+  "logos.param.use-block.item": "Item in hand",
   "logos.rune.grow": "grow",
   "logos.rune.time-skip": "time-skip",
   "logos.rune.world-weather": "world-weather",

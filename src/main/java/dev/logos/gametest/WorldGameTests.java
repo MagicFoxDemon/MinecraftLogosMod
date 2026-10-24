@@ -68,6 +68,55 @@ final class WorldGameTests {
         h.succeed();
     }
 
+    /** use-block clicks levers, buttons and doors, and opens no screen on a chest. */
+    static void useBlock(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        BlockPos lever = new BlockPos(2, 2, 4), button = new BlockPos(4, 2, 2), door = new BlockPos(6, 2, 4), chest = new BlockPos(6, 2, 6);
+        var floor = net.minecraft.world.level.block.state.properties.AttachFace.FLOOR;
+        h.setBlock(lever, Blocks.LEVER.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.ATTACH_FACE, floor));
+        h.setBlock(button, Blocks.STONE_BUTTON.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.ATTACH_FACE, floor));
+        var lower = Blocks.OAK_DOOR.defaultBlockState();
+        h.setBlock(door, lower);
+        h.setBlock(door.above(), lower.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.DOUBLE_BLOCK_HALF,
+                net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER));
+        h.setBlock(chest, Blocks.CHEST);
+        castAt(h, p, "(use-block here)", lever);
+        castAt(h, p, "(use-block here)", button);
+        castAt(h, p, "(use-block here)", door.above());
+        castAt(h, p, "(use-block here)", chest);
+        h.assertTrue(h.getBlockState(lever).getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.POWERED), "the lever should be pulled");
+        h.assertTrue(h.getBlockState(button).getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.POWERED), "the button should be pressed");
+        h.assertTrue(h.getBlockState(door).getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.OPEN), "the door should open, clicked on its top half");
+        h.assertTrue(p.containerMenu == p.inventoryMenu, "the chest must not open a screen for the caster");
+        h.succeed();
+    }
+
+    /** With :item it uses the caster's own stack: bone meal is spent, a bucket comes back full. */
+    static void useBlockWithItem(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        BlockPos wheat = new BlockPos(2, 2, 2), cauldron = new BlockPos(6, 2, 6);
+        h.setBlock(wheat.below(), Blocks.FARMLAND);
+        h.setBlock(wheat, Blocks.WHEAT);
+        h.setBlock(cauldron, Blocks.WATER_CAULDRON.defaultBlockState().setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, 3));
+        p.getInventory().add(new ItemStack(Items.BONE_MEAL, 2));
+        p.getInventory().add(new ItemStack(Items.BUCKET));
+        castAt(h, p, "(use-block here :item &minecraft:bone_meal)", wheat);
+        castAt(h, p, "(use-block here :item &minecraft:bucket)", cauldron);
+        h.assertTrue(h.getBlockState(wheat).getValue(CropBlock.AGE) > 0, "bone meal should grow the wheat");
+        h.assertTrue(count(p, Items.BONE_MEAL) == 1, "one bone meal should be spent, left " + count(p, Items.BONE_MEAL));
+        h.assertTrue(count(p, Items.WATER_BUCKET) == 1 && count(p, Items.BUCKET) == 0, "the bucket should come back full");
+        h.assertTrue(h.getBlockState(cauldron).is(Blocks.CAULDRON), "the cauldron should be emptied");
+        h.succeed();
+    }
+
+    private static int count(ServerPlayer p, net.minecraft.world.item.Item item) {
+        int n = 0;
+        for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+            if (p.getInventory().getItem(i).is(item)) n += p.getInventory().getItem(i).getCount();
+        }
+        return n;
+    }
+
     /** grow ages crops; decay rolls them back, drops leaves and destroys flowers. */
     static void growAndDecay(GameTestHelper h) {
         ServerPlayer p = caster(h);

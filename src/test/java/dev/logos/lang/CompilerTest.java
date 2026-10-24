@@ -232,6 +232,14 @@ class CompilerTest {
     }
 
     @Test
+    void useBlockTakesABlockAndAnOptionalItem() {
+        assertEquals(2, Compiler.compile("(use-block here)").profile().estimate(), 1e-6);
+        Node n = Compiler.compile("(use-block here :item &minecraft:bone_meal)").body().getFirst();
+        assertEquals(Type.LOOK, n.kw.get("item").type);
+        assertError("(use-block caster)", "◇位置 或 ▦方块群");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");
