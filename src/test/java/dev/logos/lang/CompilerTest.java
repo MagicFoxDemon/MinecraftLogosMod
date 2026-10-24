@@ -210,6 +210,19 @@ class CompilerTest {
     }
 
     @Test
+    void formsCanBeReadMovedTurnedAndDispersed() {
+        // Inside its events and through its kept output alike.
+        Compiler.compile("(projectile (on-tick (if (> (life-of form) 0.5) (turn form (dir-of caster)))))");
+        Compiler.compile("(let $f (field :life 4) (delay 1 (move $f (pos-of caster)) (delay 2 (halt $f) (disperse $f))))");
+        // A construct's self still works where only constructs did before.
+        Compiler.compile("(construct (on-tick (move self (above here 1)) (halt self)))");
+        assertEquals(Type.POS, Compiler.compile("(blink (pos-of (nearest)))").body().getFirst().arg(0).type);
+        assertEquals(Type.DIR, Compiler.compile("(projectile (on-tick (turn form (dir-of form))))").body().getFirst()
+                .events.get("on-tick").getFirst().arg(1).type);
+        assertError("(disperse here)", "插槽形状不符");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");

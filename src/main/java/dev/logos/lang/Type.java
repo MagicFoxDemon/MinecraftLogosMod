@@ -37,6 +37,8 @@ public enum Type {
     MOB_EFFECT("⚗", "药效"),
     /** A spell body a form rune made (projectile, beam, construct, field): read its life with life-of. */
     FORM("🜔", "形"),
+    /** Either a creature or a body a form made: what pos-of, dir-of, move, halt, turn and disperse act on. */
+    BODY("◍", "形或实体"),
     TEXT("¶", "文字"),
     ACTION("▶", "行动"),
     ANY("✱", "任意");
@@ -61,6 +63,8 @@ public enum Type {
         if (this == BLOCKS && actual == POS) return true;
         // A plain "id" or "#tag" string is the simplest filter.
         if (this == FILTER && actual == TEXT) return true;
+        // A creature or a form's body fits a slot that takes either.
+        if (this == BODY && (actual == ENTITY || actual == FORM)) return true;
         // A creature's model is also an appearance (only a projectile wears one; see the compiler's checks).
         if (this == LOOK && actual == CREATURE) return true;
         // ^name is read as the place it names.

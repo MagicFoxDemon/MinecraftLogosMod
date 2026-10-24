@@ -134,6 +134,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "dir_of", group = BINDING, graphTypes = SpellGraph.class)
+    public static class DirOf extends RuneNode {
+        public DirOf() {
+            super("dir-of");
+        }
+    }
+
     @NodeAttribute(name = "random_dir", group = BINDING, graphTypes = SpellGraph.class)
     public static class RandomDir extends RuneNode {
         public RandomDir() {
@@ -383,6 +390,20 @@ public final class RuneNodes {
     public static class Halt extends RuneNode {
         public Halt() {
             super("halt");
+        }
+    }
+
+    @NodeAttribute(name = "turn", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Turn extends RuneNode {
+        public Turn() {
+            super("turn");
+        }
+    }
+
+    @NodeAttribute(name = "disperse", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Disperse extends RuneNode {
+        public Disperse() {
+            super("disperse");
         }
     }
 
@@ -912,6 +933,7 @@ public final class RuneNodes {
         BY_RUNE.put("offset", Offset::new);
         BY_RUNE.put("look-point", LookPoint::new);
         BY_RUNE.put("toward", Toward::new);
+        BY_RUNE.put("dir-of", DirOf::new);
         BY_RUNE.put("random-dir", RandomDir::new);
         BY_RUNE.put("damage", Damage::new);
         BY_RUNE.put("drain", Drain::new);
@@ -950,6 +972,8 @@ public final class RuneNodes {
         BY_RUNE.put("dismiss", Dismiss::new);
         BY_RUNE.put("unanchor", Unanchor::new);
         BY_RUNE.put("halt", Halt::new);
+        BY_RUNE.put("turn", Turn::new);
+        BY_RUNE.put("disperse", Disperse::new);
         BY_RUNE.put("if", If::new);
         BY_RUNE.put("switch", Switch::new);
         BY_RUNE.put("each", Each::new);

@@ -59,6 +59,35 @@ public abstract class SpellObject {
         inst.release();
     }
 
+    /** Whether {@code i} cast it: a spell may move, turn or end only its own bodies. */
+    public boolean owns(SpellInstance i) {
+        return i == inst;
+    }
+
+    /** What pos-of reads: where it is (a beam overrides this with where it comes out). */
+    public Vec3 position() {
+        return pos;
+    }
+
+    /** What dir-of reads: the way it flies or faces. */
+    public Vec3 facing() {
+        return heading();
+    }
+
+    /** move: sets off towards {@code to}; each kind decides how ({@code speed} is in blocks per tick where it glides). */
+    public void moveTo(Vec3 to, double speed) {}
+
+    /** halt: stops where it is, keeping the rest of its life. */
+    public void halt() {}
+
+    /** turn: faces {@code dir} from now on, where its kind has a facing. */
+    public void turn(Vec3 dir) {}
+
+    /** 散形: ends now, as if its life had run out, so its on-expire runs. */
+    public void disperse() {
+        end();
+    }
+
     /** Where it is now. */
     public Vec3 pos() {
         return pos;

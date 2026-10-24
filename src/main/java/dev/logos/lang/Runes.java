@@ -494,10 +494,18 @@ public final class Runes {
                     return new Group(r, Targeting.enemiesNear(c.inst(), at.level(), at.pos(), r, false)
                             .stream().filter(e -> StatusData.has(e, s)).toList());
                 });
-        def("pos-of", BINDING, POS).p("entity", ENTITY).doc("实体的中心位置")
-                .exec((n, c) -> {
-                    Entity e = entity(n.arg(0), c);
-                    return e == null ? c.place() : new Place(lv(e), Targeting.center(e));
+        def("pos-of", BINDING, POS).p("entity", BODY).doc("实体的中心位置；接形体（此形）时是它所在处，光柱是它发出的起点")
+                .exec((n, c) -> switch (eval(n.arg(0), c)) {
+                    case SpellObject o -> new Place(o.level(), o.position());
+                    case Entity e -> new Place(lv(e), Targeting.center(e));
+                    case null, default -> c.place();
+                });
+        def("dir-of", BINDING, DIR).p("of", BODY)
+                .doc("朝向：实体的视线方向；形体的朝向——魔弹飞行的方向、光柱的方向、炼成体正面的朝向（领域朝上）。没有时取当前朝向。免费")
+                .exec((n, c) -> switch (eval(n.arg(0), c)) {
+                    case SpellObject o -> o.facing();
+                    case Entity e -> e.getLookAngle();
+                    case null, default -> c.aim();
                 });
         def("above", BINDING, POS).p("pos", POS).opt("height", NUM, "8").doc("某位置上方")
                 .exec((n, c) -> {
@@ -973,18 +981,36 @@ public final class Runes {
                     if (c.inst().caster instanceof ServerPlayer sp) dev.logos.runtime.Anchors.remove(sp, (String) n.arg(0).value);
                     return null;
                 });
-        def("move", EFFECT, ACTION).p("construct", ENTITY).p("to", POS).kw("speed", NUM, "0.2").stab(1)
-                .doc("让本术式的炼成体以 :speed 格/刻 移到某处（中心对准那里），站在上面的会被一起带走，到达时触发它的 on-arrive。通常写 (move self …)。1 魔力 + 每格 0.1")
+        def("move", EFFECT, ACTION).p("construct", BODY).p("to", POS).kw("speed", NUM, "0.2").stab(1)
+                .doc("移动本术式的形体：炼成体与领域以 :speed 格/刻 滑到那里（炼成体到达时 on-arrive，站在上面的一起带走；跟随施法者的领域从此留在原地）；"
+                        + "魔弹以自己的速度改道飞向那里并继续飞过去；光柱改从那里发出。通常写 (move form …) 或 (move self …)。1 魔力 + 每格 0.1")
                 .exec((n, c) -> {
-                    if (!(entity(n.arg(0), c) instanceof ConstructEntity ce) || ce.owner() == null || !ce.owner().owns(c.inst())) return null;
+                    SpellObject f = ownForm(n.arg(0), c);
+                    if (f == null) return null;
                     Vec3 to = place(n.arg(1), c).pos();
-                    if (!c.inst().spend(1 + 0.1 * to.distanceTo(ce.geometry().center), "move")) return null;
-                    ce.owner().moveTo(to, clamp(num(kw(n, "speed"), c), 0.01, 2));
+                    if (!c.inst().spend(1 + 0.1 * to.distanceTo(f.position()), "move")) return null;
+                    f.moveTo(to, clamp(num(kw(n, "speed"), c), 0.01, 2));
                     return null;
                 });
-        def("halt", EFFECT, ACTION).p("construct", ENTITY).doc("让本术式的炼成体停在原地。免费")
+        def("halt", EFFECT, ACTION).p("construct", BODY)
+                .doc("让本术式的形体停住：炼成体与领域停在原地（领域也不再跟随施法者），魔弹悬停（仍会击中碰到它的），光柱定住起点与方向。寿命照走。免费")
                 .exec((n, c) -> {
-                    if (entity(n.arg(0), c) instanceof ConstructEntity ce && ce.owner() != null && ce.owner().owns(c.inst())) ce.owner().halt();
+                    SpellObject f = ownForm(n.arg(0), c);
+                    if (f != null) f.halt();
+                    return null;
+                });
+        def("turn", EFFECT, ACTION).p("form", BODY).p("dir", DIR)
+                .doc("转向：让本术式的形体朝向某方向。魔弹以自己的速度改朝那边飞；光柱改指那边（不再跟随视线）；墙、圆盾等炼成体原地转过去（跟随施法者的墙和圆盾仍随视线）；领域没有朝向。免费")
+                .exec((n, c) -> {
+                    SpellObject f = ownForm(n.arg(0), c);
+                    if (f != null) f.turn(vec(n.arg(1), c));
+                    return null;
+                });
+        def("disperse", EFFECT, ACTION).p("form", BODY)
+                .doc("散形：让本术式的一个形体立刻消散，和寿命走完一样会触发它的 on-expire。免费")
+                .exec((n, c) -> {
+                    SpellObject f = ownForm(n.arg(0), c);
+                    if (f != null) f.disperse();
                     return null;
                 });
         def("copy", EFFECT, ACTION).each("target").p("count", NUM).kw("spread", NUM, "10").stab(2)
@@ -1427,6 +1453,16 @@ public final class Runes {
     }
 
     // ---- 数 Values ---------------------------------------------------------------------------
+
+    /** The body a slot names, if this spell made it: a form's own value, or a construct's entity (self). */
+    private static @org.jspecify.annotations.Nullable SpellObject ownForm(Node n, Ctx c) {
+        SpellObject f = switch (eval(n, c)) {
+            case SpellObject o -> o;
+            case ConstructEntity ce -> ce.owner();
+            case null, default -> null;
+        };
+        return f != null && f.owns(c.inst()) ? f : null;
+    }
 
     /** Rounded to the nearest whole number, halves away from zero (2.5 → 3, −2.5 → −3). */
     private static double nearest(double x) {

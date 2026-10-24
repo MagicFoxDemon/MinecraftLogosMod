@@ -21,7 +21,8 @@ import net.minecraft.world.phys.Vec3;
 public final class ProjectileObj extends SpellObject {
     private static final int ORBIT_REHIT_TICKS = 10;
 
-    private final Motion motion;
+    /** Its Mercury motion; a move, turn or halt takes over and leaves it flying straight. */
+    private Motion motion;
     private final double speed;
     private final double size;
     private final Vfx.Guise guise;
@@ -53,6 +54,27 @@ public final class ProjectileObj extends SpellObject {
     @Override
     protected void onEnded() {
         Vfx.trailEnd(level, id, pos, node.element, impactEnd);
+    }
+
+    /** Changes course for {@code to} at its own speed, then flies on straight past it. */
+    @Override
+    public void moveTo(Vec3 to, double ignored) {
+        turn(to.subtract(pos));
+    }
+
+    /** Flies {@code dir} at its own speed from now on (out of a halt as well). */
+    @Override
+    public void turn(Vec3 dir) {
+        if (dir.lengthSqr() < 1e-6) return;
+        motion = Motion.FORWARD;
+        vel = dir.normalize().scale(speed);
+    }
+
+    /** Hangs where it is for the rest of its life, still hitting what flies into it. */
+    @Override
+    public void halt() {
+        motion = Motion.FORWARD;
+        vel = Vec3.ZERO;
     }
 
     @Override
