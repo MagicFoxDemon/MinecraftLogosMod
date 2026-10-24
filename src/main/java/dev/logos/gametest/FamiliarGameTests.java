@@ -316,6 +316,91 @@ final class FamiliarGameTests {
         });
     }
 
+    /** Its master on the dragon's back, high in the air, both facing +z (a dragon's yaw is a player's turned round). */
+    private static net.minecraft.world.entity.boss.enderdragon.EnderDragon mountedDragon(GameTestHelper h, ServerPlayer p) {
+        p.setGameMode(GameType.CREATIVE);
+        forceAround(h, 2);
+        var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
+        dragon.snapTo(p.getX(), p.getY() + 60, p.getZ(), 180, 0);
+        h.assertTrue(p.startRiding(dragon, false, true), "the master should mount the dragon");
+        dragon.positionRider(p);
+        p.setYRot(0);
+        p.setXRot(0);
+        return dragon;
+    }
+
+    /** Ridden with no key held, the dragon hovers where it is instead of flying off; holding forward, it flies where its rider looks. */
+    static void dragonRiddenHoversThenFlies(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        var dragon = mountedDragon(h, p);
+        Vec3[] held = {null};
+        long[] since = {0};
+        boolean[] flying = {false};
+        h.succeedWhen(() -> {
+            long now = h.getLevel().getGameTime();
+            if (held[0] == null) {
+                h.assertTrue(dragon.tickCount > 3, "the dragon has not ticked yet");
+                held[0] = dragon.position();
+                since[0] = now;
+            }
+            if (!flying[0]) {
+                h.assertTrue(now - since[0] >= 40, "hovering for two seconds");
+                var phase = dragon.getPhaseManager().getCurrentPhase().getPhase();
+                h.assertTrue(phase == net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase.HOVERING, "ridden with no key held, it should hover, is in " + phase);
+                double drift = dragon.position().distanceTo(held[0]);
+                h.assertTrue(drift < 2, "ridden with no key held it drifted " + drift + " blocks in two seconds");
+                held[0] = dragon.position();
+                flying[0] = true;
+                p.setLastClientInput(new Input(true, false, false, false, false, false, false));
+            }
+            Vec3 moved = dragon.position().subtract(held[0]);
+            h.assertTrue(moved.z > 10 && Math.abs(moved.x) < 3, "holding forward it should fly where its rider looks (+z), moved " + moved);
+            p.setLastClientInput(Input.EMPTY);
+            dragon.discard();
+        });
+    }
+
+    /** Driving, left click is a dragon fireball from its mouth, at most one a second. */
+    static void dragonRiderFireball(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        var dragon = mountedDragon(h, p);
+        h.succeedWhen(() -> {
+            h.assertTrue(dragon.tickCount > 3, "the dragon has not ticked yet");
+            dev.logos.runtime.DragonFamiliar.control(p, dev.logos.runtime.DragonFamiliar.FIRE);
+            dev.logos.runtime.DragonFamiliar.control(p, dev.logos.runtime.DragonFamiliar.FIRE);
+            var shots = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball.class,
+                    dragon.getBoundingBox().inflate(24), f -> f.getOwner() == dragon);
+            h.assertTrue(shots.size() == 1, "two clicks at once should fire one fireball (it cools down), fired " + shots.size());
+            h.assertTrue(shots.getFirst().getDeltaMovement().z > 0.5, "the fireball should fly where its rider looks (+z), " + shots.getFirst().getDeltaMovement());
+            shots.forEach(net.minecraft.world.entity.Entity::discard);
+            dragon.discard();
+        });
+    }
+
+    /** Driving, held use is the dragon's breath: it burns a foe ahead of its mouth, and lets go when told. */
+    static void dragonRiderBreath(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        var dragon = mountedDragon(h, p);
+        Husk[] foe = {null};
+        h.succeedWhen(() -> {
+            if (foe[0] == null) {
+                h.assertTrue(dragon.tickCount > 3, "the dragon has not ticked yet");
+                Vec3 at = dragon.head.getBoundingBox().getCenter().add(0, -1, 6);
+                Husk husk = EntityType.HUSK.create(h.getLevel(), net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
+                husk.snapTo(at.x, at.y, at.z, 0, 0);
+                husk.setNoAi(true);
+                husk.setNoGravity(true);
+                h.getLevel().addFreshEntity(husk);
+                foe[0] = husk;
+                dev.logos.runtime.DragonFamiliar.control(p, dev.logos.runtime.DragonFamiliar.BREATH_ON);
+            }
+            h.assertTrue(foe[0].getHealth() < foe[0].getMaxHealth(), "the breath should burn the husk ahead of its mouth");
+            dev.logos.runtime.DragonFamiliar.control(p, dev.logos.runtime.DragonFamiliar.BREATH_OFF);
+            foe[0].discard();
+            dragon.discard();
+        });
+    }
+
     /** A baby familiar does not grow up on its own, but the grow spell still ages it. */
     static void ageFrozenButSpellsWork(GameTestHelper h) {
         ServerPlayer p = master(h);

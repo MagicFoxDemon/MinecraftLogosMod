@@ -73,6 +73,7 @@ public final class LogosClient {
     @SubscribeEvent
     static void onUse(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         ConstructPlacement.onUse(event);
+        if (!event.isCanceled()) DragonInput.onInteraction(event);
         if (!event.isCanceled()) ColossusInput.onInteraction(event);
     }
 
@@ -84,6 +85,7 @@ public final class LogosClient {
     @SubscribeEvent
     static void onClientTickStart(ClientTickEvent.Pre event) {
         ConstructRiding.tick();
+        DragonInput.tick();
         ColossusInput.tick();
     }
 

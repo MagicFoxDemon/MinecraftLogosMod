@@ -17,7 +17,8 @@
     "ServerLevelMixin",
     "LivingEntityMixin",
     "WardenMixin",
-    "ProjectileMixin"
+    "ProjectileMixin",
+    "DragonHoverPhaseMixin"
   ],
   "client": [
     "ItemInHandLayerMixin",

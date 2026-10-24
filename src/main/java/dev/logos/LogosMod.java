@@ -585,6 +585,7 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
         registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);
         registrar.playToServer(dev.logos.net.ColossusControlPayload.TYPE, dev.logos.net.ColossusControlPayload.CODEC, dev.logos.net.ColossusControlPayload::handle);
+        registrar.playToServer(dev.logos.net.DragonControlPayload.TYPE, dev.logos.net.DragonControlPayload.CODEC, dev.logos.net.DragonControlPayload::handle);
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
         registrar.playToClient(dev.logos.net.ChargePayload.TYPE, dev.logos.net.ChargePayload.CODEC);
         registrar.playToClient(dev.logos.net.AreaWeatherPayload.TYPE, dev.logos.net.AreaWeatherPayload.CODEC);
