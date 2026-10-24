@@ -3,6 +3,9 @@ package dev.logos.runtime;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
+
 /** Server-side scheduler for living spell objects and delayed continuations. */
 public final class SpellRuntime {
     /** Very deep recursion (a large maxRecursion) can exhaust the Java stack; the spell ends, the server does not. */
@@ -79,6 +82,20 @@ public final class SpellRuntime {
             }
         }
         OBJECTS.removeIf(SpellObject::isEnded);
+    }
+
+    /**
+     * The running spells with a body in {@code level} within {@code radius} of {@code at}, each once, nearest body first:
+     * what 万咒皆终 (end-all) may reach.
+     */
+    public static List<SpellInstance> spellsNear(ServerLevel level, Vec3 at, double radius) {
+        List<SpellObject> bodies = new ArrayList<>(OBJECTS);
+        bodies.addAll(SPAWNED);
+        bodies.removeIf(o -> o.isEnded() || o.inst.dead || o.level != level || o.position().distanceTo(at) > radius);
+        bodies.sort(java.util.Comparator.comparingDouble(o -> o.position().distanceToSqr(at)));
+        java.util.LinkedHashSet<SpellInstance> spells = new java.util.LinkedHashSet<>();
+        for (SpellObject o : bodies) spells.add(o.inst);
+        return List.copyOf(spells);
     }
 
     public static void clear() {

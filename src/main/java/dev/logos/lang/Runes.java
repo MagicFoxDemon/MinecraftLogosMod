@@ -1013,6 +1013,36 @@ public final class Runes {
                     if (f != null) f.disperse();
                     return null;
                 });
+        def("end-all", EFFECT, ACTION).kw("at", POS, "here").kw("radius", NUM, "6").stab(4)
+                .doc("万咒皆终：熄灭 :radius 格内有形体的术式——每碰到一个形体，就熄灭它所属的整个术式（它别处的形体与排着队的延迟、重复一起），"
+                        + "不触发消散时事件。离中心最近的先停；每停一个，付它此刻剩下的魔力 + 2，付不起就跳过它。"
+                        + "施法者自己的其他术式也会停；其他玩家的术式要 :players true。已经施加的效果（时间停止、护盾、印记、药水）不受影响")
+                .exec((n, c) -> {
+                    Place at = place(kw(n, "at"), c);
+                    double r = clamp(num(kw(n, "radius"), c), 0, 32);
+                    int ended = 0;
+                    double paid = 0;
+                    for (SpellInstance s : SpellRuntime.spellsNear(at.level(), at.pos(), r)) {
+                        if (s == c.inst() || s.dead) continue;
+                        if (s.caster instanceof Player && s.caster != c.inst().caster && !c.inst().spell.affectsPlayers()) continue;
+                        double cost = 2 + s.mana;
+                        if (cost > c.inst().mana + 1e-9) continue; // too strong to stop now: a weaker one may still be
+                        c.inst().spend(cost, "end-all");
+                        s.terminate("被万咒皆终终止");
+                        if (s.caster instanceof ServerPlayer owner && owner != c.inst().caster) {
+                            owner.sendSystemMessage(Component.literal("✗ 你的术式《" + s.spell.name() + "》被万咒皆终终止").withStyle(ChatFormatting.RED));
+                        }
+                        ended++;
+                        paid += cost;
+                    }
+                    Vfx.burst(at.level(), at.pos(), Element.VOID, 30);
+                    Vfx.sound(at.level(), at.pos(), SoundEvents.BEACON_DEACTIVATE, 1f, 0.8f);
+                    if (c.inst().caster instanceof ServerPlayer p) {
+                        p.sendSystemMessage(Component.literal(ended == 0 ? "万咒皆终：范围内没有可以熄灭的术式"
+                                : "万咒皆终：熄灭了 " + ended + " 个术式，花费 " + Node.fmt(paid) + " 魔力").withStyle(ChatFormatting.GRAY));
+                    }
+                    return null;
+                });
         def("copy", EFFECT, ACTION).each("target").p("count", NUM).kw("spread", NUM, "10").stab(2)
                 .doc("复制飞行中的弹射物（箭矢、火球、三叉戟……），复制品左右交替偏开 :spread 度。"
                         + "复制品不能再被复制，复制出的箭矢和三叉戟不能拾取。每份 3 魔力，一次最多 8 份")

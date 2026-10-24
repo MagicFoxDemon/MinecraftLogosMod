@@ -351,6 +351,17 @@ final class RuneEmblems {
                 "..#......",
                 "...#+....",
                 "........."}, "turn");
+        // A circle struck through: every spell within it put out.
+        put(new String[]{
+                "..#####..",
+                ".#.....##",
+                "#.....#.#",
+                "#....#..#",
+                "#...#...#",
+                "#..#....#",
+                "#.#.....#",
+                "##.....#.",
+                "..#####.."}, "end-all");
         // A circle broken into motes: the body let go.
         put(new String[]{
                 "..#.#.#..",

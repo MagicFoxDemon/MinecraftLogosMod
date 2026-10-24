@@ -223,6 +223,15 @@ class CompilerTest {
     }
 
     @Test
+    void endAllTakesAPlaceAndARadius() {
+        Node n = Compiler.compile("(end-all :at (look-point) :radius 10)").body().getFirst();
+        assertEquals(Type.POS, n.kw.get("at").type);
+        // It runs without :players; reaching other players' spells is decided when it runs.
+        assertFalse(Compiler.compile("(end-all)").affectsPlayers());
+        assertTrue(Compiler.compile("(end-all)").profile().assumptions().stream().anyMatch(a -> a.contains("万咒皆终")));
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");
