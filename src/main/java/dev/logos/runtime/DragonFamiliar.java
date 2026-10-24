@@ -170,6 +170,9 @@ public final class DragonFamiliar {
         CENTRED.add(d);
         d.setFightOrigin(net.minecraft.core.BlockPos.containing(center));
         Arrays.fill(((EnderDragonAccessor) d).logos$nodes(), null);
+        // Its path and the point it was heading for belong to the old ring.
+        var pm = d.getPhaseManager();
+        if (pm.getCurrentPhase().getPhase() == EnderDragonPhase.HOLDING_PATTERN) pm.getCurrentPhase().begin();
     }
 
     /** Brought back high above its master: a dragon needs sky, not a spot on the ground. */

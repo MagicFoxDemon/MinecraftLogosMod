@@ -149,6 +149,13 @@ final class FamiliarGameTests {
             h.assertTrue(phase == net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase.HOLDING_PATTERN,
                     "a familiar dragon should be circling, is in " + phase);
             h.assertTrue(dragon.getFightOrigin().distSqr(p.blockPosition()) < 32 * 32, "its flight should centre on its master, origin " + dragon.getFightOrigin());
+            // Its flight nodes ring that origin (the widest vanilla ring is 60 blocks), not the world's 0,0.
+            var origin = dragon.getFightOrigin();
+            for (var n : ((dev.logos.mixin.EnderDragonAccessor) dragon).logos$nodes()) {
+                h.assertTrue(n != null, "its flight nodes should be built");
+                double dx = n.x - origin.getX(), dz = n.z - origin.getZ();
+                h.assertTrue(dx * dx + dz * dz <= 61 * 61, "a flight node at " + n.x + "," + n.z + " is off its ring around " + origin);
+            }
             Vec3 at = dragon.position();
             // Only players (and a few damage types) can hurt a dragon at all, as in vanilla.
             dragon.hurtServer(h.getLevel(), h.getLevel().damageSources().playerAttack(p), Float.MAX_VALUE);
