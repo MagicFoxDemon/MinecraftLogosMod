@@ -165,6 +165,39 @@ final class FamiliarGameTests {
         });
     }
 
+    /** A familiar dragon's fireball leaves through its own head and neck instead of bursting on them. */
+    static void dragonBreathSparesItself(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        p.setGameMode(GameType.CREATIVE);
+        forceAround(h, 2);
+        var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
+        dragon.snapTo(p.getX(), p.getY() + 40, p.getZ(), 0, 0);
+        net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball[] shot = {null};
+        long[] firedAt = {0};
+        h.succeedWhen(() -> {
+            if (shot[0] == null) {
+                // Its parts are placed from its first tick on.
+                h.assertTrue(dragon.tickCount > 3, "the dragon has not ticked yet");
+                // Its breath leaves just ahead of its head, slower than it flies, so it flies into its own fireball.
+                // Held still, with the fireball dropping straight through its head, that meeting is certain.
+                dragon.setNoAi(true);
+                Vec3 from = dragon.head.getBoundingBox().getCenter().add(0, 2, 0), dir = new Vec3(0, -1, 0);
+                var f = new net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball(h.getLevel(), dragon, dir);
+                f.snapTo(from.x, from.y, from.z, 0, 0);
+                h.getLevel().addFreshEntity(f);
+                shot[0] = f;
+                firedAt[0] = h.getLevel().getGameTime();
+            }
+            h.assertTrue(h.getLevel().getGameTime() - firedAt[0] >= 10, "the fireball is still on its way");
+            h.assertTrue(!shot[0].isRemoved(), "the fireball burst on its own dragon");
+            h.assertTrue(h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.AreaEffectCloud.class, dragon.getBoundingBox().inflate(16)).isEmpty(),
+                    "no breath cloud should be left around the dragon");
+            // Gone with the test, so it does not fly through the tests around it.
+            shot[0].discard();
+            dragon.discard();
+        });
+    }
+
     /** In the End: no false dragon while the true one lives; the true dragon's return unmakes any false one there. */
     static void dragonThroneRules(GameTestHelper h) {
         ServerPlayer p = master(h);

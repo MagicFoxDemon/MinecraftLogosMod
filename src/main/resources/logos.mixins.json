@@ -16,7 +16,8 @@
     "EnvironmentAttributeSystemMixin",
     "ServerLevelMixin",
     "LivingEntityMixin",
-    "WardenMixin"
+    "WardenMixin",
+    "ProjectileMixin"
   ],
   "client": [
     "ItemInHandLayerMixin",

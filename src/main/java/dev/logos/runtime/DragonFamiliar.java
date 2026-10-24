@@ -16,9 +16,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhaseManager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -82,6 +84,12 @@ public final class DragonFamiliar {
         UUID master = Familiars.masterOf(dragon);
         // Nor whoever rides it: the companion behind its master is not on the master's side by any other measure.
         if (master != null) entities.removeIf(e -> Familiars.friendly(master, e) || e.getVehicle() == dragon);
+    }
+
+    /** Whether {@code shot} is a familiar dragon's own and {@code e} is that dragon, one of its parts or a rider: its breath flies through them. */
+    public static boolean ownBody(Projectile shot, Entity e) {
+        if (!(shot.getOwner() instanceof EnderDragon d) || !Familiars.isFamiliar(d)) return false;
+        return e == d || e instanceof EnderDragonPart part && part.parentMob == d || e.getVehicle() == d;
     }
 
     static void tick(EnderDragon d, Player owner, @Nullable LivingEntity target, @Nullable Vec3 goTo, @Nullable Vec3 post) {
