@@ -240,6 +240,14 @@ class CompilerTest {
     }
 
     @Test
+    void resizeCostsTheSameToGrowOrShrink() {
+        assertEquals(8, Compiler.compile("(resize caster 2 30)").profile().estimate(), 1e-6);
+        assertEquals(8, Compiler.compile("(resize caster 0.5)").profile().estimate(), 1e-6);
+        assertEquals(2, Compiler.compile("(resize caster 1 600)").profile().estimate(), 1e-6);
+        assertError("(resize here 2)", "实体");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");

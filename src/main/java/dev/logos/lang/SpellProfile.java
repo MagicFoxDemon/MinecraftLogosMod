@@ -233,6 +233,11 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = 8 * count(n.arg(0));
                     found.add(Intent.UTILITY);
                 }
+                case "resize" -> {
+                    double scale = dev.logos.runtime.Resized.scaleOf(dev.logos.runtime.Resized.amplifierFor(argNum(n, 1, 1)));
+                    own = (2 + Math.min(argNum(n, 2, 30), 600) * 0.2 * (Math.max(scale, 1 / scale) - 1)) * count(n.arg(0));
+                    found.add(Intent.UTILITY);
+                }
                 case "potion" -> {
                     String id = String.valueOf(n.arg(1) == null ? "" : n.arg(1).value).replace("minecraft:", "");
                     double level = argNum(n, 3, 1);

@@ -117,6 +117,25 @@ final class WorldGameTests {
         return n;
     }
 
+    /** resize scales a mob through the vanilla scale attribute, a second cast replaces the first, and it wears off. */
+    static void resize(GameTestHelper h) {
+        FamiliarGameTests.forceAround(h, 1);
+        ServerPlayer p = caster(h);
+        BlockPos at = new BlockPos(6, 2, 6);
+        var pig = h.spawn(EntityType.PIG, at);
+        float width = pig.getBbWidth();
+        castAt(h, p, "(resize (entities :radius 1) 2 1)", at);
+        h.assertTrue(Math.abs(pig.getScale() - 2) < 1e-4, "the pig should be twice as big, got " + pig.getScale());
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(Math.abs(pig.getBbWidth() - width * 2) < 1e-4, "its hitbox should grow with it"))
+                .thenExecute(() -> {
+                    castAt(h, p, "(resize (entities :radius 2) 0.5 1)", at);
+                    h.assertTrue(Math.abs(pig.getScale() - 0.5) < 1e-4, "a second cast should replace the first, got " + pig.getScale());
+                })
+                .thenWaitUntil(() -> h.assertTrue(Math.abs(pig.getScale() - 1) < 1e-4, "it should wear off after a second"))
+                .thenSucceed();
+    }
+
     /** grow ages crops; decay rolls them back, drops leaves and destroys flowers. */
     static void growAndDecay(GameTestHelper h) {
         ServerPlayer p = caster(h);

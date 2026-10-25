@@ -472,6 +472,12 @@ public class LogosMod {
             ATTRIBUTES.register("channel_surge", () -> new net.minecraft.world.entity.ai.attributes.RangedAttribute(
                     "attribute.logos.channel_surge", 0, 0, 1e6).setSyncable(true));
 
+    public static final DeferredRegister<net.minecraft.world.effect.MobEffect> MOB_EFFECTS =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.MOB_EFFECT, MODID);
+    /** 缩放: a timed change of the vanilla scale attribute. */
+    public static final DeferredHolder<net.minecraft.world.effect.MobEffect, net.minecraft.world.effect.MobEffect> RESIZED =
+            MOB_EFFECTS.register("resized", dev.logos.runtime.Resized::new);
+
     /** 焚式: a data-driven enchantment (data/logos/enchantment/formula_immolation.json). */
     public static final net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> FORMULA_IMMOLATION =
             net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT,
@@ -607,6 +613,7 @@ public class LogosMod {
         ATTACHMENTS.register(modBus);
         PARTICLE_TYPES.register(modBus);
         ATTRIBUTES.register(modBus);
+        MOB_EFFECTS.register(modBus);
         modBus.addListener(this::registerPayloads);
         modBus.addListener((BuildCreativeModeTabContentsEvent e) -> {
             if (e.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {

@@ -31,6 +31,7 @@ import dev.logos.runtime.ManaInfusion;
 import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.Place;
 import dev.logos.runtime.ProjectileObj;
+import dev.logos.runtime.Resized;
 import dev.logos.runtime.SpellInstance;
 import dev.logos.runtime.SpellObject;
 import dev.logos.runtime.SpellRuntime;
@@ -813,6 +814,26 @@ public final class Runes {
                         t.addEffect(new MobEffectInstance(effect, ticks, level - 1), c.inst().caster);
                         c.inst().affected.add(t.getUUID());
                         Vfx.burst(lv(t), t, null, Element.ARCANE, Vfx.potion(effect));
+                    }
+                    return null;
+                });
+        def("resize", EFFECT, ACTION).each("target").p("scale", NUM).opt("seconds", NUM, "30").stab(2)
+                .doc("缩放：把生物的大小乘上一个倍数（原版的 scale 属性），持续若干秒（最长 600，默认 30）后恢复。"
+                        + "倍数 1/16～16，按每翻一倍 16 档取最近的一档；碰撞箱、视角高度、步幅随之改变。再次缩放会取代上一次，倍数 1 即恢复原样。"
+                        + "牛奶能解除。每个目标 2 魔力，另加每秒 0.2 ×（放大或缩小的倍数 − 1）")
+                .exec((n, c) -> {
+                    int amplifier = Resized.amplifierFor(num(n.arg(1), c));
+                    double scale = Resized.scaleOf(amplifier);
+                    double s = clamp(num(n.arg(2), c), 0, 600);
+                    double cost = 2 + s * 0.2 * (Math.max(scale, 1 / scale) - 1);
+                    int ticks = Math.max(1, (int) Math.round(s * 20));
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        if (!c.inst().spend(cost, "resize")) return null;
+                        // Removed first: vanilla would keep a larger amplifier over a smaller one.
+                        t.removeEffect(LogosMod.RESIZED);
+                        if (amplifier != Resized.ONE) t.addEffect(new MobEffectInstance(LogosMod.RESIZED, ticks, amplifier, false, false, false), c.inst().caster);
+                        c.inst().affected.add(t.getUUID());
+                        Vfx.burst(lv(t), t, null, Element.ARCANE, Vfx.Burst.FORCE);
                     }
                     return null;
                 });
