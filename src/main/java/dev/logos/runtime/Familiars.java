@@ -207,7 +207,7 @@ public final class Familiars {
         if (of(owner).stream().filter(f -> !(f instanceof KeptFamiliar)).count() >= LogosConfig.maxFamiliars()) return "使魔已达上限 " + LogosConfig.maxFamiliars() + " 只（配置 maxFamiliars）";
         if (!(type.create(level, EntitySpawnReason.MOB_SUMMONED) instanceof Mob m)) return name + "不是能召唤的生物";
         m.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);
-        if (!inst.spend(m.getMaxHealth() * 2, "召唤" + name)) return null; // the spell itself reports running dry
+        if (!inst.spend(m.getMaxHealth() * 2, "召唤" + name, dev.logos.lang.Category.EFFECT)) return null; // the spell itself reports running dry
         try {
             m.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(at)), EntitySpawnReason.MOB_SUMMONED, null);
         } catch (RuntimeException ignored) {

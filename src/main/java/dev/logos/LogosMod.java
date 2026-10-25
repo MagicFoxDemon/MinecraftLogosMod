@@ -20,7 +20,6 @@ import dev.logos.lang.Node;
 import dev.logos.lang.Spell;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Effects;
-import dev.logos.runtime.Limits;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellRuntime;
 import dev.logos.runtime.StatusData;
@@ -676,6 +675,7 @@ public class LogosMod {
         COMPONENTS.register(modBus);
         ATTACHMENTS.register(modBus);
         PARTICLE_TYPES.register(modBus);
+        dev.logos.runtime.SpellModifiers.init();
         ATTRIBUTES.register(modBus);
         MOB_EFFECTS.register(modBus);
         modBus.addListener(this::registerPayloads);
@@ -722,6 +722,7 @@ public class LogosMod {
             e.add(net.minecraft.world.entity.EntityType.PLAYER, MANA_ABSORPTION);
             e.add(net.minecraft.world.entity.EntityType.PLAYER, CHANNEL_FLOW);
             e.add(net.minecraft.world.entity.EntityType.PLAYER, CHANNEL_SURGE);
+            dev.logos.runtime.SpellModifiers.addTo(e);
         });
         // ❖ looks (&mace…) must name an item the game actually has, modded items included.
         dev.logos.lang.Compiler.itemExists = id -> {
@@ -855,7 +856,7 @@ public class LogosMod {
     public void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer sp)) return;
         PlayerMagic m = PlayerMagic.of(sp);
-        m.mana = Math.min(m.maxMana, m.mana + Limits.MANA_REGEN_PER_TICK);
+        m.mana = Math.min(m.maxMana, m.mana + dev.logos.runtime.SpellModifiers.regenerationPerTick(sp));
         long now = sp.level().getGameTime();
         if (now % 10 != 0 || now < m.hudQuietUntil) return;
         ItemStack wand = dev.logos.item.SpellBag.heldWand(sp);

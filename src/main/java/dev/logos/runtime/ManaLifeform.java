@@ -318,12 +318,14 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     /** Charging speed by level, the same as wand tiers 1 to 5: mana per second at first, and its growth per second. */
     private static final double[] FLOW = {40, 55, 70, 90, 110}, SURGE = {20, 60, 130, 184, 282};
 
+    /** Its level's flow, sped up by its channel speed (see {@link SpellModifiers#channelSpeed}). */
     public double channelFlow() {
-        return FLOW[Mth.clamp(lifeLevel(), 1, FLOW.length) - 1];
+        return FLOW[Mth.clamp(lifeLevel(), 1, FLOW.length) - 1] * SpellModifiers.channelSpeed(this);
     }
 
     public double channelSurge() {
-        return SURGE[Mth.clamp(lifeLevel(), 1, SURGE.length) - 1];
+        double speed = SpellModifiers.channelSpeed(this);
+        return SURGE[Mth.clamp(lifeLevel(), 1, SURGE.length) - 1] * speed * speed;
     }
 
     public Role role() {

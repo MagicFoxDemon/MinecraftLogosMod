@@ -159,7 +159,7 @@ public final class BeamObj extends SpellObject {
         inside.retainAll(ids);
 
         if (age % every == 0) {
-            if (!inst.spend(upkeep(radius, range), "光柱维持")) return;
+            if (!inst.spend(upkeep(radius, range), "光柱维持", dev.logos.lang.Category.FORM)) return;
             for (Entity e : touching) {
                 if (!e.isAlive()) continue;
                 Interp.fire(node, "on-hit", ctx.on(e, Targeting.center(e)).aiming(dir));

@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
 
+import dev.logos.lang.Category;
 import dev.logos.lang.Node;
 import dev.logos.lang.Spell;
 import net.minecraft.ChatFormatting;
@@ -28,6 +29,8 @@ public final class SpellInstance {
     public final double injected;
     /** Share of entropic mana that returns as free mana (the page's grade). */
     public final double recovery;
+    /** The caster's spell power and rune costs as they were when it was cast. */
+    public final SpellModifiers modifiers;
     public double mana;
     /** Where the spell last acted; free mana gathers there when it ends. */
     private @Nullable ServerLevel lastLevel;
@@ -52,6 +55,7 @@ public final class SpellInstance {
         this.level = level;
         this.injected = injected;
         this.recovery = recovery;
+        this.modifiers = SpellModifiers.of(caster);
         this.mana = injected;
         this.startTick = SpellRuntime.now();
         trace.add(mana);
@@ -63,9 +67,16 @@ public final class SpellInstance {
         lastPos = pos;
     }
 
-    /** Pays for one rune execution. Returns false (and extinguishes the spell) if the pool is dry. */
+    /** Pays for one execution of the rune named {@code what}. Returns false (and extinguishes the spell) if the pool is dry. */
     public boolean spend(double amount, String what) {
+        dev.logos.lang.Rune rune = dev.logos.lang.Runes.get(what);
+        return spend(amount, what, rune == null ? null : rune.category);
+    }
+
+    /** Pays {@code amount}, scaled by the caster's cost for runes of {@code category} (none: the overall cost only). */
+    public boolean spend(double amount, String what, @Nullable Category category) {
         if (dead) return false;
+        amount *= modifiers.cost(category);
         if (amount > mana + 1e-9) {
             terminate("魔力耗尽（" + what + " 需要 " + Node.fmt(amount) + "，仅剩 " + Node.fmt(mana) + "）");
             return false;

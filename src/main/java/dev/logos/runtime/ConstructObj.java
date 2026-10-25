@@ -111,7 +111,7 @@ public final class ConstructObj extends SpellObject {
         if (inst.dead || isEnded()) return;
         ConstructGeometry g = entity.geometry();
         if (age % 20 == 0) {
-            if (!inst.spend(upkeep, "炼成体维持")) return;
+            if (!inst.spend(upkeep, "炼成体维持", dev.logos.lang.Category.FORM)) return;
             judgePlayers();
         }
         if (age % every == 0) {
@@ -268,7 +268,7 @@ public final class ConstructObj extends SpellObject {
         }
         Vfx.burst(level, at, node.element, 6);
         Vfx.sound(level, at, SoundEvents.AMETHYST_BLOCK_HIT, 0.8f, 1.4f);
-        if (!inst.spend(BLOCK_COST, "炼成体拦截")) return true;
+        if (!inst.spend(BLOCK_COST, "炼成体拦截", dev.logos.lang.Category.FORM)) return true;
         absorb(Constructs.damageOf(p));
         Interp.fire(node, "on-block", ctx.on(p, at).aiming(n));
         return true;
@@ -290,7 +290,7 @@ public final class ConstructObj extends SpellObject {
 
     /** Stops a spell body at {@code at}: pays {@code cost} and takes {@code damage}. False if it could not pay. */
     boolean stop(Vec3 at, double cost, double damage) {
-        if (!inst.spend(cost, "炼成体拦截")) return false;
+        if (!inst.spend(cost, "炼成体拦截", dev.logos.lang.Category.FORM)) return false;
         if (cost >= BLOCK_COST) Vfx.burst(level, at, node.element, 6);
         absorb(damage);
         return true;
