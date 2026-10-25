@@ -1,0 +1,960 @@
+{
+  "credit": "Logos cultivation jar v03 - one complete cuboid per glass tier",
+  "parent": "minecraft:block/block",
+  "texture_size": [
+    16,
+    16
+  ],
+  "ambientocclusion": true,
+  "textures": {
+    "log": "minecraft:block/dark_oak_log",
+    "end": "minecraft:block/dark_oak_log_top",
+    "glass": {
+      "sprite": "minecraft:block/glass",
+      "force_translucent": true
+    },
+    "soil": "logos:block/cultivation_jar_soil",
+    "brass": "logos:block/cultivation_jar_brass",
+    "particle": "minecraft:block/dark_oak_log"
+  },
+  "elements": [
+    {
+      "name": "log_base",
+      "from": [
+        3.0,
+        0,
+        3.0
+      ],
+      "to": [
+        13.0,
+        1.5,
+        13.0
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            3.0,
+            14.5,
+            13.0,
+            16
+          ],
+          "texture": "#log"
+        },
+        "east": {
+          "uv": [
+            3.0,
+            14.5,
+            13.0,
+            16
+          ],
+          "texture": "#log"
+        },
+        "down": {
+          "uv": [
+            3.0,
+            3.0,
+            13.0,
+            13.0
+          ],
+          "texture": "#end"
+        },
+        "north": {
+          "uv": [
+            3.0,
+            14.5,
+            13.0,
+            16
+          ],
+          "texture": "#log"
+        },
+        "south": {
+          "uv": [
+            3.0,
+            14.5,
+            13.0,
+            16
+          ],
+          "texture": "#log"
+        }
+      }
+    },
+    {
+      "name": "base_brass_seal_north",
+      "from": [
+        3.0,
+        1.5,
+        3.0
+      ],
+      "to": [
+        13.0,
+        2,
+        3.3125
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            3.0,
+            14,
+            3.3125,
+            14.5
+          ],
+          "texture": "#brass"
+        },
+        "east": {
+          "uv": [
+            3.0,
+            14,
+            3.3125,
+            14.5
+          ],
+          "texture": "#brass"
+        },
+        "up": {
+          "uv": [
+            3.0,
+            3.0,
+            13.0,
+            3.3125
+          ],
+          "texture": "#brass"
+        },
+        "north": {
+          "uv": [
+            3.0,
+            14,
+            13.0,
+            14.5
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "base_brass_seal_south",
+      "from": [
+        3.0,
+        1.5,
+        12.6875
+      ],
+      "to": [
+        13.0,
+        2,
+        13.0
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            12.6875,
+            14,
+            13.0,
+            14.5
+          ],
+          "texture": "#brass"
+        },
+        "east": {
+          "uv": [
+            12.6875,
+            14,
+            13.0,
+            14.5
+          ],
+          "texture": "#brass"
+        },
+        "up": {
+          "uv": [
+            3.0,
+            12.6875,
+            13.0,
+            13.0
+          ],
+          "texture": "#brass"
+        },
+        "south": {
+          "uv": [
+            3.0,
+            14,
+            13.0,
+            14.5
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "base_brass_seal_west",
+      "from": [
+        3.0,
+        1.5,
+        3.3125
+      ],
+      "to": [
+        3.3125,
+        2,
+        12.6875
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            3.3125,
+            14,
+            12.6875,
+            14.5
+          ],
+          "texture": "#brass"
+        },
+        "up": {
+          "uv": [
+            3.0,
+            3.3125,
+            3.3125,
+            12.6875
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "base_brass_seal_east",
+      "from": [
+        12.6875,
+        1.5,
+        3.3125
+      ],
+      "to": [
+        13.0,
+        2,
+        12.6875
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            3.3125,
+            14,
+            12.6875,
+            14.5
+          ],
+          "texture": "#brass"
+        },
+        "up": {
+          "uv": [
+            12.6875,
+            3.3125,
+            13.0,
+            12.6875
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "humic_soil",
+      "from": [
+        3.3125,
+        1.5,
+        3.3125
+      ],
+      "to": [
+        12.6875,
+        4.5,
+        12.6875
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            3.3125,
+            3.3125,
+            12.6875,
+            12.6875
+          ],
+          "texture": "#soil"
+        }
+      }
+    },
+    {
+      "name": "humic_soil__west_0",
+      "from": [
+        3.3125,
+        2,
+        3.3125
+      ],
+      "to": [
+        3.3125,
+        4.5,
+        12.6875
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            3.3125,
+            11.5,
+            12.6875,
+            14.0
+          ],
+          "texture": "#soil"
+        }
+      }
+    },
+    {
+      "name": "humic_soil__east_0",
+      "from": [
+        12.6875,
+        2,
+        3.3125
+      ],
+      "to": [
+        12.6875,
+        4.5,
+        12.6875
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            3.3125,
+            11.5,
+            12.6875,
+            14.0
+          ],
+          "texture": "#soil"
+        }
+      }
+    },
+    {
+      "name": "humic_soil__north_0",
+      "from": [
+        3.3125,
+        2,
+        3.3125
+      ],
+      "to": [
+        12.6875,
+        4.5,
+        3.3125
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3.3125,
+            11.5,
+            12.6875,
+            14.0
+          ],
+          "texture": "#soil"
+        }
+      }
+    },
+    {
+      "name": "humic_soil__south_0",
+      "from": [
+        3.3125,
+        2,
+        12.6875
+      ],
+      "to": [
+        12.6875,
+        4.5,
+        12.6875
+      ],
+      "faces": {
+        "south": {
+          "uv": [
+            3.3125,
+            11.5,
+            12.6875,
+            14.0
+          ],
+          "texture": "#soil"
+        }
+      }
+    },
+    {
+      "name": "neck_brass_seal_north",
+      "from": [
+        4.25,
+        13.5,
+        4.25
+      ],
+      "to": [
+        11.75,
+        14,
+        4.5625
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            4.25,
+            2,
+            4.5625,
+            2.5
+          ],
+          "texture": "#brass"
+        },
+        "east": {
+          "uv": [
+            4.25,
+            2,
+            4.5625,
+            2.5
+          ],
+          "texture": "#brass"
+        },
+        "down": {
+          "uv": [
+            4.25,
+            4.25,
+            11.75,
+            4.5625
+          ],
+          "texture": "#brass"
+        },
+        "north": {
+          "uv": [
+            4.25,
+            2,
+            11.75,
+            2.5
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "neck_brass_seal_north__south_0",
+      "from": [
+        4.5625,
+        13.5,
+        4.5625
+      ],
+      "to": [
+        11.4375,
+        14,
+        4.5625
+      ],
+      "faces": {
+        "south": {
+          "uv": [
+            4.5625,
+            2.0,
+            11.4375,
+            2.5
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "neck_brass_seal_south",
+      "from": [
+        4.25,
+        13.5,
+        11.4375
+      ],
+      "to": [
+        11.75,
+        14,
+        11.75
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            11.4375,
+            2,
+            11.75,
+            2.5
+          ],
+          "texture": "#brass"
+        },
+        "east": {
+          "uv": [
+            11.4375,
+            2,
+            11.75,
+            2.5
+          ],
+          "texture": "#brass"
+        },
+        "down": {
+          "uv": [
+            4.25,
+            11.4375,
+            11.75,
+            11.75
+          ],
+          "texture": "#brass"
+        },
+        "south": {
+          "uv": [
+            4.25,
+            2,
+            11.75,
+            2.5
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "neck_brass_seal_south__north_0",
+      "from": [
+        4.5625,
+        13.5,
+        11.4375
+      ],
+      "to": [
+        11.4375,
+        14,
+        11.4375
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5625,
+            2.0,
+            11.4375,
+            2.5
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "neck_brass_seal_west",
+      "from": [
+        4.25,
+        13.5,
+        4.5625
+      ],
+      "to": [
+        4.5625,
+        14,
+        11.4375
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            4.5625,
+            2,
+            11.4375,
+            2.5
+          ],
+          "texture": "#brass"
+        },
+        "east": {
+          "uv": [
+            4.5625,
+            2,
+            11.4375,
+            2.5
+          ],
+          "texture": "#brass"
+        },
+        "down": {
+          "uv": [
+            4.25,
+            4.5625,
+            4.5625,
+            11.4375
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "neck_brass_seal_east",
+      "from": [
+        11.4375,
+        13.5,
+        4.5625
+      ],
+      "to": [
+        11.75,
+        14,
+        11.4375
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            4.5625,
+            2,
+            11.4375,
+            2.5
+          ],
+          "texture": "#brass"
+        },
+        "east": {
+          "uv": [
+            4.5625,
+            2,
+            11.4375,
+            2.5
+          ],
+          "texture": "#brass"
+        },
+        "down": {
+          "uv": [
+            11.4375,
+            4.5625,
+            11.75,
+            11.4375
+          ],
+          "texture": "#brass"
+        }
+      }
+    },
+    {
+      "name": "log_lid",
+      "from": [
+        4.25,
+        14,
+        4.25
+      ],
+      "to": [
+        11.75,
+        16,
+        11.75
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            4.25,
+            0,
+            11.75,
+            2
+          ],
+          "texture": "#log"
+        },
+        "east": {
+          "uv": [
+            4.25,
+            0,
+            11.75,
+            2
+          ],
+          "texture": "#log"
+        },
+        "up": {
+          "uv": [
+            4.25,
+            4.25,
+            11.75,
+            11.75
+          ],
+          "texture": "#end"
+        },
+        "north": {
+          "uv": [
+            4.25,
+            0,
+            11.75,
+            2
+          ],
+          "texture": "#log"
+        },
+        "south": {
+          "uv": [
+            4.25,
+            0,
+            11.75,
+            2
+          ],
+          "texture": "#log"
+        }
+      }
+    },
+    {
+      "name": "log_lid__down_0",
+      "from": [
+        4.5625,
+        14,
+        4.5625
+      ],
+      "to": [
+        11.4375,
+        14,
+        11.4375
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            4.5625,
+            4.5625,
+            11.4375,
+            11.4375
+          ],
+          "texture": "#end"
+        }
+      }
+    },
+    {
+      "name": "glass_body",
+      "from": [
+        3,
+        2,
+        3
+      ],
+      "to": [
+        13,
+        11.5,
+        13
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        }
+      },
+      "shade": false
+    },
+    {
+      "name": "glass_shoulder",
+      "from": [
+        3.46875,
+        11.5,
+        3.46875
+      ],
+      "to": [
+        12.53125,
+        12.5,
+        12.53125
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        }
+      },
+      "shade": false
+    },
+    {
+      "name": "glass_neck",
+      "from": [
+        4.25,
+        12.5,
+        4.25
+      ],
+      "to": [
+        11.75,
+        13.5,
+        11.75
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#glass"
+        }
+      },
+      "shade": false
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.625,
+        0.625,
+        0.625
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.375,
+        0.375,
+        0.375
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    }
+  },
+  "groups": [
+    {
+      "name": "contents_anchor",
+      "origin": [
+        8.0,
+        4.5,
+        8.0
+      ],
+      "children": []
+    }
+  ]
+}

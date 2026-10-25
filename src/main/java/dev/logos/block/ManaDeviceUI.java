@@ -125,14 +125,14 @@ public final class ManaDeviceUI {
     }
 
     /** The page centred on the bench, inked like the alchemy table's ledger. */
-    private static ModularUI screen(Player player, UIElement page) {
+    static ModularUI screen(Player player, UIElement page) {
         UIElement root = new UIElement().layout(l -> l.widthPercent(100).heightPercent(100).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
         root.addChild(page);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)), player);
     }
 
-    private static UIElement page(int width, UIElement... children) {
+    static UIElement page(int width, UIElement... children) {
         UIElement inner = new UIElement().layout(l -> l.widthPercent(100).gapAll(4).paddingAll(8).paddingTop(10));
         inner.style(s -> s.background(AlchemyArt.ledger()));
         inner.addChildren(children);
@@ -151,19 +151,19 @@ public final class ManaDeviceUI {
         return bench;
     }
 
-    private static Label title(String key) {
+    static Label title(String key) {
         Label label = new Label();
         label.setText(Component.translatable(key));
         return label;
     }
 
     /** Synced values the drawn parts read; they take no room. */
-    private static <T> BindableValue<T> hidden(BindableValue<T> value) {
+    static <T> BindableValue<T> hidden(BindableValue<T> value) {
         value.layout(l -> l.width(0).height(0));
         return value;
     }
 
-    private static ProgressBar gauge(Supplier<Float> value, float max, int width) {
+    static ProgressBar gauge(Supplier<Float> value, float max, int width) {
         ProgressBar bar = new ProgressBar().setRange(0, max);
         bar.label(l -> l.setText(Component.empty()));
         bar.bar(b -> b.style(s -> s.background(new ColorRectTexture(MANA_COLOUR))));
@@ -172,11 +172,11 @@ public final class ManaDeviceUI {
         return bar;
     }
 
-    private static UIElement column(UIElement... children) {
+    static UIElement column(UIElement... children) {
         return new UIElement().layout(l -> l.gapAll(2)).addChildren(children);
     }
 
-    private static UIElement row(UIElement... children) {
+    static UIElement row(UIElement... children) {
         return new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(8).alignItems(AlignItems.FLEX_END)).addChildren(children);
     }
 }

@@ -732,6 +732,69 @@ final class AlchemyGameTests {
         h.succeedWhen(() -> h.assertTrue(dropped(h, LogosMod.SOUL_HUMUS_ITEM.get()).size() == 1, "soul humus did not drop itself"));
     }
 
+    /** Wheat seeds planted in a cultivation jar ripen stage by stage; the harvest is wheat, and one seed stays planted. */
+    static void cultivationJarGrowsCrops(GameTestHelper h) {
+        h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        @SuppressWarnings("removal")
+        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(h.absolutePos(MAIN)), Direction.UP, h.absolutePos(MAIN), false);
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIRT));
+        h.getBlockState(MAIN).useItemOn(p.getMainHandItem(), h.getLevel(), p, InteractionHand.MAIN_HAND, hit);
+        h.assertTrue(jar.isEmpty(), "dirt was planted");
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.WHEAT_SEEDS, 2));
+        h.getBlockState(MAIN).useItemOn(p.getMainHandItem(), h.getLevel(), p, InteractionHand.MAIN_HAND, hit);
+        h.assertTrue(jar.seed().is(Items.WHEAT_SEEDS) && p.getMainHandItem().getCount() == 1, "planting took " + p.getMainHandItem());
+        for (int i = 0; i < 7; i++) {
+            h.assertFalse(jar.isRipe(), "ripe after " + i + " stages");
+            h.assertTrue(jar.grow(), "did not grow at stage " + i);
+        }
+        h.assertTrue(jar.isRipe(), "not ripe after seven stages");
+        p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        h.getBlockState(MAIN).useWithoutItem(h.getLevel(), p, hit);
+        h.assertTrue(!jar.isRipe() && jar.seed().is(Items.WHEAT_SEEDS), "the harvest did not replant");
+        h.succeedWhen(() -> h.assertTrue(dropped(h, Items.WHEAT).size() == 1, "the harvest gave no wheat"));
+    }
+
+    /**
+     * Solar amalgam poured on carrots (its bottle given back) makes the harvest golden carrots and is spent
+     * by it; a second bottle waits in the reserve and is poured when the first runs out, its bottle going to the outputs.
+     */
+    static void cultivationJarMedium(GameTestHelper h) {
+        h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        @SuppressWarnings("removal")
+        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(h.absolutePos(MAIN)), Direction.UP, h.absolutePos(MAIN), false);
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CARROT));
+        h.getBlockState(MAIN).useItemOn(p.getMainHandItem(), h.getLevel(), p, InteractionHand.MAIN_HAND, hit);
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(LogosMod.SOLAR_AMALGAM.get(), 2));
+        h.getBlockState(MAIN).useItemOn(p.getMainHandItem(), h.getLevel(), p, InteractionHand.MAIN_HAND, hit);
+        h.getBlockState(MAIN).useItemOn(p.getMainHandItem(), h.getLevel(), p, InteractionHand.MAIN_HAND, hit);
+        h.assertTrue(jar.medium().is(LogosMod.SOLAR_AMALGAM.get()) && jar.mediumUses() == 2, "the medium is " + jar.medium() + " x" + jar.mediumUses());
+        h.assertTrue(jar.reserve().getAmountAsInt(0) == 1, "the second bottle did not go to the reserve");
+        h.assertTrue(p.getInventory().countItem(Items.GLASS_BOTTLE) == 1, "the poured bottle was not given back");
+        h.assertTrue(h.getBlockState(MAIN).getValue(dev.logos.block.CultivationJarBlock.MEDIUM), "the medium layer is not shown");
+        for (int harvest = 0; harvest < 2; harvest++) {
+            while (jar.grow()) {}
+            h.assertTrue(jar.isRipe(), "the carrots did not ripen");
+            jar.randomTick(h.getLevel(), h.getLevel().getRandom());
+        }
+        h.assertTrue(jar.medium().is(LogosMod.SOLAR_AMALGAM.get()) && jar.mediumUses() == 2 && jar.reserve().getAmountAsInt(0) == 0,
+                "the reserve was not poured when the first bottle ran out");
+        int golden = 0, bottles = 0;
+        for (int i = 0; i < dev.logos.block.CultivationJarBlockEntity.OUTPUTS; i++) {
+            ItemStack s = jar.outputs().getResource(i).toStack(jar.outputs().getAmountAsInt(i));
+            if (s.is(Items.GOLDEN_CARROT)) golden += s.getCount();
+            if (s.is(Items.GLASS_BOTTLE)) bottles += s.getCount();
+        }
+        h.assertTrue(golden == 6 && bottles == 1, "the outputs hold " + golden + " golden carrots and " + bottles + " bottles");
+        h.assertTrue(jar.seed().is(Items.CARROT), "the carrot was not kept planted");
+        h.succeed();
+    }
+
     /** 灌魔 fills an alchemy table through its side half, paying 1.1 a point for only what fits; a full table costs nothing. */
     static void infuseBlockFillsTable(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);

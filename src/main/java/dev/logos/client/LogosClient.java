@@ -68,6 +68,24 @@ public final class LogosClient {
         event.registerEntityRenderer(LogosMod.ALCHEMICAL_COLOSSUS.get(), ColossusRenderer::new);
         event.registerEntityRenderer(LogosMod.MANA_LEECH.get(), ManaLeechRenderer::new);
         event.registerBlockEntityRenderer(LogosMod.ALCHEMY_TABLE_BE.get(), AlchemyTableRenderer::new);
+        event.registerBlockEntityRenderer(LogosMod.CULTIVATION_JAR_BE.get(), CultivationJarRenderer::new);
+    }
+
+    /** A cultivation jar's medium layer (tint 0 of its model) takes the colour of the medium poured in it. */
+    @SubscribeEvent
+    static void onRegisterBlockTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.BlockTintSources event) {
+        event.register(java.util.List.of(new net.minecraft.client.color.block.BlockTintSource() {
+            @Override
+            public int color(net.minecraft.world.level.block.state.BlockState state) {
+                return -1;
+            }
+
+            @Override
+            public int colorInWorld(net.minecraft.world.level.block.state.BlockState state, net.minecraft.client.renderer.block.BlockAndTintGetter level,
+                    net.minecraft.core.BlockPos pos) {
+                return level.getBlockEntity(pos) instanceof dev.logos.block.CultivationJarBlockEntity jar ? jar.mediumColor() : -1;
+            }
+        }), LogosMod.CULTIVATION_JAR.get());
     }
 
     @SubscribeEvent

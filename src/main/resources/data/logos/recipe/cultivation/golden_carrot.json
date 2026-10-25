@@ -1,0 +1,8 @@
+{
+  "type": "logos:cultivation",
+  "seed": "minecraft:carrot",
+  "medium": "logos:solar_amalgam",
+  "harvest": [
+    { "id": "minecraft:golden_carrot", "count": 3 }
+  ]
+}
