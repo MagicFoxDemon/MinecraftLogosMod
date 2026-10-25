@@ -86,7 +86,7 @@ public final class FieldObj extends SpellObject {
         }
 
         if (age % every == 0) {
-            if (!inst.spend(UPKEEP, "领域维持")) return;
+            if (!inst.spend(UPKEEP, "领域维持", dev.logos.lang.Category.FORM)) return;
             Vfx.fieldPulse(level, id, pos, radius, node.element);
             Interp.fire(node, "on-tick", ctx.at(pos));
         }

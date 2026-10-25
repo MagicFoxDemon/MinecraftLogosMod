@@ -1454,7 +1454,7 @@ public final class Runes {
             return null;
         }
         double cost = ExecuteCost.cost(t, proof);
-        if (!inst.spend(cost, "execute(需要 " + Node.fmt(cost) + ")")) return null;
+        if (!inst.spend(cost, "execute(需要 " + Node.fmt(cost) + ")", Category.EFFECT)) return null;
         if (t.level() == inst.caster.level()) Vfx.line(lv(t), Targeting.center(inst.caster), Targeting.center(t), Element.VOID);
         Vfx.execute(lv(t), Targeting.center(t));
         Vfx.sound(lv(t), t.position(), SoundEvents.WITHER_SHOOT, 0.7f, 0.6f);

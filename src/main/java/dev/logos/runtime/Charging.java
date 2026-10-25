@@ -139,8 +139,10 @@ public final class Charging {
         Casting.Injection in = Casting.injection(entry.spell(), entry.tier(), Casting.immolation(player, wand));
         if (!Casting.affordable(player, entry.spell(), in.mana())) return false;
         PlayerMagic m = PlayerMagic.of(player);
-        double flow = channel(player, LogosMod.CHANNEL_FLOW, wand);
-        double surge = channel(player, LogosMod.CHANNEL_SURGE, wand) * (1 + m.maxMana / LogosConfig.chargeManaScale());
+        // Channel speed k fills the same charge in 1/k the time: flow scales by k, surge by k².
+        double speed = channel(player, SpellModifiers.CHANNEL_SPEED, wand);
+        double flow = channel(player, LogosMod.CHANNEL_FLOW, wand) * speed;
+        double surge = channel(player, LogosMod.CHANNEL_SURGE, wand) * (1 + m.maxMana / LogosConfig.chargeManaScale()) * speed * speed;
         if (flow <= 0 && surge <= 0) {
             PlayerMagic.alert(player, Component.literal("这根法杖无法汇集魔力").withStyle(ChatFormatting.YELLOW));
             return false;

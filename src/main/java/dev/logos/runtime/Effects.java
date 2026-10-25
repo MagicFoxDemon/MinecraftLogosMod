@@ -38,6 +38,7 @@ public final class Effects {
         if (el == Element.FIRE && t.fireImmune()) amt = 0;
         if (el == Element.FROST && t.fireImmune()) amt *= 2;
         if (el == Element.LIGHTNING && t.isInWaterOrRain()) amt *= 1.5;
+        amt *= inst.modifiers.damage(el) * SpellModifiers.taken(t, el);
         DamageSource src;
         if (el == Element.PHYSICAL) {
             src = inst.caster instanceof Player p ? t.damageSources().playerAttack(p) : t.damageSources().mobAttack(inst.caster);
