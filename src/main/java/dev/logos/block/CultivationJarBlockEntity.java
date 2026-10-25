@@ -217,7 +217,10 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
             }
             return;
         }
-        if (random.nextFloat() < r.growth() * mediumGrowth()) grow();
+        // Past a whole stage a tick (vital mash), the whole stages are grown and the rest is a chance of one more.
+        float chance = r.growth() * mediumGrowth();
+        int stages = (int) chance + (random.nextFloat() < chance - (int) chance ? 1 : 0);
+        for (int i = 0; i < stages && grow(); i++) {}
     }
 
     /** Grows a stage, paying the recipe's mana; false if it cannot (nothing growing, ripe, or too little mana). */

@@ -203,6 +203,18 @@ public class LogosMod {
      */
     public static final DeferredItem<net.minecraft.world.item.Item> RAVEN_HEAD = ITEMS.registerSimpleItem("raven_head",
             p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.UNCOMMON).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE));
+    /**
+     * 生机醪: mandrake roots fermented with raven head in raw mash, a mash teeming with the force of life.
+     * Poured in a cultivation jar it makes things grow several stages a random tick; distilled, it gives the tincture of life.
+     */
+    public static final DeferredItem<net.minecraft.world.item.Item> VITAL_MASH = ITEMS.registerSimpleItem("vital_mash", p -> drinkable(p,
+            // Raw mash's kick, much stronger: the body mends and swells with strength, and the head swims.
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 20 * 20, 1),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.STRENGTH, 90 * 20, 1),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 15 * 20)).rarity(net.minecraft.world.item.Rarity.RARE));
+    /** 生命精酊: the force of life distilled out of vital mash, leaving dead ash behind; it gives its bottle back when used. */
+    public static final DeferredItem<net.minecraft.world.item.Item> TINCTURE_OF_LIFE = ITEMS.registerSimpleItem("tincture_of_life",
+            p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.EPIC).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE));
 
     // Albedo, the whitening: blackstone burnt to dead ash, rotted with soul soil, washed white with philosophers' mercury.
     /** 死灰 (caput mortuum): what calcining blackstone leaves, the dead residue the whitening starts from. */
@@ -539,6 +551,8 @@ public class LogosMod {
                 out.accept(PHILOSOPHERS_MERCURY.get());
                 out.accept(REBIS.get());
                 out.accept(RAVEN_HEAD.get());
+                out.accept(VITAL_MASH.get());
+                out.accept(TINCTURE_OF_LIFE.get());
                 out.accept(CAPUT_MORTUUM.get());
                 out.accept(CAPUT_MORTUUM_BLOCK_ITEM.get());
                 out.accept(SOUL_HUMUS_ITEM.get());

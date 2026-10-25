@@ -1,0 +1,14 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:mandrake_root", "count": 4 },
+    { "ingredient": "logos:raven_head" },
+    { "ingredient": "logos:raw_mash" }
+  ],
+  "results": [
+    { "id": "logos:vital_mash" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 20
+}

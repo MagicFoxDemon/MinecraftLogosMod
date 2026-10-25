@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "distill",
+  "ingredients": [
+    { "ingredient": "logos:vital_mash" }
+  ],
+  "results": [
+    { "id": "logos:tincture_of_life" },
+    { "id": "logos:caput_mortuum" }
+  ],
+  "mana": 30
+}
