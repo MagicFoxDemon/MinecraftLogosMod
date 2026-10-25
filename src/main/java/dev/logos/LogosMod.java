@@ -221,6 +221,15 @@ public class LogosMod {
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(0.5f)
                     .sound(net.minecraft.world.level.block.SoundType.SOUL_SOIL));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> SOUL_HUMUS_ITEM = ITEMS.registerSimpleBlockItem("soul_humus", SOUL_HUMUS);
+    /** 培养罐: soul humus under glass; a crop's seed grows in it a stage at every random tick. */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.CultivationJarBlock> CULTIVATION_JAR = BLOCKS.registerBlock(
+            "cultivation_jar", dev.logos.block.CultivationJarBlock::new,
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.NONE).strength(0.3f).noOcclusion().randomTicks()
+                    .sound(net.minecraft.world.level.block.SoundType.GLASS));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> CULTIVATION_JAR_ITEM = ITEMS.registerSimpleBlockItem("cultivation_jar", CULTIVATION_JAR);
+    public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.CultivationJarBlockEntity>> CULTIVATION_JAR_BE =
+            BLOCK_ENTITIES.register("cultivation_jar", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
+                    dev.logos.block.CultivationJarBlockEntity::new, CULTIVATION_JAR.get()));
     /** 白垩: soul humus washed white with rebis and philosophers' mercury; it raises a page to the chalk grade. */
     public static final DeferredItem<net.minecraft.world.item.Item> CHALK = ITEMS.registerSimpleItem("chalk",
             p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
@@ -320,6 +329,11 @@ public class LogosMod {
             RECIPE_TYPES.register("alchemy", net.minecraft.world.item.crafting.RecipeType::simple);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.alchemy.AlchemyRecipe>> ALCHEMY_SERIALIZER =
             RECIPE_SERIALIZERS.register("alchemy", () -> dev.logos.alchemy.AlchemyRecipe.SERIALIZER);
+    /** What grows in a cultivation jar (data/…/recipe, type logos:cultivation). */
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeType<?>, net.minecraft.world.item.crafting.RecipeType<dev.logos.alchemy.CultivationRecipe>> CULTIVATION_RECIPE =
+            RECIPE_TYPES.register("cultivation", net.minecraft.world.item.crafting.RecipeType::simple);
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.alchemy.CultivationRecipe>> CULTIVATION_SERIALIZER =
+            RECIPE_SERIALIZERS.register("cultivation", () -> dev.logos.alchemy.CultivationRecipe.SERIALIZER);
     /** Crafting a page into a higher grade, spell kept (type logos:page_upgrade). */
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.PageUpgradeRecipe>> PAGE_UPGRADE_SERIALIZER =
             RECIPE_SERIALIZERS.register("page_upgrade", () -> dev.logos.item.PageUpgradeRecipe.SERIALIZER);
@@ -373,6 +387,11 @@ public class LogosMod {
             net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "mana_fuel"),
                     net.minecraft.core.registries.Registries.ITEM, dev.logos.runtime.Lifeforms.ManaFuel.CODEC)
                     .synced(dev.logos.runtime.Lifeforms.ManaFuel.CODEC, false).build();
+    /** The bottled liquids a cultivation jar takes as its medium (data_maps/item/cultivation_medium.json). */
+    public static final net.neoforged.neoforge.registries.datamaps.DataMapType<net.minecraft.world.item.Item, dev.logos.alchemy.CultivationMedium> CULTIVATION_MEDIUM =
+            net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "cultivation_medium"),
+                    net.minecraft.core.registries.Registries.ITEM, dev.logos.alchemy.CultivationMedium.CODEC)
+                    .synced(dev.logos.alchemy.CultivationMedium.CODEC, false).build();
 
     public static final DeferredRegister<net.minecraft.world.entity.ai.attributes.Attribute> ATTRIBUTES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.ATTRIBUTE, MODID);
@@ -457,6 +476,7 @@ public class LogosMod {
                 out.accept(CAPUT_MORTUUM.get());
                 out.accept(CAPUT_MORTUUM_BLOCK_ITEM.get());
                 out.accept(SOUL_HUMUS_ITEM.get());
+                out.accept(CULTIVATION_JAR_ITEM.get());
                 out.accept(CHALK.get());
                 out.accept(SOLAR_AMALGAM.get());
                 out.accept(SOLAR_BLOSSOM.get());
@@ -529,7 +549,10 @@ public class LogosMod {
             e.put(ALCHEMICAL_COLOSSUS.get(), dev.logos.runtime.AlchemicalColossus.createAttributes().build());
             e.put(MANA_LEECH.get(), dev.logos.runtime.ManaLeech.createAttributes().build());
         });
-        modBus.addListener((net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent e) -> e.register(MANA_FUEL));
+        modBus.addListener((net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent e) -> {
+            e.register(MANA_FUEL);
+            e.register(CULTIVATION_MEDIUM);
+        });
         // Either half of an alchemy table answers hoppers, pipes and tanks for the whole table.
         modBus.addListener((net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent e) -> {
             e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) -> {
@@ -539,6 +562,9 @@ public class LogosMod {
             // A spreader's drawer takes fuel from hoppers and pipes.
             e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
                     be instanceof dev.logos.block.ManaSpreaderBlockEntity spreader ? spreader.fuel() : null, MANA_SPREADER.get());
+            // A jar takes seeds and media from hoppers and pipes, and gives up its harvests.
+            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
+                    be instanceof dev.logos.block.CultivationJarBlockEntity jar ? jar.automation() : null, CULTIVATION_JAR.get());
             e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Fluid.BLOCK, (level, pos, state, be, side) -> {
                 var table = dev.logos.block.AlchemyTableBlock.table(level, pos, state);
                 return table == null ? null : table.tank();

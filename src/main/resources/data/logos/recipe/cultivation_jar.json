@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "L",
+    "G",
+    "S"
+  ],
+  "key": {
+    "L": "#minecraft:logs",
+    "G": "minecraft:glass",
+    "S": "logos:soul_humus"
+  },
+  "result": {
+    "id": "logos:cultivation_jar",
+    "count": 2
+  }
+}

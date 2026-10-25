@@ -376,7 +376,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     }
 
     /** A range of a handler that can only be put into, or only taken from. */
-    private static final class OneWay extends RangedResourceHandler<ItemResource> {
+    static final class OneWay extends RangedResourceHandler<ItemResource> {
         private final boolean in;
 
         private OneWay(ResourceHandler<ItemResource> delegate, int start, int end, boolean in) {

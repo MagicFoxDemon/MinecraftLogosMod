@@ -1,0 +1,6 @@
+{
+  "multipart": [
+    { "apply": { "model": "logos:block/cultivation_jar" } },
+    { "when": { "medium": "true" }, "apply": { "model": "logos:block/cultivation_jar_medium" } }
+  ]
+}
