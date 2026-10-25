@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "tier=0": { "model": "logos:block/mana_cluster_0" },
+    "tier=1": { "model": "logos:block/mana_cluster_1" },
+    "tier=2": { "model": "logos:block/mana_cluster_2" }
+  }
+}

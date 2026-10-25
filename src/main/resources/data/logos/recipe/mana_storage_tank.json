@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "pattern": [
+    "CPC",
+    "GAG",
+    "CPC"
+  ],
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "P": "#minecraft:planks",
+    "G": "minecraft:glass",
+    "A": "minecraft:amethyst_shard"
+  },
+  "result": {
+    "id": "logos:mana_storage_tank"
+  }
+}

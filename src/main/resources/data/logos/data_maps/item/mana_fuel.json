@@ -4,6 +4,8 @@
     "minecraft:lapis_lazuli": { "mana": 50 },
     "minecraft:echo_shard": { "mana": 400 },
     "logos:tainted_mana_shard": { "mana": 500, "unstable": true },
-    "logos:mana_shard": { "mana": 500 }
+    "logos:mana_shard": { "mana": 500 },
+    "logos:mana_crystal": { "mana": 1000 },
+    "logos:mana_gemstone": { "mana": 5000 }
   }
 }
