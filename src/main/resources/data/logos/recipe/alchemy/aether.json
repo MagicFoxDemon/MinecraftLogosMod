@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "dissolve",
+  "ingredients": [
+    { "ingredient": "logos:firmament_liquid" },
+    { "ingredient": "logos:starlight_moss", "count": 4 }
+  ],
+  "results": [
+    { "id": "logos:aether" }
+  ],
+  "mana": 500
+}

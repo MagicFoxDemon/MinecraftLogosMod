@@ -853,6 +853,38 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
+    /**
+     * The reddening runs the seven processes once: matter (calcined, purified into the red lion) and mana
+     * (dissolved on 500 of the table's mana, sublimed into the quintessence) settle with the tincture of life
+     * (fermented, distilled) into the philosophers' stone.
+     */
+    static void reddeningRunsTheSevenProcesses(GameTestHelper h) {
+        var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
+        Object[][] steps = {
+                {Process.FERMENT, LogosMod.VITAL_MASH.get()},
+                {Process.DISTILL, LogosMod.TINCTURE_OF_LIFE.get()},
+                {Process.CALCINE, LogosMod.REDDENING_STONE.get()},
+                {Process.PURIFY, LogosMod.RED_LION.get()},
+                {Process.DISSOLVE, LogosMod.AETHER.get()},
+                {Process.SUBLIME, LogosMod.QUINTESSENCE.get()},
+                {Process.SETTLE, LogosMod.PHILOSOPHERS_STONE.get()}};
+        for (Object[] step : steps) {
+            net.minecraft.world.item.Item made = (net.minecraft.world.item.Item) step[1];
+            h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == step[0] && r.value().results().getFirst().create().is(made)),
+                    "no " + step[0] + " making " + made);
+        }
+        h.assertTrue(recipes.stream().anyMatch(r -> r.value().results().getFirst().create().is(LogosMod.AETHER.get()) && r.value().mana() == 500),
+                "aether should take 500 of the table's mana");
+        h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == Process.SETTLE
+                && r.value().results().getFirst().create().is(LogosMod.PHILOSOPHERS_STONE.get())
+                && r.value().ingredients().size() == 3
+                && r.value().ingredients().stream().anyMatch(i -> i.ingredient().test(new ItemStack(LogosMod.TINCTURE_OF_LIFE.get())))
+                && r.value().ingredients().stream().anyMatch(i -> i.ingredient().test(new ItemStack(LogosMod.RED_LION.get())))
+                && r.value().ingredients().stream().anyMatch(i -> i.ingredient().test(new ItemStack(LogosMod.QUINTESSENCE.get())))),
+                "the philosophers' stone should settle from life, the red lion and the quintessence");
+        h.succeed();
+    }
+
     /** An iron seed grows only on the jar's mana; ripe, it bears an iron pod into the outputs and stays planted. Calcined, the pod is iron. */
     static void cultivationJarGrowsMetal(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
