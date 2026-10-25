@@ -15,7 +15,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.GameType;
 
-/** The four Logos creative tabs, each opened in the creative inventory, with a check of what each holds. */
+/** The five Logos creative tabs, each opened in the creative inventory, with a check of what each holds. */
 @LDLRegisterClient(name = "logos_creative_tabs", group = "logos", registry = UIScenario.REGISTRY,
         environment = RegistrationEnvironment.DEV_ONLY)
 public class CreativeTabsScenario implements UIScenario {
@@ -37,6 +37,16 @@ public class CreativeTabsScenario implements UIScenario {
         tab(s, "spell_examples", LogosMod.EXAMPLES_TAB::get, LogosMod.INSCRIBED_PAGE.get(), LogosMod.WAND.get());
         tab(s, "great_work", LogosMod.OPUS_TAB::get, LogosMod.ANCHOR_NAIL.get(), LogosMod.SPELL_CODEX.get());
         tab(s, "spawn_eggs", LogosMod.SPAWN_EGGS_TAB::get, LogosMod.MANA_LEECH_SPAWN_EGG.get(), LogosMod.ALCHEMY_TABLE_ITEM.get());
+        tab(s, "potions", LogosMod.POTIONS_TAB::get, net.minecraft.world.item.Items.TIPPED_ARROW, LogosMod.ALCHEMY_TABLE_ITEM.get());
+        s.step("logos potions are only in their tab", ctx -> {
+            var potions = LogosMod.POTIONS_TAB.get().getDisplayItems();
+            if (potions.isEmpty() || !potions.stream().allMatch(dev.logos.alchemy.BuffPotions::isLogosPotion))
+                throw new AssertionError("the potions tab should hold Logos potions only");
+            var food = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.getValueOrThrow(net.minecraft.world.item.CreativeModeTabs.FOOD_AND_DRINKS)
+                    .getDisplayItems();
+            if (food.stream().anyMatch(dev.logos.alchemy.BuffPotions::isLogosPotion) || food.stream().noneMatch(st -> st.is(net.minecraft.world.item.Items.POTION)))
+                throw new AssertionError("food and drinks should keep vanilla potions and lose Logos ones");
+        });
         s.step("close", ctx -> Minecraft.getInstance().setScreen(null));
     }
 
