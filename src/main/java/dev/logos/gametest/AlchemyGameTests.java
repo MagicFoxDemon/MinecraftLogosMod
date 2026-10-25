@@ -823,6 +823,36 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
+    /**
+     * Vital mash on wheat grows it three stages a random tick (half a stage, six times over). It is fermented
+     * from mandrake roots, and distils into the tincture of life with dead ash left behind.
+     */
+    static void cultivationJarVitalMash(GameTestHelper h) {
+        h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        @SuppressWarnings("removal")
+        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        h.assertTrue(jar.plant(new ItemStack(Items.WHEAT_SEEDS)), "wheat would not go in");
+        h.assertTrue(jar.pour(new ItemStack(LogosMod.VITAL_MASH.get()), p), "vital mash would not pour");
+        jar.randomTick(h.getLevel(), h.getLevel().getRandom());
+        h.assertTrue(jar.age() == 3, "one random tick grew it to stage " + jar.age());
+        jar.randomTick(h.getLevel(), h.getLevel().getRandom());
+        jar.randomTick(h.getLevel(), h.getLevel().getRandom());
+        h.assertTrue(jar.isRipe(), "three random ticks left it at stage " + jar.age());
+        var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
+        h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == Process.FERMENT
+                && r.value().results().getFirst().create().is(LogosMod.VITAL_MASH.get())
+                && r.value().ingredients().stream().anyMatch(i -> i.count() == 4 && i.ingredient().test(new ItemStack(LogosMod.MANDRAKE_ROOT.get())))),
+                "no fermenting of vital mash from four mandrake roots");
+        h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == Process.DISTILL
+                && r.value().ingredients().getFirst().ingredient().test(new ItemStack(LogosMod.VITAL_MASH.get()))
+                && r.value().results().stream().anyMatch(t -> t.create().is(LogosMod.TINCTURE_OF_LIFE.get()))
+                && r.value().results().stream().anyMatch(t -> t.create().is(LogosMod.CAPUT_MORTUUM.get()))),
+                "no distilling of vital mash into the tincture of life and dead ash");
+        h.succeed();
+    }
+
     /** An iron seed grows only on the jar's mana; ripe, it bears an iron pod into the outputs and stays planted. Calcined, the pod is iron. */
     static void cultivationJarGrowsMetal(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());

@@ -10,8 +10,8 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * A bottled liquid poured into a cultivation jar as its medium (data map {@code logos:cultivation_medium}
- * on items). It lasts {@code uses} harvests, multiplies the chance to grow by {@code growth}, and shows as
- * a layer of {@code color} on the soil. A medium that neither speeds the crop nor is named by its
+ * on items). It lasts {@code uses} harvests, multiplies the chance to grow by {@code growth} (a chance past 1
+ * grows several stages a random tick), and shows as a layer of {@code color} on the soil. A medium that neither speeds the crop nor is named by its
  * {@link CultivationRecipe} is not used up.
  */
 public record CultivationMedium(int uses, float growth, int color) {
