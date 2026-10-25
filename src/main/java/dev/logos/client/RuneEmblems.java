@@ -295,6 +295,17 @@ final class RuneEmblems {
                 "#+++++++#",
                 "#+++++++#",
                 ".#######."}, "heal", "potion");
+        // A small figure and its large twin.
+        put(new String[]{
+                ".....###.",
+                ".....###.",
+                "......#..",
+                ".#..#####",
+                "###..###.",
+                ".#...###.",
+                "###..#.#.",
+                "#.#..#.#.",
+                "........."}, "resize");
         // A drop of mana falling into a bowl that fills: mana given away.
         put(new String[]{
                 "....#....",
