@@ -1,0 +1,14 @@
+{
+  "type": "logos:alchemy",
+  "process": "purify",
+  "ingredients": [
+    { "ingredient": "logos:reddening_stone" },
+    { "ingredient": "logos:philosophers_mercury" }
+  ],
+  "fluid": { "ingredient": "minecraft:water", "amount": 1000 },
+  "results": [
+    { "id": "logos:red_lion" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 40
+}

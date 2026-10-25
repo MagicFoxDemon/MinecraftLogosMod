@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "calcine",
+  "ingredients": [
+    { "ingredient": "logos:incandescent_white_stone" },
+    { "ingredient": "logos:gold_pod", "count": 2 },
+    { "ingredient": "logos:sulfur_powder" }
+  ],
+  "results": [
+    { "id": "logos:reddening_stone" }
+  ],
+  "mana": 30
+}

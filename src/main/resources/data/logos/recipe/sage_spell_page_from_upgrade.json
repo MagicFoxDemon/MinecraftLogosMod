@@ -1,0 +1,13 @@
+{
+  "type": "logos:page_upgrade",
+  "category": "misc",
+  "group": "sage_spell_page_upgrade",
+  "ingredients": [
+    "logos:firmament_spell_page",
+    "logos:philosophers_stone",
+    "logos:adhesive"
+  ],
+  "result": {
+    "id": "logos:sage_spell_page"
+  }
+}

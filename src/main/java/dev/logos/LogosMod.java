@@ -324,6 +324,24 @@ public class LogosMod {
     /** 天穹之石: the firmament liquor settled; it raises a page to the firmament grade. */
     public static final DeferredItem<net.minecraft.world.item.Item> FIRMAMENT_STONE = ITEMS.registerSimpleItem("firmament_stone",
             p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+
+    // Rubedo, the reddening: life, matter and mana, each through two of the seven processes, settled together
+    // into the philosophers' stone. Life is the tincture of life (fermented, distilled).
+    /** 赤化之石: the incandescent white stone fired again with living gold and sulfur, turning red. */
+    public static final DeferredItem<net.minecraft.world.item.Item> REDDENING_STONE = ITEMS.registerSimpleItem("reddening_stone",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+    /** 红狮: the reddening stone washed pure with philosophers' mercury, the sages' red sulfur; matter, made ready for the stone. */
+    public static final DeferredItem<net.minecraft.world.item.Item> RED_LION = ITEMS.registerSimpleItem("red_lion",
+            p -> p.rarity(net.minecraft.world.item.Rarity.EPIC));
+    /** 以太: what lies above the firmament, firmament liquid and starlight moss dissolved on a great deal of the table's own mana. */
+    public static final DeferredItem<net.minecraft.world.item.Item> AETHER = ITEMS.registerSimpleItem("aether",
+            p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.RARE));
+    /** 第五精质: aether sublimed, the fifth element beyond the four; mana, made ready for the stone. */
+    public static final DeferredItem<net.minecraft.world.item.Item> QUINTESSENCE = ITEMS.registerSimpleItem("quintessence",
+            p -> p.rarity(net.minecraft.world.item.Rarity.EPIC));
+    /** 贤者之石: the tincture of life, the red lion and the quintessence settled together; it raises a page to the sage grade. */
+    public static final DeferredItem<net.minecraft.world.item.Item> PHILOSOPHERS_STONE = ITEMS.registerSimpleItem("philosophers_stone",
+            p -> p.rarity(net.minecraft.world.item.Rarity.EPIC));
     /** 药粉: a potion settled into powder; eaten for the potion's effects, and dissolved back into it. */
     public static final DeferredItem<dev.logos.item.PotionPowderItem> POTION_POWDER = ITEMS.registerItem("potion_powder", dev.logos.item.PotionPowderItem::new,
             p -> p.component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -574,6 +592,11 @@ public class LogosMod {
                 out.accept(INCANDESCENT_WHITE_STONE.get());
                 out.accept(FIRMAMENT_LIQUID.get());
                 out.accept(FIRMAMENT_STONE.get());
+                out.accept(REDDENING_STONE.get());
+                out.accept(RED_LION.get());
+                out.accept(AETHER.get());
+                out.accept(QUINTESSENCE.get());
+                out.accept(PHILOSOPHERS_STONE.get());
             }).build());
     /** 刷怪蛋: the colossus, the mana leech and the five lifeform levels. */
     public static final DeferredHolder<net.minecraft.world.item.CreativeModeTab, net.minecraft.world.item.CreativeModeTab> SPAWN_EGGS_TAB = TABS.register("logos_spawn_eggs",
