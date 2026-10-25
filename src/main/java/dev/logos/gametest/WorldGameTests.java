@@ -137,6 +137,10 @@ final class WorldGameTests {
         castAt(h, p, "(decay here 0)", flower);
         h.assertTrue(h.getBlockState(leaves).isAir(), "leaves should decay away");
         h.assertTrue(h.getBlockState(flower).isAir(), "the flower should wither away");
+        BlockPos fern = new BlockPos(2, 2, 6);
+        h.setBlock(fern, Blocks.FERN);
+        castAt(h, p, "(decay here 0)", fern);
+        h.assertTrue(h.getBlockState(fern).isAir(), "a fern in logos:fragile_plants should wither away");
         h.succeed();
     }
 

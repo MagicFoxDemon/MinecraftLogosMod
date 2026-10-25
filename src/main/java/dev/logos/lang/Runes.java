@@ -15,6 +15,7 @@ import java.util.function.DoubleBinaryOperator;
 
 import dev.logos.block.SpellEmitterBlockEntity;
 import dev.logos.LogosConfig;
+import dev.logos.LogosMod;
 import dev.logos.runtime.AreaWeatherObj;
 import dev.logos.runtime.BeamObj;
 import dev.logos.runtime.ConstructEntity;
@@ -46,7 +47,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AgeableMob;
@@ -1128,9 +1129,12 @@ public final class Runes {
         return null;
     }
 
+    /** Small plants that decay destroys outright: flowers, saplings and grasses by default; packs and addons may add their own. */
+    public static final TagKey<Block> FRAGILE_PLANTS = TagKey.create(Registries.BLOCK,
+            Identifier.fromNamespaceAndPath(LogosMod.MODID, "fragile_plants"));
+
     private static boolean isPlantDebris(BlockState s) {
-        return s.is(BlockTags.FLOWERS) || s.is(BlockTags.SAPLINGS) || s.is(Blocks.SHORT_GRASS) || s.is(Blocks.TALL_GRASS)
-                || s.is(Blocks.FERN) || s.is(Blocks.LARGE_FERN) || s.is(Blocks.DEAD_BUSH) || s.is(Blocks.BUSH);
+        return s.is(FRAGILE_PLANTS);
     }
 
     /** Every block position within {@code radius} of {@code center}. */
