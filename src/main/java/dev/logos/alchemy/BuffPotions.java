@@ -92,6 +92,12 @@ public final class BuffPotions {
     /** Called while the mod is constructed, before its registers are handed to the bus. */
     public static void init() {}
 
+    /** Whether {@code stack} holds a Logos potion (drunk, splash, lingering or on an arrow). */
+    public static boolean isLogosPotion(ItemStack stack) {
+        return stack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, PotionContents.EMPTY).potion()
+                .flatMap(Holder::unwrapKey).filter(k -> k.identifier().getNamespace().equals(LogosMod.MODID)).isPresent();
+    }
+
     /** The brewing stand's recipes for these potions; the alchemy table dissolves by the same ones. */
     public static void brewing(PotionBrewing.Builder builder) {
         builder.addRecipe(new FromMash(LogosMod.RAW_MASH, LogosMod.MANA_SHARD, MANA_FLOW_POTION));

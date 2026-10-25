@@ -672,6 +672,21 @@ public class LogosMod {
                 out.accept(MANA_LEECH_SPAWN_EGG.get());
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) out.accept(egg.get());
             }).build());
+    /** 魔药: the Logos potions, drunk, splash and lingering, then as tipped arrows; vanilla's tabs leave them to this one. */
+    public static final DeferredHolder<net.minecraft.world.item.CreativeModeTab, net.minecraft.world.item.CreativeModeTab> POTIONS_TAB = TABS.register("logos_potions",
+            () -> net.minecraft.world.item.CreativeModeTab.builder()
+            .title(Component.translatable("itemGroup.logos_potions"))
+            .icon(() -> net.minecraft.world.item.alchemy.PotionContents.createItemStack(net.minecraft.world.item.Items.POTION,
+                    dev.logos.alchemy.BuffPotions.MANA_FLOW_POTION))
+            .withTabsBefore(SPAWN_EGGS_TAB.getKey())
+            .displayItems((params, out) -> {
+                var potions = params.holders().lookupOrThrow(net.minecraft.core.registries.Registries.POTION).listElements()
+                        .filter(p -> p.key().identifier().getNamespace().equals(MODID) && p.value().isEnabled(params.enabledFeatures())).toList();
+                for (var item : List.of(net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
+                        net.minecraft.world.item.Items.LINGERING_POTION, net.minecraft.world.item.Items.TIPPED_ARROW)) {
+                    for (var potion : potions) out.accept(net.minecraft.world.item.alchemy.PotionContents.createItemStack(item, potion));
+                }
+            }).build());
 
     public static final Supplier<AttachmentType<StatusData>> STATUS_DATA = ATTACHMENTS.register("status",
             () -> AttachmentType.builder(StatusData::new).build());
@@ -723,6 +738,10 @@ public class LogosMod {
                 e.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
                 e.accept(MANA_LEECH_SPAWN_EGG.get());
                 for (var egg : MANA_LIFEFORM_SPAWN_EGGS) e.accept(egg.get());
+            }
+            // Logos potions live in their own tab; search still finds them.
+            if (e.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS || e.getTabKey() == CreativeModeTabs.COMBAT) {
+                e.removeIf(dev.logos.alchemy.BuffPotions::isLogosPotion, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
             }
         });
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) -> {
