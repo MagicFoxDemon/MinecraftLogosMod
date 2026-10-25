@@ -29,19 +29,19 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.CropBlock;
 
 /**
  * What a seed grows into in a cultivation jar ({@code data/<ns>/recipe/…json}, type {@code logos:cultivation}),
- * optionally only in a given medium. {@code plant} is the crop drawn in the jar (the seed's own crop if left
- * out); {@code harvest}, if given, is what each harvest yields while the seed stays planted, otherwise the
- * crop's own loot. {@code growth} is the chance a random tick grows it a stage, and {@code mana} what each
+ * optionally only in a given medium. {@code plant} is the {@link JarPlant} drawn in the jar (what the seed
+ * places if left out); {@code harvest}, if given, is what each harvest yields while the seed stays planted,
+ * otherwise the plant's own loot. {@code growth} is the chance a random tick grows it a stage, and {@code mana} what each
  * stage takes from the jar.
  * <pre>{@code
  * {"type": "logos:cultivation", "seed": "minecraft:carrot", "medium": "logos:solar_amalgam",
  *  "harvest": [{"id": "minecraft:golden_carrot", "count": 3}]}
  * }</pre>
- * A crop's seed with no recipe still grows, at {@link #DEFAULT_GROWTH}, and yields its loot.
+ * A seed with no recipe whose block is a {@link JarPlant} (a crop, a berry bush…) still grows, at
+ * {@link #DEFAULT_GROWTH}, and yields its loot.
  */
 public record CultivationRecipe(Ingredient seed, Optional<Ingredient> medium, Optional<Block> plant, List<ItemStackTemplate> harvest,
         float growth, int mana) implements Recipe<CultivationRecipe.Input> {
@@ -89,15 +89,14 @@ public record CultivationRecipe(Ingredient seed, Optional<Ingredient> medium, Op
             } else if (!medium.isEmpty() && r.medium.get().test(medium)) return r;
         }
         if (any != null) return any;
-        // Any crop that grows on farmland grows in a jar, yielding its loot.
-        return seed.getItem() instanceof BlockItem item && item.getBlock() instanceof CropBlock
+        // Any plant that grows in one block on its age (JarPlant) grows in a jar, yielding its loot.
+        return seed.getItem() instanceof BlockItem item && JarPlant.of(item.getBlock()) != null
                 ? new CultivationRecipe(Ingredient.of(seed.getItem()), Optional.empty(), Optional.empty(), List.of(), DEFAULT_GROWTH, 0) : null;
     }
 
-    /** The crop drawn in the jar: {@code plant}, or the seed's own crop. */
-    public @Nullable CropBlock crop(ItemStack seedStack) {
-        Block block = plant.orElse(seedStack.getItem() instanceof BlockItem item ? item.getBlock() : null);
-        return block instanceof CropBlock crop ? crop : null;
+    /** The plant drawn in the jar: {@code plant}, or what the seed itself places. */
+    public @Nullable JarPlant jarPlant(ItemStack seedStack) {
+        return JarPlant.of(plant.orElse(seedStack.getItem() instanceof BlockItem item ? item.getBlock() : null));
     }
 
     @Override

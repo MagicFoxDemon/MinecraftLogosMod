@@ -221,7 +221,7 @@ public class LogosMod {
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(0.5f)
                     .sound(net.minecraft.world.level.block.SoundType.SOUL_SOIL));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> SOUL_HUMUS_ITEM = ITEMS.registerSimpleBlockItem("soul_humus", SOUL_HUMUS);
-    /** 培养罐: soul humus under glass; a crop's seed grows in it a stage at every random tick. */
+    /** 培养罐: soul humus under glass; a plant's seed (a crop, a berry bush…) grows in it a stage at every random tick. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.CultivationJarBlock> CULTIVATION_JAR = BLOCKS.registerBlock(
             "cultivation_jar", dev.logos.block.CultivationJarBlock::new,
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.NONE).strength(0.3f).noOcclusion().randomTicks()
