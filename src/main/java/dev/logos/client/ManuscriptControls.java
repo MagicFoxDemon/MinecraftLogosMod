@@ -135,11 +135,24 @@ final class ManuscriptControls {
             }
             cache[open.getAsBoolean() ? 1 : 0].draw(context, Math.round(x), Math.round(y));
         }));
-        for (char c : Component.translatable(key).getString().toCharArray()) {
-            Label letter = new Label();
-            letter.setText(Component.literal(String.valueOf(c)));
-            letter.textStyle(t -> t.adaptiveWidth(true));
-            tab.addChild(letter);
+        String text = Component.translatable(key).getString();
+        if (text.chars().anyMatch(c -> c < 0x80 && Character.isLetter(c))) {
+            // Latin words stacked a letter per line run off the page; they are turned to read down the ribbon instead.
+            int w = net.minecraft.client.Minecraft.getInstance().font.width(text);
+            tab.layout(l -> l.height(w + 10));
+            Label word = new Label();
+            word.setText(Component.literal(text));
+            word.layout(l -> l.positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE)
+                    .left((16 - w) / 2f).top((w + 10 - 9) / 2f).width(w).height(9));
+            word.style(s -> s.transform2D(new com.lowdragmc.lowdraglib2.gui.ui.data.Transform2D().rotation(90)));
+            tab.addChild(word);
+        } else {
+            for (char c : text.toCharArray()) {
+                Label letter = new Label();
+                letter.setText(Component.literal(String.valueOf(c)));
+                letter.textStyle(t -> t.adaptiveWidth(true));
+                tab.addChild(letter);
+            }
         }
         tab.addEventListener(UIEvents.MOUSE_DOWN, e -> {
             if (e.button == 0) onClick.run();

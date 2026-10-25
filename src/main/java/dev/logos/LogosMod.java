@@ -689,6 +689,12 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.ManaFieldPayload.TYPE, dev.logos.net.ManaFieldPayload.CODEC);
         registrar.playToServer(dev.logos.net.AnchorEditPayload.TYPE, dev.logos.net.AnchorEditPayload.CODEC, dev.logos.net.AnchorEditPayload::handle);
         registrar.playToServer(dev.logos.net.AlchemyCardPayload.TYPE, dev.logos.net.AlchemyCardPayload.CODEC, dev.logos.net.AlchemyCardPayload::handle);
+        registrar.playToServer(dev.logos.net.SageAskPayload.TYPE, dev.logos.net.SageAskPayload.CODEC, dev.logos.net.SageAskPayload::handle);
+        registrar.playToServer(dev.logos.net.SageCancelPayload.TYPE, dev.logos.net.SageCancelPayload.CODEC, dev.logos.net.SageCancelPayload::handle);
+        registrar.playToServer(dev.logos.net.SageAdminPayload.TYPE, dev.logos.net.SageAdminPayload.CODEC, dev.logos.net.SageAdminPayload::handle);
+        registrar.playToClient(dev.logos.net.SageReplyPayload.TYPE, dev.logos.net.SageReplyPayload.CODEC);
+        registrar.playToClient(dev.logos.net.SageStatusPayload.TYPE, dev.logos.net.SageStatusPayload.CODEC);
+        registrar.playToClient(dev.logos.net.SageAdminStatePayload.TYPE, dev.logos.net.SageAdminStatePayload.CODEC);
     }
 
     /** The client keeps a copy of its anchors (editor list, markers); resend whenever the player is (re)created. */

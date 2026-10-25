@@ -99,8 +99,11 @@ public final class SpellEditor {
     /** Which page is open beside the canvas: the overview, the rune library, or neither. */
     private Shelf shelf = Shelf.OVERVIEW;
     private UIElement overviewPage;
+    private SagePanel sage;
+    /** The player's own drawing, kept aside while a spell from the sage is shown on the canvas. */
+    private @org.jspecify.annotations.Nullable CompoundTag beforePreview;
 
-    private enum Shelf { OVERVIEW, LIBRARY, ENUMS, NONE }
+    private enum Shelf { OVERVIEW, LIBRARY, ENUMS, SAGE, NONE }
     /** Ticks until the canvas is framed around a freshly loaded graph (node sizes need a layout pass first). */
     private int fitIn = -1;
 
@@ -370,10 +373,54 @@ public final class SpellEditor {
             ManuscriptControls.dressMenus(root);
             ManuscriptControls.dressList(templates);
             ManuscriptControls.dressList(intent);
+            sage.dress();
         };
         root.style(s -> s.backgroundTexture(page));
         library.setDisplay(TaffyDisplay.NONE);
         enums.setDisplay(TaffyDisplay.NONE);
+        sage = new SagePanel(new SagePanel.Canvas() {
+            @Override
+            public String currentSource() {
+                GraphCompiler.Result r = graph.result();
+                return r.ok() ? r.source() : "";
+            }
+
+            @Override
+            public int capacity() {
+                return tier.capacity();
+            }
+
+            @Override
+            public boolean emitter() {
+                return emitter != null;
+            }
+
+            @Override
+            public void preview(dev.logos.lang.Spell spell) {
+                if (beforePreview == null) beforePreview = snapshot();
+                load(GraphBuilder.build(spell));
+            }
+
+            @Override
+            public boolean previewing() {
+                return beforePreview != null;
+            }
+
+            @Override
+            public void adopt() {
+                beforePreview = null;
+            }
+
+            @Override
+            public void revert() {
+                if (beforePreview == null) return;
+                SpellGraph g = new SpellGraph();
+                g.graphModel.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), beforePreview));
+                beforePreview = null;
+                load(g);
+            }
+        });
+        sage.setDisplay(TaffyDisplay.NONE);
         // Bookmark ribbons on the page's edge: each opens its page and shuts the other; clicking the open one shuts it.
         UIElement ribbons = new UIElement().layout(l -> l.width(16).heightPercent(100).gapAll(4).paddingTop(16));
         ribbons.setId("spell_shelf_tabs");
@@ -383,8 +430,10 @@ public final class SpellEditor {
         libraryTab.setId("tab_library");
         UIElement enumTab = ManuscriptControls.ribbon("logos.editor.enums", () -> shelf == Shelf.ENUMS, () -> toggle(Shelf.ENUMS));
         enumTab.setId("tab_enums");
-        ribbons.addChildren(overviewTab, libraryTab, enumTab);
-        root.addChildren(editor, side, library, enums, ribbons);
+        UIElement sageTab = ManuscriptControls.ribbon("logos.editor.sage", () -> shelf == Shelf.SAGE, () -> toggle(Shelf.SAGE));
+        sageTab.setId("tab_sage");
+        ribbons.addChildren(overviewTab, libraryTab, enumTab, sageTab);
+        root.addChildren(editor, side, library, enums, sage, ribbons);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)));
     }
@@ -395,8 +444,28 @@ public final class SpellEditor {
         overviewPage.setDisplay(shelf == Shelf.OVERVIEW ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         library.setDisplay(shelf == Shelf.LIBRARY ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         enums.setDisplay(shelf == Shelf.ENUMS ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
+        sage.setDisplay(shelf == Shelf.SAGE ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         if (shelf == Shelf.LIBRARY) library.fill(editor.getCurrentView());
         if (shelf == Shelf.ENUMS) enums.open();
+        if (shelf == Shelf.SAGE) sage.opened();
+    }
+
+    /**
+     * The drawing as it stands, to put back after a preview. On an emitter it is kept as a page
+     * (with its invocation), the form {@link #load} expects, so the emitter's node comes back as set.
+     */
+    private CompoundTag snapshot() {
+        SpellGraph page = graph;
+        if (emitter != null) {
+            TagValueOutput copy = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());
+            graph.graphModel.serialize(copy);
+            page = new SpellGraph();
+            page.graphModel.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), copy.buildResult()));
+            EmitterGraphs.toPage(page, kept);
+        }
+        TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());
+        page.graphModel.serialize(out);
+        return out.buildResult();
     }
 
     /**
@@ -539,6 +608,8 @@ public final class SpellEditor {
             player.sendOverlayMessage(Component.literal("✗ 术式无法成立：" + r.error()));
             return;
         }
+        // Writing a previewed spell down is adopting it.
+        beforePreview = null;
         if (emitter != null) {
             sendToEmitter(graphTag);
             return;
