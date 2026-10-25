@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.LogosMod;
 import dev.logos.alchemy.CultivationMedium;
 import dev.logos.alchemy.CultivationRecipe;
+import dev.logos.alchemy.JarPlant;
 import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -25,7 +26,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -37,9 +37,10 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 
 /**
  * 培养罐: the seed planted in the jar's soul humus, the medium poured on it, and the harvests waiting
- * to be taken. What grows is a {@link CultivationRecipe}: any crop of farmland yields its own loot, and
- * the jar's own seeds (and some media) yield what their recipe says. A ripe crop is harvested into the
- * output slots at the next random tick, or by hand; hoppers feed seeds and media in and take harvests out.
+ * to be taken. What grows is a {@link CultivationRecipe}: any {@link JarPlant} (a crop, a berry bush,
+ * nether wart…) yields its own loot, and the jar's own seeds (and some media) yield what their recipe
+ * says. A ripe plant is harvested into the output slots at the next random tick, or by hand; hoppers
+ * feed seeds and media in and take harvests out.
  * It holds mana, as collectors and the infusing rune give it, for the crops whose stages cost some.
  */
 public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel {
@@ -99,8 +100,8 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
     private int mediumUses;
     private int age;
     private double mana;
-    /** The crop drawn in the jar, worked out on the server and sent to clients with the rest. */
-    private @Nullable CropBlock plant;
+    /** The plant drawn in the jar, worked out on the server and sent to clients with the rest. */
+    private @Nullable JarPlant plant;
     private @Nullable CultivationRecipe recipe;
     private boolean recipeKnown;
     /** The screen's yield line, and the recipe it was worked out for. */
@@ -144,7 +145,7 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
     }
 
     public int maxAge() {
-        return plant == null ? 0 : plant.getMaxAge();
+        return plant == null ? 0 : plant.maxAge();
     }
 
     /** What grows here now, or null if nothing does (no seed, or one that does not grow in a jar). */
@@ -156,9 +157,9 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
         return recipe;
     }
 
-    /** The planted crop as it now stands, or null while nothing grows. */
+    /** The plant as it now stands, or null while nothing grows. */
     public @Nullable BlockState plant() {
-        return plant == null ? null : plant.getStateForAge(Math.min(age, plant.getMaxAge()));
+        return plant == null ? null : plant.state(age);
     }
 
     public boolean isEmpty() {
@@ -166,7 +167,7 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
     }
 
     public boolean isRipe() {
-        return plant != null && age >= plant.getMaxAge();
+        return plant != null && age >= plant.maxAge();
     }
 
     /** Puts {@code stack} in as the seed (one of it); false if a seed is planted or it does not grow here. */
@@ -243,18 +244,20 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
         return h.items;
     }
 
-    /** A harvest's yield, and whether the seed stays planted. */
-    private record Harvest(List<ItemStack> items, boolean replanted) {}
+    /** A harvest's yield, whether the seed stays planted, and the stage it grows back from. */
+    private record Harvest(List<ItemStack> items, boolean replanted, int regrowFrom) {}
 
     /**
-     * What the ripe crop yields, without changing the jar: the recipe's harvest (the seed stays), or the
-     * crop's loot less one seed to replant, as one would replant a field (no seed in the loot: none stays).
+     * What the ripe plant yields, without changing the jar: the recipe's harvest (the seed stays), or its loot.
+     * A crop's loot is less one seed to replant, as one would replant a field (no seed in the loot: none
+     * stays); a plant that fruits where it stands gives all its loot and grows back from its second stage.
      */
     private Harvest reap(ServerLevel level) {
         CultivationRecipe r = recipe();
-        if (!r.harvest().isEmpty()) return new Harvest(r.harvest().stream().map(t -> t.create()).toList(), true);
+        if (!r.harvest().isEmpty()) return new Harvest(r.harvest().stream().map(t -> t.create()).toList(), true, 0);
         ItemStack planted = seed();
         List<ItemStack> drops = new ArrayList<>(Block.getDrops(plant(), level, worldPosition, null));
+        if (!plant.replanted()) return new Harvest(drops, true, plant.regrowFrom());
         boolean replanted = false;
         for (ItemStack drop : drops) {
             if (ItemStack.isSameItemSameComponents(drop, planted)) {
@@ -264,12 +267,12 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
             }
         }
         drops.removeIf(ItemStack::isEmpty);
-        return new Harvest(drops, replanted);
+        return new Harvest(drops, replanted, 0);
     }
 
     private void afterHarvest(Harvest h) {
         CultivationRecipe r = recipe();
-        age = 0;
+        age = h.regrowFrom;
         if (!h.replanted) seed.set(0, ItemResource.EMPTY, 0);
         // The medium is spent only where it did something: sped the crop, or made the recipe.
         if (!medium.isEmpty() && r != null && (r.medium().isPresent() || mediumGrowth() > 1) && --mediumUses <= 0) {
@@ -346,8 +349,8 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
         if (level == null || level.isClientSide()) return;
         recipeKnown = false;
         CultivationRecipe r = recipe();
-        plant = r == null ? null : r.crop(seed());
-        if (plant != null) age = Math.min(age, plant.getMaxAge());
+        plant = r == null ? null : r.jarPlant(seed());
+        if (plant != null) age = Math.min(age, plant.maxAge());
         changed();
     }
 
@@ -372,7 +375,7 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
             List<ItemStack> items = new ArrayList<>();
             if (!r.harvest().isEmpty()) r.harvest().forEach(t -> items.add(t.create()));
             else {
-                BlockState ripe = plant.getStateForAge(plant.getMaxAge());
+                BlockState ripe = plant.state(plant.maxAge());
                 for (int i = 0; i < 8; i++) {
                     for (ItemStack drop : Block.getDrops(ripe, server, worldPosition, null)) {
                         if (items.stream().noneMatch(s -> ItemStack.isSameItemSameComponents(s, drop))) items.add(drop.copyWithCount(1));
@@ -399,7 +402,7 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
             return Component.translatable(full ? "logos.cultivation_jar.full" : "logos.cultivation_jar.ripe");
         }
         if (mana < r.mana()) return Component.translatable("logos.cultivation_jar.no_mana", r.mana());
-        return Component.translatable("logos.cultivation_jar.growing", age, plant.getMaxAge());
+        return Component.translatable("logos.cultivation_jar.growing", age, plant.maxAge());
     }
 
     /** The colour of the medium on the soil, for the liquid layer drawn over it. */
@@ -444,7 +447,7 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
         output.putInt("medium_uses", mediumUses);
         output.putInt("age", age);
         output.putDouble("mana", mana);
-        if (plant != null) output.putString("plant", BuiltInRegistries.BLOCK.getKey(plant).toString());
+        if (plant != null) output.putString("plant", BuiltInRegistries.BLOCK.getKey(plant.block()).toString());
     }
 
     @Override
@@ -458,8 +461,7 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
         mediumUses = input.getIntOr("medium_uses", 0);
         age = input.getIntOr("age", 0);
         mana = input.getDoubleOr("mana", 0);
-        plant = input.getString("plant").map(Identifier::tryParse).map(BuiltInRegistries.BLOCK::getValue)
-                .filter(b -> b instanceof CropBlock).map(b -> (CropBlock) b).orElse(null);
+        plant = input.getString("plant").map(Identifier::tryParse).map(BuiltInRegistries.BLOCK::getValue).map(JarPlant::of).orElse(null);
         recipeKnown = false;
         // A new medium colour is tinted into the jar's own model: have the client draw it again.
         if (level != null && level.isClientSide() && oldColor != mediumColor()) {

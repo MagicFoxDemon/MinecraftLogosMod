@@ -795,6 +795,34 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
+    /**
+     * Sweet berries fruit where they stand: a harvest gives all the bush's berries and it grows back from its
+     * second stage. Nether wart is replanted like a crop: one wart of the loot goes back in. Stems are kept out.
+     */
+    static void cultivationJarGrowsFruitingPlants(GameTestHelper h) {
+        h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        h.assertFalse(jar.plant(new ItemStack(Items.MELON_SEEDS)), "melon seeds went in");
+        h.assertTrue(jar.plant(new ItemStack(Items.SWEET_BERRIES)), "sweet berries would not go in");
+        h.assertTrue(jar.plant() != null && jar.plant().is(Blocks.SWEET_BERRY_BUSH), "the jar draws " + jar.plant());
+        while (jar.grow()) {}
+        h.assertTrue(jar.isRipe() && jar.maxAge() == 3, "the bush did not ripen at stage 3");
+        List<ItemStack> berries = jar.harvest(h.getLevel());
+        int picked = berries.stream().filter(s -> s.is(Items.SWEET_BERRIES)).mapToInt(ItemStack::getCount).sum();
+        h.assertTrue(picked >= 2, "the bush gave " + berries);
+        h.assertTrue(jar.seed().is(Items.SWEET_BERRIES) && jar.age() == 1, "the bush is at stage " + jar.age() + " with " + jar.seed());
+
+        jar.uproot();
+        h.assertTrue(jar.plant(new ItemStack(Items.NETHER_WART)), "nether wart would not go in");
+        while (jar.grow()) {}
+        List<ItemStack> warts = jar.harvest(h.getLevel());
+        int gathered = warts.stream().filter(s -> s.is(Items.NETHER_WART)).mapToInt(ItemStack::getCount).sum();
+        // Ripe wart drops 2–4; one is replanted.
+        h.assertTrue(gathered >= 1 && gathered <= 3, "the wart gave " + warts);
+        h.assertTrue(jar.seed().is(Items.NETHER_WART) && jar.age() == 0, "the wart is at stage " + jar.age() + " with " + jar.seed());
+        h.succeed();
+    }
+
     /** An iron seed grows only on the jar's mana; ripe, it bears an iron pod into the outputs and stays planted. Calcined, the pod is iron. */
     static void cultivationJarGrowsMetal(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());

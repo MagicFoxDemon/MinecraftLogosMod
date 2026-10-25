@@ -18,8 +18,8 @@ import net.minecraft.world.level.block.Blocks;
 
 /**
  * Real-client look at cultivation jars: vanilla crops and the jar's own plants at several stages, two
- * of them on a medium (raw mash, solar amalgam) whose coloured layer lies on the soil; then the screen
- * of the jar growing iron, short of mana.
+ * of them on a medium (raw mash, solar amalgam) whose coloured layer lies on the soil; a berry bush and
+ * nether wart, which fruit where they stand; then the screen of the jar growing iron, short of mana.
  * Run: {@code gradlew runClient -PldTest=logos_cultivation_jar}.
  */
 @LDLRegisterClient(name = "logos_cultivation_jar", group = "logos", registry = UIScenario.REGISTRY,
@@ -41,6 +41,7 @@ public class CultivationJarScenario implements UIScenario {
                 .runCommand("weather clear")
                 .clearArea(ORIGIN.offset(4, 4, 1), 8)
                 .fill(ORIGIN.offset(-2, 0, -3), ORIGIN.offset(10, 0, 5), Blocks.SMOOTH_STONE.defaultBlockState())
+                .fill(ORIGIN.offset(11, 0, -3), ORIGIN.offset(15, 0, 2), Blocks.SMOOTH_STONE.defaultBlockState())
                 .server("plant a row of jars", sc -> {
                     var level = sc.player().level();
                     // Seed, stages to grow, medium, row.
@@ -62,6 +63,15 @@ public class CultivationJarScenario implements UIScenario {
                         if (!medium.isEmpty()) jar.pour(medium, sc.player());
                         jar.receiveMana(CultivationJarBlockEntity.MAX_MANA);
                         for (int g = 0; g < (int) jars[i][1]; g++) jar.grow();
+                    }
+                    // Plants that fruit where they stand: a ripe berry bush, and nether wart, ripe and growing.
+                    Object[][] fruiting = {{Items.SWEET_BERRIES, 3}, {Items.NETHER_WART, 3}, {Items.NETHER_WART, 1}};
+                    for (int i = 0; i < fruiting.length; i++) {
+                        BlockPos pos = ORIGIN.offset(11 + i * 2, 1, 0);
+                        level.setBlock(pos, LogosMod.CULTIVATION_JAR.get().defaultBlockState(), 3);
+                        if (!(level.getBlockEntity(pos) instanceof CultivationJarBlockEntity jar)) continue;
+                        jar.plant(new ItemStack((net.minecraft.world.item.Item) fruiting[i][0]));
+                        for (int g = 0; g < (int) fruiting[i][1]; g++) jar.grow();
                     }
                     level.setBlock(IRON, LogosMod.CULTIVATION_JAR.get().defaultBlockState(), 3);
                     if (level.getBlockEntity(IRON) instanceof CultivationJarBlockEntity jar) {
@@ -87,6 +97,9 @@ public class CultivationJarScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() + 3.5, ORIGIN.getY() + 1.5, ORIGIN.getZ() - 2.6, 0, 20)
                 .ticks(15)
                 .screenshot("front_row_close")
+                .teleportPlayer(ORIGIN.getX() + 13.5, ORIGIN.getY() + 1.6, ORIGIN.getZ() - 2.4, 0, 22)
+                .ticks(15)
+                .screenshot("fruiting_plants")
                 .teleportPlayer(ORIGIN.getX() + 3.5, ORIGIN.getY() + 2.6, ORIGIN.getZ() + 6.2, 180, 28)
                 .server("open the iron jar", sc -> BlockUIMenuType.openUI((ServerPlayer) sc.player(), IRON))
                 .awaitModularUI()
