@@ -1,0 +1,11 @@
+{
+  "type": "logos:alchemy",
+  "process": "calcine",
+  "ingredients": [
+    { "ingredient": "logos:copper_pod" }
+  ],
+  "results": [
+    { "id": "minecraft:copper_ingot" }
+  ],
+  "mana": 2
+}

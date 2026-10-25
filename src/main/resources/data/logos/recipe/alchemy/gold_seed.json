@@ -1,0 +1,14 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:gold_embryo" },
+    { "ingredient": "logos:germinal_essence" },
+    { "ingredient": "logos:raw_mash" }
+  ],
+  "results": [
+    { "id": "logos:gold_seed", "count": 2 },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 15
+}

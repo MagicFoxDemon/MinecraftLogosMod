@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/crop",
+  "textures": {
+    "crop": "logos:block/netherite_pod_crop_stage3"
+  }
+}

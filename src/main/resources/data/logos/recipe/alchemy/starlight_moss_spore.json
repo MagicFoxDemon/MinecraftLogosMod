@@ -1,0 +1,15 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "minecraft:glow_lichen" },
+    { "ingredient": "minecraft:amethyst_shard" },
+    { "ingredient": "logos:germinal_essence" },
+    { "ingredient": "logos:echo_tincture" }
+  ],
+  "results": [
+    { "id": "logos:starlight_moss_spore" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 10
+}

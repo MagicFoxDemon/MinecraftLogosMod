@@ -1,0 +1,14 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:netherite_embryo" },
+    { "ingredient": "logos:germinal_essence" },
+    { "ingredient": "logos:raw_mash" }
+  ],
+  "results": [
+    { "id": "logos:netherite_seed", "count": 2 },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 40
+}

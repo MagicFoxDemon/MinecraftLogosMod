@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/crop",
+  "textures": {
+    "crop": "logos:block/niter_sprout_crop_stage0"
+  }
+}

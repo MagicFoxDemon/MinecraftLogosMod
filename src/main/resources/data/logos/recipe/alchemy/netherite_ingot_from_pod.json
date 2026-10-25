@@ -1,0 +1,11 @@
+{
+  "type": "logos:alchemy",
+  "process": "calcine",
+  "ingredients": [
+    { "ingredient": "logos:netherite_pod" }
+  ],
+  "results": [
+    { "id": "minecraft:netherite_ingot" }
+  ],
+  "mana": 20
+}

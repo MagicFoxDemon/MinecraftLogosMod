@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "settle",
+  "ingredients": [
+    { "ingredient": "minecraft:copper_ingot" },
+    { "ingredient": "logos:mercury_bottle" }
+  ],
+  "results": [
+    { "id": "logos:copper_embryo" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 5
+}
