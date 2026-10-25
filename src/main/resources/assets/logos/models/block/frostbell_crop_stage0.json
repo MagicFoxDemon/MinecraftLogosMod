@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/crop",
+  "textures": {
+    "crop": "logos:block/frostbell_crop_stage0"
+  }
+}

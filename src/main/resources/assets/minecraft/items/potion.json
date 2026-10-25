@@ -1,0 +1,60 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:component",
+    "component": "minecraft:potion_contents",
+    "cases": [
+      {
+        "when": [
+          "logos:mana_flow",
+          "logos:strong_mana_flow",
+          "logos:greater_mana_flow"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "logos:item/potion/mana_crystal",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      },
+      {
+        "when": [
+          "logos:physical_power",
+          "logos:strong_physical_power",
+          "logos:fire_power",
+          "logos:strong_fire_power",
+          "logos:frost_power",
+          "logos:strong_frost_power",
+          "logos:lightning_power",
+          "logos:strong_lightning_power",
+          "logos:void_power",
+          "logos:strong_void_power"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "logos:item/potion/attack_diamond",
+          "tints": [
+            {
+              "type": "minecraft:potion",
+              "default": -13083194
+            }
+          ]
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:item/potion",
+      "tints": [
+        {
+          "type": "minecraft:potion",
+          "default": -13083194
+        }
+      ]
+    }
+  }
+}

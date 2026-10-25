@@ -1,0 +1,28 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:dead_bush"
+    },
+    {
+      "ingredient": "minecraft:copper_ingot"
+    },
+    {
+      "ingredient": "logos:echo_tincture"
+    },
+    {
+      "ingredient": "logos:germinal_essence"
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:thunder_thistle"
+    },
+    {
+      "id": "minecraft:glass_bottle",
+      "count": 2
+    }
+  ],
+  "mana": 8
+}

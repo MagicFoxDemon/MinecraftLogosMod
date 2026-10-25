@@ -1,0 +1,12 @@
+{
+  "type": "logos:cultivation",
+  "seed": "logos:candleflame",
+  "plant": "logos:candleflame_crop",
+  "harvest": [
+    {
+      "id": "logos:candleflame_stamen",
+      "count": 2
+    }
+  ],
+  "growth": 0.3
+}

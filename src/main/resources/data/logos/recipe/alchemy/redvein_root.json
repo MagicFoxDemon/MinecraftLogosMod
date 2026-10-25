@@ -1,0 +1,24 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:beetroot"
+    },
+    {
+      "ingredient": "minecraft:bone_meal"
+    },
+    {
+      "ingredient": "logos:germinal_essence"
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:redvein_root"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
+  ],
+  "mana": 3
+}

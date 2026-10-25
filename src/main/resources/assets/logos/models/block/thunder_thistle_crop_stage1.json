@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/crop",
+  "textures": {
+    "crop": "logos:block/thunder_thistle_crop_stage1"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "logos:cultivation",
+  "seed": "logos:thunder_thistle",
+  "plant": "logos:thunder_thistle_crop",
+  "harvest": [
+    {
+      "id": "logos:thunder_thistle_down",
+      "count": 2
+    }
+  ],
+  "growth": 0.25
+}

@@ -1,0 +1,24 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:poppy"
+    },
+    {
+      "ingredient": "minecraft:blaze_powder"
+    },
+    {
+      "ingredient": "logos:germinal_essence"
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:candleflame"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
+  ],
+  "mana": 5
+}

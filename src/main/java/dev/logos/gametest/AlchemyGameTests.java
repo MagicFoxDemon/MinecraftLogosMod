@@ -1,5 +1,7 @@
 package dev.logos.gametest;
 
+import dev.logos.alchemy.BuffPotions;
+import dev.logos.runtime.SpellModifiers;
 import java.util.List;
 
 import dev.logos.LogosMod;
@@ -1266,5 +1268,89 @@ final class AlchemyGameTests {
             h.assertTrue(said.contains("logos.alchemy_card.output_full"), "the card does not say its outputs are full: " + said);
             h.assertFalse(said.contains("logos.alchemy_card.missing"), "the card says it is missing something: " + said);
         });
+    }
+
+    /**
+     * Raw mash brews level I of each potion with its ingredient, vital mash level II (and the greater 流魔 with a
+     * gemstone); vital mash raises a level I element potion; water brews none of them.
+     */
+    static void buffPotionsBrew(GameTestHelper h) {
+        var brewing = h.getLevel().potionBrewing();
+        ItemStack raw = new ItemStack(LogosMod.RAW_MASH.get()), vital = new ItemStack(LogosMod.VITAL_MASH.get());
+        ItemStack water = PotionContents.createItemStack(Items.POTION, Potions.WATER);
+        java.util.function.BiFunction<ItemStack, ItemStack, net.minecraft.core.Holder<net.minecraft.world.item.alchemy.Potion>> brew = (base, ingredient) -> {
+            h.assertTrue(brewing.hasMix(base, ingredient), base + " and " + ingredient + " do not mix");
+            return brewing.mix(ingredient, base.copy()).getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, PotionContents.EMPTY)
+                    .potion().orElseThrow();
+        };
+        h.assertTrue(brew.apply(raw, new ItemStack(LogosMod.MANA_SHARD.get())).is(BuffPotions.MANA_FLOW_POTION.getKey()), "shard");
+        h.assertTrue(brew.apply(raw, new ItemStack(LogosMod.MANA_CRYSTAL.get())).is(BuffPotions.STRONG_MANA_FLOW_POTION.getKey()), "crystal");
+        h.assertTrue(brew.apply(vital, new ItemStack(LogosMod.MANA_GEMSTONE.get())).is(BuffPotions.GREATER_MANA_FLOW_POTION.getKey()), "gemstone");
+        for (BuffPotions.ElementBuff e : BuffPotions.ElementBuff.values()) {
+            ItemStack herb = new ItemStack(e.herb.harvest.get());
+            h.assertTrue(brew.apply(raw, herb).is(e.potion.getKey()), e + " from raw mash");
+            h.assertTrue(brew.apply(vital, herb).is(e.strong.getKey()), e + " from vital mash");
+            h.assertTrue(brew.apply(PotionContents.createItemStack(Items.POTION, e.potion), vital).is(e.strong.getKey()), e + " raised by vital mash");
+            h.assertFalse(brewing.hasMix(water, herb), e + ": water brews with its herb");
+        }
+        h.succeed();
+    }
+
+    /** On the table, three raw mash and a candleflame stamen dissolve into three fire potions, as at a brewing stand. */
+    static void buffPotionsDissolve(GameTestHelper h) {
+        AlchemyTableBlockEntity table = placeTable(h);
+        table.setMana(10);
+        ProcessCard card = table.addCard(Process.DISSOLVE);
+        put(card.inputs(), new ItemStack(LogosMod.JarHerb.CANDLEFLAME.harvest.get()));
+        put(card.inputs(), new ItemStack(LogosMod.RAW_MASH.get(), 3));
+        h.succeedWhen(() -> h.assertTrue(countPotion(card.outputs(), BuffPotions.ElementBuff.FIRE.potion) == 3,
+                "dissolving made " + countPotion(card.outputs(), BuffPotions.ElementBuff.FIRE.potion) + " of 3 fire potions"));
+    }
+
+    /** Level I raises its element's spell power by 20% and level II by 50%; 流魔 adds its dose a second to mana regeneration. */
+    static void buffPotionsEffects(GameTestHelper h) {
+        @SuppressWarnings("removal")
+        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        for (BuffPotions.ElementBuff e : BuffPotions.ElementBuff.values()) {
+            var power = SpellModifiers.powerAttribute(e.element);
+            p.addEffect(new net.minecraft.world.effect.MobEffectInstance(e.effect, 100));
+            h.assertTrue(Math.abs(p.getAttributeValue(power) - 1.2) < 1e-6, e + " I gives " + p.getAttributeValue(power));
+            p.addEffect(new net.minecraft.world.effect.MobEffectInstance(e.effect, 100, 1));
+            h.assertTrue(Math.abs(p.getAttributeValue(power) - 1.5) < 1e-6, e + " II gives " + p.getAttributeValue(power));
+            p.removeEffect(e.effect);
+            h.assertTrue(p.getAttributeValue(power) == 1, e + " lingers at " + p.getAttributeValue(power));
+        }
+        double[] total = {400, 1000, 5000};
+        int[] seconds = {180, 180, 300};
+        for (int level = 0; level < 3; level++) {
+            p.addEffect(new net.minecraft.world.effect.MobEffectInstance(BuffPotions.MANA_FLOW, 100, level));
+            double extra = (SpellModifiers.regenerationPerTick(p) - 0.3) * 20 * seconds[level];
+            h.assertTrue(Math.abs(extra - total[level]) < 1e-6, "流魔 " + (level + 1) + " restores " + extra + ", not " + total[level]);
+            p.removeEffect(BuffPotions.MANA_FLOW);
+        }
+        h.succeed();
+    }
+
+    /** Each herb ferments from its recipe, grows in a jar from itself, and gives its harvest while staying planted. */
+    static void herbsGrowInJars(GameTestHelper h) {
+        var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
+        LogosMod.JarHerb[] herbs = LogosMod.JarHerb.values();
+        for (int i = 0; i < herbs.length; i++) {
+            LogosMod.JarHerb herb = herbs[i];
+            h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == Process.FERMENT && r.value().results().getFirst().create().is(herb.plant.get())
+                    && r.value().ingredients().stream().anyMatch(n -> n.ingredient().test(new ItemStack(LogosMod.GERMINAL_ESSENCE.get())))),
+                    "no fermenting of " + herb + " with germinal essence");
+            BlockPos at = new BlockPos(i, 2, 5);
+            h.setBlock(at, LogosMod.CULTIVATION_JAR.get());
+            var jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(at, dev.logos.block.CultivationJarBlockEntity.class);
+            h.assertTrue(jar.plant(new ItemStack(herb.plant.get())), herb + " would not go in");
+            h.assertTrue(jar.plant() != null && jar.plant().is(herb.crop.get()), herb + ": the jar draws " + jar.plant());
+            while (jar.grow()) {}
+            h.assertTrue(jar.isRipe(), herb + " did not ripen");
+            jar.randomTick(h.getLevel(), h.getLevel().getRandom());
+            h.assertTrue(jar.outputs().getResource(0).getItem() == herb.harvest.get(), herb + ": the outputs hold " + jar.outputs().getResource(0));
+            h.assertTrue(jar.seed().is(herb.plant.get()) && jar.age() == 0, herb + " was not kept planted");
+        }
+        h.succeed();
     }
 }
