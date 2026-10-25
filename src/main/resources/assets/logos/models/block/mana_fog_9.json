@@ -1,0 +1,25 @@
+{
+  "textures": {
+    "fog": {
+      "sprite": "logos:block/mana_fog",
+      "force_translucent": true
+    },
+    "particle": "logos:block/mana_fog"
+  },
+  "elements": [
+    {
+      "name": "mana_fog",
+      "from": [1.25, 3.25, 1.25],
+      "to": [14.75, 12.70, 14.75],
+      "shade": false,
+      "faces": {
+        "north": { "uv": [1.25, 6.55, 14.75, 16], "texture": "#fog" },
+        "east": { "uv": [1.25, 6.55, 14.75, 16], "texture": "#fog" },
+        "south": { "uv": [1.25, 6.55, 14.75, 16], "texture": "#fog" },
+        "west": { "uv": [1.25, 6.55, 14.75, 16], "texture": "#fog" },
+        "up": { "uv": [1.25, 1.25, 14.75, 14.75], "texture": "#fog" },
+        "down": { "uv": [1.25, 1.25, 14.75, 14.75], "texture": "#fog" }
+      }
+    }
+  ]
+}

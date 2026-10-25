@@ -2,6 +2,7 @@
   "values": [
     "logos:mana_spreader",
     "logos:mana_collector",
-    "logos:spell_emitter"
+    "logos:spell_emitter",
+    "logos:mana_storage_tank"
   ]
 }

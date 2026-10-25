@@ -69,6 +69,7 @@ public final class LogosClient {
         event.registerEntityRenderer(LogosMod.MANA_LEECH.get(), ManaLeechRenderer::new);
         event.registerBlockEntityRenderer(LogosMod.ALCHEMY_TABLE_BE.get(), AlchemyTableRenderer::new);
         event.registerBlockEntityRenderer(LogosMod.CULTIVATION_JAR_BE.get(), CultivationJarRenderer::new);
+        event.registerBlockEntityRenderer(LogosMod.MANA_STORAGE_TANK_BE.get(), ManaStorageTankRenderer::new);
     }
 
     /** A cultivation jar's medium layer (tint 0 of its model) takes the colour of the medium poured in it. */

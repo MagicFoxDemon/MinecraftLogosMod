@@ -71,6 +71,10 @@ public class LogosMod {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<CompoundTag>> SPELL_GRAPH = COMPONENTS.registerComponentType("spell_graph",
             b -> b.persistent(CompoundTag.CODEC).networkSynchronized(ByteBufCodecs.COMPOUND_TAG));
 
+    /** The mana a mana storage tank held when it was broken; placed again, it holds it still. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> STORED_MANA = COMPONENTS.registerComponentType("stored_mana",
+            b -> b.persistent(Codec.DOUBLE).networkSynchronized(ByteBufCodecs.DOUBLE));
+
     /** Which spell (index into wand pages + off-hand codex pages) the wand will cast. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SELECTED = COMPONENTS.registerComponentType("selected",
             b -> b.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
@@ -147,6 +151,12 @@ public class LogosMod {
     /** 魔力碎片: a tainted shard purified with philosophers' mercury; the same mana, burnt safely. */
     public static final DeferredItem<net.minecraft.world.item.Item> MANA_SHARD = ITEMS.registerSimpleItem("mana_shard",
             p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    /** 魔力结晶: a mana shard grown on in a storage tank; 1000 mana, a full alchemy table, spreader or emitter. */
+    public static final DeferredItem<net.minecraft.world.item.Item> MANA_CRYSTAL = ITEMS.registerSimpleItem("mana_crystal",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+    /** 魔力晶石: a mana crystal grown on in a storage tank; 5000 mana, a full tank, which only a tank can take back. */
+    public static final DeferredItem<net.minecraft.world.item.Item> MANA_GEMSTONE = ITEMS.registerSimpleItem("mana_gemstone",
+            p -> p.rarity(net.minecraft.world.item.Rarity.EPIC));
 
     // Alchemy materials: the fermentation line. The alchemy table's processes make most of them.
     /**
@@ -397,6 +407,20 @@ public class LogosMod {
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.ManaCollectorBlockEntity>> MANA_COLLECTOR_BE =
             BLOCK_ENTITIES.register("mana_collector", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.ManaCollectorBlockEntity::new, MANA_COLLECTOR.get()));
+    /** 魔力存储罐: holds 5000 mana; stores it, supplies its neighbours, or condenses it into solid mana. */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaStorageTankBlock> MANA_STORAGE_TANK = BLOCKS.registerBlock(
+            "mana_storage_tank", dev.logos.block.ManaStorageTankBlock::new,
+            p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(2.5f).noOcclusion()
+                    .sound(net.minecraft.world.level.block.SoundType.WOOD));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> MANA_STORAGE_TANK_ITEM = ITEMS.registerSimpleBlockItem("mana_storage_tank", MANA_STORAGE_TANK);
+    public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.ManaStorageTankBlockEntity>> MANA_STORAGE_TANK_BE =
+            BLOCK_ENTITIES.register("mana_storage_tank", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
+                    dev.logos.block.ManaStorageTankBlockEntity::new, MANA_STORAGE_TANK.get()));
+    /** The fog and the growing crystal drawn in a tank: never placed, no item, no loot. */
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaStorageTankBlock.Fog> MANA_FOG = BLOCKS.registerBlock(
+            "mana_fog", dev.logos.block.ManaStorageTankBlock.Fog::new, p -> p.noCollision().noOcclusion().noLootTable());
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaStorageTankBlock.Cluster> MANA_CLUSTER = BLOCKS.registerBlock(
+            "mana_cluster", dev.logos.block.ManaStorageTankBlock.Cluster::new, p -> p.noCollision().noOcclusion().noLootTable());
     /** 术式发射器: charges the spell on the page it holds from its own mana, and casts it on a trigger. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.SpellEmitterBlock> SPELL_EMITTER = BLOCKS.registerBlock(
             "spell_emitter", dev.logos.block.SpellEmitterBlock::new,
@@ -531,6 +555,7 @@ public class LogosMod {
                 out.accept(COPY_TABLE_ITEM.get());
                 out.accept(SPELL_EMITTER_ITEM.get());
                 out.accept(MANA_COLLECTOR_ITEM.get());
+                out.accept(MANA_STORAGE_TANK_ITEM.get());
                 out.accept(MANA_SPREADER_ITEM.get());
             }).build());
     /** 术式范本: every example spell, written on the page grade that fits it. */
@@ -557,6 +582,8 @@ public class LogosMod {
                 out.accept(MAINTENANCE_KIT.get());
                 out.accept(TAINTED_MANA_SHARD.get());
                 out.accept(MANA_SHARD.get());
+                out.accept(MANA_CRYSTAL.get());
+                out.accept(MANA_GEMSTONE.get());
                 out.accept(STARTER_CULTURE.get());
                 out.accept(RAW_MASH.get());
                 out.accept(FOUL_BRINE.get());
@@ -677,6 +704,9 @@ public class LogosMod {
             // A spreader's drawer takes fuel from hoppers and pipes.
             e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
                     be instanceof dev.logos.block.ManaSpreaderBlockEntity spreader ? spreader.fuel() : null, MANA_SPREADER.get());
+            // A storage tank takes mana items and seeds from hoppers and pipes, and gives up grown crystals.
+            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
+                    be instanceof dev.logos.block.ManaStorageTankBlockEntity tank ? tank.automation() : null, MANA_STORAGE_TANK.get());
             // A jar takes seeds and media from hoppers and pipes, and gives up its harvests.
             e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
                     be instanceof dev.logos.block.CultivationJarBlockEntity jar ? jar.automation() : null, CULTIVATION_JAR.get());

@@ -7,6 +7,7 @@ import dev.logos.block.ManaCollectorBlock;
 import dev.logos.block.ManaCollectorBlockEntity;
 import dev.logos.block.ManaSpreaderBlock;
 import dev.logos.block.ManaSpreaderBlockEntity;
+import dev.logos.block.ManaStorageTankBlockEntity;
 import dev.logos.runtime.ManaField;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -227,6 +228,75 @@ final class ManaFieldGameTests {
      * A spreader burns a mana shard into its chunk's air and lights up; a collector placed against an
      * alchemy table faces it and feeds it from the air.
      */
+    /**
+     * A storage tank dissolves a mana crystal whole; storing, it gives nothing out; supplying, it gives each
+     * neighbouring vessel 50 a second but not collectors or other tanks; a redstone signal pauses it.
+     */
+    static void storageTankStoresAndSupplies(GameTestHelper h) {
+        BlockPos at = new BlockPos(2, 2, 2);
+        h.setBlock(at, LogosMod.MANA_STORAGE_TANK.get());
+        ManaStorageTankBlockEntity tank = (ManaStorageTankBlockEntity) h.getBlockEntity(at, ManaStorageTankBlockEntity.class);
+        h.setBlock(at.east(), LogosMod.CULTIVATION_JAR.get());
+        h.setBlock(at.west(), LogosMod.MANA_STORAGE_TANK.get());
+        h.setBlock(at.north(), LogosMod.MANA_COLLECTOR.get().defaultBlockState().setValue(ManaCollectorBlock.FACING, Direction.NORTH));
+        var jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(at.east(), dev.logos.block.CultivationJarBlockEntity.class);
+        var other = (ManaStorageTankBlockEntity) h.getBlockEntity(at.west(), ManaStorageTankBlockEntity.class);
+        var collector = (ManaCollectorBlockEntity) h.getBlockEntity(at.north(), ManaCollectorBlockEntity.class);
+        try (Transaction tx = Transaction.openRoot()) {
+            h.assertTrue(tank.automation().insert(ItemResource.of(LogosMod.MANA_CRYSTAL.get()), 1, tx) == 1, "the tank refused a mana crystal");
+            tx.commit();
+        }
+        BlockPos pos = h.absolutePos(at);
+        tank.work(h.getLevel(), pos);
+        h.assertTrue(tank.mana() == 1000, "a mana crystal gave " + tank.mana());
+        tank.work(h.getLevel(), pos);
+        h.assertTrue(jar.mana() == 0 && tank.mana() == 1000, "storing gave the jar " + jar.mana());
+        tank.setMode(ManaStorageTankBlockEntity.Mode.SUPPLY);
+        double collectorBefore = collector.mana();
+        tank.work(h.getLevel(), pos);
+        h.assertTrue(jar.mana() == ManaStorageTankBlockEntity.SUPPLY, "supplying gave the jar " + jar.mana());
+        h.assertTrue(other.mana() == 0 && collector.mana() == collectorBefore, "supplying fed a tank or a collector");
+        h.assertTrue(tank.mana() == 1000 - ManaStorageTankBlockEntity.SUPPLY, "the tank has " + tank.mana() + " left");
+        h.setBlock(at.below(), Blocks.REDSTONE_BLOCK);
+        tank.work(h.getLevel(), pos);
+        h.assertTrue(jar.mana() == ManaStorageTankBlockEntity.SUPPLY, "a powered tank still supplied");
+        h.succeed();
+    }
+
+    /**
+     * Condensing grows a mana shard into a mana crystal at 90% (556 mana for the 500 it gains), 20 a second;
+     * broken, the tank keeps its mana on the item.
+     */
+    static void storageTankCondensesAndKeepsMana(GameTestHelper h) {
+        BlockPos at = new BlockPos(2, 2, 2);
+        h.setBlock(at, LogosMod.MANA_STORAGE_TANK.get());
+        ManaStorageTankBlockEntity tank = (ManaStorageTankBlockEntity) h.getBlockEntity(at, ManaStorageTankBlockEntity.class);
+        tank.setMana(1000);
+        tank.setMode(ManaStorageTankBlockEntity.Mode.CONDENSE);
+        tank.seed().set(0, ItemResource.of(LogosMod.MANA_SHARD.get()), 1);
+        BlockPos pos = h.absolutePos(at);
+        tank.work(h.getLevel(), pos);
+        h.assertTrue(tank.mana() == 1000 - ManaStorageTankBlockEntity.CONDENSE_RATE, "one second took " + (1000 - tank.mana()));
+        for (int i = 0; i < 40 && tank.output().getAmountAsInt(0) == 0; i++) tank.work(h.getLevel(), pos);
+        h.assertTrue(tank.output().getResource(0).getItem() == LogosMod.MANA_CRYSTAL.get(), "the output holds " + tank.output().getResource(0));
+        h.assertTrue(tank.seed().getAmountAsInt(0) == 0, "the seed was not used up");
+        double spent = 1000 - tank.mana();
+        h.assertTrue(Math.abs(spent - 500 / ManaStorageTankBlockEntity.EFFICIENCY) < 0.01, "the crystal took " + spent + " mana");
+        h.assertTrue(ManaStorageTankBlockEntity.growCost(LogosMod.MANA_CRYSTAL.get()) > 4444 && ManaStorageTankBlockEntity.growCost(LogosMod.MANA_CRYSTAL.get()) < 4445,
+                "a gemstone takes " + ManaStorageTankBlockEntity.growCost(LogosMod.MANA_CRYSTAL.get()));
+
+        double kept = tank.mana();
+        tank.output().set(0, ItemResource.EMPTY, 0);
+        h.getLevel().destroyBlock(pos, true);
+        h.succeedWhen(() -> {
+            var drops = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(pos).inflate(3),
+                    e -> e.getItem().is(LogosMod.MANA_STORAGE_TANK_ITEM.get()));
+            h.assertTrue(drops.size() == 1, "the tank dropped " + drops.size());
+            Double stored = drops.getFirst().getItem().get(LogosMod.STORED_MANA.get());
+            h.assertTrue(stored != null && Math.abs(stored - kept) < 0.01, "the dropped tank holds " + stored + " of " + kept);
+        });
+    }
+
     static void spreaderFeedsTableThroughCollector(GameTestHelper h) {
         for (int x = 0; x < 6; x++) for (int z = 0; z < 6; z++) h.setBlock(x, 1, z, Blocks.STONE);
         BlockPos main = new BlockPos(2, 2, 2);
