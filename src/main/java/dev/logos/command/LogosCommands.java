@@ -41,7 +41,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -89,6 +91,8 @@ public final class LogosCommands {
                 .then(Commands.literal("load").then(Commands.argument("file", StringArgumentType.word())
                         .suggests((c, b) -> SharedSuggestionProvider.suggest(spellFiles(), b))
                         .executes(c -> load(c, StringArgumentType.getString(c, "file")))))
+                .then(Commands.literal("source").executes(c -> source(c, null))
+                        .then(Commands.argument("file", StringArgumentType.word()).executes(c -> source(c, StringArgumentType.getString(c, "file")))))
                 .then(Commands.literal("examples").executes(LogosCommands::examples))
                 .then(Commands.literal("kit").executes(LogosCommands::kit))
                 .then(Commands.literal("anchors").executes(LogosCommands::anchors))
@@ -178,6 +182,40 @@ public final class LogosCommands {
             Casting.message(p, e);
             return 0;
         }
+    }
+
+    /** Debug: the source text written on the page (or ember) in hand, shown click-to-copy and optionally saved for {@code /logos load}. */
+    private static int source(CommandContext<CommandSourceStack> c, @org.jspecify.annotations.Nullable String file) throws CommandSyntaxException {
+        ServerPlayer p = c.getSource().getPlayerOrException();
+        String src = null;
+        for (InteractionHand hand : InteractionHand.values()) {
+            src = p.getItemInHand(hand).get(LogosMod.SPELL_SOURCE.get());
+            if (src != null) break;
+        }
+        if (src == null) {
+            c.getSource().sendFailure(Component.literal("主手或副手没有写着术式的载页或术式余烬"));
+            return 0;
+        }
+        String text = src;
+        c.getSource().sendSuccess(() -> Component.literal("术式原文（点击复制）:").withStyle(ChatFormatting.GOLD), false);
+        c.getSource().sendSuccess(() -> Component.literal(text).withStyle(st -> st.withColor(ChatFormatting.WHITE)
+                .withClickEvent(new ClickEvent.CopyToClipboard(text))
+                .withHoverEvent(new HoverEvent.ShowText(Component.literal("点击复制到剪贴板")))), false);
+        if (file == null) return 1;
+        Path path = spellDir().resolve(file + ".logos").normalize();
+        if (!path.startsWith(spellDir())) {
+            c.getSource().sendFailure(Component.literal("文件名不合法: " + file));
+            return 0;
+        }
+        try {
+            Files.createDirectories(spellDir());
+            Files.writeString(path, text, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            c.getSource().sendFailure(Component.literal("写入失败: " + e.getMessage()));
+            return 0;
+        }
+        c.getSource().sendSuccess(() -> Component.literal("已保存到 " + path + "（/logos load " + file + " 可取回）").withStyle(ChatFormatting.GRAY), false);
+        return 1;
     }
 
     private static int examples(CommandContext<CommandSourceStack> c) {

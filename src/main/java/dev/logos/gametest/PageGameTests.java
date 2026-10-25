@@ -1,10 +1,17 @@
 package dev.logos.gametest;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import dev.logos.LogosMod;
 import dev.logos.block.CopyTableBlockEntity;
 import dev.logos.block.CopyTableBlock;
+import dev.logos.command.LogosCommands;
 import dev.logos.item.PageContainer;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellBag;
@@ -186,6 +193,27 @@ final class PageGameTests {
             h.assertTrue(table.getBlockState().getValue(CopyTableBlock.RIGHT_PAGE) == CopyTableBlock.Sheet.of(table.inputs().getItem(CopyTableBlockEntity.BLANK)), "right tray material should follow the blank");
             table.onCopyTaken(null);
             h.assertTrue(table.getBlockState().getValue(CopyTableBlock.RIGHT_PAGE) == CopyTableBlock.Sheet.NONE, "taking the last copy should clear the right tray");
+        }
+        h.succeed();
+    }
+
+    /** {@code /logos source} reads the page in either hand and saves its text for {@code /logos load}. */
+    static void sourceCommandReadsPage(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var dispatcher = h.getLevel().getServer().getCommands().getDispatcher();
+        Path file = LogosCommands.spellDir().resolve("gametest_page_source.logos");
+        try {
+            h.assertTrue(dispatcher.execute("logos source", p.createCommandSourceStack()) == 0, "empty hands should have no source");
+            p.setItemInHand(InteractionHand.OFF_HAND, SpellPages.inscribed(HUNGRY, null));
+            h.assertTrue(dispatcher.execute("logos source gametest_page_source", p.createCommandSourceStack()) == 1, "the off-hand page was not read");
+            h.assertTrue(HUNGRY.equals(Files.readString(file, StandardCharsets.UTF_8)), "the saved file should hold the page's exact source");
+        } catch (CommandSyntaxException | IOException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            try {
+                Files.deleteIfExists(file);
+            } catch (IOException ignored) {
+            }
         }
         h.succeed();
     }
