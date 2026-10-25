@@ -1,0 +1,12 @@
+{
+  "type": "logos:cultivation",
+  "seed": "logos:riftshade",
+  "plant": "logos:riftshade_crop",
+  "harvest": [
+    {
+      "id": "logos:riftshade_pollen",
+      "count": 2
+    }
+  ],
+  "growth": 0.25
+}

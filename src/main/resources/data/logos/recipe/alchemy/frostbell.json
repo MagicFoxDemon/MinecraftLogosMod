@@ -1,0 +1,27 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:lily_of_the_valley"
+    },
+    {
+      "ingredient": "minecraft:powder_snow_bucket"
+    },
+    {
+      "ingredient": "logos:germinal_essence"
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:frostbell"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    },
+    {
+      "id": "minecraft:bucket"
+    }
+  ],
+  "mana": 5
+}

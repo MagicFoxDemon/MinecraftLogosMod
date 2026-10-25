@@ -1,0 +1,12 @@
+{
+  "type": "logos:cultivation",
+  "seed": "logos:frostbell",
+  "plant": "logos:frostbell_crop",
+  "harvest": [
+    {
+      "id": "logos:frostbell_petal",
+      "count": 2
+    }
+  ],
+  "growth": 0.3
+}

@@ -295,6 +295,39 @@ public class LogosMod {
         JarMetal.values();
     }
 
+    /**
+     * The herbs of the element potions (dev.logos.alchemy.BuffPotions): a flower or root fermented with
+     * germinal essence, planted in a jar as itself and harvested again and again for what brews its potion.
+     */
+    public enum JarHerb {
+        /** 赤脉根: beetroot quickened on bone meal, red-veined; the root is itself the harvest. */
+        REDVEIN("redvein_root", null, net.minecraft.world.item.Rarity.COMMON),
+        /** 烛焰花: a poppy that drank blaze powder; its stamens burn like wicks. */
+        CANDLEFLAME("candleflame", "candleflame_stamen", net.minecraft.world.item.Rarity.COMMON),
+        /** 霜铃花: lily of the valley grown in powder snow; its petals ring with cold. */
+        FROSTBELL("frostbell", "frostbell_petal", net.minecraft.world.item.Rarity.COMMON),
+        /** 鸣雷蓟: a dead bush on copper and echo; its down crackles. */
+        THUNDER_THISTLE("thunder_thistle", "thunder_thistle_down", net.minecraft.world.item.Rarity.UNCOMMON),
+        /** 隙影花: chorus fruit on echo and dragon's breath, a flower half in the void; its pollen is shadow. */
+        RIFTSHADE("riftshade", "riftshade_pollen", net.minecraft.world.item.Rarity.UNCOMMON);
+
+        /** What is planted in the jar. */
+        public final DeferredItem<net.minecraft.world.item.Item> plant;
+        /** What it gives, again and again: the brewing ingredient of its potion (the plant itself for redvein root). */
+        public final DeferredItem<net.minecraft.world.item.Item> harvest;
+        public final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> crop;
+
+        JarHerb(String plant, @org.jspecify.annotations.Nullable String harvest, net.minecraft.world.item.Rarity rarity) {
+            this.plant = ITEMS.registerSimpleItem(plant, p -> p.rarity(rarity));
+            this.harvest = harvest == null ? this.plant : ITEMS.registerSimpleItem(harvest, p -> p.rarity(rarity));
+            crop = jarCrop(plant + "_crop");
+        }
+    }
+
+    static {
+        JarHerb.values();
+    }
+
     /** 曼德拉草: a carrot quickened and blackened into a root that grows only under glass. */
     public static final DeferredItem<net.minecraft.world.item.Item> MANDRAKE_SEED = ITEMS.registerSimpleItem("mandrake_seed",
             p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
@@ -612,6 +645,10 @@ public class LogosMod {
                 out.accept(MERCURY_MUSHROOM.get());
                 out.accept(STARLIGHT_MOSS_SPORE.get());
                 out.accept(STARLIGHT_MOSS.get());
+                for (JarHerb herb : JarHerb.values()) {
+                    out.accept(herb.plant.get());
+                    if (herb.harvest != herb.plant) out.accept(herb.harvest.get());
+                }
                 out.accept(CHALK.get());
                 out.accept(SOLAR_AMALGAM.get());
                 out.accept(SOLAR_BLOSSOM.get());
@@ -677,7 +714,9 @@ public class LogosMod {
         PARTICLE_TYPES.register(modBus);
         dev.logos.runtime.SpellModifiers.init();
         ATTRIBUTES.register(modBus);
+        dev.logos.alchemy.BuffPotions.init();
         MOB_EFFECTS.register(modBus);
+        dev.logos.alchemy.BuffPotions.POTIONS.register(modBus);
         modBus.addListener(this::registerPayloads);
         modBus.addListener((BuildCreativeModeTabContentsEvent e) -> {
             if (e.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -805,9 +844,10 @@ public class LogosMod {
         LogosCommands.register(event.getDispatcher());
     }
 
-    /** A water bottle and starter culture brew into raw mash. */
+    /** A water bottle and starter culture brew into raw mash; raw and vital mash brew the Logos potions. */
     @SubscribeEvent
     public void onBrewing(net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent event) {
+        dev.logos.alchemy.BuffPotions.brewing(event.getBuilder());
         event.getBuilder().addRecipe(new net.neoforged.neoforge.common.brewing.IBrewingRecipe() {
             @Override
             public boolean isInput(ItemStack input) {

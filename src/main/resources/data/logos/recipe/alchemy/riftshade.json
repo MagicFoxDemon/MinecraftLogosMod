@@ -1,0 +1,28 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:chorus_fruit"
+    },
+    {
+      "ingredient": "logos:echo_tincture"
+    },
+    {
+      "ingredient": "logos:germinal_essence"
+    },
+    {
+      "ingredient": "minecraft:dragon_breath"
+    }
+  ],
+  "results": [
+    {
+      "id": "logos:riftshade"
+    },
+    {
+      "id": "minecraft:glass_bottle",
+      "count": 3
+    }
+  ],
+  "mana": 12
+}
