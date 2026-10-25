@@ -1,0 +1,15 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": ["minecraft:crimson_fungus", "minecraft:warped_fungus"] },
+    { "ingredient": "logos:mercury_bottle" },
+    { "ingredient": "logos:germinal_essence" },
+    { "ingredient": "logos:raven_head" }
+  ],
+  "results": [
+    { "id": "logos:mercury_spore", "count": 4 },
+    { "id": "minecraft:glass_bottle", "count": 2 }
+  ],
+  "mana": 10
+}

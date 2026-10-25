@@ -1,0 +1,9 @@
+{
+  "type": "logos:cultivation",
+  "seed": "logos:starlight_moss_spore",
+  "plant": "logos:starlight_moss_crop",
+  "harvest": [
+    { "id": "logos:starlight_moss", "count": 2 }
+  ],
+  "growth": 0.3
+}

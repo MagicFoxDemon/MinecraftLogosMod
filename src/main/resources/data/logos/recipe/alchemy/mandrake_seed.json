@@ -1,0 +1,14 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "minecraft:carrot" },
+    { "ingredient": "logos:germinal_essence" },
+    { "ingredient": "logos:raven_head" }
+  ],
+  "results": [
+    { "id": "logos:mandrake_seed" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 10
+}

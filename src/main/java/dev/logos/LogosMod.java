@@ -230,6 +230,66 @@ public class LogosMod {
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.CultivationJarBlockEntity>> CULTIVATION_JAR_BE =
             BLOCK_ENTITIES.register("cultivation_jar", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.CultivationJarBlockEntity::new, CULTIVATION_JAR.get()));
+
+    // What grows in a cultivation jar: seeds fermented on the alchemy table, and the plants the jar draws.
+    /** A plant that grows only in a cultivation jar; it has no item and is never placed in the world. */
+    private static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name) {
+        return BLOCKS.registerBlock(name, dev.logos.block.JarCropBlock::new,
+                p -> p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollision().instabreak()
+                        .sound(net.minecraft.world.level.block.SoundType.CROP).noLootTable());
+    }
+
+    /** 硝之芽: saltpeter fermented into a sprout; in a jar it gives saltpeter and more sprouts. */
+    public static final DeferredItem<net.minecraft.world.item.Item> NITER_SPROUT = ITEMS.registerSimpleItem("niter_sprout");
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> NITER_SPROUT_CROP = jarCrop("niter_sprout_crop");
+    /** 萌生精质: the quickening of seeds and a sapling, fermented in raw mash; what makes a seed of what is not one. */
+    public static final DeferredItem<net.minecraft.world.item.Item> GERMINAL_ESSENCE = ITEMS.registerSimpleItem("germinal_essence",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+
+    /** The metals that grow in a jar: each has an embryo (settled from its ingot), a seed, a plant and the pod it bears. */
+    public enum JarMetal {
+        COPPER(net.minecraft.world.item.Rarity.COMMON), IRON(net.minecraft.world.item.Rarity.COMMON),
+        GOLD(net.minecraft.world.item.Rarity.UNCOMMON), NETHERITE(net.minecraft.world.item.Rarity.RARE);
+
+        public final String id;
+        /** 铜之胚…: the metal settled into a germ that will take root. */
+        public final DeferredItem<net.minecraft.world.item.Item> embryo;
+        /** 铜之种…: the germ quickened; planted in a jar it bears pods slowly, on mana, harvest after harvest. */
+        public final DeferredItem<net.minecraft.world.item.Item> seed;
+        /** 铜荚…: the living metal a plant bears; calcined, it becomes the ingot. */
+        public final DeferredItem<net.minecraft.world.item.Item> pod;
+        public final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> crop;
+
+        JarMetal(net.minecraft.world.item.Rarity rarity) {
+            id = name().toLowerCase(java.util.Locale.ROOT);
+            embryo = ITEMS.registerSimpleItem(id + "_embryo", p -> p.rarity(rarity));
+            seed = ITEMS.registerSimpleItem(id + "_seed", p -> p.rarity(rarity));
+            pod = ITEMS.registerSimpleItem(id + "_pod", p -> p.rarity(rarity));
+            crop = jarCrop(id + "_pod_crop");
+        }
+    }
+
+    static {
+        // Registers the metals' items and plants with the rest.
+        JarMetal.values();
+    }
+
+    /** 曼德拉草: a carrot quickened and blackened into a root that grows only under glass. */
+    public static final DeferredItem<net.minecraft.world.item.Item> MANDRAKE_SEED = ITEMS.registerSimpleItem("mandrake_seed",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<net.minecraft.world.item.Item> MANDRAKE_ROOT = ITEMS.registerSimpleItem("mandrake_root",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> MANDRAKE_CROP = jarCrop("mandrake_crop");
+    /** 汞菇: a nether fungus that drinks mercury; distilled, it gives the mercury back. */
+    public static final DeferredItem<net.minecraft.world.item.Item> MERCURY_SPORE = ITEMS.registerSimpleItem("mercury_spore");
+    public static final DeferredItem<net.minecraft.world.item.Item> MERCURY_MUSHROOM = ITEMS.registerSimpleItem("mercury_mushroom");
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> MERCURY_MUSHROOM_CROP = jarCrop("mercury_mushroom_crop");
+    /** 星辉苔: glow lichen grown on amethyst and echo, glittering like the night sky. */
+    public static final DeferredItem<net.minecraft.world.item.Item> STARLIGHT_MOSS_SPORE = ITEMS.registerSimpleItem("starlight_moss_spore",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<net.minecraft.world.item.Item> STARLIGHT_MOSS = ITEMS.registerSimpleItem("starlight_moss",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> STARLIGHT_MOSS_CROP = jarCrop("starlight_moss_crop");
     /** 白垩: soul humus washed white with rebis and philosophers' mercury; it raises a page to the chalk grade. */
     public static final DeferredItem<net.minecraft.world.item.Item> CHALK = ITEMS.registerSimpleItem("chalk",
             p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
@@ -477,6 +537,17 @@ public class LogosMod {
                 out.accept(CAPUT_MORTUUM_BLOCK_ITEM.get());
                 out.accept(SOUL_HUMUS_ITEM.get());
                 out.accept(CULTIVATION_JAR_ITEM.get());
+                out.accept(GERMINAL_ESSENCE.get());
+                out.accept(NITER_SPROUT.get());
+                for (JarMetal metal : JarMetal.values()) out.accept(metal.embryo.get());
+                for (JarMetal metal : JarMetal.values()) out.accept(metal.seed.get());
+                for (JarMetal metal : JarMetal.values()) out.accept(metal.pod.get());
+                out.accept(MANDRAKE_SEED.get());
+                out.accept(MANDRAKE_ROOT.get());
+                out.accept(MERCURY_SPORE.get());
+                out.accept(MERCURY_MUSHROOM.get());
+                out.accept(STARLIGHT_MOSS_SPORE.get());
+                out.accept(STARLIGHT_MOSS.get());
                 out.accept(CHALK.get());
                 out.accept(SOLAR_AMALGAM.get());
                 out.accept(SOLAR_BLOSSOM.get());

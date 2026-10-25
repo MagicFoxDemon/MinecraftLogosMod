@@ -795,6 +795,26 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
+    /** An iron seed grows only on the jar's mana; ripe, it bears an iron pod into the outputs and stays planted. Calcined, the pod is iron. */
+    static void cultivationJarGrowsMetal(GameTestHelper h) {
+        h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        LogosMod.JarMetal iron = LogosMod.JarMetal.IRON;
+        h.assertTrue(jar.plant(new ItemStack(iron.seed.get())), "an iron seed would not go in");
+        h.assertTrue(jar.plant() != null && jar.plant().is(iron.crop.get()), "the jar draws " + jar.plant());
+        h.assertFalse(jar.grow(), "it grew without mana");
+        jar.receiveMana(100);
+        while (jar.grow()) {}
+        h.assertTrue(jar.isRipe() && jar.mana() == 100 - 3 * jar.recipe().mana(), "ripe " + jar.isRipe() + " with " + jar.mana() + " mana left");
+        jar.randomTick(h.getLevel(), h.getLevel().getRandom());
+        h.assertTrue(jar.outputs().getResource(0).getItem() == iron.pod.get(), "the outputs hold " + jar.outputs().getResource(0));
+        h.assertTrue(jar.seed().is(iron.seed.get()) && jar.age() == 0, "the seed was not kept planted");
+        h.assertTrue(h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get()).stream().anyMatch(r ->
+                r.value().process() == Process.CALCINE && r.value().ingredients().getFirst().ingredient().test(new ItemStack(iron.pod.get()))
+                        && r.value().results().getFirst().create().is(Items.IRON_INGOT)), "no calcination of the iron pod");
+        h.succeed();
+    }
+
     /** 灌魔 fills an alchemy table through its side half, paying 1.1 a point for only what fits; a full table costs nothing. */
     static void infuseBlockFillsTable(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);

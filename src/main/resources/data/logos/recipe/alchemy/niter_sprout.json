@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:saltpeter", "count": 2 },
+    { "ingredient": "minecraft:wheat_seeds" },
+    { "ingredient": "logos:starter_culture" }
+  ],
+  "results": [
+    { "id": "logos:niter_sprout", "count": 4 }
+  ],
+  "mana": 3
+}

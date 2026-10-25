@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "logos:block/starlight_moss_crop_stage3"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "type": "logos:cultivation",
+  "seed": "logos:netherite_seed",
+  "plant": "logos:netherite_pod_crop",
+  "harvest": [
+    { "id": "logos:netherite_pod" }
+  ],
+  "growth": 0.1,
+  "mana": 150
+}

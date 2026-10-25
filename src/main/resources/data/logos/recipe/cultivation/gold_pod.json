@@ -1,0 +1,10 @@
+{
+  "type": "logos:cultivation",
+  "seed": "logos:gold_seed",
+  "plant": "logos:gold_pod_crop",
+  "harvest": [
+    { "id": "logos:gold_pod" }
+  ],
+  "growth": 0.2,
+  "mana": 20
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "logos:block/mercury_mushroom_crop_stage2"
+  }
+}
