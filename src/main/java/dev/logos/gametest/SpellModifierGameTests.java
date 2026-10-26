@@ -141,6 +141,23 @@ final class SpellModifierGameTests {
         h.succeed();
     }
 
+    /** Heal power ×2 doubles healing, drain's healing of the caster and shields; the runes still pay for the amount written. */
+    static void healPowerScalesHealing(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow c = cow(h);
+        buff(p, SpellModifiers.HEAL_POWER, 1);
+        c.setHealth(4);
+        SpellInstance heal = cast(p, "(heal (nearest :radius 6) 2)");
+        near(h, c.getHealth(), 8, "2 healing at ×2");
+        near(h, heal.mana, 50 - 1 - 3, "mana left after nearest (1) and 2 healing (3)");
+        cast(p, "(shield (nearest :radius 6) 1.5)");
+        near(h, c.getAbsorptionAmount(), 3, "1.5 shield at ×2");
+        p.setHealth(10);
+        cast(p, "(drain (nearest :radius 6) 2)");
+        near(h, p.getHealth(), 12, "drain heals half of 2 at ×2");
+        h.succeed();
+    }
+
     /** Effect runes at ½ cost pay half; a selector (binding) still pays in full until the overall cost drops too. */
     static void nodeCostScalesItsCategory(GameTestHelper h) {
         ServerPlayer p = caster(h);

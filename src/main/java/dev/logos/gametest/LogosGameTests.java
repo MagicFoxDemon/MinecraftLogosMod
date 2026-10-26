@@ -51,7 +51,7 @@ public final class LogosGameTests {
             "emitter_pulse_casts_once", "emitter_full_casts_and_pays_extra", "emitter_spells_leave_through_itself", "emitter_edit_swaps_the_invocation", "offset_follows_the_facing", "dividers_measure_from_the_emitter",
             "alchemy_table_halves", "alchemy_table_automation", "alchemy_table_tank", "alchemy_table_mana", "alchemy_table_bottles", "alchemy_table_free_mana",
             "spell_modifier_element_power", "spell_modifier_resistance", "spell_modifier_fire_is_vanilla_fire", "spell_modifier_arcane_damage", "spell_modifier_creature_life_damage",
-            "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration",
+            "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "spell_modifier_heal_power",
             "buff_potions_brew", "buff_potions_dissolve", "buff_potions_effects", "herbs_grow_in_jars",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
@@ -317,6 +317,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("alchemy_table_bottles", () -> AlchemyGameTests::tableBottles);
         FUNCTIONS.register("alchemy_table_free_mana", () -> AlchemyGameTests::tableGathersFreeMana);
         FUNCTIONS.register("spell_modifier_element_power", () -> SpellModifierGameTests::elementPowerBoostsItsElement);
+        FUNCTIONS.register("spell_modifier_heal_power", () -> SpellModifierGameTests::healPowerScalesHealing);
         FUNCTIONS.register("spell_modifier_resistance", () -> SpellModifierGameTests::resistanceTurnsAsideItsElement);
         FUNCTIONS.register("spell_modifier_fire_is_vanilla_fire", () -> SpellModifierGameTests::fireIsVanillaFire);
         FUNCTIONS.register("spell_modifier_arcane_damage", () -> SpellModifierGameTests::arcaneDamageHasItsOwnPower);
