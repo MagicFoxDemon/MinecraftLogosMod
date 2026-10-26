@@ -2,9 +2,12 @@ package dev.logos.runtime;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -21,6 +24,12 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 public final class Effects {
     /** Raises max_absorption so a shield can go past vanilla's limit (0 without the Absorption effect). */
     private static final Identifier SHIELD = Identifier.fromNamespaceAndPath(LogosMod.MODID, "shield");
+
+    /**
+     * Fire damage: vanilla fire (tagged {@code minecraft:is_fire}, not armour-piercing), so armour, protection,
+     * fire protection, fire resistance and fire immunity all turn it aside, credited to the attacker.
+     */
+    public static final ResourceKey<DamageType> FIRE = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "spell_fire"));
 
     /** True while a spell is dealing damage, so passive triggers do not re-enter themselves. */
     private static int spellDepth;
@@ -55,10 +64,12 @@ public final class Effects {
         if (el == Element.FROST && t.fireImmune()) amt *= 2;
         if (el == Element.LIGHTNING && t.isInWaterOrRain()) amt *= 1.5;
         amt *= SpellModifiers.taken(t, el);
-        // Physical is a melee hit; every other element is vanilla magic, which armour does not stop.
+        // Physical is a melee hit, fire is vanilla fire, and the rest are vanilla magic, which armour does not stop.
         DamageSource src;
         if (el == Element.PHYSICAL) {
             src = attacker instanceof Player p ? t.damageSources().playerAttack(p) : t.damageSources().mobAttack(attacker);
+        } else if (el == Element.FIRE) {
+            src = t.damageSources().source(FIRE, attacker, attacker);
         } else {
             src = t.damageSources().indirectMagic(attacker, attacker);
         }

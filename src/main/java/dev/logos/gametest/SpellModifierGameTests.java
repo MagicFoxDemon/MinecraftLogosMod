@@ -18,10 +18,13 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -72,7 +75,7 @@ final class SpellModifierGameTests {
         buff(p, SpellModifiers.powerAttribute(Element.FIRE), 1);
         SpellInstance fire = cast(p, "(damage (nearest :radius 6) 2 fire)");
         near(h, c.getHealth(), 6, "2 fire at ×2");
-        near(h, fire.mana, 50 - 1 - 2, "mana left after nearest (1) and 2 fire (2)");
+        near(h, fire.mana, 50 - 1 - 1.4, "mana left after nearest (1) and 2 fire (1.4)");
         cast(p, "(damage (nearest :radius 6) 2)");
         near(h, c.getHealth(), 4, "2 physical, unboosted");
         buff(p, SpellModifiers.SPELL_POWER, 0.5);
@@ -91,6 +94,22 @@ final class SpellModifierGameTests {
         near(h, c.getHealth(), 9, "4 frost, a quarter taken");
         cast(p, "(damage (nearest :radius 6) 4 fire)");
         near(h, c.getHealth(), 7, "4 fire, half taken");
+        h.succeed();
+    }
+
+    /** Fire is vanilla fire: armour turns part of it aside and fire resistance all of it, while frost (magic) goes through armour. */
+    static void fireIsVanillaFire(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow c = cow(h);
+        buff(c, Attributes.ARMOR, 20);
+        cast(p, "(damage (nearest :radius 6) 4 frost)");
+        near(h, c.getHealth(), 6, "4 frost through armour");
+        cast(p, "(damage (nearest :radius 6) 4 fire)");
+        h.assertTrue(c.getHealth() > 2.5f && c.getHealth() < 5.5f, "armour should turn aside most of 4 fire; health " + c.getHealth());
+        float before = c.getHealth();
+        c.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 200));
+        cast(p, "(damage (nearest :radius 6) 4 fire)");
+        near(h, c.getHealth(), before, "fire resistance stops fire");
         h.succeed();
     }
 
@@ -127,9 +146,9 @@ final class SpellModifierGameTests {
         ServerPlayer p = caster(h);
         cow(h);
         buff(p, SpellModifiers.costAttribute(Category.EFFECT), -0.5);
-        near(h, cast(p, "(damage (nearest :radius 6) 1 fire)").mana, 50 - 1 - 0.5, "nearest 1, damage ½");
+        near(h, cast(p, "(damage (nearest :radius 6) 1 fire)").mana, 50 - 1 - 0.35, "nearest 1, damage ½ of 0.7");
         buff(p, SpellModifiers.SPELL_COST, -0.5);
-        near(h, cast(p, "(damage (nearest :radius 6) 1 fire)").mana, 50 - 0.5 - 0.25, "nearest ½, damage ¼");
+        near(h, cast(p, "(damage (nearest :radius 6) 1 fire)").mana, 50 - 0.5 - 0.175, "nearest ½, damage ¼ of 0.7");
         h.succeed();
     }
 

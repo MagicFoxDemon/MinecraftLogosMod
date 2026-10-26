@@ -195,6 +195,8 @@
   "entity.logos.mana_leech": "Mana Leech",
   "item.logos.mana_leech_spawn_egg": "Mana Leech Spawn Egg",
   "death.attack.logos.mana_leech": "%1$s was drained dry by %2$s",
+  "death.attack.logos.spell_fire": "%1$s was burned by %2$s's spell",
+  "death.attack.logos.spell_fire.item": "%1$s was burned by %2$s's spell from %3$s",
   "item.logos.colossus_heart": "Colossus Heart",
   "item.logos.disorder_crystal": "Disorder Crystal",
   "item.logos.maintenance_kit": "Maintenance Kit",

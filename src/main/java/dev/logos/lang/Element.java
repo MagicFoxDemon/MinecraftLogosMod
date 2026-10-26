@@ -5,7 +5,8 @@ import java.util.Locale;
 /** Every element deals damage; {@link #writable} says which ones a player may write. Synced by ordinal: append only. */
 public enum Element {
     PHYSICAL("物理", 0.8, true),
-    FIRE("火焰", 1.0, true),
+    // Cheapest: vanilla fire damage, so armour, fire protection, fire resistance and fire immunity all stop it.
+    FIRE("火焰", 0.7, true),
     FROST("寒霜", 1.0, true),
     LIGHTNING("雷霆", 1.1, true),
     VOID("虚空", 1.5, true),
