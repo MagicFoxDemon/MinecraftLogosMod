@@ -279,6 +279,20 @@ public final class Examples {
                     (on-hit (ignite target 4))))
                 """);
 
+        add("npc-heal", """
+                ; 抚生之触：沿视线治疗第一个非玩家生物，恢复 10 点生命（5 颗心）；也能治疗使魔与宠物
+                (spell :name "抚生之触" :mana 20
+                  (ray :range 24
+                    (on-hit (heal target 10))))
+                """);
+
+        add("npc-group-heal", """
+                ; 生息之环：治疗施法者周围 16 格内的非玩家生物，每个恢复 6 点生命；不区分敌我
+                ; 300 魔力包含选择器的 2 点和最多 33 个目标的治疗费用（每个 9 点）
+                (spell :name "生息之环" :mana 300
+                  (heal (entities :at (pos-of caster) :radius 16 :filter (kind living)) 6))
+                """);
+
         add("group-heal", """
                 ; 同袍之愈：:players true 才能选择、影响其他玩家
                 (spell :name "同袍之愈" :players true :mana 80
