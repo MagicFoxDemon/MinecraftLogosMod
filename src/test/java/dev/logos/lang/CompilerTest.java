@@ -78,6 +78,13 @@ class CompilerTest {
     }
 
     @Test
+    void arcaneDamageIsWritableButLifeIsNot() {
+        Spell s = Compiler.compile("(projectile (on-hit (damage target 2 arcane)))");
+        assertEquals(Element.ARCANE, s.body().getFirst().element);
+        assertThrows(LogosError.class, () -> Compiler.compile("(projectile (on-hit (damage target 2 life)))"));
+    }
+
+    @Test
     void proofIsAttachedToExecute() {
         Spell s = Compiler.compile(Examples.ALL.get("sever"));
         Node ray = s.body().getFirst();
