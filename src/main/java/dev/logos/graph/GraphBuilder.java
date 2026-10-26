@@ -257,8 +257,8 @@ public final class GraphBuilder {
                 n.setOption(RuneNode.option(p), (String) s.args.get(i).value);
                 continue;
             }
-            if (p.type() == dev.logos.lang.Type.KIND) {
-                n.setOption(RuneNode.option(p), ((dev.logos.lang.TargetKind) s.args.get(i).value).word);
+            if (p.type() == dev.logos.lang.Type.KIND && s.args.get(i).value instanceof dev.logos.lang.TargetKind kind) {
+                n.setOption(RuneNode.option(p), kind.word);
                 continue;
             }
             vy = value(s.args.get(i), n.in(repeated ? p.name() + (i - restAt) : p.name()), x - LANE_W, vy);

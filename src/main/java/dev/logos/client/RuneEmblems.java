@@ -600,6 +600,17 @@ final class RuneEmblems {
                 ".........",
                 ".........",
                 "........."}, "blocks");
+        // A creature's silhouette above a shared root: recognising kin, in the pointing family's ink.
+        put(new String[]{
+                "..#...#..",
+                "...###...",
+                "..#...#..",
+                "..#.+.#..",
+                "...###...",
+                "....+....",
+                "..#####..",
+                ".#..#..#.",
+                "........."}, "species");
         // A sieve, for what passes and what does not.
         put(new String[]{
                 ".........",

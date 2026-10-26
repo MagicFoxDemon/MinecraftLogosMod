@@ -12,6 +12,23 @@ import org.junit.jupiter.api.Test;
 
 class CompilerTest {
     @Test
+    void speciesProducesAKindThatCanBeFiltered() {
+        Spell s = Compiler.compile(Examples.ALL.get("npc-group-heal"));
+        Node kind = s.body().getFirst().arg(0).kw.get("filter");
+        assertEquals(Type.FILTER, kind.type);
+        assertEquals("species", kind.arg(0).rune.name);
+        assertEquals(Type.KIND, kind.arg(0).type);
+        assertEquals(Intent.HEAL, s.profile().primary());
+        assertEquals(100, s.mana());
+        Compiler.compile("(spell :trigger attack (heal (entities :filter (kind (species target))) 6))");
+        Compiler.compile("(let $k (species caster) (heal (entities :filter (kind $k)) 6))");
+        assertThrows(LogosError.class, () -> Compiler.compile("(heal (entities :filter (species caster)) 6)"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(heal (entities :filter (kind (species here))) 6)"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(heal (entities :filter (kind (species (entities)))) 6)"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(heal (entities :filter (kind (species target))) 6)"));
+    }
+
+    @Test
     void equipRequiresItemAndEntityTypes() {
         Spell single = Compiler.compile("(spell :mana 20 (equip caster &minecraft:stone))");
         assertEquals(8, single.profile().estimate(), 1e-6);

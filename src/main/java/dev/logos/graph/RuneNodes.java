@@ -750,6 +750,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "species", group = BINDING, graphTypes = SpellGraph.class)
+    public static class Species extends RuneNode {
+        public Species() {
+            super("species");
+        }
+    }
+
     @NodeAttribute(name = "any_of", group = BINDING, graphTypes = SpellGraph.class)
     public static class AnyOf extends RuneNode {
         public AnyOf() {
@@ -917,6 +924,7 @@ public final class RuneNodes {
         BY_RUNE.put("items", Items::new);
         BY_RUNE.put("entities", Entities::new);
         BY_RUNE.put("kind", Kind::new);
+        BY_RUNE.put("species", Species::new);
         BY_RUNE.put("any-of", AnyOf::new);
         BY_RUNE.put("all-of", AllOf::new);
         BY_RUNE.put("except", Except::new);
