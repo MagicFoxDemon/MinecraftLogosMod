@@ -288,8 +288,8 @@ public final class Examples {
 
         add("npc-group-heal", """
                 ; 生息之环：治疗施法者周围 16 格内的非玩家生物，每个恢复 6 点生命；不区分敌我
-                ; 300 魔力包含选择器的 2 点和最多 33 个目标的治疗费用（每个 9 点）
-                (spell :name "生息之环" :mana 300
+                ; 100 魔力包含选择器的 2 点和最多 10 个目标的治疗费用（每个 9 点）
+                (spell :name "生息之环" :mana 100
                   (heal (entities :at (pos-of caster) :radius 16 :filter (kind living)) 6))
                 """);
 
