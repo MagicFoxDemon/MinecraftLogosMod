@@ -27,7 +27,7 @@ public enum Type {
     PARTICLE("✧", "粒子"),
     /** Which entities or blocks are admitted: an id/#tag string, a {@code (kind …)}, or a combination. */
     FILTER("⊙", "筛选"),
-    /** A {@link TargetKind} word; only written inside {@code (kind …)}. */
+    /** A {@link TargetKind} word or an entity type read by {@code (species …)}, consumed by {@code (kind …)}. */
     KIND("◈", "种类"),
     /** A named anchor, {@code ^name}: the caster's saved place. Fits any position slot. */
     ANCHOR("⚓", "锚点"),

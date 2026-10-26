@@ -449,9 +449,19 @@ public final class Runes {
                             e -> e.isAlive() && !e.isSpectator() && Targeting.mayAffect(c.inst(), e) && f.test(c.inst(), e)),
                             at, r, e -> f.testSelf(c.inst(), e)));
                 });
+        def("species", BINDING, KIND).p("entity", ENTITY)
+                .doc("族属：读取实体的生物注册 ID，输出种类。接入种类筛选后只匹配相同 ID 的实体，也支持其他模组的生物；不判断阵营。实体为空时不匹配任何对象。免费")
+                .exec((n, c) -> {
+                    Entity e = entity(n.arg(0), c);
+                    return e == null ? null : e.getType();
+                });
         def("kind", BINDING, FILTER).p("kind", KIND)
-                .doc("目标种类：" + TargetKind.words() + "。接到任何 :filter 上；只有 all 能筛选方块。免费")
-                .exec((n, c) -> Filter.of((TargetKind) n.arg(0).value));
+                .doc("目标种类：" + TargetKind.words() + "，或族属读取的生物种类。接到任何 :filter 上；只有 all 能筛选方块。种类为空时不匹配任何对象。免费")
+                .exec((n, c) -> switch (eval(n.arg(0), c)) {
+                    case TargetKind k -> Filter.of(k);
+                    case net.minecraft.world.entity.EntityType<?> type -> Filter.entityType(type);
+                    case null, default -> Filter.of(TargetKind.NONE);
+                });
         def("any-of", BINDING, FILTER).rest("filter", FILTER).doc("符合其中任意一个筛选即可。免费")
                 .exec((n, c) -> Filter.anyOf(n.args.stream().map(a -> filter(a, c)).toList()));
         def("all-of", BINDING, FILTER).rest("filter", FILTER).doc("必须同时符合所有筛选。免费")

@@ -414,6 +414,7 @@
   "logos.rune.master": "master",
   "logos.rune.foe": "foe",
   "logos.rune.kind": "kind",
+  "logos.rune.species": "species",
   "logos.rune.any-of": "any-of",
   "logos.rune.all-of": "all-of",
   "logos.rune.except": "except",

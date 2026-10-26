@@ -340,7 +340,7 @@ public final class Compiler {
                 break;
             }
             Node arg;
-            if (i < pos.size() && p.type() == Type.KIND) {
+            if (i < pos.size() && p.type() == Type.KIND && pos.get(i) instanceof Atom a && !a.text().startsWith("$")) {
                 // Kind words (enemies, items…) are also selector names; inside (kind …) they name a kind.
                 arg = kind(pos.get(i));
             } else if (i < pos.size() && p.type() == Type.CREATURE) {

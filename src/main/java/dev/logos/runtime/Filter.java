@@ -82,6 +82,21 @@ public interface Filter {
         };
     }
 
+    /** A species read from an entity: exact registry type, never a block or an item's contents. */
+    static Filter entityType(net.minecraft.world.entity.EntityType<?> type) {
+        return new Filter() {
+            @Override
+            public boolean test(SpellInstance inst, Entity e) {
+                return e.getType() == type;
+            }
+
+            @Override
+            public boolean testBlock(BlockState state) {
+                return false;
+            }
+        };
+    }
+
     static Filter anyOf(List<Filter> fs) {
         return new Filter() {
             @Override

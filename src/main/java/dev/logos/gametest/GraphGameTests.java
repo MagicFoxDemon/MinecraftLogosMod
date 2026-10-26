@@ -51,7 +51,20 @@ final class GraphGameTests {
         formRefsRoundtrip(h);
         constructSizesFollowShape(h);
         creatureLookRoundtrip(h);
+        speciesRoundtrip(h);
         h.succeed();
+    }
+
+    /** Event targets feed species through a real kind wire, rather than the old inline kind dropdown. */
+    private static void speciesRoundtrip(GameTestHelper h) {
+        SpellGraph graph = GraphBuilder.build(Compiler.compile("(spell :trigger attack :mana 30 (heal (entities :filter (kind (species target))) 6))"));
+        var species = graph.getNodes().stream().filter(n -> n instanceof RuneNodes.Species)
+                .map(n -> (RuneNodes.Species) n).findFirst().orElseThrow();
+        var kind = graph.getNodes().stream().filter(n -> n instanceof RuneNodes.Kind)
+                .map(n -> (RuneNodes.Kind) n).findFirst().orElseThrow();
+        h.assertTrue(species.out(RuneNode.OUT).isConnected() && kind.in("kind").isConnected(), "species must connect to the kind input");
+        var r = GraphCompiler.compile(graph);
+        h.assertTrue(r.ok() && r.source().contains("(kind (species target))"), "target species must survive graph compilation: " + r.error());
     }
 
     /** A projectile wearing a creature keeps it through the graph as a creature card on its look; the look id round-trips. */
@@ -214,6 +227,8 @@ final class GraphGameTests {
         var damage = place(g, new RuneNodes.Damage());
         var execute = place(g, new RuneNodes.Execute());
         var hp = place(g, new RuneNodes.Hp());
+        var species = place(g, new RuneNodes.Species());
+        var kind = place(g, new RuneNodes.Kind());
         var model = g.graphModel;
         h.assertTrue(model.isCompatiblePort(caster.out(RuneNode.OUT), damage.in("target")), "○ entity → broadcast slot should connect");
         h.assertTrue(model.isCompatiblePort(enemies.out(RuneNode.OUT), damage.in("target")), "◎ entities → broadcast slot should connect");
@@ -223,6 +238,10 @@ final class GraphGameTests {
         h.assertTrue(!model.isCompatiblePort(hp.out(RuneNode.OUT), damage.in("target")), "□ number must not fit an entity slot");
         h.assertTrue(model.isCompatiblePort(hp.out(RuneNode.OUT), damage.in("amount")), "□ number → □ amount should connect");
         h.assertTrue(!model.isCompatiblePort(damage.out(RuneNode.NEXT), hp.in("entity")), "▶ flow must not fit a value slot");
+        h.assertTrue(model.isCompatiblePort(caster.out(RuneNode.OUT), species.in("entity")), "species accepts a single entity");
+        h.assertTrue(!model.isCompatiblePort(enemies.out(RuneNode.OUT), species.in("entity")), "species must not accept an entity group");
+        h.assertTrue(model.isCompatiblePort(species.out(RuneNode.OUT), kind.in("kind")), "species produces a kind");
+        h.assertTrue(!model.isCompatiblePort(species.out(RuneNode.OUT), enemies.in(RuneNode.kw("filter"))), "a species must pass through a kind filter");
         h.succeed();
     }
 

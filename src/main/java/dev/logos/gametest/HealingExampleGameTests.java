@@ -1,8 +1,10 @@
 package dev.logos.gametest;
 
 import dev.logos.lang.Examples;
+import dev.logos.lang.Status;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.PlayerMagic;
+import dev.logos.runtime.StatusData;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -54,22 +56,44 @@ final class HealingExampleGameTests {
     }
 
     static void group(GameTestHelper h) {
-        ServerPlayer caster = player(h, 1.5);
+        ServerPlayer bystander = player(h, 3.5);
+        var caster = patient(h, EntityType.VILLAGER, 4.5, 1.5);
         var near = patient(h, EntityType.VILLAGER, 4.5, 6.5);
-        var distant = patient(h, EntityType.IRON_GOLEM, 4.5, 16.5);
+        var distant = patient(h, EntityType.VILLAGER, 4.5, 16.5);
         var outside = patient(h, EntityType.VILLAGER, 4.5, 20.5);
+        var stranger = patient(h, EntityType.IRON_GOLEM, 6.5, 6.5);
+        var enemy = patient(h, EntityType.HUSK, 2.5, 6.5);
         var spell = Casting.compile(Examples.ALL.get("npc-group-heal"));
-        var inst = Casting.cast(caster, spell, null, null);
-        h.assertTrue(inst != null && inst.endedNaturally(), "group heal must complete");
-        h.assertTrue(near.getHealth() == 10 && distant.getHealth() == 10, "both NPCs within 16 blocks must receive 6 healing");
-        h.assertTrue(outside.getHealth() == 4, "NPC outside the radius must not be healed");
-        h.assertTrue(caster.getHealth() == 4, "group heal must not heal players");
+        var inst = Casting.castAs(caster, spell, spell.mana(), 0, null, h.absoluteVec(new Vec3(4.5, 2, 40.5)));
+        h.assertTrue(inst.endedNaturally(), "group heal must complete with 100 mana");
+        h.assertTrue(near.getHealth() == 10 && distant.getHealth() == 10,
+                "both same-species NPCs within 16 blocks of the caster must receive 6 healing");
+        h.assertTrue(outside.getHealth() == 4, "same-species NPC outside the radius must not be healed");
+        h.assertTrue(stranger.getHealth() == 4 && enemy.getHealth() == 4, "other species, including enemies, must not be healed");
+        h.assertTrue(bystander.getHealth() == 4 && caster.getHealth() == 4, "the selector must still exclude players and the caster");
+        h.assertTrue(Math.abs(inst.mana - 80) < 1e-6, "only selection and two heals should spend mana: " + inst.mana);
+        h.succeed();
+    }
 
-        var npcCaster = patient(h, EntityType.VILLAGER, 4.5, 1.5);
-        var npcCast = Casting.castAs(npcCaster, spell, spell.mana(), 0, null, h.absoluteVec(new Vec3(4.5, 2, 40.5)));
-        h.assertTrue(npcCast.endedNaturally() && near.getHealth() == 16 && distant.getHealth() == 16,
-                "NPC cast must centre the heal on the caster, even with a different event position");
-        h.assertTrue(outside.getHealth() == 4 && caster.getHealth() == 4, "range and player exclusions must hold for NPC casters");
+    /** Species follows an event target, supports modded types, and a missing entity never widens a filter. */
+    static void species(GameTestHelper h) {
+        ServerPlayer caster = player(h, 1.5);
+        var target = patient(h, dev.logos.LogosMod.MANA_LIFEFORM.get(), 4.5, 4.5);
+        var kin = patient(h, dev.logos.LogosMod.MANA_LIFEFORM.get(), 6.5, 4.5);
+        var stranger = patient(h, EntityType.VILLAGER, 2.5, 4.5);
+        var spell = Casting.compile("(spell :trigger attack :mana 20 (mark (entities :radius 8 :filter (kind (species target))) #kin))");
+        var inst = Casting.cast(caster, spell, target, null);
+        h.assertTrue(inst != null && inst.endedNaturally(), "target species filter must run");
+        var mark = new Status("#kin");
+        h.assertTrue(StatusData.has(target, mark) && StatusData.has(kin, mark), "modded entities must match their exact registry type");
+        h.assertTrue(!StatusData.has(stranger, mark), "another species must not match");
+
+        var empty = Casting.compile("(spell :mana 20 (mark (entities :radius 8 :filter (kind (species (foe)))) #missing))");
+        var emptyCast = Casting.cast(caster, empty, null, null);
+        h.assertTrue(emptyCast != null && emptyCast.endedNaturally(), "an absent species must be safe to filter");
+        var missing = new Status("#missing");
+        h.assertTrue(!StatusData.has(target, missing) && !StatusData.has(kin, missing) && !StatusData.has(stranger, missing),
+                "an absent species must select nobody");
         h.succeed();
     }
 }
