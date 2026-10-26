@@ -8,6 +8,7 @@ import dev.logos.lang.Category;
 import dev.logos.lang.Element;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Charging;
+import dev.logos.runtime.Effects;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellInstance;
 import dev.logos.runtime.SpellModifiers;
@@ -90,6 +91,34 @@ final class SpellModifierGameTests {
         near(h, c.getHealth(), 9, "4 frost, a quarter taken");
         cast(p, "(damage (nearest :radius 6) 4 fire)");
         near(h, c.getHealth(), 7, "4 fire, half taken");
+        h.succeed();
+    }
+
+    /** Arcane is a writable damage element with its own power, at 1 mana a point. */
+    static void arcaneDamageHasItsOwnPower(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow c = cow(h);
+        buff(p, SpellModifiers.powerAttribute(Element.ARCANE), 1);
+        SpellInstance arcane = cast(p, "(damage (nearest :radius 6) 2 arcane)");
+        near(h, c.getHealth(), 6, "2 arcane at ×2");
+        near(h, arcane.mana, 50 - 1 - 2, "mana left after nearest (1) and 2 arcane (2)");
+        h.succeed();
+    }
+
+    /**
+     * A creature deals life damage through the entry other mods use: its life power and the target's life
+     * resistance apply, and vanilla's hurt cooldown turns aside an equal second hit.
+     */
+    static void creatureLifeDamage(GameTestHelper h) {
+        Cow attacker = h.spawn(EntityType.COW, new Vec3(4.5, 2, 1.5));
+        attacker.setNoAi(true);
+        Cow c = cow(h);
+        buff(attacker, SpellModifiers.powerAttribute(Element.LIFE), 1);
+        buff(c, SpellModifiers.resistanceAttribute(Element.LIFE), 0.5);
+        Effects.damage(attacker, c, 4, Element.LIFE);
+        near(h, c.getHealth(), 6, "4 life at ×2, half taken");
+        Effects.damage(attacker, c, 4, Element.LIFE);
+        near(h, c.getHealth(), 6, "an equal hit during the hurt cooldown");
         h.succeed();
     }
 

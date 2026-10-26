@@ -64,7 +64,7 @@ public final class SagePrompt {
         sb.append("量级（□数）：");
         for (Map.Entry<String, Double> m : Compiler.MAGNITUDES.entrySet()) sb.append(m.getKey()).append('=').append(fmt(m.getValue())).append(' ');
         sb.append("\n元素 ✦：");
-        for (Element e : Element.values()) if (Element.parse(e.name().toLowerCase(Locale.ROOT)) == e) sb.append(e.name().toLowerCase(Locale.ROOT)).append(' ');
+        for (Element e : Element.values()) if (e.writable) sb.append(e.name().toLowerCase(Locale.ROOT)).append(' ');
         sb.append("\n运动 ∿：");
         for (Motion m : Motion.values()) sb.append(m.name().toLowerCase(Locale.ROOT)).append(' ');
         sb.append("\n形状 ⬡：");

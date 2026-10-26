@@ -55,7 +55,7 @@ final class EnumCatalog {
             case PARTICLE -> BuiltInRegistries.PARTICLE_TYPE.keySet().forEach(id -> ids.add(id.toString()));
             case EFFECT -> BuiltInRegistries.MOB_EFFECT.keySet().forEach(id -> ids.add(id.toString()));
             case DIMENSION -> ids.addAll(Dimensions.known.get());
-            case ELEMENT -> { for (Element e : Element.values()) if (Element.parse(e.name().toLowerCase(Locale.ROOT)) != null) ids.add(e.name().toLowerCase(Locale.ROOT)); }
+            case ELEMENT -> { for (Element e : Element.values()) if (e.writable) ids.add(e.name().toLowerCase(Locale.ROOT)); }
             case MOTION -> { for (Motion m : Motion.values()) ids.add(m.name().toLowerCase(Locale.ROOT)); }
             case SHAPE -> { for (ConstructShape s : ConstructShape.values()) ids.add(s.word()); }
             case WEATHER -> { for (Weather w : Weather.values()) ids.add(w.word()); }

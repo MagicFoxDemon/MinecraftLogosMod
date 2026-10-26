@@ -2,28 +2,34 @@ package dev.logos.lang;
 
 import java.util.Locale;
 
+/** Every element deals damage; {@link #writable} says which ones a player may write. Synced by ordinal: append only. */
 public enum Element {
-    PHYSICAL("物理", 0.8),
-    FIRE("火焰", 1.0),
-    FROST("寒霜", 1.0),
-    LIGHTNING("雷霆", 1.1),
-    VOID("虚空", 1.5),
-    // Not writable by players; inferred for visuals only.
-    ARCANE("奥秘", 1.0),
-    LIFE("生命", 1.0);
+    PHYSICAL("物理", 0.8, true),
+    FIRE("火焰", 1.0, true),
+    FROST("寒霜", 1.0, true),
+    LIGHTNING("雷霆", 1.1, true),
+    VOID("虚空", 1.5, true),
+    // Also how a spell with no element looks.
+    ARCANE("奥秘", 1.0, true),
+    // Dealt by other mods' creatures (a dryad), never written by players; heals and shields look like it.
+    LIFE("生命", 1.0, false);
 
     public final String zh;
     /** Mana cost per point of damage. */
     public final double costFactor;
+    /** Whether players can pick it, in text or in the graph editor. */
+    public final boolean writable;
 
-    Element(String zh, double costFactor) {
+    Element(String zh, double costFactor, boolean writable) {
         this.zh = zh;
         this.costFactor = costFactor;
+        this.writable = writable;
     }
 
+    /** The writable element named {@code s}, or null. */
     public static Element parse(String s) {
         for (Element e : values()) {
-            if (e.ordinal() <= VOID.ordinal() && e.name().toLowerCase(Locale.ROOT).equals(s)) return e;
+            if (e.writable && e.name().toLowerCase(Locale.ROOT).equals(s)) return e;
         }
         return null;
     }

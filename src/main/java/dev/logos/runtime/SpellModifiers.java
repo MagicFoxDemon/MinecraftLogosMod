@@ -54,7 +54,6 @@ public final class SpellModifiers {
 
     static {
         for (Element e : Element.values()) {
-            if (Element.parse(name(e)) == null) continue; // arcane and life are for visuals only
             POWER.put(e, attribute(name(e) + "_spell_power", 1, 0, 64));
             RESISTANCE.put(e, attribute(name(e) + "_spell_resistance", 0, 0, 1));
         }
@@ -67,7 +66,7 @@ public final class SpellModifiers {
 
     private SpellModifiers(LivingEntity caster) {
         double power = value(caster, SPELL_POWER);
-        for (Element e : Element.values()) damage[e.ordinal()] = power * value(caster, POWER.get(e), 1);
+        for (Element e : Element.values()) damage[e.ordinal()] = power * value(caster, POWER.get(e));
         baseCost = value(caster, SPELL_COST);
         for (Category c : Category.values()) cost[c.ordinal()] = baseCost * value(caster, COST.get(c));
     }
@@ -99,7 +98,7 @@ public final class SpellModifiers {
 
     /** The share of {@code element} spell damage that {@code target} still takes. */
     public static double taken(LivingEntity target, Element element) {
-        return (1 - value(target, SPELL_RESISTANCE)) * (1 - value(target, RESISTANCE.get(element), 0));
+        return (1 - value(target, SPELL_RESISTANCE)) * (1 - value(target, RESISTANCE.get(element)));
     }
 
     /** How much faster {@code caster} charges: flow scales by it and surge by its square, so a charge takes 1/speed as long. */
@@ -127,24 +126,19 @@ public final class SpellModifiers {
         return entity instanceof ManaVessel v ? v.receiveMana(amount) : 0;
     }
 
-    /** The attribute raising (or lowering) the damage of {@code element}; null for an element no spell can write. */
-    public static @Nullable Holder<Attribute> powerAttribute(Element element) {
+    /** The attribute raising (or lowering) the damage of {@code element}. */
+    public static Holder<Attribute> powerAttribute(Element element) {
         return POWER.get(element);
     }
 
-    /** The attribute turning aside spell damage of {@code element}; null for an element no spell can write. */
-    public static @Nullable Holder<Attribute> resistanceAttribute(Element element) {
+    /** The attribute turning aside spell damage of {@code element}. */
+    public static Holder<Attribute> resistanceAttribute(Element element) {
         return RESISTANCE.get(element);
     }
 
     /** The attribute scaling what runes of {@code category} cost. */
     public static Holder<Attribute> costAttribute(Category category) {
         return COST.get(category);
-    }
-
-    /** {@code attribute}'s value on {@code e}; {@code neutral} when there is no such attribute (arcane and life). */
-    private static double value(LivingEntity e, @Nullable Holder<Attribute> attribute, double neutral) {
-        return attribute == null ? neutral : value(e, attribute);
     }
 
     private static double value(LivingEntity e, Holder<Attribute> attribute) {

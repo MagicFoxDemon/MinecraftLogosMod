@@ -34,21 +34,38 @@ public final class Effects {
     /** Applies elemental damage. Returns true if the target died from it. */
     public static boolean damage(SpellInstance inst, LivingEntity t, double amount, Element el) {
         if (!t.isAlive()) return false;
+        inst.affected.add(t.getUUID());
+        return hurt(inst.caster, t, amount * inst.modifiers.damage(el), el, true);
+    }
+
+    /**
+     * Elemental damage dealt by a creature rather than a spell: the entry for other mods' monsters, such as
+     * a dryad's life damage. The attacker's element power and the target's resistances apply and the hit
+     * shows the element's damage burst, as for a spell; it keeps vanilla's hurt cooldown, and passive
+     * triggers see it as ordinary damage. Returns true if the target died from it.
+     */
+    public static boolean damage(LivingEntity attacker, LivingEntity t, double amount, Element el) {
+        if (!t.isAlive()) return false;
+        return hurt(attacker, t, amount * SpellModifiers.of(attacker).damage(el), el, false);
+    }
+
+    private static boolean hurt(LivingEntity attacker, LivingEntity t, double amount, Element el, boolean spell) {
         double amt = amount;
         if (el == Element.FIRE && t.fireImmune()) amt = 0;
         if (el == Element.FROST && t.fireImmune()) amt *= 2;
         if (el == Element.LIGHTNING && t.isInWaterOrRain()) amt *= 1.5;
-        amt *= inst.modifiers.damage(el) * SpellModifiers.taken(t, el);
+        amt *= SpellModifiers.taken(t, el);
+        // Physical is a melee hit; every other element is vanilla magic, which armour does not stop.
         DamageSource src;
         if (el == Element.PHYSICAL) {
-            src = inst.caster instanceof Player p ? t.damageSources().playerAttack(p) : t.damageSources().mobAttack(inst.caster);
+            src = attacker instanceof Player p ? t.damageSources().playerAttack(p) : t.damageSources().mobAttack(attacker);
         } else {
-            src = t.damageSources().indirectMagic(inst.caster, inst.caster);
+            src = t.damageSources().indirectMagic(attacker, attacker);
         }
-        inst.affected.add(t.getUUID());
         ServerLevel level = (ServerLevel) t.level();
-        Vfx.burst(level, t, inst.caster.level() == level ? inst.caster.getEyePosition() : null, el, Vfx.Burst.DAMAGE);
+        Vfx.burst(level, t, attacker.level() == level ? attacker.getEyePosition() : null, el, Vfx.Burst.DAMAGE);
         if (amt <= 0) return false;
+        if (!spell) return t.hurtServer(level, src, (float) amt) && !t.isAlive();
         t.invulnerableTime = 0;
         spellDepth++;
         try {
