@@ -32,6 +32,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
  * bearer does not take; they stack as {@code (1 − all) × (1 − element)}.
  * <li>{@code spell_cost}, {@code <category>_node_cost}: multipliers (base 1, at least 0.1) on what each rune
  * of a spell pays; they multiply each other.
+ * <li>{@code heal_power}: a multiplier (base 1) on the healing and shields a spell gives, drain's included;
+ * like power, the rune still pays for the amount written.
  * <li>{@code channel_speed}: how much faster a charge fills (base 1; 2 takes half as long).
  * <li>{@code mana_regeneration}: mana per second a player's pool refills by.
  * </ul>
@@ -48,6 +50,7 @@ public final class SpellModifiers {
     public static final DeferredHolder<Attribute, Attribute> SPELL_POWER = attribute("spell_power", 1, 0, 64);
     public static final DeferredHolder<Attribute, Attribute> SPELL_RESISTANCE = attribute("spell_resistance", 0, 0, 1);
     public static final DeferredHolder<Attribute, Attribute> SPELL_COST = attribute("spell_cost", 1, 0.1, 16);
+    public static final DeferredHolder<Attribute, Attribute> HEAL_POWER = attribute("heal_power", 1, 0, 64);
     public static final DeferredHolder<Attribute, Attribute> CHANNEL_SPEED = attribute("channel_speed", 1, 0.1, 16);
     public static final DeferredHolder<Attribute, Attribute> MANA_REGENERATION =
             attribute("mana_regeneration", Limits.MANA_REGEN_PER_TICK * 20, 0, 1e6);
@@ -63,12 +66,14 @@ public final class SpellModifiers {
     private final double[] damage = new double[Element.values().length];
     private final double[] cost = new double[Category.values().length];
     private final double baseCost;
+    private final double heal;
 
     private SpellModifiers(LivingEntity caster) {
         double power = value(caster, SPELL_POWER);
         for (Element e : Element.values()) damage[e.ordinal()] = power * value(caster, POWER.get(e));
         baseCost = value(caster, SPELL_COST);
         for (Category c : Category.values()) cost[c.ordinal()] = baseCost * value(caster, COST.get(c));
+        heal = value(caster, HEAL_POWER);
     }
 
     /** Called once while the mod is constructed, so the attributes are registered with the rest. */
@@ -89,6 +94,11 @@ public final class SpellModifiers {
     /** The multiplier on damage of {@code element} the caster deals. */
     public double damage(Element element) {
         return damage[element.ordinal()];
+    }
+
+    /** The multiplier on the healing and shields the caster gives. */
+    public double heal() {
+        return heal;
     }
 
     /** The multiplier on what a rune of {@code category} costs; with no category, only the overall one. */

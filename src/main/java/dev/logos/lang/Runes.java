@@ -636,7 +636,7 @@ public final class Runes {
                     for (LivingEntity t : living(n.arg(0), c)) {
                         if (!c.inst().spend(amt * 1.5, "drain")) return null;
                         boolean killed = Effects.damage(c.inst(), t, amt, Element.VOID);
-                        c.inst().caster.heal((float) amt / 2);
+                        c.inst().caster.heal((float) (amt / 2 * c.inst().modifiers.heal()));
                         if (t.level() == c.inst().caster.level()) Vfx.line(lv(t), Targeting.center(t), Targeting.center(c.inst().caster), Element.VOID);
                         if (killed) fire(n, "on-kill", c.on(t, Targeting.center(t)));
                     }
@@ -647,7 +647,7 @@ public final class Runes {
                     double amt = Math.max(0, num(n.arg(1), c));
                     for (LivingEntity t : living(n.arg(0), c)) {
                         if (!c.inst().spend(amt * 1.5, "heal")) return null;
-                        t.heal((float) amt);
+                        t.heal((float) (amt * c.inst().modifiers.heal()));
                         Vfx.burst(lv(t), t, null, Element.LIFE, Vfx.Burst.HEAL);
                     }
                     return null;
@@ -657,7 +657,7 @@ public final class Runes {
                     double amt = Math.max(0, num(n.arg(1), c));
                     for (LivingEntity t : living(n.arg(0), c)) {
                         if (!c.inst().spend(amt * 1.5, "shield")) return null;
-                        Effects.shield(t, amt);
+                        Effects.shield(t, amt * c.inst().modifiers.heal());
                         Vfx.burst(lv(t), t, null, Element.LIFE, Vfx.Burst.WARD);
                     }
                     return null;

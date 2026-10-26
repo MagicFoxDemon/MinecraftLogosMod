@@ -331,6 +331,7 @@
   "attribute.logos.spell_resistance": "法术抗性",
   "attribute.logos.spell_cost": "术式消耗",
   "attribute.logos.channel_speed": "蓄力速度",
+  "attribute.logos.heal_power": "治疗强度",
   "attribute.logos.mana_regeneration": "魔力回复",
   "attribute.logos.physical_spell_power": "物理法术强度",
   "attribute.logos.physical_spell_resistance": "物理法术抗性",
