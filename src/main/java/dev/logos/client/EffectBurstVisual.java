@@ -26,8 +26,8 @@ interface EffectBurstVisual {
                 case FROST -> new FrostDamageVisual();
                 case LIGHTNING -> new LightningDamageVisual();
                 case VOID -> new VoidDamageVisual();
-                // Arcane and life never deal damage.
-                case ARCANE, LIFE -> GENERIC;
+                case ARCANE -> new ArcaneDamageVisual();
+                case LIFE -> new LifeDamageVisual();
             };
             case HEAL -> new HealBurstVisual();
             case WARD -> new WardBurstVisual();

@@ -20,7 +20,7 @@
 - 包仍是 `BURST`：variant 为种类序号；size 为按目标碰撞箱算出的缩放（约 0.6–2.5，玩家约 1）。aux 是方向，没有时为零：伤害和缴械为“施法者 → 目标”，push/pull 为力的方向。`GENERIC` 的 size 仍是旧的粒子数换算。
 - `EffectBurstVisual.create(种类, 元素)` 已注册全部实现。`layers()` 返回空列表时继续播放旧的通用爆点，所以未完成的部分不会消失。
 - 客户端把根节点的局部 +Z 转到 aux 方向；有方向时，效果画在目标朝向来源的一侧（离中心 0.45×缩放 + 0.3 格），否则在身体中心、局部 +Z 朝上。缩放由 `scale(size)` 决定，默认限制在 0.6–2。
-- 奥秘和生命不会造成伤害，`DAMAGE` 对这两个元素返回通用实现。
+- 七个元素都会造成伤害。奥秘玩家可写；生命玩家不可写，由其他模组的生物通过 `Effects.damage(攻击者, 目标, 数值, 元素)` 造成（如树妖）。这个入口与法术伤害共用元素强度、抗性与受伤特效，但保留原版受伤冷却，也不算作法术。
 
 ## 持续的护盾球
 
@@ -35,7 +35,7 @@ shield 产生的护盾存在期间，目标身上保持一个球。服务端用 
 `DamageBurstCore.layers(主色, 高光色)` 是所有伤害共用的“法术命中身体、造成伤害”部分，按 UniqueProjectilesVol_5 的 `vfx_Hit_Wind02` 重建：中心旋涡、向外甩出的弧形风刃、十字镜头光、朝来源溅回的尖刺和火花。资源在 `textures/vfx/damage/`，导出脚本与来源哈希在仓库外（`art/burst/prepare_damage_core.py`、`damage-core-sources.txt`）。
 
 - WindMesh_01 是半个圆环网格，SwirlCenter_01 是圆盘网格；Photon 里改为预烘焙的 `arc.png`、`swirl.png` 广告牌，没有移植 Unity 的网格粒子、溶解滚动、HDR/Bloom 和软粒子。
-- 五个伤害元素在公共核心之上各自追加了元素特色（#126–#135）。
+- 七个伤害元素在公共核心之上各自追加了元素特色：物理、火焰、寒霜、雷霆、虚空见 #126–#135；奥秘（护符十字闪光、被击落的符文）与生命（凋谢的花冠、枯落的叶片）沿用各自命中特效的贴图，没有新增资源。
 
 ## 每个分支可修改的文件
 
@@ -62,6 +62,8 @@ shield 产生的护盾存在期间，目标身上保持一个球。服务端用 
 | 雷霆 | vfx_Hit_Lightning01–03 | LooseEnergySheet_01 游离电弧、ImpactShape_02 闪光 |
 | 虚空 | vfx_Hit_Ghostly01–03 / Orb18_purple | 屏幕空间 UV 的星空是虚空的标志，须自建 `void_damage_*` 着色器 |
 | 物理 | vfx_Hit_Slash01–03 | SlashShape_01 斩击、Spike_01、LensFlareAlpha_03 |
+| 奥秘 | 无，沿用奥秘命中与射线 | `arcane_impact/cross` 十字闪光、`arcane_ray/runes` 符文 |
+| 生命 | 无，沿用生命命中 | `life_impact/petal` 凋谢花冠、`life_impact/leaf` 枯落叶片（与治疗上升的叶片相反） |
 
 其它作用：
 
