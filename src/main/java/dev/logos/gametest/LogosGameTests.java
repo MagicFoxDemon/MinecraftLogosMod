@@ -50,7 +50,7 @@ public final class LogosGameTests {
             "process_ferments", "process_designates_and_routes", "process_dissolves_water_bottles", "process_dissolves_from_tank", "process_chains", "process_needs_mana", "process_shows_working", "process_cards_keep_and_remove", "process_pours_bottles_first", "process_says_what_is_missing", "alchemy_table_switch", "powder_settles", "powder_is_eaten", "powder_dissolves_back", "brews_from_base", "brews_from_water", "process_designates_exactly", "process_products_exact", "status_follows_designations", "status_says_outputs_full", "process_calcines", "calcine_needs_blast_furnace", "redstone_distils_mercury", "tria_prima_dissolve", "philosophers_mercury_settles", "conjunction_joins_powders", "purify_cleans_tainted_shards", "purify_washes_like_a_cauldron", "mercury_is_poison", "blackstone_calcines_to_caput_mortuum", "sublimation_needs_lit_beacon", "gold_dissolves_into_amalgam", "chalk_and_rebis_calcine_white_stone", "firmament_liquid_dissolves", "firmament_liquid_settles", "caput_mortuum_rots_into_soul_humus", "soul_humus_washes_into_chalk", "echo_shard_dissolves_into_tincture", "sculk_veins_dissolve_into_tincture", "caput_mortuum_rots_into_raven_head", "soul_humus_drops_itself", "cultivation_jar_grows_crops", "cultivation_jar_medium", "cultivation_jar_grows_metal", "cultivation_jar_grows_fruiting_plants", "cultivation_jar_vital_mash", "reddening_runs_the_seven_processes", "infuse_block_fills_table", "field_settles_into_steps", "collectors_share_ambient", "spreader_feeds_table_through_collector", "storage_tank_stores_and_supplies", "storage_tank_condenses_and_keeps_mana", "caput_mortuum_insulates", "caput_mortuum_block_crafts", "survey_shows_field_and_flow", "free_mana_seeps_into_field",
             "emitter_pulse_casts_once", "emitter_full_casts_and_pays_extra", "emitter_spells_leave_through_itself", "emitter_edit_swaps_the_invocation", "offset_follows_the_facing", "dividers_measure_from_the_emitter",
             "alchemy_table_halves", "alchemy_table_automation", "alchemy_table_tank", "alchemy_table_mana", "alchemy_table_bottles", "alchemy_table_free_mana",
-            "spell_modifier_element_power", "spell_modifier_resistance", "spell_modifier_arcane_damage", "spell_modifier_creature_life_damage",
+            "spell_modifier_element_power", "spell_modifier_resistance", "spell_modifier_fire_is_vanilla_fire", "spell_modifier_arcane_damage", "spell_modifier_creature_life_damage",
             "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration",
             "buff_potions_brew", "buff_potions_dissolve", "buff_potions_effects", "herbs_grow_in_jars",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
@@ -318,6 +318,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("alchemy_table_free_mana", () -> AlchemyGameTests::tableGathersFreeMana);
         FUNCTIONS.register("spell_modifier_element_power", () -> SpellModifierGameTests::elementPowerBoostsItsElement);
         FUNCTIONS.register("spell_modifier_resistance", () -> SpellModifierGameTests::resistanceTurnsAsideItsElement);
+        FUNCTIONS.register("spell_modifier_fire_is_vanilla_fire", () -> SpellModifierGameTests::fireIsVanillaFire);
         FUNCTIONS.register("spell_modifier_arcane_damage", () -> SpellModifierGameTests::arcaneDamageHasItsOwnPower);
         FUNCTIONS.register("spell_modifier_creature_life_damage", () -> SpellModifierGameTests::creatureLifeDamage);
         FUNCTIONS.register("spell_modifier_node_cost", () -> SpellModifierGameTests::nodeCostScalesItsCategory);
@@ -378,7 +379,8 @@ public final class LogosGameTests {
         SpellInstance inst = cast(h, p, Examples.ALL.get("fireball"));
         h.succeedWhen(() -> {
             h.assertTrue(inst.finished(), "spell still running");
-            h.assertTrue(husk.getHealth() <= husk.getMaxHealth() - 7, "expected on-hit (5) + on-expire burst (2), health=" + husk.getHealth());
+            // Fire is vanilla fire, so the husk's 2 armour turns aside a little of it.
+            h.assertTrue(husk.getHealth() <= husk.getMaxHealth() - 6.8f, "expected on-hit (5) + on-expire burst (2), health=" + husk.getHealth());
             h.assertTrue(husk.isOnFire(), "on-expire ignite did not apply");
         });
     }

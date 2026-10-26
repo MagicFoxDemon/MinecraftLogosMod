@@ -195,6 +195,8 @@
   "entity.logos.mana_leech": "汲魔蛭",
   "item.logos.mana_leech_spawn_egg": "汲魔蛭刷怪蛋",
   "death.attack.logos.mana_leech": "%1$s 被 %2$s 吸干了魔力",
+  "death.attack.logos.spell_fire": "%1$s 被 %2$s 的法术烧死了",
+  "death.attack.logos.spell_fire.item": "%1$s 被 %2$s 用 %3$s 施放的法术烧死了",
   "item.logos.colossus_heart": "巨像之心",
   "item.logos.disorder_crystal": "失序结晶",
   "item.logos.maintenance_kit": "维护套件",

@@ -619,7 +619,7 @@ public final class Runes {
     private static void effects() {
         def("damage", EFFECT, ACTION).each("target").p("amount", NUM).opt("element", ELEMENT, "physical")
                 .on("on-kill", true, "目标因此死亡时").stab(2)
-                .doc("造成伤害。每点伤害消耗：物理0.8 火/冰/奥秘1.0 雷1.1 虚空1.5")
+                .doc("造成伤害。每点伤害消耗：火0.7 物理0.8 冰/奥秘1.0 雷1.1 虚空1.5")
                 .exec((n, c) -> {
                     double amt = Math.max(0, num(n.arg(1), c));
                     Element el = element(n.arg(2), c);
@@ -713,7 +713,7 @@ public final class Runes {
         def("damage-all", EFFECT, ACTION).p("targets", ENTITIES).p("amount", NUM).opt("element", ELEMENT, "physical")
                 .on("on-kill", true, "每个因此死亡的目标").stab(3)
                 .doc("群体伤害：一次付费，同时伤害群中每个目标，不会因魔力耗尽只打到一部分。"
-                        + "消耗与目标数无关：半径 5 以内为单体的 3 倍（每点物理2.4 火/冰/奥秘3.0 雷3.3 虚空4.5），"
+                        + "消耗与目标数无关：半径 5 以内为单体的 3 倍（每点火2.1 物理2.4 冰/奥秘3.0 雷3.3 虚空4.5），"
                         + "选出这个群的范围越大越贵，再乘 (半径 ÷ 5)^1.5（倍率与指数可配置）；群为空时不消耗")
                 .exec((n, c) -> {
                     double amt = Math.max(0, num(n.arg(1), c));
