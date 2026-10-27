@@ -464,6 +464,30 @@ public final class Examples {
                   (heal (master) 4))
                 """);
 
+        add("prismatic-barrage", """
+                ; 虹彩轮射：不阻挡实体的圆形法阵，1.5 秒内每 0.25 秒随机发射一种元素射线，共 6 次
+                ; 每次伤害最多分配 15 魔力，按元素单价换算，伤害向下保留两位小数
+                ; 默认费用：展开 4+0.3π，维持一次 0.2+0.02π，6×(择路0.5+射线3+伤害15)
+                ; 总耗最多约 116.21，注入 120 留出约 3.79 余量
+                (spell :name "虹彩轮射" :mana 120 :trigger cast
+                  (construct :shape disk :radius 1 :life 1.5 :every 0.25
+                    :solid (kind none) :sigil
+                    (on-tick
+                      (switch (random 5 :whole)
+                        (ray :from (pos-of form) :dir (dir-of form) :range 24
+                          (on-hit (damage target 15 arcane)))
+                        (ray :from (pos-of form) :dir (dir-of form) :range 24
+                          (on-hit (damage target 21.42 fire)))
+                        (ray :from (pos-of form) :dir (dir-of form) :range 24
+                          (on-hit (damage target 18.75 physical)))
+                        (ray :from (pos-of form) :dir (dir-of form) :range 24
+                          (on-hit (damage target 15 frost)))
+                        (ray :from (pos-of form) :dir (dir-of form) :range 24
+                          (on-hit (damage target 10 void)))
+                        (ray :from (pos-of form) :dir (dir-of form) :range 24
+                          (on-hit (damage target 13.63 lightning)))))))
+                """);
+
         add("ender-gale", """
                 ; 末影疾风：:trail 把尾迹换成末影粒子；phantasm（幻像显现）在命中处召出旋风粒子
                 ; 拖尾与幻象只是表象：击退来自 push，而不是 gust 粒子
