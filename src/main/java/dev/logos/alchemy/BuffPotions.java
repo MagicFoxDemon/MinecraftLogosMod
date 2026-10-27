@@ -1,6 +1,8 @@
 package dev.logos.alchemy;
 
+import java.util.EnumMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import dev.logos.LogosMod;
@@ -43,7 +45,7 @@ public final class BuffPotions {
     private static final double[] MANA_PER_SECOND = {400 / 180.0, 1000 / 180.0, 5000 / 300.0};
 
     /** 魔力涌流: mana flows back into the drinker's pool. */
-    public static final DeferredHolder<MobEffect, MobEffect> MANA_FLOW = LogosMod.MOB_EFFECTS.register("mana_flow", () -> new Buff(0x63CCF2)
+    public static final DeferredHolder<MobEffect, MobEffect> MANA_FLOW = LogosMod.MOB_EFFECTS.register("mana_flow", () -> new Buff(MobEffectCategory.BENEFICIAL, 0x63CCF2)
             .addAttributeModifier(SpellModifiers.MANA_REGENERATION, id("mana_flow"), AttributeModifier.Operation.ADD_VALUE,
                     level -> MANA_PER_SECOND[Math.clamp(level, 0, MANA_PER_SECOND.length - 1)]));
     /** 瓶装流魔, from a mana shard. */
@@ -56,27 +58,44 @@ public final class BuffPotions {
     public static final DeferredHolder<Potion, Potion> GREATER_MANA_FLOW_POTION = POTIONS.register("greater_mana_flow",
             () -> new Potion("logos.mana_flow", new MobEffectInstance(MANA_FLOW, 300 * 20, 2)));
 
+    /** 火焰增幅…: more spell damage dealt in an element, +20% at level I and +50% at level II. Every element has one, potion or not. */
+    public static final Map<Element, DeferredHolder<MobEffect, MobEffect>> POWER = new EnumMap<>(Element.class);
+    /** 火焰易伤…: more spell damage taken in an element, +20% at level I and +50% at level II. */
+    public static final Map<Element, DeferredHolder<MobEffect, MobEffect>> VULNERABILITY = new EnumMap<>(Element.class);
+
+    static {
+        for (Element element : Element.values()) {
+            String name = element.name().toLowerCase(Locale.ROOT);
+            int color = color(element);
+            POWER.put(element, LogosMod.MOB_EFFECTS.register(name + "_power", () -> new Buff(MobEffectCategory.BENEFICIAL, color)
+                    .addAttributeModifier(SpellModifiers.powerAttribute(element), id(name + "_power"),
+                            AttributeModifier.Operation.ADD_MULTIPLIED_BASE, BuffPotions::byLevel)));
+            VULNERABILITY.put(element, LogosMod.MOB_EFFECTS.register(name + "_vulnerability", () -> new Buff(MobEffectCategory.HARMFUL, color)
+                    .addAttributeModifier(SpellModifiers.vulnerabilityAttribute(element), id(name + "_vulnerability"),
+                            AttributeModifier.Operation.ADD_VALUE, BuffPotions::byLevel)));
+        }
+    }
+
     /** An element potion: its effect, its two potions, and the herb whose harvest brews it. */
     public enum ElementBuff {
-        PHYSICAL(Element.PHYSICAL, 0xC0473A, LogosMod.JarHerb.REDVEIN),
-        FIRE(Element.FIRE, 0xFF7B1F, LogosMod.JarHerb.CANDLEFLAME),
-        FROST(Element.FROST, 0x9BE6FF, LogosMod.JarHerb.FROSTBELL),
-        LIGHTNING(Element.LIGHTNING, 0xF3DF4E, LogosMod.JarHerb.THUNDER_THISTLE),
-        VOID(Element.VOID, 0x7438C2, LogosMod.JarHerb.RIFTSHADE);
+        PHYSICAL(Element.PHYSICAL, LogosMod.JarHerb.REDVEIN),
+        FIRE(Element.FIRE, LogosMod.JarHerb.CANDLEFLAME),
+        FROST(Element.FROST, LogosMod.JarHerb.FROSTBELL),
+        LIGHTNING(Element.LIGHTNING, LogosMod.JarHerb.THUNDER_THISTLE),
+        VOID(Element.VOID, LogosMod.JarHerb.RIFTSHADE);
 
         public final Element element;
         public final LogosMod.JarHerb herb;
-        /** 火焰增幅…: more spell damage in the element, +20% at level I and +50% at level II. */
+        /** Its element's empowerment ({@link #POWER}). */
         public final DeferredHolder<MobEffect, MobEffect> effect;
         public final DeferredHolder<Potion, Potion> potion;
         public final DeferredHolder<Potion, Potion> strong;
 
-        ElementBuff(Element element, int color, LogosMod.JarHerb herb) {
+        ElementBuff(Element element, LogosMod.JarHerb herb) {
             this.element = element;
             this.herb = herb;
             String id = element.name().toLowerCase(Locale.ROOT) + "_power";
-            effect = LogosMod.MOB_EFFECTS.register(id, () -> new Buff(color).addAttributeModifier(SpellModifiers.powerAttribute(element), id(id),
-                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE, level -> level <= 0 ? 0.2 : 0.5 + 0.3 * (level - 1)));
+            effect = POWER.get(element);
             potion = POTIONS.register(id, () -> new Potion("logos." + id, new MobEffectInstance(effect, 120 * 20)));
             strong = POTIONS.register("strong_" + id, () -> new Potion("logos." + id, new MobEffectInstance(effect, 300 * 20, 1)));
         }
@@ -88,6 +107,24 @@ public final class BuffPotions {
     }
 
     private BuffPotions() {}
+
+    /** How much an element effect adds at {@code level} (0 is level I): 0.2, then 0.5, then 0.3 more a level. */
+    private static double byLevel(int level) {
+        return level <= 0 ? 0.2 : 0.5 + 0.3 * (level - 1);
+    }
+
+    /** The colour of an element's effects, as their potions are tinted. */
+    private static int color(Element element) {
+        return switch (element) {
+            case PHYSICAL -> 0xC0473A;
+            case FIRE -> 0xFF7B1F;
+            case FROST -> 0x9BE6FF;
+            case LIGHTNING -> 0xF3DF4E;
+            case VOID -> 0x7438C2;
+            case ARCANE -> 0xD45CF0;
+            case LIFE -> 0x5FCB4E;
+        };
+    }
 
     /** Called while the mod is constructed, before its registers are handed to the bus. */
     public static void init() {}
@@ -128,10 +165,10 @@ public final class BuffPotions {
         }
     }
 
-    /** A plain beneficial effect; what it does is in its attribute modifiers. */
+    /** A plain effect; what it does is in its attribute modifiers. */
     private static final class Buff extends MobEffect {
-        Buff(int color) {
-            super(MobEffectCategory.BENEFICIAL, color);
+        Buff(MobEffectCategory category, int color) {
+            super(category, color);
         }
     }
 
