@@ -1331,6 +1331,29 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
+    /** Every element, arcane and life included, has an empowerment and a vulnerability, at +20% for level I and +50% for level II. */
+    static void elementEffectsForEveryElement(GameTestHelper h) {
+        @SuppressWarnings("removal")
+        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        for (dev.logos.lang.Element e : dev.logos.lang.Element.values()) {
+            var power = SpellModifiers.powerAttribute(e);
+            var vulnerability = SpellModifiers.vulnerabilityAttribute(e);
+            h.assertTrue(BuffPotions.VULNERABILITY.get(e).value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL,
+                    e + " vulnerability is not harmful");
+            for (int level = 0; level < 2; level++) {
+                double add = level == 0 ? 0.2 : 0.5;
+                p.addEffect(new net.minecraft.world.effect.MobEffectInstance(BuffPotions.POWER.get(e), 100, level));
+                p.addEffect(new net.minecraft.world.effect.MobEffectInstance(BuffPotions.VULNERABILITY.get(e), 100, level));
+                h.assertTrue(Math.abs(p.getAttributeValue(power) - (1 + add)) < 1e-6, e + " power " + (level + 1) + " gives " + p.getAttributeValue(power));
+                h.assertTrue(Math.abs(p.getAttributeValue(vulnerability) - add) < 1e-6,
+                        e + " vulnerability " + (level + 1) + " gives " + p.getAttributeValue(vulnerability));
+                p.removeEffect(BuffPotions.POWER.get(e));
+                p.removeEffect(BuffPotions.VULNERABILITY.get(e));
+            }
+        }
+        h.succeed();
+    }
+
     /** Each herb ferments from its recipe, grows in a jar from itself, and gives its harvest while staying planted. */
     static void herbsGrowInJars(GameTestHelper h) {
         var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
