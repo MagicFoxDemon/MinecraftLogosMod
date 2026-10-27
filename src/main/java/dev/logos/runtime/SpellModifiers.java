@@ -30,6 +30,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
  * they multiply each other. Damage, not cost: the rune still pays for the amount written.
  * <li>{@code spell_resistance}, {@code <element>_spell_resistance}: the share (0 to 1) of spell damage the
  * bearer does not take; they stack as {@code (1 − all) × (1 − element)}.
+ * <li>{@code spell_vulnerability}, {@code <element>_spell_vulnerability}: how much more spell damage the bearer
+ * takes (base 0; 0.5 is half as much again), kept apart from resistance so a debuff and a ward can both hold;
+ * they multiply in as {@code (1 + all) × (1 + element)}.
  * <li>{@code spell_cost}, {@code <category>_node_cost}: multipliers (base 1, at least 0.1) on what each rune
  * of a spell pays; they multiply each other.
  * <li>{@code heal_power}: a multiplier (base 1) on the healing and shields a spell gives, drain's included;
@@ -45,10 +48,12 @@ public final class SpellModifiers {
     private static final List<DeferredHolder<Attribute, Attribute>> ALL = new ArrayList<>();
     private static final Map<Element, DeferredHolder<Attribute, Attribute>> POWER = new EnumMap<>(Element.class);
     private static final Map<Element, DeferredHolder<Attribute, Attribute>> RESISTANCE = new EnumMap<>(Element.class);
+    private static final Map<Element, DeferredHolder<Attribute, Attribute>> VULNERABILITY = new EnumMap<>(Element.class);
     private static final Map<Category, DeferredHolder<Attribute, Attribute>> COST = new EnumMap<>(Category.class);
 
     public static final DeferredHolder<Attribute, Attribute> SPELL_POWER = attribute("spell_power", 1, 0, 64);
     public static final DeferredHolder<Attribute, Attribute> SPELL_RESISTANCE = attribute("spell_resistance", 0, 0, 1);
+    public static final DeferredHolder<Attribute, Attribute> SPELL_VULNERABILITY = attribute("spell_vulnerability", 0, 0, 16);
     public static final DeferredHolder<Attribute, Attribute> SPELL_COST = attribute("spell_cost", 1, 0.1, 16);
     public static final DeferredHolder<Attribute, Attribute> HEAL_POWER = attribute("heal_power", 1, 0, 64);
     public static final DeferredHolder<Attribute, Attribute> CHANNEL_SPEED = attribute("channel_speed", 1, 0.1, 16);
@@ -59,6 +64,7 @@ public final class SpellModifiers {
         for (Element e : Element.values()) {
             POWER.put(e, attribute(name(e) + "_spell_power", 1, 0, 64));
             RESISTANCE.put(e, attribute(name(e) + "_spell_resistance", 0, 0, 1));
+            VULNERABILITY.put(e, attribute(name(e) + "_spell_vulnerability", 0, 0, 16));
         }
         for (Category c : Category.values()) COST.put(c, attribute(c.name().toLowerCase(Locale.ROOT) + "_node_cost", 1, 0.1, 16));
     }
@@ -106,9 +112,10 @@ public final class SpellModifiers {
         return category == null ? baseCost : cost[category.ordinal()];
     }
 
-    /** The share of {@code element} spell damage that {@code target} still takes. */
+    /** The share of {@code element} spell damage that {@code target} takes: less by its resistances, more by its vulnerabilities. */
     public static double taken(LivingEntity target, Element element) {
-        return (1 - value(target, SPELL_RESISTANCE)) * (1 - value(target, RESISTANCE.get(element)));
+        return (1 - value(target, SPELL_RESISTANCE)) * (1 - value(target, RESISTANCE.get(element)))
+                * (1 + value(target, SPELL_VULNERABILITY)) * (1 + value(target, VULNERABILITY.get(element)));
     }
 
     /** How much faster {@code caster} charges: flow scales by it and surge by its square, so a charge takes 1/speed as long. */
@@ -144,6 +151,11 @@ public final class SpellModifiers {
     /** The attribute turning aside spell damage of {@code element}. */
     public static Holder<Attribute> resistanceAttribute(Element element) {
         return RESISTANCE.get(element);
+    }
+
+    /** The attribute making its bearer take more spell damage of {@code element}. */
+    public static Holder<Attribute> vulnerabilityAttribute(Element element) {
+        return VULNERABILITY.get(element);
     }
 
     /** The attribute scaling what runes of {@code category} cost. */

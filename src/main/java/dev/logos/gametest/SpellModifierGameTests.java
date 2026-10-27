@@ -158,6 +158,25 @@ final class SpellModifierGameTests {
         h.succeed();
     }
 
+    /**
+     * Overall and void vulnerability of ½ each make void damage 2.25 times as much; physical vulnerability of 1
+     * against physical resistance of ½ leaves physical damage as it was.
+     */
+    static void vulnerabilityAddsToDamageTaken(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow c = cow(h);
+        buff(c, SpellModifiers.SPELL_VULNERABILITY, 0.5);
+        buff(c, SpellModifiers.vulnerabilityAttribute(Element.VOID), 0.5);
+        cast(p, "(damage (nearest :radius 6) 2 void)");
+        near(h, c.getHealth(), 10 - 4.5, "2 void at 1.5 × 1.5");
+        c.getAttribute(SpellModifiers.SPELL_VULNERABILITY).removeModifier(BUFF);
+        buff(c, SpellModifiers.vulnerabilityAttribute(Element.PHYSICAL), 1);
+        buff(c, SpellModifiers.resistanceAttribute(Element.PHYSICAL), 0.5);
+        cast(p, "(damage (nearest :radius 6) 2)");
+        near(h, c.getHealth(), 10 - 4.5 - 2, "2 physical at ½ × 2");
+        h.succeed();
+    }
+
     /** Effect runes at ½ cost pay half; a selector (binding) still pays in full until the overall cost drops too. */
     static void nodeCostScalesItsCategory(GameTestHelper h) {
         ServerPlayer p = caster(h);
