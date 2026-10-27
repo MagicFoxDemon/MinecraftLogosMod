@@ -12,7 +12,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 
-/** All six real on-hit branches must share the launch budget without starving another missile. */
+/** All six real on-hit branches spend at most 10 mana per missile and fit within 59 injected mana. */
 final class PrismaticVolleyGameTests {
     private PrismaticVolleyGameTests() {}
 
@@ -38,7 +38,7 @@ final class PrismaticVolleyGameTests {
             var spell = Casting.compile(source.replace("(random 5 :whole)", Integer.toString(i)));
             var inst = Casting.cast(caster, spell, null, null);
             h.assertTrue(inst != null && !inst.dead && inst.objects == 3, "branch " + i + " must launch exactly three missiles");
-            h.assertTrue(Math.abs(inst.mana - 21.5) < 1e-6, "branch " + i + " must pay only the chosen launch path: " + inst.mana);
+            h.assertTrue(Math.abs(inst.mana - 30.5) < 1e-6, "branch " + i + " must pay only the chosen launch path: " + inst.mana);
             casts.add(inst);
         }
         h.succeedWhen(() -> {
@@ -46,7 +46,8 @@ final class PrismaticVolleyGameTests {
                 var inst = casts.get(i);
                 h.assertTrue(inst.finished(), "branch " + i + " is still flying");
                 h.assertTrue(inst.endedNaturally(), "branch " + i + " exhausted mana: " + inst.endReason());
-                h.assertTrue(Math.abs(inst.mana) < 1e-6, "branch " + i + " must spend its full damage budget: " + inst.mana);
+                h.assertTrue(inst.mana >= 0.5 - 1e-6 && inst.mana <= 0.53 + 1e-6,
+                        "branch " + i + " must spend nearly 10 mana per hit, leaving only integer/decimal rounding: " + inst.mana);
             }
             h.assertTrue(target.getHealth() < target.getMaxHealth(), "the homing missiles must deal real damage");
         });

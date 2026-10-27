@@ -14,8 +14,8 @@ class CompilerTest {
     @Test
     void prismaticVolleyKeepsSixExclusiveHomingBranches() {
         Spell s = Compiler.compile(Examples.ALL.get("prismatic-volley"));
-        assertEquals(50, s.mana());
-        Node split = s.body().getFirst().body.getFirst();
+        assertEquals(59, s.mana());
+        Node split = s.body().getFirst();
         assertEquals("split", split.rune.name);
         assertEquals(3.0, split.arg(0).value);
         Node choice = split.body.getFirst();
@@ -30,6 +30,8 @@ class CompilerTest {
             assertEquals(Motion.HOMING, projectile.kw.get("motion").value);
             assertEquals(elements.get(i), projectile.element);
             assertEquals(elements.get(i), projectile.events.get("on-hit").getFirst().arg(2).value);
+            double cost = (double) projectile.events.get("on-hit").getFirst().arg(1).value * elements.get(i).costFactor;
+            assertTrue(cost <= 10 && cost >= 9.99 - 1e-9, "each hit should use at most 10 mana, rounded down to two damage decimals: " + cost);
         }
     }
 
