@@ -36,7 +36,7 @@ public final class LogosGameTests {
 
     private static final List<String> TESTS = List.of(
             "projectile_impact_expiry", "projectile_impact_wall", "projectile_impact_piercing",
-            "example_npc_heal", "example_npc_group_heal", "rune_species_filter",
+            "example_npc_heal", "example_npc_group_heal", "rune_species_filter", "example_prismatic_volley_budget",
             "fireball_hits_and_bursts", "chain_lightning_bounces", "execute_with_proof_is_cheap", "execute_without_proof_starves",
             "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "context_wire_meanings", "config_limits_apply",
             "world_toggle_state", "world_resize", "world_use_block", "world_use_block_item", "world_grow_and_decay", "world_players_flag", "world_nearest_player", "end_all_others", "end_all_own", "form_ops_projectile", "form_ops_beam", "form_ops_field", "form_ops_spells", "value_random", "value_mix", "value_round_clamp", "value_wave", "value_choose", "value_spot_around", "value_spot_in", "world_switch", "world_form_refs", "world_blink_target", "world_items_magnet", "world_nether_step", "world_time_skip", "world_weather_global", "world_weather_area", "world_lightning",
@@ -69,6 +69,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("example_npc_heal", () -> HealingExampleGameTests::single);
         FUNCTIONS.register("example_npc_group_heal", () -> HealingExampleGameTests::group);
         FUNCTIONS.register("rune_species_filter", () -> HealingExampleGameTests::species);
+        FUNCTIONS.register("example_prismatic_volley_budget", () -> PrismaticVolleyGameTests::budget);
         FUNCTIONS.register("projectile_impact_expiry", () -> ProjectileImpactGameTests::expiry);
         FUNCTIONS.register("projectile_impact_wall", () -> ProjectileImpactGameTests::block);
         FUNCTIONS.register("projectile_impact_piercing", () -> ProjectileImpactGameTests::piercing);

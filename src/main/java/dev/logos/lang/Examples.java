@@ -33,6 +33,28 @@ public final class Examples {
                     (on-hit (damage target minor))))
                 """);
 
+        add("prismatic-volley", """
+                ; 虹彩飞矢：三枚追踪魔弹各自随机取六种元素之一，择路只执行选中的一支
+                ; 默认节点费用下，分裂、择路与追踪弹共花 3×(2+0.5+4+3)=28.5 魔力
+                ; 余下魔力提前均分给三枚，再除以各元素单价换算伤害；命中时不会抢走其他魔弹的预算
+                (spell :name "虹彩飞矢" :mana 50 :trigger cast
+                  (let $m (/ (max 0 (- (mana-left) 28.5)) 3)
+                    (split 3
+                      (switch (random 5 :whole)
+                        (projectile :motion homing
+                          (on-hit (damage target $m arcane)))
+                        (projectile :motion homing
+                          (on-hit (damage target (/ $m 0.7) fire)))
+                        (projectile :motion homing
+                          (on-hit (damage target (/ $m 1.1) lightning)))
+                        (projectile :motion homing
+                          (on-hit (damage target (/ $m 1.5) void)))
+                        (projectile :motion homing
+                          (on-hit (damage target (/ $m 0.8) physical)))
+                        (projectile :motion homing
+                          (on-hit (damage target $m frost)))))))
+                """);
+
         add("fireball", """
                 ; 爆炎火球：没有"火球"符文，只有 弹丸 + 命中 + 伤害 + 消散时的范围
                 (spell :name "爆炎火球" :mana 30
