@@ -12,6 +12,30 @@ import org.junit.jupiter.api.Test;
 
 class CompilerTest {
     @Test
+    void prismaticVolleyKeepsSixExclusiveHomingBranches() {
+        Spell s = Compiler.compile(Examples.ALL.get("prismatic-volley"));
+        assertEquals(59, s.mana());
+        Node split = s.body().getFirst();
+        assertEquals("split", split.rune.name);
+        assertEquals(3.0, split.arg(0).value);
+        Node choice = split.body.getFirst();
+        assertEquals("switch", choice.rune.name);
+        assertEquals(7, choice.args.size());
+        assertTrue(choice.arg(0).flags.contains("whole"));
+        assertEquals(5.0, choice.arg(0).arg(0).value);
+        List<Element> elements = List.of(Element.ARCANE, Element.FIRE, Element.LIGHTNING, Element.VOID, Element.PHYSICAL, Element.FROST);
+        for (int i = 0; i < elements.size(); i++) {
+            Node projectile = choice.arg(i + 1);
+            assertEquals("projectile", projectile.rune.name);
+            assertEquals(Motion.HOMING, projectile.kw.get("motion").value);
+            assertEquals(elements.get(i), projectile.element);
+            assertEquals(elements.get(i), projectile.events.get("on-hit").getFirst().arg(2).value);
+            double cost = (double) projectile.events.get("on-hit").getFirst().arg(1).value * elements.get(i).costFactor;
+            assertTrue(cost <= 10 && cost >= 9.99 - 1e-9, "each hit should use at most 10 mana, rounded down to two damage decimals: " + cost);
+        }
+    }
+
+    @Test
     void speciesProducesAKindThatCanBeFiltered() {
         Spell s = Compiler.compile(Examples.ALL.get("npc-group-heal"));
         Node kind = s.body().getFirst().arg(0).kw.get("filter");
