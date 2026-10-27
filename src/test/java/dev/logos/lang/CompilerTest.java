@@ -104,6 +104,37 @@ class CompilerTest {
     }
 
     @Test
+    void prismaticBarrageUsesSixExclusiveRaysWithCappedHitCosts() {
+        Spell s = Compiler.compile(Examples.ALL.get("prismatic-barrage"));
+        assertEquals(120, s.mana());
+        Node construct = s.body().getFirst();
+        assertEquals(ConstructShape.DISK, construct.kw.get("shape").value);
+        assertEquals(1.0, construct.kw.get("radius").value);
+        assertEquals(1.5, construct.kw.get("life").value);
+        assertEquals(0.25, construct.kw.get("every").value);
+        assertTrue(construct.flags.contains("sigil"));
+        assertEquals(TargetKind.NONE, construct.kw.get("solid").arg(0).value);
+        Node choice = construct.events.get("on-tick").getFirst();
+        assertEquals(7, choice.args.size());
+        assertEquals(5.0, choice.arg(0).arg(0).value);
+        assertTrue(choice.arg(0).flags.contains("whole"));
+        List<Element> elements = List.of(Element.ARCANE, Element.FIRE, Element.PHYSICAL, Element.FROST, Element.VOID, Element.LIGHTNING);
+        for (int i = 0; i < elements.size(); i++) {
+            Node ray = choice.arg(i + 1);
+            assertEquals("ray", ray.rune.name);
+            assertEquals(24.0, ray.kw.get("range").value);
+            assertEquals("pos-of", ray.kw.get("from").rune.name);
+            assertEquals("form", ray.kw.get("from").arg(0).value);
+            assertEquals("dir-of", ray.kw.get("dir").rune.name);
+            assertEquals("form", ray.kw.get("dir").arg(0).value);
+            assertEquals(elements.get(i), ray.element);
+            Node damage = ray.events.get("on-hit").getFirst();
+            double cost = (double) damage.arg(1).value * elements.get(i).costFactor;
+            assertTrue(cost <= 15 && cost >= 14.99, "each hit must stay within its 15 mana budget: " + cost);
+        }
+    }
+
+    @Test
     void groupEstimateGrowsWithRadius() {
         // enemies 2 + 1 physical (0.8) × 3 × max(1, (r/5)^1.5); past 64 counts as 64
         assertEquals(4.4, Compiler.compile("(spell :mana 200 (damage-all (enemies) 1))").profile().estimate(), 1e-6);

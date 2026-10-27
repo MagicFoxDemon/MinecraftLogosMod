@@ -61,7 +61,8 @@ public final class LogosGameTests {
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
             "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
             "colossus_grabs_big", "colossus_grabs_from_reach", "colossus_defends_itself", "colossus_orders_before_self_defense", "colossus_stomps_small_foes", "colossus_grabs_rider", "colossus_lets_go_when_killed", "colossus_punches_crowd", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_cannon_strikes_at_once", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered", "colossus_jumps_off",
-            "leech_hunts_richest", "leech_clings_and_drains", "leech_knocked_off", "leech_drains_familiar_health", "leech_splits", "leech_offspring_do_not_split", "leech_bane_and_death", "leech_familiar_obeys");
+            "leech_hunts_richest", "leech_clings_and_drains", "leech_knocked_off", "leech_drains_familiar_health", "leech_splits", "leech_offspring_do_not_split", "leech_bane_and_death", "leech_familiar_obeys",
+            "example_prismatic_barrage_budget");
 
     private LogosGameTests() {}
 
@@ -334,6 +335,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("buff_potions_dissolve", () -> AlchemyGameTests::buffPotionsDissolve);
         FUNCTIONS.register("buff_potions_effects", () -> AlchemyGameTests::buffPotionsEffects);
         FUNCTIONS.register("herbs_grow_in_jars", () -> AlchemyGameTests::herbsGrowInJars);
+        FUNCTIONS.register("example_prismatic_barrage_budget", () -> PrismaticBarrageGameTests::budget);
         FUNCTIONS.register(modBus);
         modBus.addListener(LogosGameTests::onRegisterTests);
     }
