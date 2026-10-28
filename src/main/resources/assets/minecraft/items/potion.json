@@ -32,7 +32,11 @@
           "logos:lightning_power",
           "logos:strong_lightning_power",
           "logos:void_power",
-          "logos:strong_void_power"
+          "logos:strong_void_power",
+          "logos:arcane_power",
+          "logos:strong_arcane_power",
+          "logos:life_power",
+          "logos:strong_life_power"
         ],
         "model": {
           "type": "minecraft:model",
