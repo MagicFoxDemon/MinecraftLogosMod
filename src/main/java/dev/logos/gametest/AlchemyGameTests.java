@@ -1287,7 +1287,7 @@ final class AlchemyGameTests {
         h.assertTrue(brew.apply(raw, new ItemStack(LogosMod.MANA_CRYSTAL.get())).is(BuffPotions.STRONG_MANA_FLOW_POTION.getKey()), "crystal");
         h.assertTrue(brew.apply(vital, new ItemStack(LogosMod.MANA_GEMSTONE.get())).is(BuffPotions.GREATER_MANA_FLOW_POTION.getKey()), "gemstone");
         for (BuffPotions.ElementBuff e : BuffPotions.ElementBuff.values()) {
-            ItemStack herb = new ItemStack(e.herb.harvest.get());
+            ItemStack herb = new ItemStack(e.ingredient.get());
             h.assertTrue(brew.apply(raw, herb).is(e.potion.getKey()), e + " from raw mash");
             h.assertTrue(brew.apply(vital, herb).is(e.strong.getKey()), e + " from vital mash");
             h.assertTrue(brew.apply(PotionContents.createItemStack(Items.POTION, e.potion), vital).is(e.strong.getKey()), e + " raised by vital mash");

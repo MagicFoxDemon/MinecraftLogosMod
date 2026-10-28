@@ -33,7 +33,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * with a mana shard (400 over 3 minutes) or a mana crystal (1000 over 3 minutes), vital mash with a mana
  * gemstone (5000 over 5 minutes).
  * <li>The element potions: +20% spell damage in their element for 2 minutes, brewed from raw mash and
- * the harvest of that element's herb ({@link LogosMod.JarHerb}); from vital mash, or a level I potion
+ * its ingredient (a jar herb's harvest, a mandrake root for life, starlight moss for arcane); from vital mash, or a level I potion
  * raised with vital mash, +50% for 5 minutes.
  * </ul>
  * The alchemy table's dissolving mirrors the brewing stand, so it makes all of them too.
@@ -76,24 +76,27 @@ public final class BuffPotions {
         }
     }
 
-    /** An element potion: its effect, its two potions, and the herb whose harvest brews it. */
+    /** An element potion: its effect, its two potions, and what brews it from mash. */
     public enum ElementBuff {
-        PHYSICAL(Element.PHYSICAL, LogosMod.JarHerb.REDVEIN),
-        FIRE(Element.FIRE, LogosMod.JarHerb.CANDLEFLAME),
-        FROST(Element.FROST, LogosMod.JarHerb.FROSTBELL),
-        LIGHTNING(Element.LIGHTNING, LogosMod.JarHerb.THUNDER_THISTLE),
-        VOID(Element.VOID, LogosMod.JarHerb.RIFTSHADE);
+        PHYSICAL(Element.PHYSICAL, LogosMod.JarHerb.REDVEIN.harvest),
+        FIRE(Element.FIRE, LogosMod.JarHerb.CANDLEFLAME.harvest),
+        FROST(Element.FROST, LogosMod.JarHerb.FROSTBELL.harvest),
+        LIGHTNING(Element.LIGHTNING, LogosMod.JarHerb.THUNDER_THISTLE.harvest),
+        VOID(Element.VOID, LogosMod.JarHerb.RIFTSHADE.harvest),
+        ARCANE(Element.ARCANE, LogosMod.STARLIGHT_MOSS),
+        LIFE(Element.LIFE, LogosMod.MANDRAKE_ROOT);
 
         public final Element element;
-        public final LogosMod.JarHerb herb;
+        /** What brews it, one to three bottles of mash at a time. */
+        public final Supplier<? extends Item> ingredient;
         /** Its element's empowerment ({@link #POWER}). */
         public final DeferredHolder<MobEffect, MobEffect> effect;
         public final DeferredHolder<Potion, Potion> potion;
         public final DeferredHolder<Potion, Potion> strong;
 
-        ElementBuff(Element element, LogosMod.JarHerb herb) {
+        ElementBuff(Element element, Supplier<? extends Item> ingredient) {
             this.element = element;
-            this.herb = herb;
+            this.ingredient = ingredient;
             String id = element.name().toLowerCase(Locale.ROOT) + "_power";
             effect = POWER.get(element);
             potion = POTIONS.register(id, () -> new Potion("logos." + id, new MobEffectInstance(effect, 120 * 20)));
@@ -141,8 +144,8 @@ public final class BuffPotions {
         builder.addRecipe(new FromMash(LogosMod.RAW_MASH, LogosMod.MANA_CRYSTAL, STRONG_MANA_FLOW_POTION));
         builder.addRecipe(new FromMash(LogosMod.VITAL_MASH, LogosMod.MANA_GEMSTONE, GREATER_MANA_FLOW_POTION));
         for (ElementBuff e : ElementBuff.values()) {
-            builder.addRecipe(new FromMash(LogosMod.RAW_MASH, e.herb.harvest, e.potion));
-            builder.addRecipe(new FromMash(LogosMod.VITAL_MASH, e.herb.harvest, e.strong));
+            builder.addRecipe(new FromMash(LogosMod.RAW_MASH, e.ingredient, e.potion));
+            builder.addRecipe(new FromMash(LogosMod.VITAL_MASH, e.ingredient, e.strong));
             builder.addMix(e.potion, LogosMod.VITAL_MASH.get(), e.strong);
         }
     }
