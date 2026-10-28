@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "logos:item/potion/utility_vial_overlay",
+    "layer1": "logos:item/potion/utility_vial"
+  }
+}

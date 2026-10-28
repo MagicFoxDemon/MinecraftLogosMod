@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "logos:item/potion/restore_perfume_overlay",
+    "layer1": "logos:item/potion/restore_perfume"
+  }
+}
