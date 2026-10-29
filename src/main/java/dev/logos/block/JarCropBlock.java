@@ -3,6 +3,9 @@ package dev.logos.block;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
@@ -12,9 +15,11 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
 /**
- * A plant that grows only in a cultivation jar (niter sprouts, the metal plants, mandrake…), in four
- * stages like beetroot. It is never placed in the world: the jar draws it at its age and harvests it
- * by its {@link dev.logos.alchemy.CultivationRecipe}, so it has no item and no loot of its own.
+ * A plant grown in a cultivation jar (niter sprouts, the metal plants, mandrake…), in four stages
+ * like beetroot. The jar draws it at its age and harvests it by its
+ * {@link dev.logos.alchemy.CultivationRecipe}, so it has no item and no loot of its own.
+ * Ground substrates are opt-in through {@link #plantableOn()}, empty by default; add-ons supply
+ * placement and harvesting when enabling ground cultivation.
  */
 public class JarCropBlock extends CropBlock {
     public static final MapCodec<JarCropBlock> CODEC = simpleCodec(JarCropBlock::new);
@@ -39,9 +44,14 @@ public class JarCropBlock extends CropBlock {
         return 3;
     }
 
+    /** Ground substrates for this crop: {@code <namespace>:plantable_on/<crop block path>}. */
+    public TagKey<Block> plantableOn() {
+        return TagKey.create(Registries.BLOCK, BuiltInRegistries.BLOCK.getKey(this).withPrefix("plantable_on/"));
+    }
+
     @Override
     protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
-        return false;
+        return state.is(plantableOn());
     }
 
     @Override
