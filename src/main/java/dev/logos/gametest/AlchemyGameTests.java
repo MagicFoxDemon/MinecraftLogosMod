@@ -1354,25 +1354,49 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
-    /** Each herb ferments from its recipe, grows in a jar from itself, and gives its harvest while staying planted. */
+    /** Each herb ferments as seeds and shares ground loot with jars, which reserve one seed to replant. */
     static void herbsGrowInJars(GameTestHelper h) {
         var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
         LogosMod.JarHerb[] herbs = LogosMod.JarHerb.values();
         for (int i = 0; i < herbs.length; i++) {
             LogosMod.JarHerb herb = herbs[i];
-            h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == Process.FERMENT && r.value().results().getFirst().create().is(herb.plant.get())
+            h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == Process.FERMENT && r.value().results().getFirst().create().is(herb.seed.get())
                     && r.value().ingredients().stream().anyMatch(n -> n.ingredient().test(new ItemStack(LogosMod.GERMINAL_ESSENCE.get())))),
                     "no fermenting of " + herb + " with germinal essence");
             BlockPos at = new BlockPos(i, 2, 5);
             h.setBlock(at, LogosMod.CULTIVATION_JAR.get());
             var jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(at, dev.logos.block.CultivationJarBlockEntity.class);
-            h.assertTrue(jar.plant(new ItemStack(herb.plant.get())), herb + " would not go in");
+            h.assertFalse(jar.plant(new ItemStack(herb.plant.get())), herb + " still accepts the plant instead of its seed");
+            h.assertFalse(jar.plant(new ItemStack(herb.harvest.get())), herb + " accepts its harvest as a seed");
+            h.assertTrue(jar.plant(new ItemStack(herb.seed.get())), herb + " seed would not go in");
             h.assertTrue(jar.plant() != null && jar.plant().is(herb.crop.get()), herb + ": the jar draws " + jar.plant());
+            h.assertTrue(jar.recipe().harvest().isEmpty(), herb + " bypasses its ground loot with a fixed harvest");
+            for (int stage = 0; stage < herb.crop.get().getMaxAge(); stage++) {
+                var young = net.minecraft.world.level.block.Block.getDrops(herb.crop.get().getStateForAge(stage), h.getLevel(), h.absolutePos(at), null);
+                h.assertTrue(young.stream().mapToInt(s -> s.is(herb.seed.get()) ? s.getCount() : 0).sum() == 1,
+                        herb + " should drop one seed before maturity, stage " + stage);
+                h.assertTrue(young.stream().allMatch(s -> s.is(herb.seed.get())), herb + " dropped materials before maturity");
+            }
             while (jar.grow()) {}
             h.assertTrue(jar.isRipe(), herb + " did not ripen");
+            var ground = net.minecraft.world.level.block.Block.getDrops(jar.plant(), h.getLevel(), h.absolutePos(at), null);
+            h.assertTrue(ground.stream().mapToInt(s -> s.is(herb.seed.get()) ? s.getCount() : 0).sum() == 2,
+                    herb + " ground harvest should drop two seeds");
+            h.assertTrue(ground.stream().mapToInt(s -> s.is(herb.harvest.get()) ? s.getCount() : 0).sum() == 2,
+                    herb + " ground harvest should drop two materials");
+            h.assertTrue(ground.stream().allMatch(s -> s.is(herb.seed.get()) || s.is(herb.harvest.get())), herb + " dropped unexpected items");
             jar.randomTick(h.getLevel(), h.getLevel().getRandom());
-            h.assertTrue(jar.outputs().getResource(0).getItem() == herb.harvest.get(), herb + ": the outputs hold " + jar.outputs().getResource(0));
-            h.assertTrue(jar.seed().is(herb.plant.get()) && jar.age() == 0, herb + " was not kept planted");
+            h.assertTrue(count(jar.outputs(), herb.harvest.get()) == 2, herb + " automatic harvest should output two materials");
+            h.assertTrue(count(jar.outputs(), herb.seed.get()) == 1, herb + " automatic harvest did not reserve exactly one seed");
+            h.assertTrue(jar.seed().is(herb.seed.get()) && jar.age() == 0, herb + " seed was not kept planted");
+            while (jar.grow()) {}
+            var hand = jar.harvest(h.getLevel());
+            h.assertTrue(hand.stream().mapToInt(s -> s.is(herb.seed.get()) ? s.getCount() : 0).sum() == 1,
+                    herb + " manual harvest did not reserve exactly one seed");
+            h.assertTrue(hand.stream().mapToInt(s -> s.is(herb.harvest.get()) ? s.getCount() : 0).sum() == 2,
+                    herb + " manual harvest should give two materials");
+            h.assertTrue(jar.seed().is(herb.seed.get()) && jar.age() == 0, herb + " manual harvest did not replant");
+            h.assertTrue(jar.uproot().is(herb.seed.get()) && jar.isEmpty(), herb + " could not return its reserved seed");
         }
         h.succeed();
     }

@@ -255,9 +255,17 @@ public class LogosMod {
     // What grows in a cultivation jar: seeds fermented on the alchemy table, and the plants the jar draws.
     /** A plant grown in a cultivation jar by default; add-ons can opt into ground substrates through its block tag. */
     private static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name) {
+        return jarCrop(name, false);
+    }
+
+    /** Element herbs share their block loot between ground harvesting and the jar's seed replanting. */
+    private static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name, boolean hasLoot) {
         return BLOCKS.registerBlock(name, dev.logos.block.JarCropBlock::new,
-                p -> p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollision().instabreak()
-                        .sound(net.minecraft.world.level.block.SoundType.CROP).noLootTable());
+                p -> {
+                    p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollision().instabreak()
+                            .sound(net.minecraft.world.level.block.SoundType.CROP);
+                    return hasLoot ? p : p.noLootTable();
+                });
     }
 
     /** 硝之芽: saltpeter fermented into a sprout; in a jar it gives saltpeter and more sprouts. */
@@ -296,8 +304,8 @@ public class LogosMod {
     }
 
     /**
-     * The herbs of the element potions (dev.logos.alchemy.BuffPotions): a flower or root fermented with
-     * germinal essence, planted in a jar as itself and harvested again and again for what brews its potion.
+     * The herbs of the element potions (dev.logos.alchemy.BuffPotions): seeds fermented with germinal
+     * essence, grown in a jar and harvested again and again for what brews their potions.
      */
     public enum JarHerb {
         /** 赤脉根: beetroot quickened on bone meal, red-veined; the root is itself the harvest. */
@@ -311,16 +319,19 @@ public class LogosMod {
         /** 隙影花: chorus fruit on echo and dragon's breath, a flower half in the void; its pollen is shadow. */
         RIFTSHADE("riftshade", "riftshade_pollen", net.minecraft.world.item.Rarity.UNCOMMON);
 
-        /** What is planted in the jar. */
+        /** The seed fermented on the alchemy table and planted in the jar. */
+        public final DeferredItem<net.minecraft.world.item.Item> seed;
+        /** The herb itself, separate from its seed and any harvested brewing ingredient. */
         public final DeferredItem<net.minecraft.world.item.Item> plant;
         /** What it gives, again and again: the brewing ingredient of its potion (the plant itself for redvein root). */
         public final DeferredItem<net.minecraft.world.item.Item> harvest;
         public final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> crop;
 
         JarHerb(String plant, @org.jspecify.annotations.Nullable String harvest, net.minecraft.world.item.Rarity rarity) {
+            this.seed = ITEMS.registerSimpleItem(plant + "_seed", p -> p.rarity(rarity));
             this.plant = ITEMS.registerSimpleItem(plant, p -> p.rarity(rarity));
             this.harvest = harvest == null ? this.plant : ITEMS.registerSimpleItem(harvest, p -> p.rarity(rarity));
-            crop = jarCrop(plant + "_crop");
+            crop = jarCrop(plant + "_crop", true);
         }
     }
 
@@ -646,6 +657,7 @@ public class LogosMod {
                 out.accept(STARLIGHT_MOSS_SPORE.get());
                 out.accept(STARLIGHT_MOSS.get());
                 for (JarHerb herb : JarHerb.values()) {
+                    out.accept(herb.seed.get());
                     out.accept(herb.plant.get());
                     if (herb.harvest != herb.plant) out.accept(herb.harvest.get());
                 }
