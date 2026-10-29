@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.Blocks;
 
 /**
  * Real-client look at the first Logos potions: the five element herbs ripe and half grown in jars, then
- * an inventory of their plants and harvests, the 流魔 potions in the crystal flask and the element
+ * an inventory of their seeds and harvests, the 流魔 potions in the crystal flask and the element
  * potions in the diamond bottle, with a vanilla potion beside them for comparison.
  * Run: {@code gradlew runClient -PldTest=logos_buff_potions}.
  */
@@ -49,7 +49,7 @@ public class BuffPotionsScenario implements UIScenario {
                             BlockPos pos = ORIGIN.offset(i * 2, 1, row * 2);
                             level.setBlock(pos, LogosMod.CULTIVATION_JAR.get().defaultBlockState(), 3);
                             if (!(level.getBlockEntity(pos) instanceof CultivationJarBlockEntity jar)) continue;
-                            jar.plant(new ItemStack(herbs[i].plant.get()));
+                            jar.plant(new ItemStack(herbs[i].seed.get()));
                             for (int g = 0; g < (row == 0 ? 3 : 2); g++) jar.grow();
                         }
                     }
@@ -68,10 +68,10 @@ public class BuffPotionsScenario implements UIScenario {
                     inv.clearContent();
                     int slot = 9;
                     for (LogosMod.JarHerb herb : LogosMod.JarHerb.values()) {
-                        inv.setItem(slot++, new ItemStack(herb.plant.get()));
-                        if (herb.harvest != herb.plant) inv.setItem(slot++, new ItemStack(herb.harvest.get()));
+                        inv.setItem(slot++, new ItemStack(herb.seed.get()));
+                        inv.setItem(slot++, new ItemStack(herb.harvest.get()));
                     }
-                    slot = 18;
+                    slot = 19;
                     for (var potion : java.util.List.of(BuffPotions.MANA_FLOW_POTION, BuffPotions.STRONG_MANA_FLOW_POTION, BuffPotions.GREATER_MANA_FLOW_POTION))
                         inv.setItem(slot++, PotionContents.createItemStack(Items.POTION, potion));
                     inv.setItem(slot++, PotionContents.createItemStack(Items.POTION, net.minecraft.world.item.alchemy.Potions.SWIFTNESS));
