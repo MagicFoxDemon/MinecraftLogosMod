@@ -131,7 +131,7 @@ final class JarCropGameTests {
                 new CropYield(LogosMod.MANDRAKE_CROP.get(), LogosMod.MANDRAKE_SEED.get(), LogosMod.MANDRAKE_ROOT.get(), 2, 2),
                 new CropYield(LogosMod.MERCURY_MUSHROOM_CROP.get(), LogosMod.MERCURY_SPORE.get(), LogosMod.MERCURY_MUSHROOM.get(), 2, 2),
                 new CropYield(LogosMod.STARLIGHT_MOSS_CROP.get(), LogosMod.STARLIGHT_MOSS_SPORE.get(), LogosMod.STARLIGHT_MOSS.get(), 2, 2)));
-        for (var metal : LogosMod.JarMetal.values()) crops.add(new CropYield(metal.crop.get(), metal.seed.get(), metal.pod.get(), 1, 2));
+        for (var metal : LogosMod.JarMetal.values()) crops.add(new CropYield(metal.crop.get(), metal.seed.get(), metal.pod.get(), 1, 1));
         for (var herb : LogosMod.JarHerb.values()) crops.add(new CropYield(herb.crop.get(), herb.seed.get(), herb.harvest.get(), 2, 2));
         return crops;
     }
