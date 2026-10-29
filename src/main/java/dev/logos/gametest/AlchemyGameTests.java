@@ -887,7 +887,7 @@ final class AlchemyGameTests {
         h.succeed();
     }
 
-    /** An iron seed grows on the jar's mana; ripe, it gives a pod and a spare seed, reserving one to replant. */
+    /** An iron seed grows on the jar's mana; ripe, it gives a pod and reserves its only seed to replant. */
     static void cultivationJarGrowsMetal(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
         dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
@@ -900,7 +900,7 @@ final class AlchemyGameTests {
         h.assertTrue(jar.isRipe() && jar.mana() == 100 - 3 * jar.recipe().mana(), "ripe " + jar.isRipe() + " with " + jar.mana() + " mana left");
         jar.randomTick(h.getLevel(), h.getLevel().getRandom());
         h.assertTrue(count(jar.outputs(), iron.pod.get()) == 1, "the jar should output one iron pod");
-        h.assertTrue(count(jar.outputs(), iron.seed.get()) == 1, "the jar should output one spare iron seed");
+        h.assertTrue(count(jar.outputs(), iron.seed.get()) == 0, "the jar must reserve its only iron seed, not produce extras");
         h.assertTrue(jar.seed().is(iron.seed.get()) && jar.age() == 0, "the seed was not kept planted");
         h.assertTrue(h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get()).stream().anyMatch(r ->
                 r.value().process() == Process.CALCINE && r.value().ingredients().getFirst().ingredient().test(new ItemStack(iron.pod.get()))
