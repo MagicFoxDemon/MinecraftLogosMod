@@ -1,9 +1,5 @@
 {
   "type": "logos:cultivation",
   "seed": "logos:niter_sprout",
-  "plant": "logos:niter_sprout_crop",
-  "harvest": [
-    { "id": "logos:saltpeter", "count": 2 },
-    { "id": "logos:niter_sprout", "count": 2 }
-  ]
+  "plant": "logos:niter_sprout_crop"
 }

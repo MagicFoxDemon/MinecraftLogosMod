@@ -2,9 +2,6 @@
   "type": "logos:cultivation",
   "seed": "logos:iron_seed",
   "plant": "logos:iron_pod_crop",
-  "harvest": [
-    { "id": "logos:iron_pod" }
-  ],
   "growth": 0.2,
   "mana": 10
 }

@@ -255,17 +255,9 @@ public class LogosMod {
     // What grows in a cultivation jar: seeds fermented on the alchemy table, and the plants the jar draws.
     /** A plant grown in a cultivation jar by default; add-ons can opt into ground substrates through its block tag. */
     private static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name) {
-        return jarCrop(name, false);
-    }
-
-    /** Element herbs share their block loot between ground harvesting and the jar's seed replanting. */
-    private static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name, boolean hasLoot) {
         return BLOCKS.registerBlock(name, dev.logos.block.JarCropBlock::new,
-                p -> {
-                    p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollision().instabreak()
-                            .sound(net.minecraft.world.level.block.SoundType.CROP);
-                    return hasLoot ? p : p.noLootTable();
-                });
+                p -> p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollision().instabreak()
+                        .sound(net.minecraft.world.level.block.SoundType.CROP));
     }
 
     /** 硝之芽: saltpeter fermented into a sprout; in a jar it gives saltpeter and more sprouts. */
@@ -331,7 +323,7 @@ public class LogosMod {
             this.seed = ITEMS.registerSimpleItem(plant + "_seed", p -> p.rarity(rarity));
             this.plant = ITEMS.registerSimpleItem(plant, p -> p.rarity(rarity));
             this.harvest = harvest == null ? this.plant : ITEMS.registerSimpleItem(harvest, p -> p.rarity(rarity));
-            crop = jarCrop(plant + "_crop", true);
+            crop = jarCrop(plant + "_crop");
         }
     }
 
