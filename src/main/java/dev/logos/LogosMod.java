@@ -253,7 +253,7 @@ public class LogosMod {
                     dev.logos.block.CultivationJarBlockEntity::new, CULTIVATION_JAR.get()));
 
     // What grows in a cultivation jar: seeds fermented on the alchemy table, and the plants the jar draws.
-    /** A plant that grows only in a cultivation jar; it has no item and is never placed in the world. */
+    /** A plant grown in a cultivation jar by default; add-ons can opt into ground substrates through its block tag. */
     private static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name) {
         return BLOCKS.registerBlock(name, dev.logos.block.JarCropBlock::new,
                 p -> p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollision().instabreak()
