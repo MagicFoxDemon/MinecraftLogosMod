@@ -2,9 +2,6 @@
   "type": "logos:cultivation",
   "seed": "logos:copper_seed",
   "plant": "logos:copper_pod_crop",
-  "harvest": [
-    { "id": "logos:copper_pod" }
-  ],
   "growth": 0.25,
   "mana": 5
 }

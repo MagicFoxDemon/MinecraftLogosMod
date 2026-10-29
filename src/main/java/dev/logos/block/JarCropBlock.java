@@ -17,8 +17,8 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 /**
  * A plant grown in a cultivation jar (niter sprouts, the metal plants, mandrake…), in four stages
  * like beetroot. The jar draws it at its age and harvests it by its
- * {@link dev.logos.alchemy.CultivationRecipe}: element herbs use their block loot, other crops
- * specify a fixed harvest. It has no block item; seeds are registered separately.
+ * {@link dev.logos.alchemy.CultivationRecipe}, using the same block loot as a ground crop and
+ * reserving one seed to replant. It has no block item; seeds are registered separately.
  * Ground substrates are opt-in through {@link #plantableOn()}, empty by default; add-ons supply
  * placement and world generation when enabling ground cultivation.
  */

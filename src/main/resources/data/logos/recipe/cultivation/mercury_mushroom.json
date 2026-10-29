@@ -2,8 +2,5 @@
   "type": "logos:cultivation",
   "seed": "logos:mercury_spore",
   "plant": "logos:mercury_mushroom_crop",
-  "harvest": [
-    { "id": "logos:mercury_mushroom", "count": 2 }
-  ],
   "growth": 0.4
 }

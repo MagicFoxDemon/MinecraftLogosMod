@@ -2,8 +2,5 @@
   "type": "logos:cultivation",
   "seed": "logos:mandrake_seed",
   "plant": "logos:mandrake_crop",
-  "harvest": [
-    { "id": "logos:mandrake_root", "count": 2 }
-  ],
   "growth": 0.35
 }
