@@ -108,6 +108,7 @@ gh pr create --fill                # 或在网页上开 PR
 - `item/`、`block/`：法杖、载页（`PageTier` 品级）、典籍、编纂台、拓印台。
 - `mixin/`：对原版的少量改动，登记在 `src/main/resources/logos.mixins.json`。
 - `client/`：渲染、界面与客户端事件。`client/uitest/` 是无窗口客户端场景（截图检查）。
+  - `client/voice/`：语音念咒的识别引擎。玩家录几遍自己喊咒语名的声音，之后说出的话按声音和这些录音比对（不是语音转文字，任何语言都行）。`SpeechEmbedding` 用纯 Java 跑 Google 的 speech_embedding 模型（权重在 `assets/logos/voice/`，由 `tools/voice/` 从 ONNX 导出），`SpellVoices` 存录音、检查登记质量并识别，`Microphone` 用游戏自带的 OpenAL 采集。什么时候开始听、识别后怎么施法还没有接。
 - `KeptFamiliar` 接口：魔力生命体和巨像这类「造出来的使魔」，随世界保存、有自己的心智，使魔系统只负责传达命令。
   - 魔力生命体：`runtime/ManaLifeform`（实体、心核槽位、连携、动画控制器）、`runtime/LifeformMind`（效用 AI，每个行为一个内部类，加新行为只需加一个类并放进构造器的列表；`/logos mind` 显示各行为分数）、`runtime/Lifeforms`（召唤规则、存档登记、心核界面）、`client/ManaLifeformRenderer`。
   - 炼金术巨像：`runtime/AlchemicalColossus`（实体、魔力、暴走与平息、座位、动作同步）、`runtime/ColossusMind`（效用 AI 与按动画计时的动作序列、乘客位置 `holdPoint`）、`runtime/ColossusCannon`（掌心炮）、`runtime/Colossi`（召唤、驾驶、进度、道具面板）、`client/ColossusRenderer`、`client/ColossusInput`。
