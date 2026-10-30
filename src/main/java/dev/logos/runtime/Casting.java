@@ -111,14 +111,19 @@ public final class Casting {
         return true;
     }
 
+    /** Whether the player's stability bears {@code spell}; alerts them if not. */
+    public static boolean stable(ServerPlayer player, Spell spell) {
+        PlayerMagic m = PlayerMagic.of(player);
+        if (spell.stability() <= m.stability) return true;
+        PlayerMagic.alert(player, Component.literal("法则不稳定：《" + spell.name() + "》复杂度 " + Node.fmt(spell.stability())
+                + " 超过你的稳定度上限 " + m.stability).withStyle(ChatFormatting.RED));
+        return false;
+    }
+
     /** Whether the player's stability bears {@code spell} and their pool holds {@code mana}; alerts them if not. */
     public static boolean affordable(ServerPlayer player, Spell spell, double mana) {
+        if (!stable(player, spell)) return false;
         PlayerMagic m = PlayerMagic.of(player);
-        if (spell.stability() > m.stability) {
-            PlayerMagic.alert(player, Component.literal("法则不稳定：《" + spell.name() + "》复杂度 " + Node.fmt(spell.stability())
-                    + " 超过你的稳定度上限 " + m.stability).withStyle(ChatFormatting.RED));
-            return false;
-        }
         if (m.mana < mana) {
             PlayerMagic.alert(player, Component.literal("魔力不足：《" + spell.name() + "》需要注入 " + Node.fmt(mana)
                     + "，当前 " + Node.fmt(m.mana)).withStyle(ChatFormatting.RED));

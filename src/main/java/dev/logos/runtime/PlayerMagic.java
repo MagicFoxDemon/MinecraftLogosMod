@@ -33,6 +33,8 @@ public final class PlayerMagic {
     public long hudQuietUntil;
     /** Not persisted: the wand cast being charged, if any (see {@link Charging}). */
     public Charging.@org.jspecify.annotations.Nullable Charge charge;
+    /** Not persisted: the staff being filled, if any (see {@link StaffCharging}). */
+    public StaffCharging.@org.jspecify.annotations.Nullable Fill fill;
 
     public PlayerMagic() {
         this(Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_STABILITY, true);

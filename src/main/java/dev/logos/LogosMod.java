@@ -70,9 +70,12 @@ public class LogosMod {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<CompoundTag>> SPELL_GRAPH = COMPONENTS.registerComponentType("spell_graph",
             b -> b.persistent(CompoundTag.CODEC).networkSynchronized(ByteBufCodecs.COMPOUND_TAG));
 
-    /** The mana a mana storage tank held when it was broken; placed again, it holds it still. */
+    /**
+     * The mana a mana storage tank held when it was broken; placed again, it holds it still. Also the mana a
+     * staff holds, which changes every tick it fills: the staff in hand is not lowered and raised again for it.
+     */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> STORED_MANA = COMPONENTS.registerComponentType("stored_mana",
-            b -> b.persistent(Codec.DOUBLE).networkSynchronized(ByteBufCodecs.DOUBLE));
+            b -> b.persistent(Codec.DOUBLE).ignoreSwapAnimation().networkSynchronized(ByteBufCodecs.DOUBLE));
 
     /** Which spell (index into wand pages + off-hand codex pages) the wand will cast. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SELECTED = COMPONENTS.registerComponentType("selected",
@@ -105,9 +108,17 @@ public class LogosMod {
     public static final DeferredItem<WandItem> ADEPT_WAND = ITEMS.registerItem("adept_wand", p -> new WandItem(p, 6, 90, 184), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE));
     public static final DeferredItem<WandItem> MASTER_WAND = ITEMS.registerItem("master_wand",
             p -> new WandItem(p, 9, 135, 445), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC));
+    /** The woods the first-tier wands and staffs are made of. */
+    private static final List<String> WOODS = List.of("oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "cherry");
     /** The first-tier wands, one per wood (log, planks and a gold nugget); each holds three pages like the novice wand. */
-    public static final List<DeferredItem<WandItem>> WOOD_WANDS = java.util.stream.Stream.of("oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "cherry")
+    public static final List<DeferredItem<WandItem>> WOOD_WANDS = WOODS.stream()
             .map(wood -> ITEMS.registerItem(wood + "_wand", p -> new WandItem(p, 3, 40, 20), p -> p.stacksTo(1))).toList();
+    /**
+     * The first-tier staffs, one per wood: hold up to 150 mana of their own, three tier-1 pages' worth. They flow
+     * slower than the wood wands, so one long fill of 150 takes about as long as three wand charges of 50 (3 s).
+     */
+    public static final List<DeferredItem<dev.logos.item.StaffItem>> WOOD_STAFFS = WOODS.stream()
+            .map(wood -> ITEMS.registerItem(wood + "_staff", p -> new dev.logos.item.StaffItem(p, 3, 28, 14, 150), p -> p.stacksTo(1))).toList();
     /** Every grade of 术式载页: an empty and a written item each. */
     public static final Map<PageTier, PageTier.Items> PAGES = new EnumMap<>(PageTier.class);
 
@@ -580,6 +591,7 @@ public class LogosMod {
             .icon(() -> new ItemStack(INSCRIBED_PAGE.get()))
             .displayItems((params, out) -> {
                 for (var wand : WOOD_WANDS) out.accept(wand.get());
+                for (var staff : WOOD_STAFFS) out.accept(staff.get());
                 out.accept(WAND.get());
                 out.accept(ADEPT_WAND.get());
                 out.accept(MASTER_WAND.get());
@@ -818,6 +830,7 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.FxPayload.TYPE, dev.logos.net.FxPayload.CODEC);
         registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
         registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);
+        registrar.playToServer(dev.logos.net.StaffFillPayload.TYPE, dev.logos.net.StaffFillPayload.CODEC, dev.logos.net.StaffFillPayload::handle);
         registrar.playToServer(dev.logos.net.ColossusControlPayload.TYPE, dev.logos.net.ColossusControlPayload.CODEC, dev.logos.net.ColossusControlPayload::handle);
         registrar.playToServer(dev.logos.net.DragonControlPayload.TYPE, dev.logos.net.DragonControlPayload.CODEC, dev.logos.net.DragonControlPayload::handle);
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
@@ -920,6 +933,7 @@ public class LogosMod {
         if (!(event.getEntity() instanceof ServerPlayer sp)) return;
         PlayerMagic m = PlayerMagic.of(sp);
         m.mana = Math.min(m.maxMana, m.mana + dev.logos.runtime.SpellModifiers.regenerationPerTick(sp));
+        dev.logos.runtime.StaffCharging.tick(sp);
         long now = sp.level().getGameTime();
         if (now % 10 != 0 || now < m.hudQuietUntil) return;
         ItemStack wand = dev.logos.item.SpellBag.heldWand(sp);
@@ -929,11 +943,17 @@ public class LogosMod {
                 .append(Component.literal("█".repeat(filled)).withStyle(ChatFormatting.BLUE))
                 .append(Component.literal("█".repeat(10 - filled)).withStyle(ChatFormatting.DARK_GRAY))
                 .append(Component.literal(" " + (int) m.mana + "/" + (int) m.maxMana).withStyle(ChatFormatting.AQUA));
+        // A staff casts from what it holds, not from the pool.
+        double source = m.mana;
+        if (wand.getItem() instanceof dev.logos.item.StaffItem staff) {
+            source = dev.logos.item.StaffItem.stored(wand);
+            hud = hud.copy().append(Component.literal("  杖内 " + (int) source + "/" + (int) staff.capacity()).withStyle(ChatFormatting.DARK_AQUA));
+        }
         var selected = dev.logos.item.SpellBag.selected(sp, wand);
         if (selected != null) {
             Spell s = selected.spell();
             var in = Casting.injection(s, selected.tier(), Casting.immolation(sp, wand));
-            ChatFormatting c = m.mana >= in.mana() ? ChatFormatting.GRAY : ChatFormatting.RED;
+            ChatFormatting c = source >= in.mana() ? ChatFormatting.GRAY : ChatFormatting.RED;
             String inject = in.mana() < s.mana() ? Node.fmt(in.mana()) + "/" + Node.fmt(s.mana()) : Node.fmt(in.mana());
             hud = hud.copy().append(Component.literal("  《" + s.name() + "》注入 " + inject + (in.burns() ? " 🜂焚" : "")
                     + " · 稳定 " + Node.fmt(s.stability()) + "/" + m.stability).withStyle(c));

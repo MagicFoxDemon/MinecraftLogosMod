@@ -6,6 +6,8 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
+import dev.logos.lang.Compiler;
+import dev.logos.lang.Element;
 import dev.logos.lang.Spell;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
@@ -24,6 +26,11 @@ public final class SpellBag {
         public PageTier tier() {
             PageTier t = SpellPages.tier(page);
             return t == null ? PageTier.BASIC : t;
+        }
+
+        /** How a cast of it looks (a charge, a release): its spell's main element. */
+        public Element element() {
+            return Compiler.inferElement(spell.body());
         }
 
         /** Replaces the page where it lies with what Formula Immolation leaves of it. */

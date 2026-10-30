@@ -4,10 +4,12 @@ import java.util.List;
 
 import dev.logos.LogosMod;
 import dev.logos.item.SpellPages;
+import dev.logos.item.StaffItem;
 import dev.logos.lang.Status;
 import dev.logos.runtime.Charging;
 import dev.logos.runtime.FreeManaEntity;
 import dev.logos.runtime.PlayerMagic;
+import dev.logos.runtime.StaffCharging;
 import dev.logos.runtime.StatusData;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -20,7 +22,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/** In-world tests for wand charging: mana flows in while right-click is held, and casts only once full. */
+/**
+ * In-world tests for wand charging: mana flows in while right-click is held, and casts only once full.
+ * A staff fills ahead of time instead, and casts at once from what it holds.
+ */
 final class ChargingGameTests {
     /** 100 asked of a crystal page (holds 150); marking the caster costs 1 of it. */
     private static final String MARK = "(spell :name \"蓄\" :mana 100 (mark caster #charged))";
@@ -157,6 +162,63 @@ final class ChargingGameTests {
         h.assertTrue(look(MARK) == dev.logos.lang.Element.ARCANE, "a mark should look arcane");
         h.assertTrue(Charging.tier(99) == 0 && Charging.tier(100) == 1 && Charging.tier(799) == 1 && Charging.tier(800) == 2
                 && Charging.tier(3199) == 2 && Charging.tier(3200) == 3, "tiers break at 100, 800 and 3200");
+        h.succeed();
+    }
+
+    /** {@link #caster}, holding an oak staff (flow 28, surge 14, holds 150) in place of the wand, empty. */
+    private static ServerPlayer staffCaster(GameTestHelper h) {
+        ServerPlayer p = caster(h, MARK);
+        ItemStack staff = new ItemStack(LogosMod.WOOD_STAFFS.getFirst().get());
+        staff.set(DataComponents.CONTAINER, wand(p).get(DataComponents.CONTAINER));
+        p.setItemInHand(InteractionHand.MAIN_HAND, staff);
+        return p;
+    }
+
+    private static void fill(ServerPlayer p, int ticks) {
+        for (int i = 0; i < ticks; i++) StaffCharging.tick(p);
+    }
+
+    /**
+     * An empty staff casts nothing. Filled (at the charge rate: 28 + 28·t a second, 42 in the first second) up
+     * to its 150 from the pool, it casts at once on right-click, paid from what it holds, until that runs short.
+     */
+    static void staffFillsThenCasts(GameTestHelper h) {
+        ServerPlayer p = staffCaster(h);
+        ItemStack staff = wand(p);
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.FAIL, "an empty staff cast");
+        StaffCharging.start(p);
+        fill(p, 20);
+        near(h, StaffItem.stored(staff), 42, "a second of filling");
+        near(h, PlayerMagic.of(p).mana, 958, "the pool pays what went in");
+        fill(p, 200);
+        near(h, StaffItem.stored(staff), 150, "a full staff");
+        near(h, PlayerMagic.of(p).mana, 850, "filling stops at the staff's capacity");
+        StaffCharging.stop(p);
+        h.assertTrue(PlayerMagic.of(p).fill == null, "letting go ends the fill");
+        near(h, StaffItem.stored(staff), 150, "letting go keeps what went in");
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.CONSUME, "a filled staff did not cast");
+        h.assertTrue(StatusData.stacks(p, new Status("#charged")) == 1, "right-click casts at once");
+        near(h, StaffItem.stored(staff), 50, "the cast is paid from the staff");
+        near(h, PlayerMagic.of(p).mana, 850, "not from the pool");
+        p.stopUsingItem();
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.FAIL, "a staff holding 50 cast 100");
+        near(h, StaffItem.stored(staff), 50, "a refused cast takes nothing");
+        h.succeed();
+    }
+
+    /** A staff taken out of the main hand stops filling. */
+    static void staffFillNeedsMainHand(GameTestHelper h) {
+        ServerPlayer p = staffCaster(h);
+        ItemStack staff = wand(p);
+        StaffCharging.start(p);
+        fill(p, 5);
+        double stored = StaffItem.stored(staff);
+        h.assertTrue(stored > 0, "five ticks should fill some");
+        p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        p.setItemInHand(InteractionHand.OFF_HAND, staff);
+        fill(p, 20);
+        h.assertTrue(PlayerMagic.of(p).fill == null, "the fill should have stopped");
+        near(h, StaffItem.stored(staff), stored, "an off-hand staff takes no more");
         h.succeed();
     }
 
