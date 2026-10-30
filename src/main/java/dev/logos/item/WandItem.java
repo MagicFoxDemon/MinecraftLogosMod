@@ -97,8 +97,8 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
 
     @Override
     public ModularUI createUI(HeldItemUIMenuType.HeldItemUIHolder holder) {
-        return PageSlotsUI.create(holder.player, new PageContainer(holder.itemStack, slots), Math.min(slots, 9),
-                holder.itemStack.getHoverName(), Component.literal("挂上术式载页 · 按术式轮盘键（默认 R）选择要施放的术式"));
+        return PageSlotsUI.create(holder.player, new PageContainer(holder.itemStack, slots, true), Math.min(slots, 9),
+                holder.itemStack.getHoverName(), Component.literal("挂上术式载页或杖饰 · 按术式轮盘键（默认 R）选择要施放的术式"));
     }
 
     @Override

@@ -1,7 +1,10 @@
 package dev.logos.runtime;
 
+import dev.logos.LogosConfig;
+import dev.logos.LogosMod;
 import dev.logos.item.SpellBag;
 import dev.logos.item.StaffItem;
+import dev.logos.item.WandCharmItem;
 import dev.logos.lang.Element;
 import dev.logos.lang.Node;
 import net.minecraft.ChatFormatting;
@@ -94,6 +97,15 @@ public final class StaffCharging {
         Charging.discharge(player, entry.element(), Charging.tier(in.mana()));
         Casting.launch(player, entry, in, null, null, true);
         return true;
+    }
+
+    /**
+     * Right-click held, {@code ticks} after the first cast: with a chant charm on the staff it casts again every
+     * shortest charge time ({@code chargeMinTicks}), until the staff runs short and is let go.
+     */
+    public static void repeat(ServerPlayer player, ItemStack staff, int ticks) {
+        if (ticks <= 0 || ticks % Math.max(1, LogosConfig.chargeMinTicks()) != 0 || !WandCharmItem.on(staff, LogosMod.CHANT_CHARM.get())) return;
+        if (!cast(player, staff, InteractionHand.MAIN_HAND)) player.stopUsingItem();
     }
 
     /** Shows the fill as a charge: the selected spell's element (arcane with none), graded and filled by what the staff holds. */

@@ -5,6 +5,7 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.item.SpellBag;
+import dev.logos.item.WandCharmItem;
 import dev.logos.lang.Element;
 import dev.logos.lang.Node;
 import dev.logos.net.ChargePayload;
@@ -48,10 +49,13 @@ public final class Charging {
         /** How it looks: the spell's main element, and a grade by how much it injects. */
         public final Element element;
         public final int tier;
+        /** A chant charm hangs on the wand: once full, the charge goes off by itself and the next one starts. */
+        public final boolean repeats;
 
-        Charge(SpellBag.Entry entry, int selected, Casting.Injection in, double flow, double surge) {
+        Charge(SpellBag.Entry entry, int selected, Casting.Injection in, double flow, double surge, boolean repeats) {
             this.entry = entry;
             this.selected = selected;
+            this.repeats = repeats;
             this.in = in;
             this.flow = flow;
             this.surge = surge;
@@ -142,7 +146,8 @@ public final class Charging {
         Rate rate = rate(player, wand);
         if (rate == null) return false;
         PlayerMagic m = PlayerMagic.of(player);
-        m.charge = new Charge(entry, wand.getOrDefault(LogosMod.SELECTED.get(), 0), in, rate.flow(), rate.surge());
+        m.charge = new Charge(entry, wand.getOrDefault(LogosMod.SELECTED.get(), 0), in, rate.flow(), rate.surge(),
+                WandCharmItem.on(wand, LogosMod.CHANT_CHARM.get()));
         sync(player, m.charge);
         Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
         return true;
@@ -203,11 +208,21 @@ public final class Charging {
                 m.mana = Math.max(0, m.mana - share);
                 c.injected += share;
                 c.done++;
+                if (c.full() && c.repeats) {
+                    again(player, wand);
+                    return;
+                }
                 if (c.full()) sync(player, c);
                 chime(level, tip, c.done, (float) c.done / c.ticks, c.full());
             }
         }
         if (level.getGameTime() % 2 == 0) sync(player, c);
+    }
+
+    /** A repeating charge is full: it goes off at once and the next one starts; if that cannot, the wand is let go. */
+    private static void again(ServerPlayer player, ItemStack wand) {
+        release(player);
+        if (!begin(player, wand, InteractionHand.MAIN_HAND)) player.stopUsingItem();
     }
 
     /**

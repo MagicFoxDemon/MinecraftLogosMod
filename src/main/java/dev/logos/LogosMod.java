@@ -139,6 +139,13 @@ public class LogosMod {
             dev.logos.item.SpellEmberItem::new, p -> p.stacksTo(1));
     public static final DeferredItem<dev.logos.item.CodexItem> SPELL_CODEX = ITEMS.registerItem("spell_codex",
             dev.logos.item.CodexItem::new, p -> p.stacksTo(1));
+    /**
+     * 连咏坠: a charm for a wand slot. Held right-click keeps casting: a wand lets each full charge go at once
+     * and starts the next, a staff casts again at the shortest charge time for as long as it holds enough.
+     */
+    public static final DeferredItem<dev.logos.item.WandCharmItem> CHANT_CHARM = ITEMS.registerItem("chant_charm",
+            p -> new dev.logos.item.WandCharmItem(p, "挂在法杖上：按住右键连续施放。法杖每蓄满一次立即放出并开始下一轮；长杖只要储能足够，以最短间隔连发"),
+            p -> p.stacksTo(1));
     /** 锚钉: spent to set an anchor, by hand or by the anchor rune. Crafted later through alchemy. */
     public static final DeferredItem<dev.logos.item.AnchorNailItem> ANCHOR_NAIL = ITEMS.registerItem("anchor_nail",
             dev.logos.item.AnchorNailItem::new, p -> p.stacksTo(64));
@@ -598,6 +605,7 @@ public class LogosMod {
                 for (PageTier t : PageTier.values()) out.accept(t.blank());
                 out.accept(SPELL_EMBER.get());
                 out.accept(SPELL_CODEX.get());
+                out.accept(CHANT_CHARM.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
                 out.accept(SPELL_EMITTER_ITEM.get());

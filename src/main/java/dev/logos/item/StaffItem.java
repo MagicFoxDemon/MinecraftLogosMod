@@ -52,9 +52,11 @@ public class StaffItem extends WandItem {
         return InteractionResult.CONSUME;
     }
 
-    // Nothing charges while right-click is held: the cast has already gone off.
+    // Nothing charges while right-click is held: the cast has already gone off. A chant charm casts again.
     @Override
-    public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remaining) {}
+    public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remaining) {
+        if (entity instanceof ServerPlayer sp) StaffCharging.repeat(sp, stack, entity.getTicksUsingItem());
+    }
 
     @Override
     public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {
