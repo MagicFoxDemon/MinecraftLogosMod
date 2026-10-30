@@ -3,6 +3,7 @@ package dev.logos.gametest;
 import java.util.List;
 
 import dev.logos.LogosMod;
+import dev.logos.item.PageContainer;
 import dev.logos.item.SpellPages;
 import dev.logos.item.StaffItem;
 import dev.logos.lang.Status;
@@ -219,6 +220,49 @@ final class ChargingGameTests {
         fill(p, 20);
         h.assertTrue(PlayerMagic.of(p).fill == null, "the fill should have stopped");
         near(h, StaffItem.stored(staff), stored, "an off-hand staff takes no more");
+        h.succeed();
+    }
+
+    /** Hangs a chant charm in the slot after {@code wand}'s page. */
+    private static void chant(ItemStack wand) {
+        wand.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(
+                PageContainer.get(wand, 0), new ItemStack(LogosMod.CHANT_CHARM.get()))));
+    }
+
+    /** With a chant charm, a wand lets each full charge go by itself and starts the next, until the pool cannot pay one. */
+    static void chantRepeatsWandCharge(GameTestHelper h) {
+        ServerPlayer p = caster(h, MARK);
+        chant(wand(p));
+        h.assertTrue(press(h, p), "charging did not start");
+        hold(h, p, 29);
+        near(h, PlayerMagic.of(p).mana, 900, "the first charge went off once full");
+        var next = Charging.of(p);
+        h.assertTrue(next != null && next.injected == 0 && p.isUsingItem(), "the next charge should have started");
+        hold(h, p, 29);
+        near(h, PlayerMagic.of(p).mana, 800, "the second charge went off too");
+        PlayerMagic.of(p).mana = 150;
+        hold(h, p, 29);
+        h.assertTrue(Charging.of(p) == null && !p.isUsingItem(), "with 50 left the next charge cannot start, so the wand is let go");
+        near(h, PlayerMagic.of(p).mana, 50, "the third charge was paid and cast");
+        h.succeed();
+    }
+
+    /** With a chant charm, a held staff casts again every shortest charge time while it holds enough, then is let go. */
+    static void chantRepeatsStaffCast(GameTestHelper h) {
+        ServerPlayer p = staffCaster(h);
+        ItemStack staff = wand(p);
+        staff.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(
+                SpellPages.inscribed(dev.logos.item.PageTier.CRYSTAL, "(spell :name \"连\" :mana 20 (mark caster #charged))", null))));
+        chant(staff);
+        StaffItem.store(staff, 150);
+        int every = Math.max(1, dev.logos.LogosConfig.chargeMinTicks());
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.CONSUME, "the first cast failed");
+        for (int k = 1; k < every; k++) StaffCharging.repeat(p, staff, k);
+        near(h, StaffItem.stored(staff), 130, "nothing more before the shortest charge time");
+        for (int k = every; k <= 7 * every; k++) StaffCharging.repeat(p, staff, k);
+        near(h, StaffItem.stored(staff), 10, "seven casts of 20 out of 150");
+        h.assertTrue(!p.isUsingItem(), "a staff too low for the next cast is let go");
+        near(h, PlayerMagic.of(p).mana, 1000, "the pool pays nothing");
         h.succeed();
     }
 

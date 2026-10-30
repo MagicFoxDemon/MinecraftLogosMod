@@ -12,14 +12,22 @@ import net.minecraft.world.item.component.ItemContainerContents;
 
 /**
  * Page slots stored on an item (wand or codex) in its {@code minecraft:container} component.
- * Every change is written straight back to the item, and only spell pages are accepted.
+ * Every change is written straight back to the item, and only spell pages are accepted (and, on a
+ * wand, charms).
  */
 public final class PageContainer extends SimpleContainer {
     private final ItemStack holder;
+    private final boolean charms;
 
     public PageContainer(ItemStack holder, int size) {
+        this(holder, size, false);
+    }
+
+    /** {@code charms}: the slots also take {@link WandCharmItem}s (a wand's do, a codex's do not). */
+    public PageContainer(ItemStack holder, int size, boolean charms) {
         super(size);
         this.holder = holder;
+        this.charms = charms;
         NonNullList<ItemStack> items = NonNullList.withSize(size, ItemStack.EMPTY);
         holder.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).copyInto(items);
         for (int i = 0; i < size; i++) setItem(i, items.get(i));
@@ -35,7 +43,11 @@ public final class PageContainer extends SimpleContainer {
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return SpellPages.isHoldable(stack);
+        return accepts(stack);
+    }
+
+    private boolean accepts(ItemStack stack) {
+        return SpellPages.isHoldable(stack) || charms && stack.getItem() instanceof WandCharmItem;
     }
 
     @Override
@@ -43,12 +55,12 @@ public final class PageContainer extends SimpleContainer {
         return 1;
     }
 
-    /** A UI slot for page {@code index}: pages only, one per slot. */
+    /** A UI slot for page {@code index}: pages (and charms, where taken) only, one per slot. */
     public Slot slot(int index) {
         return new Slot(this, index, 0, 0) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return SpellPages.isHoldable(stack);
+                return accepts(stack);
             }
 
             @Override
