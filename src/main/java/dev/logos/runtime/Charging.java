@@ -56,7 +56,7 @@ public final class Charging {
             this.flow = flow;
             this.surge = surge;
             this.ticks = ticks(in.mana(), flow, surge);
-            this.element = dev.logos.lang.Compiler.inferElement(entry.spell().body());
+            this.element = entry.element();
             this.tier = tier(in.mana());
         }
 
@@ -92,7 +92,20 @@ public final class Charging {
     public static double injectedAfter(int k, double mana, double flow, double surge, int ticks) {
         if (k >= ticks) return mana;
         double t = k / 20.0 * Math.min(1, seconds(mana, flow, surge) * 20 / ticks);
-        return Math.min(mana, flow * t + surge * t * t / 2);
+        return Math.min(mana, gathered(t, flow, surge));
+    }
+
+    /** Mana gathered in the first {@code t} seconds at {@code flow + surge·t} per second. */
+    public static double gathered(double t, double flow, double surge) {
+        return flow * t + surge * t * t / 2;
+    }
+
+    /** How fast a player gathers mana through a wand: {@code flow + surge·t} per second. */
+    public record Rate(double flow, double surge) {
+        /** Mana gathered from the {@code k}-th tick to the next. */
+        public double tick(int k) {
+            return gathered((k + 1) / 20.0, flow, surge) - gathered(k / 20.0, flow, surge);
+        }
     }
 
     /** Ticks a charge of {@code mana} takes, never fewer than the configured minimum. */
@@ -122,22 +135,43 @@ public final class Charging {
     /** Starts charging the wand's selected spell. Returns false (and tells the player why) if it cannot. */
     public static boolean begin(ServerPlayer player, ItemStack wand, InteractionHand hand) {
         cancel(player);
+        SpellBag.Entry entry = castable(player, wand, hand);
+        if (entry == null) return false;
+        Casting.Injection in = Casting.injection(entry.spell(), entry.tier(), Casting.immolation(player, wand));
+        if (!Casting.affordable(player, entry.spell(), in.mana())) return false;
+        Rate rate = rate(player, wand);
+        if (rate == null) return false;
+        PlayerMagic m = PlayerMagic.of(player);
+        m.charge = new Charge(entry, wand.getOrDefault(LogosMod.SELECTED.get(), 0), in, rate.flow(), rate.surge());
+        sync(player, m.charge);
+        Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
+        return true;
+    }
+
+    /**
+     * The spell {@code wand} would cast from {@code hand}: its selected page, if the wand is in the main hand
+     * and the spell is not passive. Null (and tells the player why) otherwise.
+     */
+    static SpellBag.@Nullable Entry castable(ServerPlayer player, ItemStack wand, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) {
-            PlayerMagic.alert(player, Component.literal("法杖要拿在主手才能蓄力施放").withStyle(ChatFormatting.YELLOW));
-            return false;
+            PlayerMagic.alert(player, Component.literal("法杖要拿在主手才能施放").withStyle(ChatFormatting.YELLOW));
+            return null;
         }
         SpellBag.Entry entry = SpellBag.selected(player, wand);
         if (entry == null) {
             PlayerMagic.alert(player, Component.literal("法杖上没有术式：潜行右键挂上术式载页，或在副手拿法式典籍").withStyle(ChatFormatting.YELLOW));
-            return false;
+            return null;
         }
         if (entry.spell().isPassive()) {
             PlayerMagic.alert(player, Component.literal("《" + entry.spell().name() + "》是被动术式，会在"
                     + dev.logos.lang.Spell.triggerZh(entry.spell().trigger()) + "自动触发，无需施放").withStyle(ChatFormatting.YELLOW));
-            return false;
+            return null;
         }
-        Casting.Injection in = Casting.injection(entry.spell(), entry.tier(), Casting.immolation(player, wand));
-        if (!Casting.affordable(player, entry.spell(), in.mana())) return false;
+        return entry;
+    }
+
+    /** How fast {@code player} gathers mana through {@code wand}, or null (and tells them) if it gathers none. */
+    static @Nullable Rate rate(ServerPlayer player, ItemStack wand) {
         PlayerMagic m = PlayerMagic.of(player);
         // Channel speed k fills the same charge in 1/k the time: flow scales by k, surge by k².
         double speed = channel(player, SpellModifiers.CHANNEL_SPEED, wand);
@@ -145,12 +179,9 @@ public final class Charging {
         double surge = channel(player, LogosMod.CHANNEL_SURGE, wand) * (1 + m.maxMana / LogosConfig.chargeManaScale()) * speed * speed;
         if (flow <= 0 && surge <= 0) {
             PlayerMagic.alert(player, Component.literal("这根法杖无法汇集魔力").withStyle(ChatFormatting.YELLOW));
-            return false;
+            return null;
         }
-        m.charge = new Charge(entry, wand.getOrDefault(LogosMod.SELECTED.get(), 0), in, flow, surge);
-        sync(player, m.charge);
-        Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
-        return true;
+        return new Rate(flow, surge);
     }
 
     /** One tick of charging: pays the next share of mana, or stops the charge if the selected spell changed. */
@@ -172,16 +203,24 @@ public final class Charging {
                 m.mana = Math.max(0, m.mana - share);
                 c.injected += share;
                 c.done++;
-                if (c.full()) {
-                    sync(player, c);
-                    Vfx.sound(level, tip, SoundEvents.AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
-                    Vfx.sound(level, tip, SoundEvents.PLAYER_LEVELUP, 0.4f, 1.8f);
-                } else if (c.done % 5 == 0) {
-                    Vfx.sound(level, tip, SoundEvents.AMETHYST_BLOCK_CHIME, 0.5f, 0.6f + 1.0f * c.done / c.ticks);
-                }
+                if (c.full()) sync(player, c);
+                chime(level, tip, c.done, (float) c.done / c.ticks, c.full());
             }
         }
         if (level.getGameTime() % 2 == 0) sync(player, c);
+    }
+
+    /**
+     * The sound of mana flowing in at the wand's head, on the {@code k}-th tick paid for: a chime every
+     * quarter second, rising as it goes ({@code along}, 0 to 1), and a bright one on the tick it {@code filled}.
+     */
+    static void chime(ServerLevel level, Vec3 tip, int k, float along, boolean filled) {
+        if (filled) {
+            Vfx.sound(level, tip, SoundEvents.AMETHYST_BLOCK_CHIME, 1.0f, 1.6f);
+            Vfx.sound(level, tip, SoundEvents.PLAYER_LEVELUP, 0.4f, 1.8f);
+        } else if (k % 5 == 0) {
+            Vfx.sound(level, tip, SoundEvents.AMETHYST_BLOCK_CHIME, 0.5f, 0.6f + 1.0f * along);
+        }
     }
 
     /** Let go: casts if the charge is full and returns true; otherwise leaves it for {@link #cancel}. */
@@ -215,7 +254,7 @@ public final class Charging {
     }
 
     /** About where the wand's tip is, for sounds: ahead, below the eyes and to the right. Clients draw the effects at the real tip. */
-    private static Vec3 tip(ServerPlayer player) {
+    static Vec3 tip(ServerPlayer player) {
         Vec3 look = player.getLookAngle();
         Vec3 right = look.cross(new Vec3(0, 1, 0));
         right = right.lengthSqr() < 1e-6 ? Vec3.ZERO : right.normalize();

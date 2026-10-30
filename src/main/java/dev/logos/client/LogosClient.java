@@ -94,6 +94,7 @@ public final class LogosClient {
         ConstructPlacement.onUse(event);
         if (!event.isCanceled()) DragonInput.onInteraction(event);
         if (!event.isCanceled()) ColossusInput.onInteraction(event);
+        if (!event.isCanceled()) StaffInput.onInteraction(event);
     }
 
     @SubscribeEvent
@@ -106,6 +107,7 @@ public final class LogosClient {
         ConstructRiding.tick();
         DragonInput.tick();
         ColossusInput.tick();
+        StaffInput.tick();
     }
 
     @SubscribeEvent

@@ -116,6 +116,11 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
             var s = SpellPages.spell(pages.get(sel));
             if (s != null) builder.accept(Component.literal("当前：《" + s.name() + "》 注入 " + Node.fmt(s.mana())).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
-        builder.accept(Component.literal("按住右键蓄力，蓄满后松开施放 · 潜行右键挂载术式载页 · R 打开术式轮盘").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.literal(usage() + " · 潜行右键挂载术式载页 · R 打开术式轮盘").withStyle(ChatFormatting.DARK_GRAY));
+    }
+
+    /** How this wand casts, for its tooltip. */
+    protected String usage() {
+        return "按住右键蓄力，蓄满后松开施放";
     }
 }
