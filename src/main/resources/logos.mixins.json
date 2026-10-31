@@ -24,6 +24,8 @@
     "ItemInHandRendererMixin",
     "ItemStackRenderStateAccessor",
     "LayerRenderStateAccessor",
+    "ItemStackRenderStateMixin",
+    "ItemModelResolverMixin",
     "CloudRendererMixin",
     "WeatherEffectRendererMixin",
     "SkyWeatherMixin",

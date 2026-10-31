@@ -33,6 +33,8 @@ public final class LogosClient {
         event.register(dev.logos.net.AreaWeatherPayload.TYPE, (payload, ctx) -> dev.logos.runtime.AreaWeather.receive(payload));
         event.register(dev.logos.net.ManaFieldPayload.TYPE, (payload, ctx) -> dev.logos.runtime.ManaField.receive(ctx.player().level(), payload));
         event.register(dev.logos.net.LifeformCorePayload.TYPE, (payload, ctx) -> dev.logos.runtime.Lifeforms.opening(ctx.player(), payload.entityId()));
+        event.register(dev.logos.net.PillarBurstPayload.TYPE, (payload, ctx) -> PillarBursts.receive(payload));
+        event.register(dev.logos.net.ManaTornadoPayload.TYPE, (payload, ctx) -> ManaTornados.receive(payload));
     }
 
     @SubscribeEvent
@@ -100,6 +102,10 @@ public final class LogosClient {
     @SubscribeEvent
     static void onSubmitGeometry(SubmitCustomGeometryEvent event) {
         LogosFx.submit(event);
+        // After LogosFx, which begins the ShaderPackOverlay frame these submit into.
+        PillarBursts.submit(event);
+        ManaTornados.submit(event);
+        SurfaceAuras.submit(event);
     }
 
     @SubscribeEvent
@@ -114,6 +120,9 @@ public final class LogosClient {
     static void onClientTick(ClientTickEvent.Post event) {
         LogosFx.tick();
         WardSpheres.tick();
+        PillarBursts.tick();
+        ManaTornados.tick();
+        SurfaceAuras.tick();
         while (SPELL_WHEEL.consumeClick()) SpellWheelScreen.tryOpen();
     }
 }
