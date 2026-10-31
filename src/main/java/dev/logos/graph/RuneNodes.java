@@ -246,6 +246,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "imbue", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Imbue extends RuneNode {
+        public Imbue() {
+            super("imbue");
+        }
+    }
+
     @NodeAttribute(name = "resize", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Resize extends RuneNode {
         public Resize() {
@@ -979,6 +986,7 @@ public final class RuneNodes {
         BY_RUNE.put("disarm", Disarm::new);
         BY_RUNE.put("equip", Equip::new);
         BY_RUNE.put("potion", Potion::new);
+        BY_RUNE.put("imbue", Imbue::new);
         BY_RUNE.put("resize", Resize::new);
         BY_RUNE.put("push", Push::new);
         BY_RUNE.put("pull", Pull::new);

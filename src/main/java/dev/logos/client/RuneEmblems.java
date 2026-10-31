@@ -240,6 +240,17 @@ final class RuneEmblems {
                 "..#.#....",
                 ".#...#...",
                 "#........"}, "damage", "damage-all", "drain", "execute", "disarm");
+        // The same blade, with mana winding about it.
+        put(new String[]{
+                "......+.#",
+                ".......#+",
+                "....+.#+#",
+                ".....#+#+",
+                "..#.#+#..",
+                "..+#+#+..",
+                "..#.#....",
+                ".#+..#...",
+                "#........"}, "imbue");
         // A breastplate receiving a piece of equipment, in the same ink as disarm's blade.
         put(new String[]{
                 ".##...##.",

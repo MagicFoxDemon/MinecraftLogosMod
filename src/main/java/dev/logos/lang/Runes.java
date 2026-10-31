@@ -28,6 +28,7 @@ import dev.logos.runtime.Filter;
 import dev.logos.runtime.Lightning;
 import dev.logos.runtime.Limits;
 import dev.logos.runtime.ManaInfusion;
+import dev.logos.runtime.ManaWrap;
 import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.Place;
 import dev.logos.runtime.ProjectileObj;
@@ -844,6 +845,24 @@ public final class Runes {
                         if (amplifier != Resized.ONE) t.addEffect(new MobEffectInstance(LogosMod.RESIZED, ticks, amplifier, false, false, false), c.inst().caster);
                         c.inst().affected.add(t.getUUID());
                         Vfx.burst(lv(t), t, null, Element.ARCANE, Vfx.Burst.FORCE);
+                    }
+                    return null;
+                });
+        def("imbue", EFFECT, ACTION).each("target").p("amount", NUM).p("seconds", NUM).opt("element", ELEMENT, "arcane").stab(2)
+                .doc("魔力缠绕：目标主手的每次近战攻击额外造成若干点该元素的伤害，持续若干秒。缠在手上而不是物品上："
+                        + "拿着什么就缠在什么上，换了武器也跟着走，空手时缠在拳头上。玩家的这份伤害随攻击蓄力缩放，只给瞄准的那个目标，横扫不算；"
+                        + "受施法者元素增幅和目标抗性影响。再次缠绕会取代上一次，点数或秒数为 0 即解除。"
+                        + "每个目标 0.178 × 元素系数 × 点数^1.2 × 秒数^1.1 魔力：缠 4 点 30 秒时火焰约 28、物理 32、虚空 59，点数和时长越大越贵")
+                .exec((n, c) -> {
+                    double amt = Math.max(0, num(n.arg(1), c));
+                    double s = Math.max(0, num(n.arg(2), c));
+                    Element el = element(n.arg(3), c);
+                    double cost = ManaWrap.cost(el, amt, s);
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        if (!c.inst().spend(cost, "imbue")) return null;
+                        ManaWrap.wrap(t, el, amt, s);
+                        c.inst().affected.add(t.getUUID());
+                        Vfx.burst(lv(t), Targeting.center(t), el, 12);
                     }
                     return null;
                 });

@@ -4,6 +4,8 @@
 
 三种都只有画面，没有伤害，也不破坏方块；服务端只发「在哪、多大」，画面全由客户端决定。目前还没有符文触发它们，只有服务端的公开方法和客户端场景。
 
+物品表面特效另有一支按元素分的：魔力缠绕（`imbue` 符文），画在被缠绕的手拿着的东西上，空手时画在拳头上，见文末「魔力缠绕」。
+
 ## 公共约定
 
 - 服务端入口在 `dev.logos.runtime`：`PillarBurst`、`ManaTornado`、`SurfaceAura`。网络包是 `net/PillarBurstPayload`、`net/ManaTornadoPayload`，只发给协商过频道的连接。
@@ -17,7 +19,7 @@
 - 客户端场景都在 `logos` 组里，可以单独跑：
 
   ```text
-  ./gradlew runClient -PldTest=logos_pillar_burst,logos_pillar_burst_close,logos_mana_tornado,logos_mana_tornado_caster,logos_surface_aura,logos_surface_aura_hand -PldTestHeadless
+  ./gradlew runClient -PldTest=logos_pillar_burst,logos_pillar_burst_close,logos_mana_tornado,logos_mana_tornado_caster,logos_surface_aura,logos_surface_aura_hand,logos_mana_wrap,logos_mana_wrap_hand -PldTestHeadless
   ```
 
 - 动态预览（`client/uitest/FormPreviews`）：不截图、不检查，每种特效一组，白天、夜里各一个短场景。不在 `logos` 组里，开窗口跑：
@@ -131,6 +133,25 @@
   - 音效、原版的点光源和扭曲（Distortion）。
   - 原版其余样式（闪电、冰、烟、蝴蝶、龙、碎玻璃等）。
 
+## 魔力缠绕（`ManaWrap`）
+
+变类符文 `imbue`（魔力缠绕）：目标主手的每次近战攻击额外造成若干点某元素的伤害，持续若干秒。玩法规则写在 `Runes` 里它的 `doc`；这里只记数据怎么走、画面怎么分工。
+
+- **数据**：缠在手上，不在物品上。`runtime/ManaWrap`（元素、点数、到期的游戏刻）是实体上的附件 `logos:mana_wrap`，存盘并同步给所有看得见它的客户端；到期后服务端摘掉。换武器时效果跟着手走，物品上不留数据。附属的生物要用「生命」元素（玩家写不了）时直接调 `ManaWrap.wrap(实体, 元素, 点数, 秒数)`。
+- **额外伤害**：命中后补一记元素伤害（`Effects.followUp`），和法术伤害一样吃施法者元素增幅、目标抗性，不受这一下近战留下的受伤冷却挡，被动触发看不见它。玩家的按攻击蓄力缩放，只给瞄准的那个，横扫波及的不算；生物的不缩放。
+- **画在哪**：
+  - 拿着东西：`SurfaceAuras.resolved` 看物品的持有者有没有缠绕、这只手是不是主手，记在渲染状态上，和物品表面特效走同一条路（同一个物品可以两种都有，各自发射）。
+  - 空手：`WrapFists`。第三人称给所有用人形模型的生物（玩家、僵尸、骷髅、猪灵、露出手臂的盔甲架）加一层渲染层，取手臂方块末端 5 像素当拳头（`ItemSurface.box`）；第一人称在 `RenderArmEvent` 里照 `AvatarRenderer.renderHand` 的姿态画自己的手。没有手臂的生物只加伤害，不画。
+- **每个元素一个类**：`WrapVisual.of(元素)` 按元素取 `PhysicalWrapVisual`、`FireWrapVisual`、`FrostWrapVisual`、`LightningWrapVisual`、`VoidWrapVisual`、`ArcaneWrapVisual`、`LifeWrapVisual`。现在它们都继承 `TintedWrapVisual`：上面「缠着魔力」的样式换成元素的两种颜色（取自 `LogosFx` 的元素色板）。每个类自己管：
+  - `local`：贴着物品或拳头的部分，在模型空间画（0–1 是一格），参数和 `SurfaceAuraVisual.local` 一样；
+  - `emit` / `tick` / `world`：自己的粒子，存在自己的实例里，`world` 用 `layers.apply(n)` 固定先后；
+  - `particles` / `clear`：粒子数（和物品表面特效共用 1200 的上限）、清空。
+- **按元素做缠绕时**（每个元素一个工作树，只改自己的 `<元素>WrapVisual.java`、自己的贴图 `textures/vfx/wrap/<元素>/`，需要时加自己的客户端场景；公共部分有缺的，记下来交给公共入口统一改）：
+  - 从这个元素已有的特效里取特点，保持同一套语言：魔弹 `<元素>ProjectileVisual`、命中 `<元素>ProjectileImpactVisual`、射线 `<元素>RayVisual`、光束 `<元素>BeamVisual`、蓄力 `<元素>ChargeVisual`、伤害爆发 `<元素>DamageVisual`，以及对应的 `*_VFX.md`。优先复用这些已有的贴图和画法，缺的再加。
+  - 贴着的部分要比物品表面特效收敛：武器本身还要看得清，拳头只有 4×5 像素大。
+  - 第一人称（剑和空手）、第三人称、白天和夜里都要看：`logos_mana_wrap`（七个盔甲架，先拿剑后空手，近看火焰剑、奥秘拳头）和 `logos_mana_wrap_hand`（自己的手，火焰空手、挥拳、背后，寒霜剑）。
+- 没有做的：副手、远程武器（箭、三叉戟投掷）不带缠绕；音效；缠绕时手上的物品图标不变。
+
 ## 光影
 
-三种都没有开光影实测过。世界里的几何经 ShaderPackOverlay 提交；物品表面特效贴着物品的部分是在物品渲染里直接提交的，没有经过 ShaderPackOverlay；粒子着色器的镂空材质经 ShaderPackOverlay 是否正常也需要确认。
+三种都没有开光影实测过，魔力缠绕也没有。世界里的几何经 ShaderPackOverlay 提交；物品表面特效贴着物品的部分是在物品渲染里直接提交的，没有经过 ShaderPackOverlay；粒子着色器的镂空材质经 ShaderPackOverlay 是否正常也需要确认。

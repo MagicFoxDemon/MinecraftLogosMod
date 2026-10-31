@@ -176,6 +176,32 @@ final class ItemSurface {
         return new ItemSurface(all.toArray(), all.size / STRIDE, edge.toArray(), edge.size / STRIDE);
     }
 
+    /**
+     * The surface of a box, every face solid, one cell a sixteenth of a block (a model pixel): a bare fist, the end
+     * of an arm's cube. Its longest side is the main axis, pointing to +x+y like an item's (towards the knuckles for an
+     * arm, which hangs down +Y in its model space).
+     */
+    static ItemSurface box(float x0, float y0, float z0, float x1, float y1, float z1) {
+        FloatList all = new FloatList();
+        float total = 0;
+        Vector3f[][] faces = {
+                {new Vector3f(x0, y0, z0), new Vector3f(x1 - x0, 0, 0), new Vector3f(0, y1 - y0, 0), new Vector3f(0, 0, -1)},
+                {new Vector3f(x0, y0, z1), new Vector3f(x1 - x0, 0, 0), new Vector3f(0, y1 - y0, 0), new Vector3f(0, 0, 1)},
+                {new Vector3f(x0, y0, z0), new Vector3f(0, 0, z1 - z0), new Vector3f(0, y1 - y0, 0), new Vector3f(-1, 0, 0)},
+                {new Vector3f(x1, y0, z0), new Vector3f(0, 0, z1 - z0), new Vector3f(0, y1 - y0, 0), new Vector3f(1, 0, 0)},
+                {new Vector3f(x0, y0, z0), new Vector3f(x1 - x0, 0, 0), new Vector3f(0, 0, z1 - z0), new Vector3f(0, -1, 0)},
+                {new Vector3f(x0, y1, z0), new Vector3f(x1 - x0, 0, 0), new Vector3f(0, 0, z1 - z0), new Vector3f(0, 1, 0)}};
+        for (Vector3f[] f : faces) {
+            int ns = Mth.clamp(Math.round(f[1].length() * 16), 1, MAX_CELLS), nt = Mth.clamp(Math.round(f[2].length() * 16), 1, MAX_CELLS);
+            float cellArea = f[1].length() * f[2].length() / (ns * nt);
+            for (int i = 0; i < ns; i++) for (int j = 0; j < nt; j++) {
+                total += cellArea;
+                put(all, f[0], f[1], f[2], f[3], (i + .5f) / ns, (j + .5f) / nt, ns, nt, total);
+            }
+        }
+        return new ItemSurface(all.toArray(), all.size / STRIDE, new float[0], 0);
+    }
+
     private static float texel(float u, float u0, float u1, int size) {
         return (u - u0) / (u1 - u0) * size;
     }

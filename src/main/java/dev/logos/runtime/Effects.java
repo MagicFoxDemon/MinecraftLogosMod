@@ -58,6 +58,16 @@ public final class Effects {
         return hurt(attacker, t, amount * SpellModifiers.of(attacker).damage(el), el, false);
     }
 
+    /**
+     * A second hit riding on a melee blow that has just landed (a {@link ManaWrap}): the attacker's element power and
+     * the target's resistances apply, and like a spell's damage it ignores the hurt cooldown the blow set and is not
+     * seen by passive triggers. Returns true if the target died from it.
+     */
+    public static boolean followUp(LivingEntity attacker, LivingEntity t, double amount, Element el) {
+        if (!t.isAlive() || !attacker.isAlive() || attacker.level() != t.level()) return false;
+        return hurt(attacker, t, amount * SpellModifiers.of(attacker).damage(el), el, true);
+    }
+
     private static boolean hurt(LivingEntity attacker, LivingEntity t, double amount, Element el, boolean spell) {
         double amt = amount;
         if (el == Element.FIRE && t.fireImmune()) amt = 0;

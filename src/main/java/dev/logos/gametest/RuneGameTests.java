@@ -4,10 +4,12 @@ import java.util.List;
 
 import dev.logos.LogosMod;
 import dev.logos.item.SpellPages;
+import dev.logos.lang.Element;
 import dev.logos.lang.LogosError;
 import dev.logos.lang.Status;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Effects;
+import dev.logos.runtime.ManaWrap;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.TimeStop;
@@ -290,5 +292,61 @@ final class RuneGameTests {
         h.assertTrue(p.getHealth() == full, "the blow should be kept, health " + p.getHealth() + ", kept " + TimeStop.stored(p));
         h.succeedWhen(() -> h.assertTrue(!TimeStop.stopped(p) && p.getAttributeValue(Attributes.MOVEMENT_SPEED) == speed && p.getHealth() == full - 4,
                 "once time resumes, the player should move again and take 4; health " + p.getHealth()));
+    }
+
+    /** imbue wraps the target's hand: its blows deal the extra element damage on top, whatever it holds, priced by the formula; 0 seconds takes it off. */
+    static void imbueMobBlows(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var wrapped = mob(h, EntityType.HUSK);
+        var plain = h.spawn(EntityType.HUSK, new Vec3(1.5, 2, 6.5));
+        plain.setNoAi(true);
+        var hit = h.spawn(EntityType.PIG, new Vec3(4.5, 2, 6.5));
+        var control = h.spawn(EntityType.PIG, new Vec3(1.5, 2, 8.5));
+        for (var m : List.of(wrapped, plain)) m.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        for (var m : List.of(hit, control)) m.setNoAi(true);
+
+        var inst = Casting.cast(p, Casting.compile("(spell :mana 20 (imbue (nearest :radius 2.5) 3 10 arcane))"), null, null);
+        double cost = ManaWrap.cost(Element.ARCANE, 3, 10);
+        h.assertTrue(inst != null && Math.abs(inst.mana - (20 - 1 - cost)) < 1e-6, "imbue should cost " + cost + ", left " + (inst == null ? "-" : inst.mana));
+        h.assertTrue(ManaWrap.of(wrapped) != null && ManaWrap.of(plain) == null, "only the nearest husk is wrapped");
+        // Swapping what the hand holds keeps the wrap: it is on the hand.
+        wrapped.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
+        plain.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
+        float hit0 = hit.getHealth(), control0 = control.getHealth();
+        wrapped.doHurtTarget(h.getLevel(), hit);
+        plain.doHurtTarget(h.getLevel(), control);
+        h.succeedWhen(() -> {
+            float extra = (hit0 - hit.getHealth()) - (control0 - control.getHealth());
+            h.assertTrue(Math.abs(extra - 3) < 1e-3, "the wrapped blow should deal 3 more, dealt " + extra + " more");
+            Casting.cast(p, Casting.compile("(imbue (nearest :radius 2.5) 3 0)"), null, null);
+            h.assertTrue(ManaWrap.of(wrapped) == null, "0 seconds takes the wrap off");
+        });
+    }
+
+    /** A player's wrapped blow is scaled by its charge and lands only on the entity aimed at, not on one the sweep catches. */
+    static void imbuePlayerBlow(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var aimed = mob(h, EntityType.HUSK);
+        var swept = h.spawn(EntityType.HUSK, new Vec3(2.5, 2, 3.5));
+        swept.setNoAi(true);
+        ManaWrap.wrap(p, Element.ARCANE, 4, 30);
+        float charge = p.getAttackStrengthScale(.5f);
+        float aimed0 = aimed.getHealth(), swept0 = swept.getHealth();
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p, aimed));
+        aimed.hurtServer(h.getLevel(), aimed.damageSources().playerAttack(p), 1);
+        swept.hurtServer(h.getLevel(), swept.damageSources().playerAttack(p), 1);
+        h.succeedWhen(() -> {
+            float extra = (aimed0 - aimed.getHealth()) - (swept0 - swept.getHealth());
+            h.assertTrue(Math.abs(extra - 4 * charge) < 1e-3, "the aimed blow should deal 4 × charge " + charge + " more, dealt " + extra + " more");
+        });
+    }
+
+    /** A wrap comes off its holder when its time is up. */
+    static void imbueRunsOut(GameTestHelper h) {
+        FamiliarGameTests.forceAround(h, 1);
+        var husk = mob(h, EntityType.HUSK);
+        ManaWrap.wrap(husk, Element.FIRE, 2, .1);
+        h.assertTrue(ManaWrap.of(husk) != null, "the wrap should be on");
+        h.succeedWhen(() -> h.assertTrue(!husk.hasData(LogosMod.MANA_WRAP), "the wrap should come off after 2 ticks"));
     }
 }
