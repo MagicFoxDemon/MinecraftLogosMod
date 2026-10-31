@@ -83,6 +83,9 @@ public class LogosMod {
     /** What a pair of dividers has measured. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<dev.logos.item.DividersItem.Measure>> DIVIDERS = COMPONENTS.registerComponentType("dividers",
             b -> b.persistent(dev.logos.item.DividersItem.Measure.CODEC).networkSynchronized(ByteBufCodecs.fromCodecWithRegistries(dev.logos.item.DividersItem.Measure.CODEC)));
+    /** Fire or mana along an item's surface, seen wherever the item is drawn (FORM_VFX.md). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<dev.logos.runtime.SurfaceAura>> SURFACE_AURA = COMPONENTS.registerComponentType("surface_aura",
+            b -> b.persistent(dev.logos.runtime.SurfaceAura.CODEC).networkSynchronized(dev.logos.runtime.SurfaceAura.STREAM_CODEC));
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES =
@@ -845,6 +848,8 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.ChargePayload.TYPE, dev.logos.net.ChargePayload.CODEC);
         registrar.playToClient(dev.logos.net.AreaWeatherPayload.TYPE, dev.logos.net.AreaWeatherPayload.CODEC);
         registrar.playToClient(dev.logos.net.ManaFieldPayload.TYPE, dev.logos.net.ManaFieldPayload.CODEC);
+        registrar.playToClient(dev.logos.net.PillarBurstPayload.TYPE, dev.logos.net.PillarBurstPayload.CODEC);
+        registrar.playToClient(dev.logos.net.ManaTornadoPayload.TYPE, dev.logos.net.ManaTornadoPayload.CODEC);
         registrar.playToServer(dev.logos.net.AnchorEditPayload.TYPE, dev.logos.net.AnchorEditPayload.CODEC, dev.logos.net.AnchorEditPayload::handle);
         registrar.playToServer(dev.logos.net.AlchemyCardPayload.TYPE, dev.logos.net.AlchemyCardPayload.CODEC, dev.logos.net.AlchemyCardPayload::handle);
         registrar.playToServer(dev.logos.net.SageAskPayload.TYPE, dev.logos.net.SageAskPayload.CODEC, dev.logos.net.SageAskPayload::handle);

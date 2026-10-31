@@ -84,14 +84,18 @@ public final class WandTips {
         HAND_BASE.set(pose);
     }
 
+    /** A first-person pose relative to {@link #beginHands}: in view space, with or without a shader pack. */
+    static Matrix4f inView(Matrix4fc pose) {
+        return new Matrix4f(HAND_BASE).invert().mul(pose);
+    }
+
     /** First person: {@code pose} is the item's pose before its display transform, under {@link #beginHands}. */
     public static void captureFirstPerson(LivingEntity holder, ItemStack stack, ItemDisplayContext context, Matrix4fc pose) {
         if (!(stack.getItem() instanceof WandItem) || context.leftHand() != (holder.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT)) return;
         Minecraft mc = Minecraft.getInstance();
         ItemStackRenderState state = new ItemStackRenderState();
         mc.getItemModelResolver().updateForTopItem(state, stack, context, holder.level(), holder, 0);
-        Matrix4f inView = new Matrix4f(HAND_BASE).invert().mul(pose);
-        capture(holder.getId(), stack, state, context.leftHand(), inView, mc.gameRenderer.getMainCamera().rotation());
+        capture(holder.getId(), stack, state, context.leftHand(), inView(pose), mc.gameRenderer.getMainCamera().rotation());
     }
 
     /** Third person: {@code pose} is camera-relative world space, before the item's display transform; only a main hand counts. */
