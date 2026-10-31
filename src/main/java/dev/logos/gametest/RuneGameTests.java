@@ -341,6 +341,26 @@ final class RuneGameTests {
         });
     }
 
+    /** Life can't be written in a spell, but a wrap given through the API (an addon's creatures) works like any other. */
+    static void imbueLifeThroughApi(GameTestHelper h) {
+        var wrapped = mob(h, EntityType.HUSK);
+        var plain = h.spawn(EntityType.HUSK, new Vec3(1.5, 2, 6.5));
+        plain.setNoAi(true);
+        var hit = h.spawn(EntityType.PIG, new Vec3(4.5, 2, 6.5));
+        var control = h.spawn(EntityType.PIG, new Vec3(1.5, 2, 8.5));
+        for (var m : List.of(hit, control)) m.setNoAi(true);
+        for (var m : List.of(wrapped, plain)) m.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        ManaWrap.wrap(wrapped, Element.LIFE, 2, 30);
+        h.assertTrue(ManaWrap.of(wrapped) != null && ManaWrap.of(wrapped).element() == Element.LIFE, "the life wrap should be on");
+        float hit0 = hit.getHealth(), control0 = control.getHealth();
+        wrapped.doHurtTarget(h.getLevel(), hit);
+        plain.doHurtTarget(h.getLevel(), control);
+        h.succeedWhen(() -> {
+            float extra = (hit0 - hit.getHealth()) - (control0 - control.getHealth());
+            h.assertTrue(Math.abs(extra - 2) < 1e-3, "the life-wrapped blow should deal 2 more, dealt " + extra + " more");
+        });
+    }
+
     /** A wrap comes off its holder when its time is up. */
     static void imbueRunsOut(GameTestHelper h) {
         FamiliarGameTests.forceAround(h, 1);
