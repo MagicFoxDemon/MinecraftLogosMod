@@ -35,6 +35,10 @@ public final class PlayerMagic {
     public Charging.@org.jspecify.annotations.Nullable Charge charge;
     /** Not persisted: the staff being filled, if any (see {@link StaffCharging}). */
     public StaffCharging.@org.jspecify.annotations.Nullable Fill fill;
+    /** Not persisted: the wand listening for a spell's name, if any (see {@link VoiceCasting}). */
+    public VoiceCasting.@org.jspecify.annotations.Nullable Listen listen;
+    /** Not persisted: the page whose spell a staff with a chant charm keeps casting after it was named aloud. */
+    public net.minecraft.world.item.@org.jspecify.annotations.Nullable ItemStack chanting;
 
     public PlayerMagic() {
         this(Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_STABILITY, true);

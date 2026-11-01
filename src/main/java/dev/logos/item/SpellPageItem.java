@@ -2,6 +2,7 @@ package dev.logos.item;
 
 import java.util.function.Consumer;
 
+import dev.logos.LogosMod;
 import dev.logos.lang.LogosError;
 import dev.logos.lang.Node;
 import dev.logos.lang.Report;
@@ -109,7 +110,15 @@ public class SpellPageItem extends Item {
             builder.accept(Component.literal("⚠ 超出载页承载：施放时只注入 " + tier.capacity()
                     + (s.immolate() ? "，焚式可放大（载页焚毁）" : "，术式不允许焚式")).withStyle(ChatFormatting.GOLD));
         }
+        String voice = stack.get(LogosMod.VOICE.get());
+        if (voice != null) builder.accept(Component.literal("🗣 言出法随：法杖挂上言灵坠后，喊出「" + voice + "」即可施放").withStyle(ChatFormatting.LIGHT_PURPLE));
         builder.accept(Component.literal("挂到法杖上（潜行右键法杖）或放进法式典籍").withStyle(ChatFormatting.DARK_GRAY));
+    }
+
+    /** A page written with 言出法随 shimmers, so it stands out on a wand and in a chest. */
+    @Override
+    public boolean isFoil(ItemStack stack) {
+        return stack.has(LogosMod.VOICE.get()) || super.isFoil(stack);
     }
 
 }
