@@ -31,6 +31,13 @@ import dev.logos.sage.SageSettings;
 public final class SpellVoices {
     /** A match closer than this is taken as the spell. From one player's tests in three languages: matches 0.015–0.10, other speech above 0.14. */
     public static final double ACCEPT = 0.12;
+    /**
+     * A looser match is still taken when it stands out: closer than {@code LOOSE} and ahead of every
+     * other recorded name by {@code LEAD}. This forgives a name said a little off without letting in
+     * a word that merely sits between two names; on the same player's recordings it caught one more
+     * of 57 takes and let in no more unrecorded words than {@link #ACCEPT} alone.
+     */
+    public static final double LOOSE = 0.18, LEAD = 0.06;
     /** Recordings with less speech than this are rejected as accidental. */
     public static final double MIN_SECONDS = 0.2;
 
@@ -116,33 +123,61 @@ public final class SpellVoices {
                 double d = u.distance(s.utterance);
                 spread = Double.isNaN(spread) ? d : Math.max(spread, d);
             }
-            String nearest = null;
-            double nearestDistance = Double.NaN;
-            for (var e : samples.entrySet()) {
-                if (e.getKey().equals(name)) continue;
-                for (Sample s : e.getValue()) {
-                    double d = u.distance(s.utterance);
-                    if (nearest == null || d < nearestDistance) {
-                        nearest = e.getKey();
-                        nearestDistance = d;
-                    }
-                }
-            }
-            Path folder = folders.get(name);
-            if (folder == null) {
-                folder = dir.resolve(folderName(name));
-                Files.createDirectories(folder);
-                Files.writeString(folder.resolve("name.txt"), name, StandardCharsets.UTF_8);
-                folders.put(name, folder);
-            }
-            Path file = folder.resolve(System.currentTimeMillis() + ".wav");
-            for (int i = 1; Files.exists(file); i++) file = folder.resolve(System.currentTimeMillis() + "-" + i + ".wav");
-            writeWav(file, raw);
-            List<Sample> own = samples.computeIfAbsent(name, k -> new ArrayList<>());
-            own.add(new Sample(file, u));
+            Ranked nearest = closestOther(name, u);
+            double nearestDistance = nearest == null ? Double.NaN : nearest.distance();
+            int count = save(name, raw, u);
             Problem problem = spread > ACCEPT ? Problem.INCONSISTENT : nearestDistance < ACCEPT ? Problem.CONFUSABLE : Problem.NONE;
-            return new Enrollment(problem, own.size(), spread, nearest, nearestDistance);
+            return new Enrollment(problem, count, spread, nearest == null ? null : nearest.name(), nearestDistance);
         }
+    }
+
+    /** {@code raw} trimmed and embedded, ready to compare; null when it holds no speech. */
+    public @Nullable Utterance hear(float[] raw) {
+        if (Utterance.peak(raw) < Utterance.QUIET) return null;
+        Utterance u = Utterance.of(model, raw);
+        return u.seconds() < MIN_SECONDS ? null : u;
+    }
+
+    /** A recorded name and how far it is from something said. */
+    public record Ranked(String name, double distance) {}
+
+    /** The recorded name other than {@code name} that {@code u} sounds most like, or null when there is none. */
+    public synchronized @Nullable Ranked closestOther(String name, Utterance u) {
+        Ranked best = null;
+        for (var e : samples.entrySet()) {
+            if (e.getKey().equals(name)) continue;
+            for (Sample s : e.getValue()) {
+                double d = u.distance(s.utterance);
+                if (best == null || d < best.distance()) best = new Ranked(e.getKey(), d);
+            }
+        }
+        return best;
+    }
+
+    /** Swaps every recording of {@code name} for {@code takes}, as one step: a redone set replaces the old one whole. */
+    public void replace(String name, List<float[]> takes) throws IOException {
+        List<Utterance> heard = new ArrayList<>();
+        for (float[] raw : takes) heard.add(Utterance.of(model, raw));
+        synchronized (this) {
+            forget(name);
+            for (int i = 0; i < takes.size(); i++) save(name, takes.get(i), heard.get(i));
+        }
+    }
+
+    private int save(String name, float[] raw, Utterance u) throws IOException {
+        Path folder = folders.get(name);
+        if (folder == null) {
+            folder = dir.resolve(folderName(name));
+            Files.createDirectories(folder);
+            Files.writeString(folder.resolve("name.txt"), name, StandardCharsets.UTF_8);
+            folders.put(name, folder);
+        }
+        Path file = folder.resolve(System.currentTimeMillis() + ".wav");
+        for (int i = 1; Files.exists(file); i++) file = folder.resolve(System.currentTimeMillis() + "-" + i + ".wav");
+        writeWav(file, raw);
+        List<Sample> own = samples.computeIfAbsent(name, k -> new ArrayList<>());
+        own.add(new Sample(file, u));
+        return own.size();
     }
 
     /** Deletes the newest recording of {@code name}, for redoing a bad take. */
@@ -172,31 +207,40 @@ public final class SpellVoices {
     public @Nullable Recognition recognize(float[] raw, @Nullable Collection<String> candidates) {
         if (Utterance.peak(raw) < Utterance.QUIET) return null;
         Utterance u = Utterance.of(model, raw);
-        String best = null, second = null;
-        double bestD = Double.POSITIVE_INFINITY, secondD = Double.POSITIVE_INFINITY;
+        Map<String, Double> near = new LinkedHashMap<>();
         synchronized (this) {
             for (var e : samples.entrySet()) {
-                if (candidates != null && !candidates.contains(e.getKey())) continue;
                 double d = Double.POSITIVE_INFINITY;
                 for (Sample s : e.getValue()) d = Math.min(d, u.distance(s.utterance));
-                if (d < bestD) {
-                    second = best;
-                    secondD = bestD;
-                    best = e.getKey();
-                    bestD = d;
-                } else if (d < secondD) {
-                    second = e.getKey();
-                    secondD = d;
-                }
+                near.put(e.getKey(), d);
             }
         }
-        return best == null || bestD == Double.POSITIVE_INFINITY ? null : new Recognition(best, bestD, second, secondD);
+        String best = null;
+        for (var e : near.entrySet())
+            if ((candidates == null || candidates.contains(e.getKey())) && (best == null || e.getValue() < near.get(best))) best = e.getKey();
+        if (best == null || near.get(best) == Double.POSITIVE_INFINITY) return null;
+        // The runner-up is any other recorded name, on the wand or not: a word that sounds more like a
+        // spell left at home than like the one on the wand is not taken for the one on the wand.
+        String second = null;
+        for (var e : near.entrySet())
+            if (!e.getKey().equals(best) && (second == null || e.getValue() < near.get(second))) second = e.getKey();
+        return new Recognition(best, near.get(best), second, second == null ? Double.POSITIVE_INFINITY : near.get(second));
     }
 
-    /** The best match and the runner-up (null when there was only one candidate). */
+    /**
+     * Whether something {@code distance} from a name, with the closest other recorded name at
+     * {@code runnerUp} (infinite when there is none), is taken as that name: close, and no other name
+     * closer; or a little further but clearly ahead of every other (which needs another to compare with).
+     */
+    public static boolean accepts(double distance, double runnerUp) {
+        return distance < ACCEPT && distance <= runnerUp
+                || distance < LOOSE && runnerUp != Double.POSITIVE_INFINITY && runnerUp - distance >= LEAD;
+    }
+
+    /** The best match among the candidates, and the closest other recorded name (null when there is none). */
     public record Recognition(String name, double distance, @Nullable String runnerUp, double runnerUpDistance) {
         public boolean accepted() {
-            return distance < ACCEPT;
+            return accepts(distance, runnerUpDistance);
         }
     }
 

@@ -1,8 +1,8 @@
 package dev.logos.client.voice;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.openal.AL10;
@@ -12,26 +12,18 @@ import org.lwjgl.openal.ALUtil;
 
 /**
  * Microphone capture through the game's own OpenAL, so it needs no extra library and works on
- * every platform the game does. While open it keeps the last {@link #PREROLL_SECONDS} of audio, so
- * {@link #begin} also catches a word the player started a moment before pressing. Audio comes out
- * as 16 kHz mono floats, ready for {@link SpellVoices}. Use it only after the game's sound engine
- * has started (OpenAL must be loaded).
+ * every platform the game does. While open it hands each new piece of audio, as 16 kHz mono
+ * floats, to its {@link #listen listener} (an {@link Endpointer}, usually) on its own thread. Use
+ * it only after the game's sound engine has started (OpenAL must be loaded).
  */
 public final class Microphone implements AutoCloseable {
-    public static final double PREROLL_SECONDS = 0.3;
-    /** Longest single take kept; anything longer is cut, so a stuck key cannot grow memory without end. */
-    public static final double MAX_SECONDS = 10;
     private static final int RATE = SpeechEmbedding.SAMPLE_RATE;
 
     private final long device;
     private final int factor;
-    private final float[] ring = new float[(int) (RATE * PREROLL_SECONDS)];
-    private int ringPos;
-    private float[] take = new float[0];
-    private int takeLength;
-    private boolean recording;
     private volatile boolean closed;
     private volatile float level;
+    private volatile @Nullable Consumer<float[]> listener;
 
     /** Capture device names, the first being the system default. */
     public static List<String> devices() {
@@ -39,7 +31,7 @@ public final class Microphone implements AutoCloseable {
         return all == null ? List.of() : all;
     }
 
-    /** Opens {@code device}, or the system default when null, and starts listening. */
+    /** Opens {@code device}, or the system default when null, and starts capturing. */
     public static Microphone open(@Nullable String device) throws IOException {
         for (int factor : new int[] {1, 3}) {
             long handle = ALC11.alcCaptureOpenDevice(device, RATE * factor, AL10.AL_FORMAT_MONO16, RATE * factor / 2);
@@ -57,6 +49,11 @@ public final class Microphone implements AutoCloseable {
         t.start();
     }
 
+    /** Where captured audio goes from now on; null drops it. */
+    public void listen(@Nullable Consumer<float[]> listener) {
+        this.listener = listener;
+    }
+
     /** Polls the device every 10 ms; a 48 kHz device is brought down to 16 kHz by averaging each three samples. */
     private void pump() {
         short[] buf = new short[RATE * factor / 10];
@@ -69,17 +66,17 @@ public final class Microphone implements AutoCloseable {
                 if (n > 0) ALC11.alcCaptureSamples(device, buf, n);
             }
             if (n > 0) {
+                float[] chunk = new float[n / factor];
                 double sum = 0;
-                synchronized (this) {
-                    for (int i = 0; i < n; i += factor) {
-                        float v = 0;
-                        for (int k = 0; k < factor; k++) v += buf[i + k];
-                        v /= factor * 32768f;
-                        sum += v * v;
-                        push(v);
-                    }
+                for (int i = 0; i < chunk.length; i++) {
+                    float v = 0;
+                    for (int k = 0; k < factor; k++) v += buf[i * factor + k];
+                    chunk[i] = v / (factor * 32768f);
+                    sum += chunk[i] * chunk[i];
                 }
-                level = (float) Math.sqrt(sum / (n / factor));
+                level = (float) Math.sqrt(sum / chunk.length);
+                Consumer<float[]> l = listener;
+                if (l != null) l.accept(chunk);
             }
             try {
                 Thread.sleep(10);
@@ -87,38 +84,6 @@ public final class Microphone implements AutoCloseable {
                 return;
             }
         }
-    }
-
-    private void push(float v) {
-        if (!recording) {
-            ring[ringPos] = v;
-            ringPos = (ringPos + 1) % ring.length;
-            return;
-        }
-        if (takeLength >= RATE * MAX_SECONDS) return;
-        if (takeLength == take.length) take = Arrays.copyOf(take, Math.max(RATE, take.length * 2));
-        take[takeLength++] = v;
-    }
-
-    /** Starts a take, beginning with the pre-roll. */
-    public synchronized void begin() {
-        take = new float[RATE * 2];
-        takeLength = 0;
-        recording = true;
-        for (int i = 0; i < ring.length; i++) push(ring[(ringPos + i) % ring.length]);
-    }
-
-    /** Ends the take and returns it. Callers that want the tail of a word said while letting go should wait a moment (about 0.2 s) first. */
-    public synchronized float[] end() {
-        recording = false;
-        float[] out = Arrays.copyOf(take, takeLength);
-        take = new float[0];
-        takeLength = 0;
-        return out;
-    }
-
-    public synchronized boolean recording() {
-        return recording;
     }
 
     /** Recent loudness, 0 to 1 (RMS), for a level meter. */
@@ -130,6 +95,7 @@ public final class Microphone implements AutoCloseable {
     public synchronized void close() {
         if (closed) return;
         closed = true;
+        listener = null;
         ALC11.alcCaptureStop(device);
         ALC11.alcCaptureCloseDevice(device);
     }

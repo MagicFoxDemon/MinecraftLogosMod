@@ -102,12 +102,15 @@ public class CopyTableBlockEntity extends BlockEntity {
         return result;
     }
 
-    /** The original's spell (and drawing) written onto one of the empty pages, keeping that page's grade. */
+    /** The original's spell (its drawing, and 言出法随 if it has it) written onto one of the empty pages, keeping that page's grade. */
     public ItemStack result() {
         ItemStack original = inputs.getItem(ORIGINAL), blank = inputs.getItem(BLANK);
         if (!isOriginal(original) || !SpellPages.isBlank(blank)) return ItemStack.EMPTY;
         CompoundTag graph = original.get(LogosMod.SPELL_GRAPH.get());
-        return SpellPages.write(blank.copyWithCount(1), original.get(LogosMod.SPELL_SOURCE.get()), graph);
+        ItemStack copy = SpellPages.write(blank.copyWithCount(1), original.get(LogosMod.SPELL_SOURCE.get()), graph);
+        String voice = original.get(LogosMod.VOICE.get());
+        if (voice != null) copy.set(LogosMod.VOICE.get(), voice);
+        return copy;
     }
 
     /** Called when a copy is taken: the empty page it was written on is used up. */

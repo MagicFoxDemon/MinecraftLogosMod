@@ -114,6 +114,30 @@ class SpellVoicesTest {
     }
 
     @Test
+    void aLooserMatchCountsOnlyWhenItClearlyLeads() {
+        assertTrue(SpellVoices.accepts(0.05, 0.20), "close and alone");
+        assertFalse(SpellVoices.accepts(0.05, 0.04), "close, but another recorded name is closer");
+        assertTrue(SpellVoices.accepts(0.15, 0.25), "a little off, far ahead of every other name");
+        assertFalse(SpellVoices.accepts(0.15, 0.19), "a little off and not clearly ahead: could be either");
+        assertFalse(SpellVoices.accepts(0.15, Double.POSITIVE_INFINITY), "a little off with nothing to compare against");
+        assertFalse(SpellVoices.accepts(0.19, 0.40), "too far whatever the lead");
+    }
+
+    @Test
+    void aWordLikeASpellLeftOffTheWandIsNotTakenForOneOnIt(@TempDir Path dir) throws IOException {
+        SpellVoices voices = new SpellVoices(dir, SpeechEmbedding.get());
+        double[] a = {300, 800, 500}, b = {900, 400, 1200};
+        for (int take = 0; take < 3; take++) {
+            voices.enroll("Ignis", word(a, 1 + 0.08 * (take - 1), take));
+            voices.enroll("Glacies", word(b, 1 + 0.08 * (take - 1), 10 + take));
+        }
+        SpellVoices.Recognition r = voices.recognize(word(a, 0.95, 99), List.of("Glacies"));
+        assertEquals("Glacies", r.name());
+        assertEquals("Ignis", r.runnerUp(), "the runner-up counts every recorded name, not just the candidates");
+        assertFalse(r.accepted(), "it sounds like Ignis, which is not a candidate");
+    }
+
+    @Test
     void silenceIsNotSavedOrRecognized(@TempDir Path dir) throws IOException {
         SpellVoices voices = new SpellVoices(dir, SpeechEmbedding.get());
         SpellVoices.Enrollment e = voices.enroll("Ignis", new float[RATE]);
