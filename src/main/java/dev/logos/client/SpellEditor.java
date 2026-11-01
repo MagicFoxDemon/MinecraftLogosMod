@@ -100,10 +100,14 @@ public final class SpellEditor {
     private Shelf shelf = Shelf.OVERVIEW;
     private UIElement overviewPage;
     private SagePanel sage;
+    /** 言出法随's page; pages in a spell emitter are not cast by hand, so the emitter has none. */
+    private @org.jspecify.annotations.Nullable VoicePanel voicePanel;
+    /** The name 言出法随 is applied under for this page: as the page had it, until changed on the voice page. */
+    private @org.jspecify.annotations.Nullable String voice;
     /** The player's own drawing, kept aside while a spell from the sage is shown on the canvas. */
     private @org.jspecify.annotations.Nullable CompoundTag beforePreview;
 
-    private enum Shelf { OVERVIEW, LIBRARY, ENUMS, SAGE, NONE }
+    private enum Shelf { OVERVIEW, LIBRARY, ENUMS, SAGE, VOICE, NONE }
     /** Ticks until the canvas is framed around a freshly loaded graph (node sizes need a layout pass first). */
     private int fitIn = -1;
 
@@ -210,6 +214,7 @@ public final class SpellEditor {
     public static void open(BlockPos table, ItemStack page) {
         PageTier tier = SpellPages.tier(page);
         SpellEditor e = new SpellEditor(table, tier == null ? PageTier.BASIC : tier, null);
+        e.voice = page.get(LogosMod.VOICE.get());
         e.load(initialGraph(page));
         Minecraft.getInstance().setScreen(new ModularUIScreen(e.createUI(), Component.literal("Logos")));
     }
@@ -433,7 +438,33 @@ public final class SpellEditor {
         UIElement sageTab = ManuscriptControls.ribbon("logos.editor.sage", () -> shelf == Shelf.SAGE, () -> toggle(Shelf.SAGE));
         sageTab.setId("tab_sage");
         ribbons.addChildren(overviewTab, libraryTab, enumTab, sageTab);
-        root.addChildren(editor, side, library, enums, sage, ribbons);
+        root.addChildren(editor, side, library, enums, sage);
+        if (emitter == null) {
+            voicePanel = new VoicePanel(new VoicePanel.Host() {
+                @Override
+                public String spellName() {
+                    GraphCompiler.Result r = graph.result();
+                    return r.ok() ? r.spell().name() : null;
+                }
+
+                @Override
+                public String applied() {
+                    return voice;
+                }
+
+                @Override
+                public void apply(String name) {
+                    voice = name;
+                    refresh();
+                }
+            });
+            voicePanel.setDisplay(TaffyDisplay.NONE);
+            UIElement voiceTab = ManuscriptControls.ribbon("logos.editor.voice", () -> shelf == Shelf.VOICE, () -> toggle(Shelf.VOICE));
+            voiceTab.setId("tab_voice");
+            ribbons.addChild(voiceTab);
+            root.addChild(voicePanel);
+        }
+        root.addChild(ribbons);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)));
     }
@@ -445,9 +476,11 @@ public final class SpellEditor {
         library.setDisplay(shelf == Shelf.LIBRARY ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         enums.setDisplay(shelf == Shelf.ENUMS ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         sage.setDisplay(shelf == Shelf.SAGE ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
+        if (voicePanel != null) voicePanel.setDisplay(shelf == Shelf.VOICE ? TaffyDisplay.FLEX : TaffyDisplay.NONE);
         if (shelf == Shelf.LIBRARY) library.fill(editor.getCurrentView());
         if (shelf == Shelf.ENUMS) enums.open();
         if (shelf == Shelf.SAGE) sage.opened();
+        if (shelf == Shelf.VOICE && voicePanel != null) voicePanel.opened();
     }
 
     /**
@@ -526,7 +559,8 @@ public final class SpellEditor {
             status.setText(Component.literal("✗ " + r.error()));
         }
         String emitterInfo = emitter == null ? "" : emitterInfo(r.ok() ? r.spell() : null);
-        overview.setText(Component.literal((r.ok() ? overview(r.spell()) + (emitter == null ? "" : "\n\n") : "") + emitterInfo));
+        String voiceLine = emitter == null && r.ok() ? "\n" + voiceLine(r.spell().name()) : "";
+        overview.setText(Component.literal((r.ok() ? overview(r.spell()) + voiceLine + (emitter == null ? "" : "\n\n") : "") + emitterInfo));
         SpecialNodes.SpellRoot root = root();
         SpecialNodes.IntentChoice chosen = root == null ? null : root.option(SpecialNodes.SpellRoot.INTENT, SpecialNodes.IntentChoice.class);
         syncingIntent = true;
@@ -572,6 +606,13 @@ public final class SpellEditor {
         return sb.toString().strip();
     }
 
+    /** Whether the page will be written with 言出法随, in one line; the voice page has the rest. */
+    private String voiceLine(String name) {
+        if (name.equals(voice)) return "🗣 言出法随：可用（写入后喊「" + name + "」施放）";
+        if (voice != null) return "🗣 言出法随：咒语名已改，需在「言出法随」页重新录制";
+        return "🗣 言出法随：未启用（在「言出法随」页录制）";
+    }
+
     /** The emitter's store, how long one charge takes, and what its trigger does, as set on its node. */
     private String emitterInfo(dev.logos.lang.@org.jspecify.annotations.Nullable Spell s) {
         StringBuilder sb = new StringBuilder("⚙ 发射器魔力 ").append((int) emitter.mana()).append(" / ").append((int) SpellEmitterBlockEntity.MAX_MANA)
@@ -614,7 +655,8 @@ public final class SpellEditor {
             sendToEmitter(graphTag);
             return;
         }
-        ClientPacketDistributor.sendToServer(new InscribePayload(table, r.source(), graphTag));
+        ClientPacketDistributor.sendToServer(new InscribePayload(table, r.source(), graphTag,
+                r.spell().name().equals(voice) ? voice : ""));
         seal.stamp();
     }
 

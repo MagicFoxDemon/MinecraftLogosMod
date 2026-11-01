@@ -80,6 +80,15 @@ public class LogosMod {
     /** Which spell (index into wand pages + off-hand codex pages) the wand will cast. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SELECTED = COMPONENTS.registerComponentType("selected",
             b -> b.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
+    /**
+     * 言出法随: the name the page's spell is called by aloud. Set when the page is written with voice
+     * casting applied in the workbench; the player's own recordings of that name are matched on their client.
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> VOICE = COMPONENTS.registerComponentType("voice",
+            b -> b.persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8));
+    /** A wand whose spell wheel has 言出法随 (its 言灵坠) chosen in place of a page. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> VOICE_SELECTED = COMPONENTS.registerComponentType("voice_selected",
+            b -> b.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL));
     /** What a pair of dividers has measured. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<dev.logos.item.DividersItem.Measure>> DIVIDERS = COMPONENTS.registerComponentType("dividers",
             b -> b.persistent(dev.logos.item.DividersItem.Measure.CODEC).networkSynchronized(ByteBufCodecs.fromCodecWithRegistries(dev.logos.item.DividersItem.Measure.CODEC)));
@@ -148,6 +157,13 @@ public class LogosMod {
      */
     public static final DeferredItem<dev.logos.item.WandCharmItem> CHANT_CHARM = ITEMS.registerItem("chant_charm",
             p -> new dev.logos.item.WandCharmItem(p, "挂在法杖上：按住右键连续施放。法杖每蓄满一次立即放出并开始下一轮；长杖只要储能足够，以最短间隔连发"),
+            p -> p.stacksTo(1));
+    /**
+     * 言灵坠: a charm for a wand slot that adds 言出法随 to the spell wheel. Chosen there, held right-click
+     * listens: name a voice-cast spell on the wand and it is cast (see {@link dev.logos.runtime.VoiceCasting}).
+     */
+    public static final DeferredItem<dev.logos.item.WandCharmItem> VOICE_CHARM = ITEMS.registerItem("voice_charm",
+            p -> new dev.logos.item.WandCharmItem(p, "挂在法杖上：术式轮盘里多出「言出法随」。选中后按住右键，喊出任意一张言出法随载页的咒语名即可施放"),
             p -> p.stacksTo(1));
     /** 锚钉: spent to set an anchor, by hand or by the anchor rune. Crafted later through alchemy. */
     public static final DeferredItem<dev.logos.item.AnchorNailItem> ANCHOR_NAIL = ITEMS.registerItem("anchor_nail",
@@ -609,6 +625,7 @@ public class LogosMod {
                 out.accept(SPELL_EMBER.get());
                 out.accept(SPELL_CODEX.get());
                 out.accept(CHANT_CHARM.get());
+                out.accept(VOICE_CHARM.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
                 out.accept(SPELL_EMITTER_ITEM.get());
@@ -846,6 +863,7 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
         registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);
         registrar.playToServer(dev.logos.net.StaffFillPayload.TYPE, dev.logos.net.StaffFillPayload.CODEC, dev.logos.net.StaffFillPayload::handle);
+        registrar.playToServer(dev.logos.net.VoiceCastPayload.TYPE, dev.logos.net.VoiceCastPayload.CODEC, dev.logos.net.VoiceCastPayload::handle);
         registrar.playToServer(dev.logos.net.ColossusControlPayload.TYPE, dev.logos.net.ColossusControlPayload.CODEC, dev.logos.net.ColossusControlPayload::handle);
         registrar.playToServer(dev.logos.net.DragonControlPayload.TYPE, dev.logos.net.DragonControlPayload.CODEC, dev.logos.net.DragonControlPayload::handle);
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
@@ -967,6 +985,21 @@ public class LogosMod {
             hud = hud.copy().append(Component.literal("  杖内 " + (int) source + "/" + (int) staff.capacity()).withStyle(ChatFormatting.DARK_AQUA));
         }
         var selected = dev.logos.item.SpellBag.selected(sp, wand);
+        if (dev.logos.runtime.VoiceCasting.armed(wand)) {
+            // 言出法随: listening, then the spell that was named (where the selected spell would show).
+            selected = null;
+            if (m.listen != null) {
+                hud = hud.copy().append(Component.literal("  🗣 言出法随 · 聆听中…" + (m.listen.injected() > 0 ? " 已汇集 " + Node.fmt(m.listen.injected()) : ""))
+                        .withStyle(ChatFormatting.LIGHT_PURPLE));
+            } else if (m.charge != null && sp.isUsingItem()) {
+                hud = hud.copy().append(Component.literal("  🗣 即将释放《" + m.charge.spell().name() + "》 " + Node.fmt(m.charge.injected) + "/" + Node.fmt(m.charge.in.mana()))
+                        .withStyle(ChatFormatting.LIGHT_PURPLE));
+            } else {
+                int n = dev.logos.runtime.VoiceCasting.spoken(sp, wand).size();
+                hud = hud.copy().append(Component.literal("  🗣 言出法随 · " + (n == 0 ? "法杖上没有言出法随的术式" : "按住右键念出咒语（" + n + " 个可用）"))
+                        .withStyle(n == 0 ? ChatFormatting.RED : ChatFormatting.GRAY));
+            }
+        }
         if (selected != null) {
             Spell s = selected.spell();
             var in = Casting.injection(s, selected.tier(), Casting.immolation(sp, wand));
