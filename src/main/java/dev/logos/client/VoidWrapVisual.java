@@ -14,15 +14,11 @@ import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -55,26 +51,8 @@ final class VoidWrapVisual extends WrapVisual {
 
     @Override
     void local(ItemSurface surface, VfxParts.View view, float t, long seed, PoseStack stack, SubmitNodeCollector collector) {
-        collector.order(1).submitCustomGeometry(stack, WINDOW, (pose, buf) -> {
-            flushItems();
-            window(pose, buf, surface, t);
-        });
-    }
-
-    /** The item sheets and glints, which hold the vertices of every item drawn so far this pass. */
-    private static final RenderType[] ITEMS = {Sheets.cutoutBlockItemSheet(), Sheets.translucentBlockItemSheet(), Sheets.cutoutItemSheet(),
-            Sheets.translucentItemSheet(), RenderTypes.glint(), RenderTypes.glintTranslucent(), RenderTypes.entityGlint()};
-
-    /**
-     * Draws the items now, so the see-through window lands on its item and is not painted over by it. Items go
-     * into fixed buffers that are drawn only when the pass ends; in the level pass their solid half is already
-     * drawn before any translucent geometry, but the first-person hand pass draws everything and only then the
-     * fixed buffers, so there the item would cover its own window. Drawing a fixed buffer early only moves it
-     * forward; the window's own (shared) buffer is untouched.
-     */
-    private static void flushItems() {
-        MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-        for (RenderType type : ITEMS) buffers.endBatch(type);
+        // After the item (order 0), so the window lies on it and not under it.
+        collector.order(1).submitCustomGeometry(stack, WINDOW, (pose, buf) -> window(pose, buf, surface, t));
     }
 
     /** Every cell of the surface, pushed out a little, its alpha a slow wave running up the item. */
