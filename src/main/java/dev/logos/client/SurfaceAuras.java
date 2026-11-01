@@ -140,7 +140,11 @@ public final class SurfaceAuras {
             PoseStack poseStack, SubmitNodeCollector collector) {
         Minecraft mc = Minecraft.getInstance();
         // In first person one's own third-person body is drawn only in a shader pack's shadow pass; it does not count.
-        if (!context.firstPerson() && mc.getCameraEntity() != null && owner == mc.getCameraEntity().getId() && mc.options.getCameraType().isFirstPerson()) return;
+        // The holder is compared with the camera entity itself, not by id: a free camera (Tweakeroo's) is an entity
+        // of its own that reports its player's id, and then the player's body is really drawn.
+        Entity viewer = mc.getCameraEntity();
+        if (!context.firstPerson() && viewer != null && mc.level != null && mc.level.getEntity(owner) == viewer
+                && mc.options.getCameraType().isFirstPerson()) return;
         Matrix4f pose = poseStack.last().pose();
         var camera = mc.gameRenderer.getMainCamera();
         // The item's pose is camera-relative: in third person already on world axes, in first person turned back
