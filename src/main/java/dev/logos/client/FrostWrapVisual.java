@@ -39,8 +39,8 @@ final class FrostWrapVisual extends WrapVisual {
     @Override
     void local(ItemSurface surface, VfxParts.View view, float t, long seed, PoseStack stack, SubmitNodeCollector collector) {
         // The rime first, translucent (so it whitens the item by day), then the cold glow and the crystals over it.
-        collector.order(1).submitCustomGeometry(stack, FROST_CRUST, (pose, buf) -> rime(pose, buf, surface, .5f / 16, VfxParts.argb(.42f, RIME_WHITE)));
-        float breathe = .26f + .05f * Mth.sin(t * .12f);
+        collector.order(1).submitCustomGeometry(stack, FROST_CRUST, (pose, buf) -> rime(pose, buf, surface, .5f / 16, VfxParts.argb(.14f, RIME_WHITE)));
+        float breathe = .1f + .02f * Mth.sin(t * .12f);
         OrderedSubmitNodeCollector over = collector.order(2);
         over.submitCustomGeometry(stack, COLD, (pose, buf) ->
                 SurfaceAuraVisual.shell(pose, buf, surface, t, 2.6f, .004f, .35f / 16, VfxParts.argb(breathe, GLOW)));
@@ -54,7 +54,7 @@ final class FrostWrapVisual extends WrapVisual {
      */
     private static void rime(PoseStack.Pose pose, VertexConsumer buf, ItemSurface surface, float offset, int color) {
         Vector3f axis = surface.axis, across = surface.across;
-        float tiles = 3.2f;
+        float tiles = 4.5f;
         surface.forEachCell((cx, cy, cz, ax, ay, az, bx, by, bz, nx, ny, nz) -> {
             float ox = cx + nx * offset, oy = cy + ny * offset, oz = cz + nz * offset;
             for (int i = 0; i < 4; i++) {
