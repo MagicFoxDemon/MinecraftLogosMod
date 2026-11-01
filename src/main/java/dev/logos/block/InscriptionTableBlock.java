@@ -151,10 +151,17 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
      * Returns that grade, or null if nothing was written.
      */
     public static @Nullable PageTier inscribe(ServerPlayer player, BlockPos pos, String source, net.minecraft.nbt.CompoundTag graph) {
+        return inscribe(player, pos, source, graph, null);
+    }
+
+    /** {@code voice}: the name the spell is called by aloud (言出法随), or null to write it without. */
+    public static @Nullable PageTier inscribe(ServerPlayer player, BlockPos pos, String source, net.minecraft.nbt.CompoundTag graph, @Nullable String voice) {
         if (player.distanceToSqr(pos.getCenter()) > 64) return null;
         if (!(player.level().getBlockEntity(pos) instanceof InscriptionTableBlockEntity table) || table.page().isEmpty()) return null;
         PageTier tier = SpellPages.tier(table.page());
-        table.setPage(SpellPages.write(table.page(), source, graph));
+        ItemStack written = SpellPages.write(table.page(), source, graph);
+        if (voice != null) written.set(dev.logos.LogosMod.VOICE.get(), voice);
+        table.setPage(written);
         player.level().playSound(null, pos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1, 1.2f);
         return tier == null ? PageTier.BASIC : tier;
     }

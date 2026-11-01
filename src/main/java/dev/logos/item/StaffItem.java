@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import dev.logos.LogosMod;
 import dev.logos.lang.Node;
 import dev.logos.runtime.StaffCharging;
+import dev.logos.runtime.VoiceCasting;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -47,7 +48,8 @@ public class StaffItem extends WandItem {
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (player.isShiftKeyDown()) return super.use(level, player, hand);
-        if (player instanceof ServerPlayer sp && !StaffCharging.cast(sp, player.getItemInHand(hand), hand)) return InteractionResult.FAIL;
+        ItemStack staff = player.getItemInHand(hand);
+        if (player instanceof ServerPlayer sp && !(VoiceCasting.armed(staff) ? VoiceCasting.begin(sp, staff, hand) : StaffCharging.cast(sp, staff, hand))) return InteractionResult.FAIL;
         player.startUsingItem(hand);
         return InteractionResult.CONSUME;
     }
@@ -64,7 +66,9 @@ public class StaffItem extends WandItem {
     }
 
     @Override
-    public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {}
+    public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
+        if (entity instanceof ServerPlayer sp) VoiceCasting.cancel(sp);
+    }
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
