@@ -38,6 +38,11 @@ public final class LogosClient {
     }
 
     @SubscribeEvent
+    static void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        event.register(LogosMod.POSSESSED_INVENTORY.get(), com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen::new);
+    }
+
+    @SubscribeEvent
     static void onRegisterParticles(net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(LogosMod.MANA_MOTE.get(), ManaMote.Provider::new);
     }
