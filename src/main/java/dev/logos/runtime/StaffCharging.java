@@ -85,7 +85,12 @@ public final class StaffCharging {
     /** Right-click: casts the staff's selected spell at once out of what it holds. False (and tells the player why) if it cannot. */
     public static boolean cast(ServerPlayer player, ItemStack staff, InteractionHand hand) {
         SpellBag.Entry entry = Charging.castable(player, staff, hand);
-        if (entry == null || !Casting.stable(player, entry.spell())) return false;
+        return entry != null && cast(player, staff, entry);
+    }
+
+    /** Casts {@code entry} at once out of what {@code staff} holds. False (and tells the player why) if it cannot. */
+    public static boolean cast(ServerPlayer player, ItemStack staff, SpellBag.Entry entry) {
+        if (!Casting.stable(player, entry.spell())) return false;
         Casting.Injection in = Casting.injection(entry.spell(), entry.tier(), Casting.immolation(player, staff));
         double stored = StaffItem.stored(staff);
         if (stored + 1e-9 < in.mana()) {
@@ -105,6 +110,13 @@ public final class StaffCharging {
      */
     public static void repeat(ServerPlayer player, ItemStack staff, int ticks) {
         if (ticks <= 0 || ticks % Math.max(1, LogosConfig.chargeMinTicks()) != 0 || !WandCharmItem.on(staff, LogosMod.CHANT_CHARM.get())) return;
+        // With 言出法随 it repeats the spell that was named. While still listening, or once the staff runs
+        // short, the press stays down idle until let go, so a held right-click does not listen again.
+        if (VoiceCasting.armed(staff)) {
+            SpellBag.Entry spoken = VoiceCasting.chanting(player, staff);
+            if (spoken != null && !cast(player, staff, spoken)) PlayerMagic.of(player).chanting = null;
+            return;
+        }
         if (!cast(player, staff, InteractionHand.MAIN_HAND)) player.stopUsingItem();
     }
 
