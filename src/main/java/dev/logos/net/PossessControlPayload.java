@@ -13,10 +13,11 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Client → server: a possessing player's left click (a blow) or use button (a shot) at the entity
- * they aim at (or -1), or their inventory key (the creature's inventory).
+ * they aim at (or -1), their inventory key (the creature's inventory), or the instinct key pressed
+ * (at what they aim at) or let go.
  */
 public record PossessControlPayload(byte action, int target) implements CustomPacketPayload {
-    public static final byte STRIKE = 0, SHOOT = 1, INVENTORY = 2;
+    public static final byte STRIKE = 0, SHOOT = 1, INVENTORY = 2, INSTINCT = 3, STEER = 4;
     public static final Type<PossessControlPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "possess_control"));
     public static final StreamCodec<RegistryFriendlyByteBuf, PossessControlPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.BYTE, PossessControlPayload::action, ByteBufCodecs.VAR_INT, PossessControlPayload::target, PossessControlPayload::new);
@@ -33,6 +34,8 @@ public record PossessControlPayload(byte action, int target) implements CustomPa
             case STRIKE -> Possession.strike(sp, target);
             case SHOOT -> Possession.shoot(sp, target);
             case INVENTORY -> PossessionInventory.open(sp);
+            case INSTINCT -> Possession.instinct(sp, target, true);
+            case STEER -> Possession.instinct(sp, null, false);
             default -> {}
         }
     }

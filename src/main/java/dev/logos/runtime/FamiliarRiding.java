@@ -59,9 +59,9 @@ public final class FamiliarRiding {
 
     /** The master steering a ground mount (the dragon is flown on the server instead), or null. */
     public static @Nullable Player controller(Entity mount) {
-        // A possessed creature is driven by the player inside it, whatever it is.
+        // A possessed creature is driven by the player inside it, whatever it is, unless they let its instincts act.
         Player inside = Possession.possessor(mount);
-        if (inside != null) return inside;
+        if (inside != null) return Possession.instinct(mount) ? null : inside;
         // A colossus is driven by its master from a shoulder, in drive mode only.
         if (mount instanceof AlchemicalColossus c) return c.driver();
         if (mount instanceof EnderDragon || !rideable(mount)) return null;
