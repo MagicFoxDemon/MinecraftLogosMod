@@ -25,9 +25,10 @@ import net.neoforged.neoforge.client.settings.IKeyConflictContext;
  * A possessing player's keys and view. Their movement keys need nothing here (the creature is
  * ridden, see {@link Possession}); left click is its blow and the use button its shot, at whatever
  * they aim at, and their own hands neither show nor act. The inventory key opens the creature's
- * inventory (see {@link dev.logos.runtime.PossessionInventory}) instead of their own. Held, the
- * instinct key (V by default) lets the creature's own AI act, at what they aimed at when they pressed
- * it. Looking out of a creeper, spider or enderman, they see as it does, as a spectator would.
+ * inventory (see {@link dev.logos.runtime.PossessionInventory}) instead of their own. The instinct
+ * key (V by default) lets the creature's own AI act for a while, at what they aim at; pressed again,
+ * it takes the reins back. Looking out of a creeper, spider or enderman, they see as it does, as a
+ * spectator would.
  */
 final class PossessionInput {
     /** Active only while possessing, so sharing V with the mount mode key is no conflict. */
@@ -46,7 +47,6 @@ final class PossessionInput {
     /** How far a possessing player's aim reaches; the server checks the creature's own reach and range. */
     private static final double AIM_RANGE = 48;
     private static @Nullable Entity viewing;
-    private static boolean instinctHeld;
 
     private PossessionInput() {}
 
@@ -58,13 +58,14 @@ final class PossessionInput {
             while (mc.options.keyInventory.consumeClick()) {
                 if (mc.screen == null) ClientPacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.INVENTORY, -1));
             }
-        }
-        boolean held = now != null && INSTINCT.isDown();
-        if (held != instinctHeld) {
-            Entity target = held ? aimed(mc.player) : null;
-            ClientPacketDistributor.sendToServer(new PossessControlPayload(held ? PossessControlPayload.INSTINCT : PossessControlPayload.STEER,
-                    target == null ? -1 : target.getId()));
-            instinctHeld = held;
+            while (INSTINCT.consumeClick()) {
+                if (Possession.instinct(now)) {
+                    ClientPacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.STEER, -1));
+                } else {
+                    Entity target = aimed(mc.player);
+                    ClientPacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.INSTINCT, target == null ? -1 : target.getId()));
+                }
+            }
         }
         if (now == viewing) return;
         mc.gameRenderer.checkEntityPostEffect(now != null ? now : mc.getCameraEntity());

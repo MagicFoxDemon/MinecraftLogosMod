@@ -186,9 +186,9 @@ final class PossessionGameTests {
     }
 
     /**
-     * Holding the instinct key lets the wolf's own AI act: it goes for the cow the player aimed at and
-     * bites it, never its possessor; the player's clicks do nothing meanwhile. Letting go takes the
-     * reins back and drops its target.
+     * The instinct key lets the wolf's own AI act: it goes for the cow the player aimed at and bites
+     * it, never its possessor; the player's clicks do nothing meanwhile. Pressed again it takes the
+     * reins back; with the cow dead, the wolf gives them back by itself and drops its target.
      */
     static void instinct(GameTestHelper h) {
         ServerPlayer p = caster(h);
@@ -199,7 +199,7 @@ final class PossessionGameTests {
         Possession.instinct(p, p, true);
         h.assertTrue(Possession.instinct(wolf) && wolf.getTarget() == null, "the wolf should never be set on its possessor");
         Possession.instinct(p, null, false);
-        h.assertTrue(!Possession.instinct(wolf) && wolf.getControllingPassenger() == p, "letting go should give the reins back");
+        h.assertTrue(!Possession.instinct(wolf) && wolf.getControllingPassenger() == p, "pressing again should give the reins back");
 
         float full = cow.getHealth();
         Possession.instinct(p, cow, true);
@@ -208,10 +208,26 @@ final class PossessionGameTests {
         Possession.strike(p, cow);
         h.assertTrue(cow.getHealth() == full, "the player's own blows should do nothing while its instincts act");
         h.succeedWhen(() -> {
-            h.assertTrue(cow.getHealth() < full, "the wolf should run to the cow and bite it on its own");
-            Possession.instinct(p, null, false);
-            h.assertTrue(wolf.getControllingPassenger() == p && wolf.getTarget() == null, "letting go should give the reins back and drop its target");
+            h.assertTrue(!cow.isAlive(), "the wolf should run to the cow and bite it to death on its own");
+            h.assertTrue(!Possession.instinct(wolf) && wolf.getControllingPassenger() == p && wolf.getTarget() == null,
+                    "with the cow dead the wolf should give the reins back and drop its target");
             h.assertTrue(Possession.possessing(p), "the player should still be inside the wolf");
+        });
+    }
+
+    /** With nothing aimed at, the creature acts on its own for ten seconds, then the player steers again. */
+    static void instinctTime(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var pig = h.spawn(EntityType.PIG, new Vec3(4.5, 2, 4.5));
+        h.assertTrue(Possession.start(p, pig, 60), "the possession should start");
+        Possession.instinct(p, null, true);
+        h.assertTrue(Possession.instinct(pig) && pig.getControllingPassenger() == null, "its instincts should act with nothing aimed at");
+        long from = h.getLevel().getGameTime();
+        h.succeedWhen(() -> {
+            h.assertTrue(!Possession.instinct(pig) && pig.getControllingPassenger() == p, "the instinct should run out by itself");
+            long took = h.getLevel().getGameTime() - from;
+            h.assertTrue(took >= Possession.INSTINCT_TICKS, "the instinct should last ten seconds, ran out after " + took + " ticks");
+            h.assertTrue(Possession.possessing(p), "the player should still be inside the pig");
         });
     }
 
