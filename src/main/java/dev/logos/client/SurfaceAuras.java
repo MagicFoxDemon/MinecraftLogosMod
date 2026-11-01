@@ -18,8 +18,11 @@ import dev.logos.mixin.LayerRenderStateAccessor;
 import dev.logos.runtime.ManaWrap;
 import dev.logos.runtime.SurfaceAura;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -159,8 +162,27 @@ public final class SurfaceAuras {
         }
         if (wrap != null) {
             if (owner >= 0) capture(owner, context, null, wrap, surface, rel, camera.position());
+            if (context.firstPerson()) collector.order(0).submitCustomGeometry(poseStack, FLUSH, (p, buf) -> flushItems());
             WrapVisual.of(wrap).local(surface, view, t, seed, poseStack, collector);
         }
+    }
+
+    /** Carries {@link #flushItems} into the feature pass; it writes no vertices of its own. */
+    private static final RenderType FLUSH = VfxParts.add("surface/fire_loop");
+    /** The item sheets and glints, which hold the vertices of every item drawn so far this pass. */
+    private static final RenderType[] ITEMS = {Sheets.cutoutBlockItemSheet(), Sheets.translucentBlockItemSheet(), Sheets.cutoutItemSheet(),
+            Sheets.translucentItemSheet(), RenderTypes.glint(), RenderTypes.glintTranslucent(), RenderTypes.entityGlint()};
+
+    /**
+     * Draws the held items now, so a wrap's layers land on their item rather than under it. Items go into fixed
+     * buffers drawn only when the pass ends; in the level pass their solid half is drawn before any translucent
+     * geometry, but the first-person hand pass draws every feature and only then the fixed buffers, so there the
+     * item would cover what is drawn on its own face. Runs at order 0, after that order's items and before the wraps'
+     * layers (order 1 and up); drawing a fixed buffer early only moves it forward.
+     */
+    private static void flushItems() {
+        var buffers = Minecraft.getInstance().renderBuffers().bufferSource();
+        for (RenderType type : ITEMS) buffers.endBatch(type);
     }
 
     private static void capture(int owner, ItemDisplayContext context, @Nullable SurfaceAura aura, @Nullable Element wrap, ItemSurface surface, Matrix4f rel, Vec3 cam) {
