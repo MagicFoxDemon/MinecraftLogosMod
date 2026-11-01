@@ -327,6 +327,15 @@ class CompilerTest {
     }
 
     @Test
+    void possessCostsHealthOverFiveTimesRootSeconds() {
+        // Estimated on 20 health: 4 × √seconds, seconds 1–600, 30 by default.
+        assertEquals(20, Compiler.compile("(possess caster 25)").profile().estimate(), 1e-6);
+        assertEquals(4 * Math.sqrt(30), Compiler.compile("(possess caster)").profile().estimate(), 0.051);
+        assertEquals(4 * Math.sqrt(600), Compiler.compile("(possess caster 5000)").profile().estimate(), 0.051);
+        assertError("(possess here)", "实体");
+    }
+
+    @Test
     void imbueCostsMoreThanLinearForBigWraps() {
         // 0.178 × element factor × points^1.2 × seconds^1.1 (the estimate is rounded to 0.1): about points × seconds × 0.33 × factor
         // at 4 points for 30 seconds, steeper beyond.

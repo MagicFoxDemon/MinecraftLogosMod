@@ -317,6 +317,17 @@ final class RuneEmblems {
                 "###..#.#.",
                 "#.#..#.#.",
                 "........."}, "resize");
+        // A body left standing while its soul drifts into a creature.
+        put(new String[]{
+                "###......",
+                "###......",
+                ".#...+...",
+                "###.+.+..",
+                ".#...+...",
+                ".#..####.",
+                "#.#.#++##",
+                "#.#.####.",
+                "....#..#."}, "possess");
         // A drop of mana falling into a bowl that fills: mana given away.
         put(new String[]{
                 "....#....",

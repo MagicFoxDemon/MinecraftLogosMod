@@ -59,6 +59,9 @@ public final class FamiliarRiding {
 
     /** The master steering a ground mount (the dragon is flown on the server instead), or null. */
     public static @Nullable Player controller(Entity mount) {
+        // A possessed creature is driven by the player inside it, whatever it is.
+        Player inside = Possession.possessor(mount);
+        if (inside != null) return inside;
         // A colossus is driven by its master from a shoulder, in drive mode only.
         if (mount instanceof AlchemicalColossus c) return c.driver();
         if (mount instanceof EnderDragon || !rideable(mount)) return null;
@@ -67,17 +70,23 @@ public final class FamiliarRiding {
 
     /** Like a horse: strafing is slower, backing up much slower. A colossus stands still through a blow or a shot. */
     public static Vec3 riddenInput(LivingEntity mount, Player rider) {
+        if (Possession.possessor(mount) == rider) return Possession.riddenInput(mount, rider);
         if (mount instanceof AlchemicalColossus c && c.act() != AlchemicalColossus.Act.NONE) return Vec3.ZERO;
         return new Vec3(rider.xxa * 0.5, 0, rider.zza < 0 ? rider.zza * 0.25 : rider.zza);
     }
 
     public static float riddenSpeed(LivingEntity mount) {
+        if (Possession.possessor(mount) != null) return Possession.speed(mount);
         if (mount instanceof AlchemicalColossus) return AlchemicalColossus.DRIVE_SPEED;
         return (float) mount.getAttributeValue(Attributes.MOVEMENT_SPEED);
     }
 
     /** The mount faces where its rider looks. */
     public static void tickRidden(LivingEntity mount, Player rider) {
+        if (Possession.possessor(mount) == rider) {
+            Possession.tickRidden(mount, rider);
+            return;
+        }
         mount.setYRot(rider.getYRot());
         mount.yRotO = mount.getYRot();
         mount.setXRot(rider.getXRot() * 0.5f);

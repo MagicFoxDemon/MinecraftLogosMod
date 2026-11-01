@@ -260,6 +260,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "possess", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Possess extends RuneNode {
+        public Possess() {
+            super("possess");
+        }
+    }
+
     @NodeAttribute(name = "push", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Push extends RuneNode {
         public Push() {
@@ -988,6 +995,7 @@ public final class RuneNodes {
         BY_RUNE.put("potion", Potion::new);
         BY_RUNE.put("imbue", Imbue::new);
         BY_RUNE.put("resize", Resize::new);
+        BY_RUNE.put("possess", Possess::new);
         BY_RUNE.put("push", Push::new);
         BY_RUNE.put("pull", Pull::new);
         BY_RUNE.put("launch", Launch::new);

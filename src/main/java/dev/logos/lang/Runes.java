@@ -848,6 +848,21 @@ public final class Runes {
                     }
                     return null;
                 });
+        def("possess", EFFECT, ACTION).p("target", ENTITY).opt("seconds", NUM, "30").stab(3)
+                .doc("附身：灵魂离开身体，进入一只生物，用自己的按键操控它若干秒（1～600，默认 30）：移动、跳跃，左键是它的近战，"
+                        + "右键是它的远程攻击（骷髅、女巫这类会射击的生物）。它自己的 AI 暂停。身体留在原地，受到的伤害都由你承受，"
+                        + "原本盯上你的生物会去打它；附身的生物也能打到它。潜行主动解除；时间到、生物离身体超过 128 格、你死亡或下线也会解除，"
+                        + "回到身体里。附身期间生物死亡，你受到最大生命值 25% 的伤害（无视护甲）。不能附身玩家、Boss 和载着别人的生物，"
+                        + "目标须在 128 格内。魔力 = 目标当前生命值 ÷ 5 × √秒数；附身自己的使魔免费")
+                .exec((n, c) -> {
+                    if (!(c.inst().caster instanceof ServerPlayer p) || p instanceof FakePlayer) return null;
+                    if (!(entity(n.arg(0), c) instanceof net.minecraft.world.entity.Mob mob) || !dev.logos.runtime.Possession.canStart(p, mob)) return null;
+                    double s = clamp(num(n.arg(1), c), 1, dev.logos.runtime.Possession.MAX_SECONDS);
+                    if (!c.inst().spend(dev.logos.runtime.Possession.cost(mob, p, s), "possess")) return null;
+                    Vfx.burst(lv(p), p, null, Element.ARCANE, Vfx.Burst.FORCE);
+                    if (dev.logos.runtime.Possession.start(p, mob, s)) c.inst().affected.add(mob.getUUID());
+                    return null;
+                });
         def("imbue", EFFECT, ACTION).each("target").p("amount", NUM).p("seconds", NUM).opt("element", ELEMENT, "arcane").stab(2)
                 .doc("魔力缠绕：目标主手的每次近战攻击额外造成若干点该元素的伤害，持续若干秒。缠在手上而不是物品上："
                         + "拿着什么就缠在什么上，换了武器也跟着走，空手时缠在拳头上。玩家的这份伤害随攻击蓄力缩放，只给瞄准的那个目标，横扫不算；"
