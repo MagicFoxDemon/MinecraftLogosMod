@@ -755,6 +755,9 @@ public class LogosMod {
     /** On a mob: the UUID of the player possessing it (dev.logos.runtime.Possession), synced so their client steers it; never saved. */
     public static final Supplier<AttachmentType<java.util.UUID>> POSSESSOR = ATTACHMENTS.register("possessor",
             () -> AttachmentType.builder(() -> dev.logos.runtime.Possession.NOBODY).sync(net.minecraft.core.UUIDUtil.STREAM_CODEC).build());
+    /** On a possessed mob: whether its possessor has let its own instincts act (dev.logos.runtime.Possession#instinct), synced so their client stops steering it; never saved. */
+    public static final Supplier<AttachmentType<Boolean>> INSTINCT = ATTACHMENTS.register("instinct",
+            () -> AttachmentType.builder(() -> false).sync(net.minecraft.network.codec.ByteBufCodecs.BOOL).build());
 
     public static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENU_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.MENU, MODID);

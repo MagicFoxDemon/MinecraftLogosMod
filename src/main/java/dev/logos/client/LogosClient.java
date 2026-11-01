@@ -52,6 +52,7 @@ public final class LogosClient {
         event.registerCategory(CATEGORY);
         event.register(SPELL_WHEEL);
         event.register(ColossusInput.MODE);
+        event.register(PossessionInput.INSTINCT);
     }
 
     @SubscribeEvent

@@ -386,7 +386,7 @@ public final class Familiars {
         return s == null ? null : s.target;
     }
 
-    private static void aim(Mob m, @Nullable LivingEntity target) {
+    static void aim(Mob m, @Nullable LivingEntity target) {
         m.setTarget(target);
         // A warden attacks only what it is furious at, and otherwise listens and sniffs its way there slowly:
         // its master's fight makes it furious at once.

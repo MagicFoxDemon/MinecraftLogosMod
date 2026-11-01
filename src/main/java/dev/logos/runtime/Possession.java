@@ -54,7 +54,9 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * inside a creature, unseen, at its eyes. They steer it with their own keys through the same
  * ridden movement as a familiar mount ({@link FamiliarRiding}); its own AI stands idle meanwhile,
  * as a ridden horse's does. Left click is its melee blow and the use button its ranged attack, if
- * it has one ({@link #strike}, {@link #shoot}).
+ * it has one ({@link #strike}, {@link #shoot}). While the player holds the instinct key they let go
+ * ({@link #instinct}): its own AI acts again, at what they aimed at if anything, with its own
+ * attacks and animations, which reaches what no generic blow can (another mod's creatures above all).
  * <p>
  * Whatever hurts the body hurts the player (their own armour and totems apply), and nothing else
  * does; creatures that go for the hidden player go for the body instead. It ends when the time is
@@ -115,6 +117,11 @@ public final class Possession {
     /** Whether {@code e} is a player inside a creature, on either side. */
     public static boolean possessing(@Nullable Entity e) {
         return e instanceof Player p && possessor(p.getVehicle()) == p;
+    }
+
+    /** Whether the possessed creature {@code e} acts on its own instincts now, on either side. */
+    public static boolean instinct(@Nullable Entity e) {
+        return e != null && e.hasData(LogosMod.INSTINCT) && e.getData(LogosMod.INSTINCT);
     }
 
     /** A mob carrying nobody, and neither a boss nor of {@code #logos:unpossessable}. */
@@ -183,6 +190,7 @@ public final class Possession {
         Session s = ACTIVE.remove(p.getUUID());
         if (s == null) return;
         if (s.mob.hasData(LogosMod.POSSESSOR)) s.mob.setData(LogosMod.POSSESSOR, NOBODY);
+        if (instinct(s.mob)) s.mob.setData(LogosMod.INSTINCT, false);
         if (p.getVehicle() == s.mob) p.stopRiding();
         ServerLevel level = (ServerLevel) s.body.level();
         p.teleportTo(level, s.body.getX(), s.body.getY(), s.body.getZ(), Set.of(), s.body.getYRot(), p.getXRot(), true);
@@ -193,10 +201,30 @@ public final class Possession {
         if (backlash) p.hurtServer(level, level.damageSources().source(BACKLASH_DAMAGE, s.mob), p.getMaxHealth() * BACKLASH);
     }
 
+    /**
+     * The instinct key, held ({@code on}) or let go. Held, the player stops steering and the creature's
+     * own AI acts: at {@code target} if it is something it may go for (not the player or itself, nor
+     * another player PvP would spare), as a familiar ordered to attack does; otherwise as it would
+     * anyway. Let go, its target is dropped and the player steers again.
+     */
+    public static void instinct(ServerPlayer p, @Nullable Entity target, boolean on) {
+        Session s = ACTIVE.get(p.getUUID());
+        if (s == null || instinct(s.mob) == on) return;
+        s.mob.setData(LogosMod.INSTINCT, on);
+        if (!on) {
+            Familiars.aim(s.mob, null);
+            return;
+        }
+        if (target instanceof LivingEntity t && t != s.mob && t != p && t.isAlive() && t.level() == s.mob.level()
+                && !(t instanceof Player other && !p.canHarmPlayer(other))) {
+            Familiars.aim(s.mob, t);
+        }
+    }
+
     /** Left click: the creature's own melee blow at {@code target}, if within its reach (otherwise only a swing). */
     public static void strike(ServerPlayer p, @Nullable Entity target) {
         Session s = ACTIVE.get(p.getUUID());
-        if (s == null || !ready(s)) return;
+        if (s == null || instinct(s.mob) || !ready(s)) return;
         Mob mob = s.mob;
         mob.swing(InteractionHand.MAIN_HAND);
         if (!(target instanceof LivingEntity t) || t == mob || t == p || !t.isAlive() || t.level() != mob.level()) return;
@@ -207,7 +235,7 @@ public final class Possession {
     /** The use button: the creature's ranged attack, if it has one, at {@code target} or else where the player looks. */
     public static void shoot(ServerPlayer p, @Nullable Entity target) {
         Session s = ACTIVE.get(p.getUUID());
-        if (s == null || !(s.mob instanceof RangedAttackMob ranged) || !ready(s)) return;
+        if (s == null || instinct(s.mob) || !(s.mob instanceof RangedAttackMob ranged) || !ready(s)) return;
         LivingEntity at = target instanceof LivingEntity t && t != s.mob && t != p && t.isAlive() && t.level() == s.mob.level()
                 && s.mob.distanceTo(t) <= 64 && s.mob.hasLineOfSight(t) ? t : aimPoint(s.mob.level(), p);
         ranged.performRangedAttack(at, 1.0f);
