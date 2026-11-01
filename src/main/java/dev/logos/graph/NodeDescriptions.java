@@ -369,7 +369,7 @@ public final class NodeDescriptions {
             Map.entry("resize/param/target", "要缩放的存活生物；也可连接实体群，逐个缩放并付费。其他玩家仍受术式的玩家开关限制。"),
             Map.entry("resize/param/scale", "大小倍数，范围 1/16～16；大于 1 放大，小于 1 缩小，1 恢复原样。按每翻一倍 16 档取最近的一档。"),
             Map.entry("resize/param/seconds", "持续时间，范围 0～600 秒，默认 30。"),
-            Map.entry("possess/intro", "灵魂离开身体进入一只生物，用自己的按键操控它：移动、跳跃，左键近战，右键远程（会射击的生物才有）。身体留在原地，受到的伤害都由你承受。"),
+            Map.entry("possess/intro", "灵魂离开身体进入一只生物，用自己的按键操控它：移动、跳跃，左键近战，右键是它的专属技能或远程攻击（苦力怕自爆、末影人传送、骷髅射箭等）。身体留在原地，受到的伤害都由你承受。"),
             Map.entry("possess/note", "魔力 = 目标当前生命值 ÷ 5 × √秒数，附身自己的使魔免费。潜行主动解除；生物离身体超过 128 格也会解除。附身期间生物死亡，你受到最大生命值 25% 的伤害。"),
             Map.entry("possess/param/target", "要附身的生物，须在 128 格内；不能是玩家、Boss 或载着别人的生物。"),
             Map.entry("possess/param/seconds", "附身时长，范围 1～600 秒，默认 30。"),

@@ -53,8 +53,9 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * 附身: a player leaves their body standing where they were (a mannequin with their skin) and rides
  * inside a creature, unseen, at its eyes. They steer it with their own keys through the same
  * ridden movement as a familiar mount ({@link FamiliarRiding}); its own AI stands idle meanwhile,
- * as a ridden horse's does. Left click is its melee blow and the use button its ranged attack, if
- * it has one ({@link #strike}, {@link #shoot}). While the player holds the instinct key they let go
+ * as a ridden horse's does. Left click is its melee blow and the use button its own skill
+ * ({@link PossessionSkills}) or else its ranged attack, if it has one ({@link #strike},
+ * {@link #shoot}). While the player holds the instinct key they let go
  * ({@link #instinct}): its own AI acts again, at what they aimed at if anything, with its own
  * attacks and animations, which reaches what no generic blow can (another mod's creatures above all).
  * <p>
@@ -92,6 +93,7 @@ public final class Possession {
         final Mannequin body;
         final long until;
         long nextAttack;
+        long nextSkill;
 
         Session(ServerPlayer player, Mob mob, Mannequin body, long until) {
             this.player = player;
@@ -232,10 +234,23 @@ public final class Possession {
         if (mob.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE) && mob.isWithinMeleeAttackRange(t)) mob.doHurtTarget((ServerLevel) mob.level(), t);
     }
 
-    /** The use button: the creature's ranged attack, if it has one, at {@code target} or else where the player looks. */
+    /**
+     * The use button: the creature's own skill if it has one ({@link PossessionSkills}), else its ranged
+     * attack if it has one, at {@code target} or else where the player looks.
+     */
     public static void shoot(ServerPlayer p, @Nullable Entity target) {
         Session s = ACTIVE.get(p.getUUID());
-        if (s == null || instinct(s.mob) || !(s.mob instanceof RangedAttackMob ranged) || !ready(s)) return;
+        if (s == null || instinct(s.mob)) return;
+        PossessionSkills.Entry skill = PossessionSkills.of(s.mob);
+        if (skill != null) {
+            long now = s.mob.level().getGameTime();
+            if (now >= s.nextSkill && skill.skill().use((ServerLevel) s.mob.level(), s.mob, p,
+                    PossessionSkills.fair(p, s.mob, target) ? (LivingEntity) target : null)) {
+                s.nextSkill = now + skill.cooldown();
+            }
+            return;
+        }
+        if (!(s.mob instanceof RangedAttackMob ranged) || !ready(s)) return;
         LivingEntity at = target instanceof LivingEntity t && t != s.mob && t != p && t.isAlive() && t.level() == s.mob.level()
                 && s.mob.distanceTo(t) <= 64 && s.mob.hasLineOfSight(t) ? t : aimPoint(s.mob.level(), p);
         ranged.performRangedAttack(at, 1.0f);
@@ -315,6 +330,7 @@ public final class Possession {
         }
         p.setAirSupply(p.getMaxAirSupply());
         p.resetFallDistance();
+        PossessionSkills.tick(p, s.mob);
         if (left <= 100 && left % 20 == 0) p.sendOverlayMessage(Component.translatable("logos.possess.ending", left / 20));
     }
 

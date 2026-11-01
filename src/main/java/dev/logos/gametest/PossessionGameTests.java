@@ -16,6 +16,11 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.Mannequin;
+import net.minecraft.world.entity.projectile.EvokerFangs;
+import net.minecraft.world.entity.projectile.ShulkerBullet;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
+import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -208,6 +213,113 @@ final class PossessionGameTests {
             h.assertTrue(wolf.getControllingPassenger() == p && wolf.getTarget() == null, "letting go should give the reins back and drop its target");
             h.assertTrue(Possession.possessing(p), "the player should still be inside the wolf");
         });
+    }
+
+    private static int around(GameTestHelper h, Class<? extends net.minecraft.world.entity.Entity> type, net.minecraft.world.entity.Entity at) {
+        return h.getLevel().getEntitiesOfClass(type, at.getBoundingBox().inflate(24)).size();
+    }
+
+    /**
+     * The use button is a creature's own skill when it has one: the blaze's three fireballs (then a
+     * cooldown), the ghast's fireball, the breeze's wind charge, the evoker's line of fangs, the
+     * shulker's bullet (only with something aimed at, and no cooldown spent without).
+     */
+    static void skillShots(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var blaze = h.spawn(EntityType.BLAZE, new Vec3(4.5, 2, 4.5));
+        h.assertTrue(Possession.start(p, blaze, 30), "the blaze possession should start");
+        Possession.shoot(p, null);
+        h.assertTrue(around(h, SmallFireball.class, blaze) == 3, "the blaze should throw three small fireballs, got " + around(h, SmallFireball.class, blaze));
+        Possession.shoot(p, null);
+        h.assertTrue(around(h, SmallFireball.class, blaze) == 3, "a second throw should wait for the cooldown");
+        Possession.end(p, false);
+
+        var ghast = h.spawn(EntityType.GHAST, new Vec3(4.5, 4, 4.5));
+        h.assertTrue(Possession.start(p, ghast, 30), "the ghast possession should start");
+        Possession.shoot(p, null);
+        h.assertTrue(around(h, LargeFireball.class, ghast) == 1, "the ghast should fire one fireball");
+        Possession.end(p, false);
+
+        var breeze = h.spawn(EntityType.BREEZE, new Vec3(2.5, 2, 6.5));
+        h.assertTrue(Possession.start(p, breeze, 30), "the breeze possession should start");
+        Possession.shoot(p, null);
+        h.assertTrue(around(h, BreezeWindCharge.class, breeze) == 1, "the breeze should fire a wind charge");
+        Possession.end(p, false);
+
+        var evoker = h.spawn(EntityType.EVOKER, new Vec3(1.5, 2, 1.5));
+        h.assertTrue(Possession.start(p, evoker, 30), "the evoker possession should start");
+        Possession.shoot(p, null);
+        // Looking along +z from the floor's corner: the fangs over the floor rise, those past its edge find no ground.
+        h.assertTrue(around(h, EvokerFangs.class, evoker) >= 5, "the evoker should raise a line of fangs, got " + around(h, EvokerFangs.class, evoker));
+        Possession.end(p, false);
+
+        var shulker = h.spawn(EntityType.SHULKER, new BlockPos(7, 2, 1));
+        var cow = h.spawn(EntityType.COW, new Vec3(7.5, 2, 6.5));
+        h.assertTrue(Possession.start(p, shulker, 30), "the shulker possession should start");
+        Possession.shoot(p, null);
+        h.assertTrue(around(h, ShulkerBullet.class, shulker) == 0, "a shulker should not shoot at nothing");
+        Possession.shoot(p, cow);
+        h.assertTrue(around(h, ShulkerBullet.class, shulker) == 1, "a shulker should shoot at what is aimed at, even right after shooting at nothing");
+        Possession.end(p, false);
+        h.succeed();
+    }
+
+    /**
+     * The warden's sonic boom hits what is aimed at within its reach; the ravager's roar hurts and
+     * throws back what stands near; a ramming goat strikes what it runs into; the enderman goes where
+     * the player looks; the creeper blows itself up, ending the possession without the backlash.
+     */
+    static void skillMoves(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Vec3 start = p.position();
+        var warden = h.spawn(EntityType.WARDEN, new Vec3(2.5, 2, 2.5));
+        var calf = h.spawn(EntityType.COW, new Vec3(2.5, 2, 8.5));
+        h.assertTrue(Possession.start(p, warden, 30), "the warden possession should start");
+        Possession.shoot(p, calf);
+        h.assertTrue(calf.getHealth() < calf.getMaxHealth(), "the sonic boom should hit the cow");
+        Possession.end(p, false);
+        warden.discard();
+
+        var ravager = h.spawn(EntityType.RAVAGER, new Vec3(6.5, 2, 2.5));
+        var near = h.spawn(EntityType.COW, new Vec3(6.5, 2, 5.5));
+        h.assertTrue(Possession.start(p, ravager, 30), "the ravager possession should start");
+        Possession.shoot(p, null);
+        h.assertTrue(near.getHealth() < near.getMaxHealth() && near.getDeltaMovement().z > 0.5, "the roar should hurt the cow and throw it back, motion " + near.getDeltaMovement());
+        Possession.end(p, false);
+        ravager.discard();
+
+        var goat = h.spawn(EntityType.GOAT, new Vec3(4.5, 2, 4.5));
+        var butt = h.spawn(EntityType.COW, new Vec3(4.5, 2, 5.4));
+        h.assertTrue(Possession.start(p, goat, 30), "the goat possession should start");
+        Possession.shoot(p, null);
+        h.assertTrue(goat.getDeltaMovement().horizontalDistance() > 1, "the goat should charge forward");
+
+        var enderman = h.spawn(EntityType.ENDERMAN, new Vec3(1.5, 2, 1.5));
+        var creeper = h.spawn(EntityType.CREEPER, new Vec3(8.5, 2, 8.5));
+        h.startSequence()
+                .thenWaitUntil(() -> h.assertTrue(butt.getHealth() < butt.getMaxHealth(), "the ramming goat should strike the cow in front of it"))
+                .thenExecute(() -> {
+                    Possession.end(p, false);
+                    goat.discard();
+                    h.assertTrue(Possession.start(p, enderman, 30), "the enderman possession should start");
+                    // Looking down the floor ahead (+z), it lands about four blocks on.
+                    p.setYRot(0);
+                    p.setXRot(30);
+                    Vec3 from = enderman.position();
+                    Possession.shoot(p, null);
+                    h.assertTrue(enderman.position().distanceTo(from) > 2, "the enderman should teleport where the player looks, moved " + enderman.position().distanceTo(from));
+                    Possession.end(p, false);
+                    p.setXRot(0);
+                    h.assertTrue(Possession.start(p, creeper, 30), "the creeper possession should start");
+                    Possession.shoot(p, null);
+                    h.assertTrue(creeper.isIgnited(), "the creeper's fuse should be lit");
+                })
+                .thenWaitUntil(() -> {
+                    h.assertTrue(!Possession.possessing(p) && creeper.isRemoved(), "the blast should end the possession");
+                    h.assertTrue(p.position().distanceTo(start) < 0.01, "the player should be back in their body");
+                    h.assertTrue(p.getHealth() == p.getMaxHealth(), "blowing itself up should cost no backlash, health " + p.getHealth());
+                })
+                .thenSucceed();
     }
 
     /** Left click is the creature's own blow, once a second; the use button its shot, if it has one. */
