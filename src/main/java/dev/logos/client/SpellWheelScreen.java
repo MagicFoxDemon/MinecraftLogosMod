@@ -19,7 +19,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 /**
  * The spell wheel: hold the wheel key, point at a spell, release (or click) to select it for the
  * wand. Up to {@link #PER_PAGE} spells sit on the ring; with more, the scroll wheel pages through
- * them, so a codex full of pages stays usable.
+ * them, so a codex full of pages stays usable. A 言灵坠 on the wand adds 言出法随 as the last entry.
  */
 public class SpellWheelScreen extends Screen {
     static final int PER_PAGE = 10;
@@ -27,22 +27,36 @@ public class SpellWheelScreen extends Screen {
 
     private final List<SpellBag.Entry> entries;
     private final int selected;
+    /** The 言出法随 entry, after the pages: the charm that offers it, or empty without one. */
+    private final ItemStack voice;
+    /** How many of the entries are written with 言出法随, for its description. */
+    private final int voiced;
     private int page;
     private int hovered = -1;
 
     public SpellWheelScreen(List<SpellBag.Entry> entries, int selected) {
+        this(entries, selected, ItemStack.EMPTY, false);
+    }
+
+    public SpellWheelScreen(List<SpellBag.Entry> entries, int selected, ItemStack voice, boolean voiceSelected) {
         super(Component.literal("术式轮盘"));
         this.entries = entries;
-        this.selected = Math.floorMod(selected, Math.max(1, entries.size()));
+        this.voice = voice;
+        this.voiced = (int) entries.stream().filter(e -> e.page().has(dev.logos.LogosMod.VOICE.get()) && !e.spell().isPassive()).count();
+        this.selected = voiceSelected && !voice.isEmpty() ? entries.size() : Math.floorMod(selected, Math.max(1, entries.size()));
         this.page = this.selected / PER_PAGE;
     }
 
+    private int slots() {
+        return entries.size() + (voice.isEmpty() ? 0 : 1);
+    }
+
     private int pages() {
-        return Math.max(1, (entries.size() + PER_PAGE - 1) / PER_PAGE);
+        return Math.max(1, (slots() + PER_PAGE - 1) / PER_PAGE);
     }
 
     private int onPage() {
-        return Math.min(PER_PAGE, entries.size() - page * PER_PAGE);
+        return Math.min(PER_PAGE, slots() - page * PER_PAGE);
     }
 
     @Override
@@ -60,11 +74,18 @@ public class SpellWheelScreen extends Screen {
 
         for (int k = 0; k < n; k++) {
             int global = page * PER_PAGE + k;
-            SpellBag.Entry e = entries.get(global);
             double ang = -Math.PI / 2 + Math.PI * 2 * k / n;
             int x = cx + (int) (Math.cos(ang) * radius);
             int y = cy + (int) (Math.sin(ang) * radius);
             int bg = k == hovered ? 0xE0B060FF : global == selected ? 0xC0E8B84A : 0xB0181822;
+            if (global == entries.size()) {
+                g.fill(x - BOX / 2, y - BOX / 2, x + BOX / 2, y + BOX / 2, bg);
+                g.outline(x - BOX / 2, y - BOX / 2, BOX, BOX, 0xFFD67FF0);
+                g.item(voice, x - 8, y - 8);
+                g.centeredText(font, "🗣 言出法随", x, y + BOX / 2 + 3, k == hovered ? 0xFFFFFFFF : 0xFFE6B8F5);
+                continue;
+            }
+            SpellBag.Entry e = entries.get(global);
             int border = e.spell().isPassive() ? 0xFF6FD3E0 : e.fromCodex() ? 0xFFE08A3F : 0xFFE6E2D3;
             g.fill(x - BOX / 2, y - BOX / 2, x + BOX / 2, y + BOX / 2, bg);
             g.outline(x - BOX / 2, y - BOX / 2, BOX, BOX, border);
@@ -76,7 +97,14 @@ public class SpellWheelScreen extends Screen {
 
         // Centre: details of the spell under the pointer (or the selected one).
         int show = hovered >= 0 ? page * PER_PAGE + hovered : selected;
-        if (!entries.isEmpty() && show < entries.size()) {
+        if (show == entries.size() && !voice.isEmpty()) {
+            g.fill(cx - 70, cy - 26, cx + 70, cy + 26, 0xC0101018);
+            g.outline(cx - 70, cy - 26, 140, 52, 0xFFD67FF0);
+            g.centeredText(font, "言出法随", cx, cy - 20, 0xFFE6B8F5);
+            g.centeredText(font, "按住右键，念出咒语即施放", cx, cy - 8, 0xFFCFCFCF);
+            g.centeredText(font, voiced == 0 ? "还没有言出法随的载页" : voiced + " 个术式可以念出", cx, cy + 4, voiced == 0 ? 0xFFE07F6F : 0xFF9F9FAF);
+            if (pages() > 1) g.centeredText(font, "◀ " + (page + 1) + " / " + pages() + " ▶  滚轮翻页", cx, cy + 15, 0xFF6FD3E0);
+        } else if (!entries.isEmpty() && show < entries.size()) {
             Spell s = entries.get(show).spell();
             g.fill(cx - 70, cy - 26, cx + 70, cy + 26, 0xC0101018);
             g.outline(cx - 70, cy - 26, 140, 52, 0xFFB57FE0);
@@ -117,7 +145,10 @@ public class SpellWheelScreen extends Screen {
     }
 
     private void confirm() {
-        if (hovered >= 0) ClientPacketDistributor.sendToServer(new SelectSpellPayload(page * PER_PAGE + hovered));
+        if (hovered >= 0) {
+            int global = page * PER_PAGE + hovered;
+            ClientPacketDistributor.sendToServer(new SelectSpellPayload(global == entries.size() ? SelectSpellPayload.VOICE : global));
+        }
         onClose();
     }
 
@@ -128,10 +159,12 @@ public class SpellWheelScreen extends Screen {
         ItemStack wand = SpellBag.heldWand(mc.player);
         if (wand == null) return;
         var entries = SpellBag.entries(mc.player, wand);
-        if (entries.isEmpty()) {
+        ItemStack charm = dev.logos.item.PageContainer.pages(wand).stream().filter(s -> s.is(dev.logos.LogosMod.VOICE_CHARM.get())).findFirst().orElse(ItemStack.EMPTY);
+        if (entries.isEmpty() && charm.isEmpty()) {
             mc.player.sendOverlayMessage(Component.literal("法杖上没有术式：潜行右键挂上术式载页，或在副手拿法式典籍"));
             return;
         }
-        mc.setScreen(new SpellWheelScreen(entries, wand.getOrDefault(dev.logos.LogosMod.SELECTED.get(), 0)));
+        mc.setScreen(new SpellWheelScreen(entries, wand.getOrDefault(dev.logos.LogosMod.SELECTED.get(), 0), charm,
+                dev.logos.runtime.VoiceCasting.armed(wand)));
     }
 }
