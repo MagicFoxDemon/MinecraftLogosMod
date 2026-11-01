@@ -752,6 +752,9 @@ public class LogosMod {
     public static final Supplier<AttachmentType<dev.logos.runtime.ManaWrap>> MANA_WRAP = ATTACHMENTS.register("mana_wrap",
             () -> AttachmentType.builder(() -> dev.logos.runtime.ManaWrap.NONE).serialize(dev.logos.runtime.ManaWrap.CODEC, w -> w.until() > 0)
                     .sync(dev.logos.runtime.ManaWrap.STREAM_CODEC).build());
+    /** On a mob: the UUID of the player possessing it (dev.logos.runtime.Possession), synced so their client steers it; never saved. */
+    public static final Supplier<AttachmentType<java.util.UUID>> POSSESSOR = ATTACHMENTS.register("possessor",
+            () -> AttachmentType.builder(() -> dev.logos.runtime.Possession.NOBODY).sync(net.minecraft.core.UUIDUtil.STREAM_CODEC).build());
 
     public static final DeferredRegister<net.minecraft.core.particles.ParticleType<?>> PARTICLE_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.PARTICLE_TYPE, MODID);
@@ -781,6 +784,7 @@ public class LogosMod {
         MOB_EFFECTS.register(modBus);
         dev.logos.alchemy.BuffPotions.POTIONS.register(modBus);
         modBus.addListener(this::registerPayloads);
+        modBus.addListener((net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent e) -> e.register(dev.logos.runtime.Possession.TICKETS));
         modBus.addListener((BuildCreativeModeTabContentsEvent e) -> {
             if (e.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
                 e.accept(ALCHEMICAL_COLOSSUS_SPAWN_EGG.get());
@@ -866,6 +870,7 @@ public class LogosMod {
         registrar.playToServer(dev.logos.net.VoiceCastPayload.TYPE, dev.logos.net.VoiceCastPayload.CODEC, dev.logos.net.VoiceCastPayload::handle);
         registrar.playToServer(dev.logos.net.ColossusControlPayload.TYPE, dev.logos.net.ColossusControlPayload.CODEC, dev.logos.net.ColossusControlPayload::handle);
         registrar.playToServer(dev.logos.net.DragonControlPayload.TYPE, dev.logos.net.DragonControlPayload.CODEC, dev.logos.net.DragonControlPayload::handle);
+        registrar.playToServer(dev.logos.net.PossessControlPayload.TYPE, dev.logos.net.PossessControlPayload.CODEC, dev.logos.net.PossessControlPayload::handle);
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
         registrar.playToClient(dev.logos.net.ChargePayload.TYPE, dev.logos.net.ChargePayload.CODEC);
         registrar.playToClient(dev.logos.net.AreaWeatherPayload.TYPE, dev.logos.net.AreaWeatherPayload.CODEC);

@@ -7,6 +7,7 @@
     "BeaconAccessor",
     "EntityMixin",
     "ServerGamePacketListenerMixin",
+    "MannequinAccessor",
     "EnderDragonAccessor",
     "EnderDragonFightAccessor",
     "EnderDragonMixin",
@@ -21,6 +22,8 @@
   ],
   "client": [
     "ItemInHandLayerMixin",
+    "EntityRenderDispatcherMixin",
+    "LevelRendererMixin",
     "ItemInHandRendererMixin",
     "ItemStackRenderStateAccessor",
     "LayerRenderStateAccessor",

@@ -94,9 +94,15 @@ public final class LogosClient {
     @SubscribeEvent
     static void onUse(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         ConstructPlacement.onUse(event);
+        if (!event.isCanceled()) PossessionInput.onInteraction(event);
         if (!event.isCanceled()) DragonInput.onInteraction(event);
         if (!event.isCanceled()) ColossusInput.onInteraction(event);
         if (!event.isCanceled()) StaffInput.onInteraction(event);
+    }
+
+    @SubscribeEvent
+    static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
+        PossessionInput.onRenderHand(event);
     }
 
     @SubscribeEvent
@@ -111,6 +117,7 @@ public final class LogosClient {
     @SubscribeEvent
     static void onClientTickStart(ClientTickEvent.Pre event) {
         ConstructRiding.tick();
+        PossessionInput.tick();
         DragonInput.tick();
         ColossusInput.tick();
         StaffInput.tick();

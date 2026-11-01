@@ -36,6 +36,13 @@ abstract class EntityMixin {
     @org.spongepowered.asm.mixin.injection.Inject(method = "positionRider(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/entity/Entity$MoveFunction;)V",
             at = @At("HEAD"), cancellable = true)
     private void logos$dragonSeats(Entity passenger, Entity.MoveFunction move, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+        // A possessing player sits with their eyes at the creature's: their view is its view.
+        if (dev.logos.runtime.Possession.possessor((Entity) (Object) this) == passenger) {
+            Vec3 at = dev.logos.runtime.Possession.seat((Entity) (Object) this, passenger);
+            move.accept(passenger, at.x, at.y, at.z);
+            ci.cancel();
+            return;
+        }
         if ((Object) this instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon dragon && dev.logos.runtime.Familiars.isFamiliar(dragon)) {
             int seat = Math.max(0, dragon.getPassengers().indexOf(passenger));
             Vec3 at = dev.logos.runtime.FamiliarRiding.dragonSeat(dragon, seat);
