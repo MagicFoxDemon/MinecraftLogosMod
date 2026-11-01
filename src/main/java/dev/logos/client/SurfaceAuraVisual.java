@@ -2,6 +2,7 @@ package dev.logos.client;
 
 import java.util.List;
 import java.util.function.IntFunction;
+import java.util.function.ToIntFunction;
 
 import org.joml.Vector3f;
 
@@ -57,18 +58,20 @@ final class SurfaceAuraVisual {
                 collector.order(2).submitCustomGeometry(stack, h == 0 ? FIRE : FIRE_GRAY, (pose, buf) ->
                         sheets(pose, buf, view, surface, t, seed, 3, 56, 1.3f, .42f, 1, h == 0 ? 0xFFFFFF : VfxParts.hue(FIRE_TINT, h)));
             }
-            case MANA -> {
-                int mana = VfxParts.hue(MANA, h), core = VfxParts.hue(MANA_CORE, h);
-                collector.submitCustomGeometry(stack, NOISE, (pose, buf) ->
-                        shell(pose, buf, surface, t, 2.2f, .06f, .45f / 16, VfxParts.argb(.3f + .08f * Mth.sin(t * .35f), mana)));
-                collector.submitCustomGeometry(stack, TRAIL, (pose, buf) -> {
-                    for (int j = 0; j < 3; j++) thread(pose, buf, view, surface, t, j, .16f, .4f, mana, false);
-                });
-                collector.submitCustomGeometry(stack, EMBER_TEX, (pose, buf) -> {
-                    for (int j = 0; j < 3; j++) thread(pose, buf, view, surface, t, j, .045f, 1, core, true);
-                });
-            }
+            case MANA -> mana(surface, view, t, stack, collector, VfxParts.hue(MANA, h), VfxParts.hue(MANA_CORE, h));
         }
+    }
+
+    /** The mana style's clinging part in any two colours: the flowing glow and the threads, wispy in {@code glow} with a solid {@code core} line. */
+    static void mana(ItemSurface surface, VfxParts.View view, float t, PoseStack stack, SubmitNodeCollector collector, int glow, int core) {
+        collector.submitCustomGeometry(stack, NOISE, (pose, buf) ->
+                shell(pose, buf, surface, t, 2.2f, .06f, .45f / 16, VfxParts.argb(.3f + .08f * Mth.sin(t * .35f), glow)));
+        collector.submitCustomGeometry(stack, TRAIL, (pose, buf) -> {
+            for (int j = 0; j < 3; j++) thread(pose, buf, view, surface, t, j, .16f, .4f, glow, false);
+        });
+        collector.submitCustomGeometry(stack, EMBER_TEX, (pose, buf) -> {
+            for (int j = 0; j < 3; j++) thread(pose, buf, view, surface, t, j, .045f, 1, core, true);
+        });
     }
 
     /**
@@ -94,7 +97,7 @@ final class SurfaceAuraVisual {
     }
 
     /** A flowing glow just outside the item's surface (the original's noise decal on the weapon): each cell pushed out and enlarged a little, the noise flowing along the axis. */
-    private static void shell(PoseStack.Pose pose, VertexConsumer buf, ItemSurface surface, float t, float tiles, float flow, float offset, int color) {
+    static void shell(PoseStack.Pose pose, VertexConsumer buf, ItemSurface surface, float t, float tiles, float flow, float offset, int color) {
         Vector3f axis = surface.axis, across = surface.across;
         surface.forEachCell((cx, cy, cz, ax, ay, az, bx, by, bz, nx, ny, nz) -> {
             float ox = cx + nx * offset, oy = cy + ny * offset, oz = cz + nz * offset, g = 1.35f;
@@ -114,7 +117,7 @@ final class SurfaceAuraVisual {
      * only the dot texture's middle column, a solid line soft at both sides; otherwise the wispy trail texture flows
      * along it as the glow outside.
      */
-    private static void thread(PoseStack.Pose pose, VertexConsumer buf, VfxParts.View view, ItemSurface surface, float t, int j,
+    static void thread(PoseStack.Pose pose, VertexConsumer buf, VfxParts.View view, ItemSurface surface, float t, int j,
             float widthK, float alpha, int rgb, boolean line) {
         int m = 16;
         float len = surface.length(), head = Mth.frac(t * .014f + j / 3f) * 1.6f - .25f, span = .6f;
@@ -145,54 +148,62 @@ final class SurfaceAuraVisual {
     // ---- into the world ------------------------------------------------------------------------
 
     static void emit(SurfaceAuras.Emitter e, RandomSource r, List<Mote> out) {
+        float h = e.aura.hue();
+        if (e.aura.style() == SurfaceAura.Style.MANA) {
+            manaMotes(e, r, out, h);
+            return;
+        }
         float scale = e.scale();
         if (scale < 1e-3f) return;
         ItemSurface s = e.surface;
-        float h = e.aura.hue();
         Vector3f pos = new Vector3f(), normal = new Vector3f();
         // More in a swing, by distance moved (the original's rateOverDistance); the fraction rounds up at random.
         float swing = (float) Math.min(12, e.moved() / scale * 7);
         int swingCount = (int) swing + (r.nextFloat() < swing - (int) swing ? 1 : 0);
+        if (r.nextFloat() < .8f) {
+            s.sample(r, true, pos, normal);
+            Vec3 n = e.direction(normal).normalize();
+            out.add(new Mote(Mote.Kind.TONGUE, e.world(pos, r.nextFloat()), n.scale(.004 * scale).add(0, .012 * scale, 0),
+                    10 + r.nextInt(7), scale * (.4f + .15f * r.nextFloat()), h, r));
+        }
+        for (int i = r.nextFloat() < .35f ? 2 : 1; i > 0; i--) {
+            s.sample(r, true, pos, normal);
+            Vec3 n = e.direction(normal).normalize();
+            Vec3 v = n.scale(.012 * scale).add(0, .018 * scale, 0).add(jitter(r, .008 * scale));
+            out.add(new Mote(Mote.Kind.EMBER, e.world(pos, r.nextFloat()), v, 16 + r.nextInt(16), Math.max(.012f, .028f * scale), h, r));
+        }
+        for (int i = 0; i < swingCount; i++) {
+            s.along(.15f + .85f * r.nextFloat(), pos);
+            out.add(new Mote(Mote.Kind.FLAME, e.world(pos, r.nextFloat()), new Vec3(0, .01 * scale, 0).add(jitter(r, .006 * scale)),
+                    10 + r.nextInt(11), scale * (.42f + .16f * r.nextFloat()), h, r));
+        }
+    }
+
+    /** The mana style's particles: wisps with trails drifting off the surface and circling the item, more in a swing, now and then a rune. */
+    static void manaMotes(SurfaceAuras.Emitter e, RandomSource r, List<Mote> out, float h) {
+        float scale = e.scale();
+        if (scale < 1e-3f) return;
+        ItemSurface s = e.surface;
+        Vector3f pos = new Vector3f(), normal = new Vector3f();
+        float swing = (float) Math.min(12, e.moved() / scale * 7);
+        int swingCount = (int) swing + (r.nextFloat() < swing - (int) swing ? 1 : 0);
         Vec3 axis = e.direction(s.axis).normalize();
-        switch (e.aura.style()) {
-            case FIRE -> {
-                if (r.nextFloat() < .8f) {
-                    s.sample(r, true, pos, normal);
-                    Vec3 n = e.direction(normal).normalize();
-                    out.add(new Mote(Mote.Kind.TONGUE, e.world(pos, r.nextFloat()), n.scale(.004 * scale).add(0, .012 * scale, 0),
-                            10 + r.nextInt(7), scale * (.4f + .15f * r.nextFloat()), h, r));
-                }
-                for (int i = r.nextFloat() < .35f ? 2 : 1; i > 0; i--) {
-                    s.sample(r, true, pos, normal);
-                    Vec3 n = e.direction(normal).normalize();
-                    Vec3 v = n.scale(.012 * scale).add(0, .018 * scale, 0).add(jitter(r, .008 * scale));
-                    out.add(new Mote(Mote.Kind.EMBER, e.world(pos, r.nextFloat()), v, 16 + r.nextInt(16), Math.max(.012f, .028f * scale), h, r));
-                }
-                for (int i = 0; i < swingCount; i++) {
-                    s.along(.15f + .85f * r.nextFloat(), pos);
-                    out.add(new Mote(Mote.Kind.FLAME, e.world(pos, r.nextFloat()), new Vec3(0, .01 * scale, 0).add(jitter(r, .006 * scale)),
-                            10 + r.nextInt(11), scale * (.42f + .16f * r.nextFloat()), h, r));
-                }
-            }
-            case MANA -> {
-                for (int i = r.nextFloat() < .4f ? 2 : 1; i > 0; i--) {
-                    s.sample(r, false, pos, normal);
-                    Vec3 n = e.direction(normal).normalize();
-                    Vec3 v = n.scale(.01 * scale).add(axis.cross(n).scale(.014 * scale)).add(jitter(r, .004 * scale));
-                    out.add(new Mote(Mote.Kind.WISP, e.world(pos, r.nextFloat()), v, 18 + r.nextInt(15), Math.max(.014f, .036f * scale), h, r));
-                }
-                for (int i = 0; i < swingCount; i++) {
-                    s.along(.1f + .9f * r.nextFloat(), pos);
-                    out.add(new Mote(Mote.Kind.WISP, e.world(pos, r.nextFloat()), jitter(r, .01 * scale), 14 + r.nextInt(12),
-                            Math.max(.012f, .03f * scale), h, r));
-                }
-                if (r.nextInt(26) == 0) {
-                    s.sample(r, false, pos, normal);
-                    Vec3 n = e.direction(normal).normalize();
-                    out.add(new Mote(Mote.Kind.RUNE, e.world(pos, 1), n.scale(.006 * scale).add(0, .008 * scale, 0), 34 + r.nextInt(10),
-                            Math.max(.04f, .1f * scale), h, r));
-                }
-            }
+        for (int i = r.nextFloat() < .4f ? 2 : 1; i > 0; i--) {
+            s.sample(r, false, pos, normal);
+            Vec3 n = e.direction(normal).normalize();
+            Vec3 v = n.scale(.01 * scale).add(axis.cross(n).scale(.014 * scale)).add(jitter(r, .004 * scale));
+            out.add(new Mote(Mote.Kind.WISP, e.world(pos, r.nextFloat()), v, 18 + r.nextInt(15), Math.max(.014f, .036f * scale), h, r));
+        }
+        for (int i = 0; i < swingCount; i++) {
+            s.along(.1f + .9f * r.nextFloat(), pos);
+            out.add(new Mote(Mote.Kind.WISP, e.world(pos, r.nextFloat()), jitter(r, .01 * scale), 14 + r.nextInt(12),
+                    Math.max(.012f, .03f * scale), h, r));
+        }
+        if (r.nextInt(26) == 0) {
+            s.sample(r, false, pos, normal);
+            Vec3 n = e.direction(normal).normalize();
+            out.add(new Mote(Mote.Kind.RUNE, e.world(pos, 1), n.scale(.006 * scale).add(0, .008 * scale, 0), 34 + r.nextInt(10),
+                    Math.max(.04f, .1f * scale), h, r));
         }
     }
 
@@ -273,12 +284,18 @@ final class SurfaceAuraVisual {
                 VfxParts.streak(pose, buf, view, p.subtract(dir.scale(stretch)), p.add(dir.scale(m.size * .5)), m.size * (1 - .4f * k), VfxParts.argb(a, rgb));
             }
         });
+        manaWorld(motes, view, pt, stack, to, m -> VfxParts.hue(MANA, m.hue), m -> VfxParts.hue(MANA_CORE, m.hue));
+    }
+
+    /** Draws the wisps and runes among {@code motes} in the colours given for each. */
+    static void manaWorld(List<Mote> motes, VfxParts.View view, float pt, PoseStack stack, OrderedSubmitNodeCollector to,
+            ToIntFunction<Mote> glow, ToIntFunction<Mote> core) {
         // Wisp trails: the dot texture's middle column, a line soft at both sides, thinner and fainter towards its end.
         to.submitCustomGeometry(stack, EMBER_TEX, (pose, buf) -> {
             for (Mote m : motes) {
                 if (m.kind != Mote.Kind.WISP || m.trailCount < 1) continue;
                 float k = m.k(pt), a = (1 - VfxParts.smooth(.55f, 1, k)) * VfxParts.smooth(0, .1f, k);
-                int rgb = VfxParts.hue(MANA, m.hue);
+                int rgb = glow.applyAsInt(m);
                 Vec3 prev = m.at(pt);
                 for (int i = 0; i < m.trailCount; i++) {
                     Vec3 at = new Vec3(m.trail[i * 3], m.trail[i * 3 + 1], m.trail[i * 3 + 2]);
@@ -295,8 +312,8 @@ final class SurfaceAuraVisual {
                 float k = m.k(pt);
                 Vec3 p = m.at(pt);
                 float a = (1 - VfxParts.smooth(.55f, 1, k)) * VfxParts.smooth(0, .1f, k) * VfxParts.fade(view.cam(), p, .3, .9);
-                VfxParts.sprite(pose, buf, view, p, m.size * 1.2f, 0, VfxParts.argb(a, VfxParts.hue(MANA_CORE, m.hue)));
-                VfxParts.sprite(pose, buf, view, p, m.size * 2.6f, 0, VfxParts.argb(a * .35f, VfxParts.hue(MANA, m.hue)));
+                VfxParts.sprite(pose, buf, view, p, m.size * 1.2f, 0, VfxParts.argb(a, core.applyAsInt(m)));
+                VfxParts.sprite(pose, buf, view, p, m.size * 2.6f, 0, VfxParts.argb(a * .35f, glow.applyAsInt(m)));
             }
         });
         to.submitCustomGeometry(stack, RUNES, (pose, buf) -> {
@@ -307,7 +324,7 @@ final class SurfaceAuraVisual {
                 float a = VfxParts.smooth(0, .2f, k) * (1 - VfxParts.smooth(.55f, 1, k)) * VfxParts.fade(view.cam(), p, .3, .9);
                 int g = m.glyph;
                 VfxParts.sprite(pose, buf, view, p, m.size, m.size, m.roll * .2f, g % 6 / 6f, g / 6 / 4f, (g % 6 + 1) / 6f, (g / 6 + 1) / 4f,
-                        VfxParts.argb(a, VfxParts.lerpColor(VfxParts.hue(MANA, m.hue), 0xFFFFFF, .45f)));
+                        VfxParts.argb(a, VfxParts.lerpColor(glow.applyAsInt(m), 0xFFFFFF, .45f)));
             }
         });
     }

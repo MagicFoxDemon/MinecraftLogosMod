@@ -327,6 +327,16 @@ class CompilerTest {
     }
 
     @Test
+    void imbueCostsMoreThanLinearForBigWraps() {
+        // 0.178 × element factor × points^1.2 × seconds^1.1 (the estimate is rounded to 0.1): about points × seconds × 0.33 × factor
+        // at 4 points for 30 seconds, steeper beyond.
+        assertEquals(27.7, Compiler.compile("(imbue caster 4 30 fire)").profile().estimate(), 0.051);
+        assertEquals(0.178 * Math.pow(10, 1.2) * Math.pow(60, 1.1), Compiler.compile("(imbue caster 10 60)").profile().estimate(), 0.051);
+        assertError("(imbue caster 4 30 life)", "未知的词");
+        assertError("(imbue here 4 30)", "实体");
+    }
+
+    @Test
     void playersNeedThePlayersSwitch() {
         assertError("(heal (players :radius 8) 2)", ":players true");
         Spell s = Compiler.compile("(spell :players true (heal (players :radius 8) 2))");

@@ -731,6 +731,10 @@ public class LogosMod {
     /** On a chunk: the spread mana in its air (dev.logos.runtime.ManaField); saved only while there is some. */
     public static final Supplier<AttachmentType<Double>> MANA_FIELD = ATTACHMENTS.register("mana_field",
             () -> AttachmentType.builder(() -> 0.0).serialize(com.mojang.serialization.Codec.DOUBLE.fieldOf("mana"), v -> v > 0).build());
+    /** On a living entity: the mana wrap about its hand (dev.logos.runtime.ManaWrap), synced to everyone who sees it. */
+    public static final Supplier<AttachmentType<dev.logos.runtime.ManaWrap>> MANA_WRAP = ATTACHMENTS.register("mana_wrap",
+            () -> AttachmentType.builder(() -> dev.logos.runtime.ManaWrap.NONE).serialize(dev.logos.runtime.ManaWrap.CODEC, w -> w.until() > 0)
+                    .sync(dev.logos.runtime.ManaWrap.STREAM_CODEC).build());
 
     public static final DeferredRegister<net.minecraft.core.particles.ParticleType<?>> PARTICLE_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.PARTICLE_TYPE, MODID);
