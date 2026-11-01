@@ -8,6 +8,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import dev.logos.lang.Node;
 import dev.logos.LogosMod;
 import dev.logos.runtime.Charging;
+import dev.logos.runtime.VoiceCasting;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -64,7 +65,7 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
             if (!level.isClientSide() && player instanceof ServerPlayer sp) HeldItemUIMenuType.openUI(sp, hand);
             return InteractionResult.SUCCESS;
         }
-        if (player instanceof ServerPlayer sp && !Charging.begin(sp, wand, hand)) return InteractionResult.FAIL;
+        if (player instanceof ServerPlayer sp && !(VoiceCasting.armed(wand) ? VoiceCasting.begin(sp, wand, hand) : Charging.begin(sp, wand, hand))) return InteractionResult.FAIL;
         player.startUsingItem(hand);
         return InteractionResult.CONSUME;
     }
@@ -81,7 +82,9 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
 
     @Override
     public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remaining) {
-        if (entity instanceof ServerPlayer sp) Charging.tick(sp, stack);
+        if (!(entity instanceof ServerPlayer sp)) return;
+        if (VoiceCasting.listening(sp)) VoiceCasting.tick(sp, stack);
+        else Charging.tick(sp, stack);
     }
 
     @Override
@@ -92,7 +95,9 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     /** Let go too early, switched away, or anything else that stops the charge: the mana goes back out free. */
     @Override
     public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
-        if (entity instanceof ServerPlayer sp) Charging.cancel(sp);
+        if (!(entity instanceof ServerPlayer sp)) return;
+        Charging.cancel(sp);
+        VoiceCasting.cancel(sp);
     }
 
     @Override
@@ -111,7 +116,10 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
         long n = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).count();
         builder.accept(Component.literal("术式槽 " + n + "/" + slots).withStyle(ChatFormatting.GRAY));
         var pages = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).toList();
-        if (!pages.isEmpty()) {
+        if (VoiceCasting.armed(stack)) {
+            long voiced = pages.stream().filter(p -> p.has(LogosMod.VOICE.get())).count();
+            builder.accept(Component.literal("当前：🗣 言出法随（" + voiced + " 个术式可念出）").withStyle(ChatFormatting.LIGHT_PURPLE));
+        } else if (!pages.isEmpty()) {
             int sel = Math.floorMod(stack.getOrDefault(dev.logos.LogosMod.SELECTED.get(), 0), pages.size());
             var s = SpellPages.spell(pages.get(sel));
             if (s != null) builder.accept(Component.literal("当前：《" + s.name() + "》 注入 " + Node.fmt(s.mana())).withStyle(ChatFormatting.LIGHT_PURPLE));

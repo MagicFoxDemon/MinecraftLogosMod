@@ -1,0 +1,12 @@
+speech_embedding.bin
+
+The weights are Google's speech_embedding model (TF Hub google/speech_embedding/1, now on
+Kaggle Models as google/speech-embedding), from "Training Keyword Spotters with Limited and
+Synthesized Speech Data" (Lin et al., 2020, arXiv:2002.01322), licensed under the Apache License,
+Version 2.0 (LICENSE-speech-embedding.txt).
+
+Modified for Logos: taken from the ONNX conversion in st-matskevich/local-wake (MIT),
+lwake/models/speech-embedding.onnx, SHA-256
+0140c2b1455c016783f9b859e16f47b5187c69079503cd053f406b86f9094560, and re-stored as float16 in
+a flat layout by tools/voice/ExportSpeechEmbedding.java. The network itself is unchanged; Logos
+runs it in plain Java (dev.logos.client.voice.SpeechEmbedding).
