@@ -51,17 +51,31 @@ public final class Charging {
         public final int tier;
         /** A chant charm hangs on the wand: once full, the charge goes off by itself and the next one starts. */
         public final boolean repeats;
+        /**
+         * Named aloud (言出法随) rather than chosen on the wheel: it charges that spell whatever is selected,
+         * and goes off by itself once full ({@code repeats} then starts the same spell again).
+         */
+        final boolean spoken;
 
         Charge(SpellBag.Entry entry, int selected, Casting.Injection in, double flow, double surge, boolean repeats) {
+            this(entry, selected, in, flow, surge, repeats, false);
+        }
+
+        Charge(SpellBag.Entry entry, int selected, Casting.Injection in, double flow, double surge, boolean repeats, boolean spoken) {
             this.entry = entry;
             this.selected = selected;
             this.repeats = repeats;
+            this.spoken = spoken;
             this.in = in;
             this.flow = flow;
             this.surge = surge;
             this.ticks = ticks(in.mana(), flow, surge);
             this.element = entry.element();
             this.tier = tier(in.mana());
+        }
+
+        public dev.logos.lang.Spell spell() {
+            return entry.spell();
         }
 
         public float progress() {
@@ -154,6 +168,26 @@ public final class Charging {
     }
 
     /**
+     * Starts charging a spell the player named aloud (言出法随), carrying on from {@code injected} already
+     * gathered while they spoke, at the point of the charge curve that holds that much. With
+     * {@code repeats} (a chant charm) it starts the same spell again each time it goes off; without,
+     * it goes off once full and the press stays down, idle, until let go. False (and tells the player why) if it cannot,
+     * leaving {@code injected} for the caller to return.
+     */
+    public static boolean beginSpoken(ServerPlayer player, ItemStack wand, SpellBag.Entry entry, double injected, boolean repeats) {
+        Casting.Injection in = Casting.injection(entry.spell(), entry.tier(), Casting.immolation(player, wand));
+        if (!Casting.affordable(player, entry.spell(), Math.max(0, in.mana() - injected))) return false;
+        Rate rate = rate(player, wand);
+        if (rate == null) return false;
+        Charge c = new Charge(entry, wand.getOrDefault(LogosMod.SELECTED.get(), 0), in, rate.flow(), rate.surge(), repeats, true);
+        c.injected = Math.min(injected, in.mana());
+        while (c.done < c.ticks && c.after(c.done) < c.injected) c.done++;
+        PlayerMagic.of(player).charge = c;
+        sync(player, c);
+        return true;
+    }
+
+    /**
      * The spell {@code wand} would cast from {@code hand}: its selected page, if the wand is in the main hand
      * and the spell is not passive. Null (and tells the player why) otherwise.
      */
@@ -193,9 +227,7 @@ public final class Charging {
     public static void tick(ServerPlayer player, ItemStack wand) {
         Charge c = of(player);
         if (c == null) return;
-        SpellBag.Entry now = SpellBag.selected(player, wand);
-        if (now == null || wand.getOrDefault(LogosMod.SELECTED.get(), 0) != c.selected
-                || !ItemStack.isSameItemSameComponents(now.page(), c.entry.page())) {
+        if (c.spoken ? !VoiceCasting.armed(wand) || VoiceCasting.find(player, wand, c.entry.page()) == null : !stillSelected(player, wand, c)) {
             player.stopUsingItem();
             return;
         }
@@ -208,8 +240,8 @@ public final class Charging {
                 m.mana = Math.max(0, m.mana - share);
                 c.injected += share;
                 c.done++;
-                if (c.full() && c.repeats) {
-                    again(player, wand);
+                if (c.full() && (c.repeats || c.spoken)) {
+                    again(player, wand, c);
                     return;
                 }
                 if (c.full()) sync(player, c);
@@ -219,10 +251,23 @@ public final class Charging {
         if (level.getGameTime() % 2 == 0) sync(player, c);
     }
 
-    /** A repeating charge is full: it goes off at once and the next one starts; if that cannot, the wand is let go. */
-    private static void again(ServerPlayer player, ItemStack wand) {
+    private static boolean stillSelected(ServerPlayer player, ItemStack wand, Charge c) {
+        SpellBag.Entry now = SpellBag.selected(player, wand);
+        return now != null && wand.getOrDefault(LogosMod.SELECTED.get(), 0) == c.selected && ItemStack.isSameItemSameComponents(now.page(), c.entry.page());
+    }
+
+    /**
+     * A repeating or spoken charge is full: it goes off at once. A repeating one starts the next (the same
+     * spoken spell, or whatever is selected); if that cannot, the wand is let go. A spoken press that does not
+     * go on stays down, idle, until let go: a held right-click must not start listening again.
+     */
+    private static void again(ServerPlayer player, ItemStack wand, Charge c) {
         release(player);
-        if (!begin(player, wand, InteractionHand.MAIN_HAND)) player.stopUsingItem();
+        if (c.spoken) {
+            if (c.repeats) VoiceCasting.again(player, wand, c.entry.page());
+            return;
+        }
+        if (!c.repeats || !begin(player, wand, InteractionHand.MAIN_HAND)) player.stopUsingItem();
     }
 
     /**
@@ -266,6 +311,7 @@ public final class Charging {
     public static void interrupt(ServerPlayer player) {
         if (player.isUsingItem()) player.stopUsingItem();
         cancel(player);
+        VoiceCasting.cancel(player);
     }
 
     /** About where the wand's tip is, for sounds: ahead, below the eyes and to the right. Clients draw the effects at the real tip. */

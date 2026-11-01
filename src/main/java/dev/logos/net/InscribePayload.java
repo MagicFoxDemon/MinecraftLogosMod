@@ -20,9 +20,10 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 /**
  * Client → server: write a spell drawn in the workbench onto the page lying on the inscription
  * table at {@code pos}. The server never trusts the client's compilation; it recompiles
- * {@code source} and keeps {@code graph} only so the editor can reopen the drawing.
+ * {@code source} and keeps {@code graph} only so the editor can reopen the drawing. {@code voice} is
+ * the spell's name when the page is written with 言出法随, else empty.
  */
-public record InscribePayload(BlockPos pos, String source, CompoundTag graph) implements CustomPacketPayload {
+public record InscribePayload(BlockPos pos, String source, CompoundTag graph, String voice) implements CustomPacketPayload {
     public static final int MAX_SOURCE = 32_000;
 
     public static final Type<InscribePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "inscribe"));
@@ -30,6 +31,7 @@ public record InscribePayload(BlockPos pos, String source, CompoundTag graph) im
             BlockPos.STREAM_CODEC, InscribePayload::pos,
             ByteBufCodecs.stringUtf8(MAX_SOURCE), InscribePayload::source,
             ByteBufCodecs.COMPOUND_TAG, InscribePayload::graph,
+            ByteBufCodecs.stringUtf8(256), InscribePayload::voice,
             InscribePayload::new);
 
     @Override
@@ -46,7 +48,8 @@ public record InscribePayload(BlockPos pos, String source, CompoundTag graph) im
             Casting.message(sp, e);
             return;
         }
-        var tier = InscriptionTableBlock.inscribe(sp, p.pos, p.source, p.graph);
+        // 言出法随 is kept only under the name the spell really has, the name its recordings were made for.
+        var tier = InscriptionTableBlock.inscribe(sp, p.pos, p.source, p.graph, p.voice.equals(spell.name()) ? p.voice : null);
         if (tier != null) {
             Report.summary(spell, PlayerMagic.of(sp).stability, sp::sendSystemMessage);
             dev.logos.item.SpellPageItem.warnCapacity(sp, spell, tier);
