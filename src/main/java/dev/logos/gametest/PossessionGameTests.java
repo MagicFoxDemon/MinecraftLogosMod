@@ -5,15 +5,21 @@ import dev.logos.runtime.Casting;
 import dev.logos.runtime.Familiars;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.Possession;
+import dev.logos.runtime.PossessionInventory;
 import dev.logos.runtime.SpellInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
@@ -131,6 +137,47 @@ final class PossessionGameTests {
             h.assertTrue(!Possession.possessing(p), "half a second should wear off by itself");
             h.assertTrue(p.position().distanceTo(start) < 0.01, "the player should be back in their body, at " + p.position());
         });
+    }
+
+    /**
+     * The inventory key opens the creature's things: its equipment (each slot taking what fits, and
+     * what is put on kept on death) and what it carries, a villager's pockets or a donkey's chest.
+     * It closes once the possession ends.
+     */
+    static void inventory(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var villager = h.spawn(EntityType.VILLAGER, new Vec3(4.5, 2, 4.5));
+        villager.getInventory().setItem(0, new ItemStack(Items.WHEAT, 5));
+        h.assertTrue(Possession.start(p, villager, 30), "the possession should start");
+        // A mock player cannot be sent the screen; the server's side of the menu is what holds the items.
+        var menu = PossessionInventory.menu(1, p.getInventory(), villager);
+        h.assertTrue(menu.stillValid(p), "the menu should be valid while the player is inside");
+        long pockets = menu.slots.stream().filter(s -> s.container == villager.getInventory()).count();
+        h.assertTrue(pockets == 8, "all eight of the villager's pockets should be there, found " + pockets);
+        h.assertTrue(menu.slots.stream().anyMatch(s -> s.container == villager.getInventory() && s.getItem().is(Items.WHEAT)),
+                "the wheat in its pocket should show");
+        // Equipment first, in order: head, chest, legs, feet, main hand, off hand.
+        Slot head = menu.slots.get(0), hand = menu.slots.get(4);
+        h.assertTrue(head.mayPlace(new ItemStack(Items.IRON_HELMET)) && !head.mayPlace(new ItemStack(Items.IRON_SWORD)), "the head slot should take only headgear");
+        h.assertTrue(hand.mayPlace(new ItemStack(Items.WHEAT)), "a hand should take anything");
+        hand.set(new ItemStack(Items.IRON_SWORD));
+        h.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD), "what is put in the hand slot should be in its hand");
+        h.assertTrue(villager.getDropChances().isPreserved(EquipmentSlot.MAINHAND), "what is put on it should be kept on its death");
+        Possession.end(p, false);
+        h.assertTrue(!menu.stillValid(p), "the menu should close once the possession ends");
+
+        // A chest goes on as a player puts it on (that is when the donkey's chest inventory is made).
+        var donkey = h.spawn(EntityType.DONKEY, new Vec3(6.5, 2, 2.5));
+        donkey.setTamed(true);
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CHEST));
+        donkey.mobInteract(p, InteractionHand.MAIN_HAND);
+        h.assertTrue(donkey.hasChest(), "the donkey should take the chest");
+        h.assertTrue(Possession.start(p, donkey, 30), "the donkey possession should start");
+        var mount = PossessionInventory.menu(2, p.getInventory(), donkey);
+        long chest = mount.slots.stream().filter(s -> s.container == donkey.getInventory()).count();
+        h.assertTrue(chest == donkey.getInventorySize() && chest > 0, "the donkey's chest should be there, found " + chest + " of " + donkey.getInventorySize());
+        Possession.end(p, false);
+        h.succeed();
     }
 
     /** Left click is the creature's own blow, once a second; the use button its shot, if it has one. */

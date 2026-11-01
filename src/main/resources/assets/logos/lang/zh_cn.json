@@ -211,6 +211,8 @@
   "logos.possess.body": "灵魂离体",
   "logos.possess.start": "附身 %s 秒 · 潜行解除",
   "logos.possess.ending": "附身还剩 %s 秒",
+  "logos.possess.equipment": "装备",
+  "logos.possess.carried": "携带的物品",
   "item.logos.colossus_heart": "巨像之心",
   "item.logos.disorder_crystal": "失序结晶",
   "item.logos.maintenance_kit": "维护套件",

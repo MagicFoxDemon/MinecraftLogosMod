@@ -20,8 +20,9 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 /**
  * A possessing player's keys and view. Their movement keys need nothing here (the creature is
  * ridden, see {@link Possession}); left click is its blow and the use button its shot, at whatever
- * they aim at, and their own hands neither show nor act. Looking out of a creeper, spider or
- * enderman, they see as it does, as a spectator would.
+ * they aim at, and their own hands neither show nor act. The inventory key opens the creature's
+ * inventory (see {@link dev.logos.runtime.PossessionInventory}) instead of their own. Looking out
+ * of a creeper, spider or enderman, they see as it does, as a spectator would.
  */
 final class PossessionInput {
     /** How far a possessing player's aim reaches; the server checks the creature's own reach and range. */
@@ -30,10 +31,15 @@ final class PossessionInput {
 
     private PossessionInput() {}
 
-    /** Each client tick: the creature's way of seeing, put on and taken off with the possession. */
+    /** Each client tick, before the game's own keys: the inventory key, and the creature's way of seeing, put on and taken off with the possession. */
     static void tick() {
         Minecraft mc = Minecraft.getInstance();
         Entity now = Possession.possessing(mc.player) ? mc.player.getVehicle() : null;
+        if (now != null) {
+            while (mc.options.keyInventory.consumeClick()) {
+                if (mc.screen == null) ClientPacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.INVENTORY, -1));
+            }
+        }
         if (now == viewing) return;
         mc.gameRenderer.checkEntityPostEffect(now != null ? now : mc.getCameraEntity());
         viewing = now;
@@ -47,7 +53,8 @@ final class PossessionInput {
         event.setCanceled(true);
         if (event.isAttack() || event.isUseItem()) {
             Entity target = aimed(p);
-            ClientPacketDistributor.sendToServer(new PossessControlPayload(event.isUseItem(), target == null ? -1 : target.getId()));
+            ClientPacketDistributor.sendToServer(new PossessControlPayload(event.isUseItem() ? PossessControlPayload.SHOOT : PossessControlPayload.STRIKE,
+                    target == null ? -1 : target.getId()));
         }
     }
 

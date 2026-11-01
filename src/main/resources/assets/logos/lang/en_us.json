@@ -211,6 +211,8 @@
   "logos.possess.body": "Soul away",
   "logos.possess.start": "Possessing for %s s · sneak to leave",
   "logos.possess.ending": "Possession ends in %s s",
+  "logos.possess.equipment": "Equipment",
+  "logos.possess.carried": "Carried",
   "item.logos.colossus_heart": "Colossus Heart",
   "item.logos.disorder_crystal": "Disorder Crystal",
   "item.logos.maintenance_kit": "Maintenance Kit",

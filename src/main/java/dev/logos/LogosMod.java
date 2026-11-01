@@ -756,6 +756,12 @@ public class LogosMod {
     public static final Supplier<AttachmentType<java.util.UUID>> POSSESSOR = ATTACHMENTS.register("possessor",
             () -> AttachmentType.builder(() -> dev.logos.runtime.Possession.NOBODY).sync(net.minecraft.core.UUIDUtil.STREAM_CODEC).build());
 
+    public static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENU_TYPES =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.MENU, MODID);
+    /** A possessed creature's inventory, opened by its possessor's inventory key (dev.logos.runtime.PossessionInventory). */
+    public static final Supplier<net.minecraft.world.inventory.MenuType<com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu>> POSSESSED_INVENTORY =
+            MENU_TYPES.register("possessed_inventory", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create(dev.logos.runtime.PossessionInventory::create));
+
     public static final DeferredRegister<net.minecraft.core.particles.ParticleType<?>> PARTICLE_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.PARTICLE_TYPE, MODID);
     /** A mote of mana drifting in the air (dev.logos.client.ManaMote). */
@@ -778,6 +784,7 @@ public class LogosMod {
         COMPONENTS.register(modBus);
         ATTACHMENTS.register(modBus);
         PARTICLE_TYPES.register(modBus);
+        MENU_TYPES.register(modBus);
         dev.logos.runtime.SpellModifiers.init();
         ATTRIBUTES.register(modBus);
         dev.logos.alchemy.BuffPotions.init();
