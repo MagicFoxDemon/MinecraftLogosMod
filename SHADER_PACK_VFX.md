@@ -19,7 +19,9 @@ Iris + Sodium 几乎是玩家必装的模组。本模组的特效在不开光影
 - `LogosFx.submit` 每帧先调用 `ShaderPackOverlay.begin()`，再把 `ShaderPackOverlay.collector(event.getSubmitNodeCollector())` 交给魔弹飞行外观。
 - 没有 Iris、或装了 Iris 但没开光影时，`collector` 原样返回真正的收集器，什么都不变。
 - 开了光影时，它返回一个只把 `submitCustomGeometry` 记下来的收集器。`IrisRenderingPipelineMixin`（`@Pseudo`，目标 `IrisRenderingPipeline.finalizeLevelRendering` 的末尾）在光影合成完、原版为手持物清除深度之前调用 `ShaderPackOverlay.draw()`，用我们自己的 `RenderType` 画上去。
-- 所以：外观和不开光影时一致；方块仍会挡住特效；手持物仍画在特效前面。
+- 叠加收集器的 `order(n)` 返回它自己：分层按提交顺序画，不会漏回光影的通道。
+- 贴着物品画的部分（物品表面特效、魔力缠绕）用 `ShaderPackOverlay.item(...)`：第三人称的物品单独存一份（实体比 `begin()` 先提交），第一人称记下 Iris 画手时的投影和视图矩阵，叠加时换上再画；光影的阴影通道里不收。
+- 所以：外观和不开光影时一致；方块仍会挡住特效；手持物仍画在特效前面（贴着物品画的部分除外，它本来就画在物品上）。
 - 代价：不吃光影的光照、雾和泛光，也不投影。
 - Iris 只是编译期依赖（`compileOnly`，版本 id 在 `gradle.properties` 的 `iris_version`），不打包、不要求玩家安装。Iris 的类只能在 `ShaderPackOverlay` 的内部类 `Bridge` 里引用，没装 Iris 时这个类不会被加载。
 

@@ -163,4 +163,8 @@
 
 ## 光影
 
-三种都没有开光影实测过，魔力缠绕也没有。世界里的几何经 ShaderPackOverlay 提交；物品表面特效贴着物品的部分是在物品渲染里直接提交的，没有经过 ShaderPackOverlay；粒子着色器的镂空材质经 ShaderPackOverlay 是否正常也需要确认。
+世界里的几何经 ShaderPackOverlay 提交。物品表面特效和魔力缠绕贴着物品的部分经 `ShaderPackOverlay.item` 提交，开光影时也在光影合成之后画上去：
+
+- 第三人称、地上和展示框里的物品：和世界里的特效一起画。实体（连同手上的物品）比 `begin()` 先提交，所以物品单独存一份，从原版画完不透明方块起开始收；光影的阴影通道里和关卡以外（物品栏里的玩家）画的物品不收。
+- 第一人称：Iris 在关卡里自己画手，投影（手的视角）和视图矩阵都和关卡不同，提交时记下来，叠加时换上再画。叠加本来就画在物品上面，所以开光影时不再需要第一人称的提前刷物品。
+- 魔力缠绕和物品表面特效在 photon、Complementary Reimagined 下用 `logos_mana_wrap`、`logos_mana_wrap_hand`、`logos_surface_aura`、`logos_surface_aura_hand` 看过；光柱和龙卷还没有开光影实测过。

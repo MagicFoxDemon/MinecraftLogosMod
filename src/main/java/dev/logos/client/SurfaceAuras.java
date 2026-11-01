@@ -156,14 +156,16 @@ public final class SurfaceAuras {
                 new Vec3(inverse.transformDirection(right).normalize()), new Vec3(inverse.transformDirection(up).normalize()));
         float t = ticks + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         long seed = owner * 0x9E3779B97F4A7C15L + context.ordinal();
+        // Under a shader pack the layers are drawn over the finished frame, so over the item already.
+        SubmitNodeCollector out = ShaderPackOverlay.item(collector, context.firstPerson());
         if (aura != null) {
             if (owner >= 0) capture(owner, context, aura, null, surface, rel, camera.position());
-            SurfaceAuraVisual.local(aura, surface, view, t, seed, poseStack, collector);
+            SurfaceAuraVisual.local(aura, surface, view, t, seed, poseStack, out);
         }
         if (wrap != null) {
             if (owner >= 0) capture(owner, context, null, wrap, surface, rel, camera.position());
-            if (context.firstPerson()) collector.order(0).submitCustomGeometry(poseStack, FLUSH, (p, buf) -> flushItems());
-            WrapVisual.of(wrap).local(surface, view, t, seed, poseStack, collector);
+            if (context.firstPerson() && out == collector) collector.order(0).submitCustomGeometry(poseStack, FLUSH, (p, buf) -> flushItems());
+            WrapVisual.of(wrap).local(surface, view, t, seed, poseStack, out);
         }
     }
 
