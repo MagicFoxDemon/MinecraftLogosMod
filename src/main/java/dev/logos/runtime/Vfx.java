@@ -187,10 +187,16 @@ public final class Vfx {
     /**
      * Head {@code head} of vein {@code id} (a ring has many), re-sent every tick while it crawls: standing at {@code at} on
      * that {@code face} of the blocks (the top of the ground unless it climbs), heading {@code dir} along it, {@code width}
-     * wide and {@code height} high.
+     * wide and {@code height} high; what it crawls over stays for {@code linger} ticks (0, gone as it goes).
      */
-    public static void vein(ServerLevel level, int id, int head, Vec3 at, Vec3 dir, net.minecraft.core.Direction face, Element e, double width, double height) {
-        send(level, Kind.VEIN_HOLD, e, head, at, dir, (float) width, id, new Guise(face.get3DDataValue(), height, NONE));
+    public static void vein(ServerLevel level, int id, int head, Vec3 at, Vec3 dir, net.minecraft.core.Direction face, Element e, double width, double height,
+            int linger) {
+        send(level, Kind.VEIN_HOLD, e, head, at, dir, (float) width, id, new Guise(face.get3DDataValue(), height, linger));
+    }
+
+    /** Vein {@code id} has gone, and what it left behind with it, before that would have faded by itself. */
+    public static void veinFade(ServerLevel level, int id, Element e, Vec3 at) {
+        send(level, Kind.VEIN_FADE, e, 0, at, Vec3.ZERO, 0, id);
     }
 
     /** That head crawls no further, at {@code at}: it {@code struck} something or a wall, or else ran out or off an edge. */

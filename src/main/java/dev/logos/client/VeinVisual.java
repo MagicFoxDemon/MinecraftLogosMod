@@ -11,6 +11,11 @@ import net.minecraft.world.level.Level;
  * played out after stopping. {@link VeinVisuals} makes one per head and calls {@link #tick} every client tick until it
  * returns false after the head stopped, and {@link #submit} every frame. Everything about the head is read from
  * {@link LiveVein}. Every element starts on {@link TintedVeinVisual}, the shared look in its own colours.
+ * <p>
+ * A vein that lingers ({@code :linger}) is a different thing to see, and every element gets a look for each: without it
+ * something that passes over the ground (a sword's qi skimming along it), with it something the ground keeps (spikes
+ * thrust up out of it). The shared lingering look is {@link TintedLingeringVeinVisual}. A lingering head is kept until what
+ * it crawled over has faded ({@link LiveVein#linger} ticks after it was crawled over), or until the vein is gone.
  */
 public interface VeinVisual {
     /**
@@ -25,7 +30,8 @@ public interface VeinVisual {
     /** Dropped (it finished, the level went away, or it outlived its cap): stop anything still playing. */
     default void end() {}
 
-    static VeinVisual create(Element element) {
-        return new TintedVeinVisual(element);
+    /** The look of a head of {@code element}: of one that leaves what it crawled over behind if it {@code lingers}. */
+    static VeinVisual create(Element element, boolean lingers) {
+        return lingers ? new TintedLingeringVeinVisual(element) : new TintedVeinVisual(element);
     }
 }

@@ -653,6 +653,7 @@
   "logos.param.vein.radius": "弧扫半径（格）",
   "logos.param.vein.ccw": "逆时针",
   "logos.param.vein.climb": "爬墙",
+  "logos.param.vein.linger": "留下形体（秒）",
   "logos.param.look": "显形外观",
   "logos.param.trail": "尾迹粒子",
   "logos.param.spin": "自旋（圈/秒）",

@@ -75,11 +75,14 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
          * One head of a vein ({@code vein}), re-sent every tick under {@code id} while it crawls: {@code variant} is which
          * head (a ring has many), (x,y,z) where it stands on the ground, (ax,ay,az) its heading along it, {@code size} its
          * width, {@code spin} its height and {@code look} the face of the blocks it is on (a {@code Direction}'s 3D data
-         * value; up, the top of the ground, unless it climbs).
+         * value; up, the top of the ground, unless it climbs) and {@code particle} how many ticks what it crawls over stays
+         * (0, or none before {@code :linger}: gone as it goes).
          */
         VEIN_HOLD,
         /** That head crawls no further, at (x,y,z); {@code size} is 1 if it struck something or a wall, else 0. */
-        VEIN_END;
+        VEIN_END,
+        /** Vein {@code id} has gone, what it left behind too: drop every head of it now. */
+        VEIN_FADE;
 
         public static final Kind[] VALUES = values();
     }

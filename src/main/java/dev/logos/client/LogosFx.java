@@ -440,8 +440,10 @@ public final class LogosFx {
             case FIELD_ENTER -> FieldVisuals.enter(p.id(), pos, p.look());
             case FIELD_END -> FieldVisuals.ended(p.id());
             case VEIN_HOLD -> VeinVisuals.hold(p.id(), p.variant(), el, pos, new Vec3(p.ax(), p.ay(), p.az()),
-                    p.look() >= 0 && p.look() < 6 ? net.minecraft.core.Direction.from3DDataValue(p.look()) : net.minecraft.core.Direction.UP, p.size(), p.spin());
+                    p.look() >= 0 && p.look() < 6 ? net.minecraft.core.Direction.from3DDataValue(p.look()) : net.minecraft.core.Direction.UP, p.size(), p.spin(),
+                    Math.max(0, p.particle()));
             case VEIN_END -> VeinVisuals.ended(p.id(), p.variant(), pos, p.size() > 0);
+            case VEIN_FADE -> VeinVisuals.faded(p.id());
             case BEAM -> {
                 Vec3 end = new Vec3(p.ax(), p.ay(), p.az());
                 // A ray from its caster's eyes is drawn from the caster's cast point (a wand's head).

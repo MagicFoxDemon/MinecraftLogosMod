@@ -20,6 +20,8 @@ public final class LiveVein {
     Vec3 dir = new Vec3(0, 0, 1);
     Direction face = Direction.UP;
     float width = 1, height = 1;
+    /** How many ticks what it crawls over stays; 0 if it goes as it crawls on. */
+    int linger;
     long heard;
     boolean ended;
     boolean struck;
@@ -61,6 +63,9 @@ public final class LiveVein {
     public float height() { return height; }
 
     public boolean ended() { return ended; }
+
+    /** How many ticks what it crawls over stays (the vein's {@code :linger}); 0 if it goes as it crawls on. */
+    public int linger() { return linger; }
 
     /** Whether it stopped on something (a body, a wall) rather than running out or off an edge. */
     public boolean struck() { return struck; }

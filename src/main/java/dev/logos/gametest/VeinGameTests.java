@@ -112,6 +112,37 @@ final class VeinGameTests {
         h.succeed();
     }
 
+    /**
+     * Lingering, what it crawled over stays after its head has stopped: a zombie that walks onto it is struck as the head
+     * would strike it, once; it fades from where it was crawled over first; the vein ends, running on-expire, only once
+     * the last of it has gone.
+     */
+    static void linger(GameTestHelper h) {
+        ServerPlayer p = caster(h, 0.5, 4.5);
+        var vein = vein(h, p, "(vein (on-hit (mark target #struck)) (on-expire (mark caster #gone)))", new Vec3(0.5, 2, 4.5), new Vec3(1, 0, 0),
+                Motion.FORWARD, 0.5, 6);
+        vein.linger(40);
+        Status struck = new Status("#struck"), gone = new Status("#gone");
+        // Its head crawls the 6 blocks in 12 ticks.
+        for (int k = 0; k < 14; k++) vein.tick();
+        h.assertTrue(vein.heads().isEmpty() && vein.progress() < 1 && StatusData.stacks(p, gone) == 0,
+                "its head has stopped, but what it crawled over is still there");
+        Zombie onto = still(h, 3.5, 4.5);
+        vein.tick();
+        h.assertTrue(StatusData.stacks(onto, struck) == 1, "a zombie on what it left behind should be struck");
+        for (int k = 0; k < 4; k++) vein.tick();
+        h.assertTrue(StatusData.stacks(onto, struck) == 1, "it should be struck once, as by the head");
+        // By tick 45 what it crawled over in its first four ticks (up to x 2.5) has gone; the rest is still there.
+        while (vein.progress() < 44.0 / 53) vein.tick();
+        Zombie early = still(h, 1, 4.5), late = still(h, 5.5, 4.5);
+        vein.tick();
+        h.assertTrue(StatusData.stacks(early, struck) == 0, "what it crawled over first should have faded first");
+        h.assertTrue(StatusData.stacks(late, struck) == 1, "what it crawled over last should still strike");
+        for (int k = 0; k < 20 && vein.progress() < 1; k++) vein.tick();
+        h.assertTrue(vein.progress() == 1 && StatusData.stacks(p, gone) == 1, "once all of it has faded it should end, running on-expire once");
+        h.succeed();
+    }
+
     /** Part of a ring spreads only over its angle: the zombie it faces is struck, the one behind it is not. */
     static void ringSector(GameTestHelper h) {
         ServerPlayer p = caster(h, 4.5, 4.5);

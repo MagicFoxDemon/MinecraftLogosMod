@@ -653,6 +653,7 @@
   "logos.param.vein.radius": "Sweep radius (blocks)",
   "logos.param.vein.ccw": "Counter-clockwise",
   "logos.param.vein.climb": "Climb walls",
+  "logos.param.vein.linger": "Linger (s)",
   "logos.param.look": "Appearance",
   "logos.param.trail": "Trail particle",
   "logos.param.spin": "Spin (turns/s)",

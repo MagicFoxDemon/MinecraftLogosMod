@@ -331,22 +331,25 @@ public final class Runes {
 
         def("vein", FORM, ACTION).yields(Type.FORM)
                 .kw("from", POS, "here").kw("dir", DIR, "aim").kw("motion", Type.MOTION, "forward").kw("spread", NUM, "360").kw("radius", NUM, "3")
-                .kw("speed", NUM, "0.6").kw("range", NUM, "16").kw("width", NUM, "1").kw("height", NUM, "1").kw("pierce", NUM, "0").flag("ccw").flag("climb")
-                .on("on-hit", true, "碰到实体时").on("on-step", false, "每走上一块新的方块，起步那块也算；爬墙时墙面、天花板上的方块也算（here 是那块方块）")
+                .kw("speed", NUM, "0.6").kw("range", NUM, "16").kw("width", NUM, "1").kw("height", NUM, "1").kw("pierce", NUM, "0").kw("linger", NUM, "0").flag("ccw").flag("climb")
+                .on("on-hit", true, "碰到实体时（留下形体时，碰到留下的路径也算）").on("on-step", false, "每走上一块新的方块，起步那块也算；爬墙时墙面、天花板上的方块也算（here 是那块方块）")
                 .on("on-impact", false, "撞上翻不过去的墙时（here 是那个方块）；爬墙时不会撞墙")
-                .on("on-expire", false, "消散时（走完射程、寿命结束、撞墙、穿透耗尽或地面断开）")
+                .on("on-expire", false, "消散时（走完射程、寿命结束、撞墙、穿透耗尽或地面断开；留下形体时，等留下的路径全部散去）")
                 .stab(4).doc("游脉：贴着地面往前爬的一道脉络——藤蔓生长、地火蔓延、剑气贴地、冰刺破土。"
                         + "从 :from 往下最多 6 格找到地面起步（找不到则不成形，也不花魔力），沿 :dir 的水平方向前进，能迈上 1 格高的台阶、顺着地面往下最多 4 格，"
                         + "在液体表面也能走；撞上更高的墙时 on-impact，地面断开超过 4 格时消散。"
                         + ":climb 爬墙：贴着任何方块表面爬，撞上墙就爬上墙，墙顶接着翻过去，能沿着天花板走，走到屋檐、悬崖边就绕过边沿往下爬，不会掉下去也不会撞墙；"
                         + "离开地面时笔直前进，回到地面后才按运动拐弯、摆动、追踪或沿弧线走。"
+                        + ":linger 留下形体：爬过的路径保留这么多秒（0 不保留，最多 30 秒），期间碰到它的实体就像被头部碰到一样触发 on-hit（每个实体仍只碰一次，不消耗 :pierce）；"
+                        + "路径从最早爬过的地方开始散去，全部散去后游脉才消散。"
                         + ":motion 运动：与魔弹共用 forward 直行、homing 追踪（拐向最近的敌人）、wander 游走（随机拐弯，偏离原方向不超过 60°）；"
                         + "游脉独有 snake 蛇行（左右摆动着前进）、ring 环扩（从起点向四周同时扩散，:spread 度以内，默认 360 是整圈，以 :dir 为中线）、"
                         + "sweep 弧扫（以 :from 为圆心、:radius 为半径，沿 :spread 度的弧扫过去，以 :dir 为中线，从上往下看默认顺时针，即从施法者左边扫到右边，:ccw 逆时针；扫完整段弧为止，不看 :range）。"
                         + "抛物、环绕、折返离不开空中，接上会报错。"
                         + ":width 宽、:height 高是碰到实体的范围；每个实体只碰一次，:pierce 是还能穿过几个。"
                         + "展开 4 + 运动的代价（直行 0、游走 1、蛇行 1、弧扫 1、环扩 2、追踪 3）+ 0.05×宽×高×爬过的长度："
-                        + "一般是射程；环扩是射程×π×角度/360（不低于射程）；弧扫是弧长，半径×角度（弧度）")
+                        + "一般是射程；环扩是射程×π×角度/360（不低于射程）；弧扫是弧长，半径×角度（弧度）；"
+                        + "留下形体另加 0.02×宽×高×同一长度×保留秒数")
                 .exec((n, c) -> {
                     Place from = place(kw(n, "from"), c);
                     // Written motions are checked when compiled; one worked out while it runs and unfit for the ground goes straight on.
@@ -363,10 +366,12 @@ public final class Runes {
                     if (ground == null) return null;
                     double speed = clamp(num(kw(n, "speed"), c), 0.1, 2), range = clamp(num(kw(n, "range"), c), 1, 64);
                     double width = clamp(num(kw(n, "width"), c), 0.25, 4), height = clamp(num(kw(n, "height"), c), 0.25, 4);
-                    if (!c.inst().spend(VeinObj.cost(motion, range, width, height, arc.spread(), arc.radius()), "vein")) return null;
+                    double linger = clamp(num(kw(n, "linger"), c), 0, VeinObj.LINGER_MAX);
+                    if (!c.inst().spend(VeinObj.cost(motion, range, width, height, arc.spread(), arc.radius(), linger), "vein")) return null;
                     var obj = new VeinObj(n, c.at(from.moved(ground)), ground, dir, motion, speed, range, width, height,
                             (int) clamp(num(kw(n, "pierce"), c), 0, 99), arc);
                     if (n.flags.contains("climb")) obj.climb();
+                    obj.linger((int) Math.round(linger * 20));
                     SpellRuntime.spawn(obj);
                     Vfx.sound(from.level(), ground, Vfx.sound(n.element), 0.5f, 0.8f);
                     return c.inst().dead ? null : obj;

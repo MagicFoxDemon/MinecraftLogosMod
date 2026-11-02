@@ -29,7 +29,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class VeinVisuals {
-    /** No head lingers longer than this after it stops, whatever its element asks for. */
+    /** No head lingers longer than this after it stops (and after what it left behind has faded), whatever its element asks for. */
     public static final int LINGER_CAP = 100;
     /** The server tells clients every tick; a head not heard of for this long has gone. */
     private static final int STALE_TICKS = 10;
@@ -44,11 +44,12 @@ public final class VeinVisuals {
     }
 
     /** Head {@code head} of vein {@code id} stands at {@code at} (see {@code FxPayload.Kind.VEIN_HOLD}). */
-    static void hold(int id, int head, Element element, Vec3 at, Vec3 dir, Direction face, float width, float height) {
+    static void hold(int id, int head, Element element, Vec3 at, Vec3 dir, Direction face, float width, float height, int linger) {
         long now = ClientCharges.ticks();
         LiveVein v = LIVE.get(key(id, head));
         if (v == null) {
-            v = new LiveVein(id, head, element, VeinVisual.create(element), at, now);
+            v = new LiveVein(id, head, element, VeinVisual.create(element, linger > 0), at, now);
+            v.linger = linger;
             LIVE.put(key(id, head), v);
         }
         v.pos = at;
@@ -73,6 +74,20 @@ public final class VeinVisuals {
         ENDED.add(v);
     }
 
+    /** Vein {@code id} has gone, and what it left behind with it: every head of it is dropped now. */
+    static void faded(int id) {
+        LIVE.values().removeIf(v -> {
+            if (v.id != id) return false;
+            v.visual.end();
+            return true;
+        });
+        ENDED.removeIf(v -> {
+            if (v.id != id) return false;
+            v.visual.end();
+            return true;
+        });
+    }
+
     @SubscribeEvent
     static void onTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
@@ -94,7 +109,7 @@ public final class VeinVisuals {
         }
         ENDED.removeIf(v -> {
             v.sinceEnd++;
-            if (v.sinceEnd <= LINGER_CAP && step(level, v)) return false;
+            if (v.sinceEnd <= LINGER_CAP + v.linger && step(level, v)) return false;
             v.visual.end();
             return true;
         });
