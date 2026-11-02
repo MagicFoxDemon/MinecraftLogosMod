@@ -241,6 +241,19 @@ public abstract class RuneNode extends LogosNode {
         };
     }
 
+    /**
+     * Whether this node's flag is one its picked shape or motion does not use (a vein's counter-clockwise unless it
+     * sweeps): its checkbox is hidden but keeps its value, and the graph compiler leaves it out, as with hidden ports.
+     */
+    public boolean hidesFlag(String name) {
+        for (Rune.Kw k : rune().keywords.values()) {
+            if (k.type() != Type.SHAPE && k.type() != Type.MOTION) continue;
+            PortModel shape = in(kw(k.name()));
+            return shape != null && unused(shape, name);
+        }
+        return false;
+    }
+
     /** Whether this port is a keyword its shape or motion hides; the graph compiler leaves those out. */
     public static boolean hidden(@Nullable PortModel port) {
         return port != null && port.getOptions() == PortModelOptions.HIDDEN;

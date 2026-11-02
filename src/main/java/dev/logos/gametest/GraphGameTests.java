@@ -121,18 +121,25 @@ final class GraphGameTests {
         var node = graph.getNodes().stream().filter(n -> n instanceof dev.logos.graph.RuneNodes.Vein).map(n -> (dev.logos.graph.RuneNodes.Vein) n).findFirst().orElseThrow();
         h.assertTrue(!RuneNode.hidden(node.in(RuneNode.kw("spread"))) && !RuneNode.hidden(node.in(RuneNode.kw("radius"))) && RuneNode.hidden(node.in(RuneNode.kw("range"))),
                 "a sweep shows its angle and radius, not a range");
+        h.assertTrue(!node.hidesFlag("ccw"), "a sweep shows its counter-clockwise box");
         GraphCompiler.Result r = GraphCompiler.compile(graph);
         h.assertTrue(r.ok() && r.source().contains(":spread 120") && r.source().contains(":radius 5") && r.source().contains(":ccw"), "the sweep must survive: " + r.source());
         node.in(RuneNode.kw("motion")).getEmbeddedValue().setValue(dev.logos.lang.Motion.RING);
         node.model().defineNode();
         h.assertTrue(!RuneNode.hidden(node.in(RuneNode.kw("range"))) && !RuneNode.hidden(node.in(RuneNode.kw("spread"))) && RuneNode.hidden(node.in(RuneNode.kw("radius"))),
                 "a ring shows its range and angle, not a radius");
+        h.assertTrue(node.hidesFlag("ccw"), "a ring hides the sweep's counter-clockwise box");
         node.in(RuneNode.kw("motion")).getEmbeddedValue().setValue(dev.logos.lang.Motion.FORWARD);
         node.model().defineNode();
         h.assertTrue(!RuneNode.hidden(node.in(RuneNode.kw("range"))) && RuneNode.hidden(node.in(RuneNode.kw("spread"))) && RuneNode.hidden(node.in(RuneNode.kw("radius"))),
                 "a line shows its range only");
         GraphCompiler.Result line = GraphCompiler.compile(graph);
-        h.assertTrue(line.ok() && !line.source().contains(":spread") && !line.source().contains(":radius"), "a line drops the sweep's angle and radius: " + line.source());
+        h.assertTrue(line.ok() && !line.source().contains(":spread") && !line.source().contains(":radius") && !line.source().contains(":ccw"),
+                "a line drops the sweep's angle, radius and direction: " + line.source());
+        node.in(RuneNode.kw("motion")).getEmbeddedValue().setValue(dev.logos.lang.Motion.SWEEP);
+        node.model().defineNode();
+        GraphCompiler.Result back = GraphCompiler.compile(graph);
+        h.assertTrue(back.ok() && back.source().contains(":ccw"), "sweeping again brings back the kept counter-clockwise: " + back.source());
     }
 
     /** A form's or summon's kept body becomes the node's own output wire, and this form becomes its context node. */
