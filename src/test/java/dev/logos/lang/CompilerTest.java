@@ -339,6 +339,7 @@ class CompilerTest {
     void imbueIsKeptUpLikeAField() {
         // 6 to wind, 0.5 a pulse (every 0.5 s by default): 30 seconds is 6 + 60 × 0.5.
         assertEquals(36, Compiler.compile("(imbue caster :life 30)").profile().estimate(), 0.051);
+        assertEquals(36, Compiler.compile("(imbue :life 30)").profile().estimate(), 0.051);
         // Its blows are reckoned one every 2 seconds: 10 seconds is 5 blows.
         double blow = Compiler.compile("(damage caster 4 fire)").profile().estimate();
         assertEquals(6 + 20 * 0.5 + 5 * blow, Compiler.compile("(imbue caster :life 10 (on-hit (damage target 4 fire)))").profile().estimate(), 0.051);

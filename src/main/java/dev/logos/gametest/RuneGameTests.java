@@ -324,13 +324,13 @@ final class RuneGameTests {
         });
     }
 
-    /** A player's blow counts only charged to 90%, and only on the entity aimed at, not on one the sweep catches. */
+    /** A player's blow counts only charged to 90%, and only on the entity aimed at, not on one the sweep catches; left unwired, the hand wrapped is the caster's own. */
     static void imbuePlayerBlow(GameTestHelper h) {
         ServerPlayer p = caster(h);
         var aimed = mob(h, EntityType.HUSK);
         var swept = h.spawn(EntityType.HUSK, new Vec3(2.5, 2, 3.5));
         swept.setNoAi(true);
-        Casting.cast(p, Casting.compile("(spell :mana 50 (imbue caster :life 30 (on-hit (mark target #hit))))"), null, null);
+        Casting.cast(p, Casting.compile("(spell :mana 50 (imbue :life 30 (on-hit (mark target #hit))))"), null, null);
         h.assertTrue(WrapObj.on(p) != null, "the caster's hand should be wrapped");
         // A blow straight after another is weak: it does not count.
         p.resetAttackStrengthTicker();
