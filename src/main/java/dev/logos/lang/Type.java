@@ -35,7 +35,7 @@ public enum Type {
     CREATURE("❦", "生物"),
     /** A mob effect (potion effect) by registry id; vanilla and modded alike. */
     MOB_EFFECT("⚗", "药效"),
-    /** A spell body a form rune made (projectile, beam, construct, field): read its life with life-of. */
+    /** A spell body a form rune made (projectile, beam, construct, field, imbue, vein): read its life with life-of. */
     FORM("🜔", "形"),
     /** Either a creature or a body a form made: what pos-of, dir-of, move, halt, turn and disperse act on. */
     BODY("◍", "形或实体"),

@@ -181,6 +181,23 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     if (n.events.containsKey("on-hit") || n.events.containsKey("on-swing")) assumptions.add("魔力缠绕按每 " + Node.fmt(BLOW_SECONDS) + " 秒一击估算");
                     found.add(Intent.WARD);
                 }
+                case "vein" -> {
+                    Motion motion = n.kw.get("motion") != null && n.kw.get("motion").value instanceof Motion m && m.crawls() ? m : Motion.FORWARD;
+                    boolean ring = motion == Motion.RING;
+                    double out = kwNum(n, "range", 16), spread = kwNum(n, "spread", 360), radius = kwNum(n, "radius", 3);
+                    // A sweep crawls its arc round :from; the rest go out to their range.
+                    double length = motion == Motion.SWEEP ? radius * Math.toRadians(spread) : out;
+                    reach(motion == Motion.SWEEP ? radius : out);
+                    if (ring) group = true;
+                    own = dev.logos.runtime.VeinObj.cost(motion, out, kwNum(n, "width", 1), kwNum(n, "height", 1), spread, radius);
+                    // A step for each block crawled; a ring's every head steps on its own.
+                    double steps = Math.ceil(length) * (ring ? dev.logos.runtime.VeinObj.ringHeads(out, spread) : 1);
+                    double hits = ring ? ASSUMED_TARGETS : Math.min(kwNum(n, "pierce", 0) + 1, 2);
+                    own += events(n, "on-hit", inGroup || ring) * hits + repeated(n, "on-step", inGroup) * steps
+                            + events(n, "on-impact", inGroup) + events(n, "on-expire", inGroup);
+                    if (n.events.containsKey("on-step")) assumptions.add("on-step 按射程内的每一格计算" + (ring ? "，环扩的每一支各算一遍" : ""));
+                    if (n.events.containsKey("on-hit")) assumptions.add(ring ? "环扩按碰到 " + ASSUMED_TARGETS + " 个目标估算" : "游脉按碰到一次估算");
+                }
                 case "ray" -> {
                     reach(kwNum(n, "range", 16));
                     own = 3 + events(n, "on-hit", inGroup) * Math.min(kwNum(n, "pierce", 0) + 1, 2);

@@ -439,6 +439,8 @@ public final class LogosFx {
             }
             case FIELD_ENTER -> FieldVisuals.enter(p.id(), pos, p.look());
             case FIELD_END -> FieldVisuals.ended(p.id());
+            case VEIN_HOLD -> VeinVisuals.hold(p.id(), p.variant(), el, pos, new Vec3(p.ax(), p.ay(), p.az()), p.size(), p.spin());
+            case VEIN_END -> VeinVisuals.ended(p.id(), p.variant(), pos, p.size() > 0);
             case BEAM -> {
                 Vec3 end = new Vec3(p.ax(), p.ay(), p.az());
                 // A ray from its caster's eyes is drawn from the caster's cast point (a wand's head).
@@ -559,7 +561,7 @@ public final class LogosFx {
         Minecraft mc = Minecraft.getInstance();
         ShaderPackOverlay.begin();
         Level level = mc.level;
-        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && RAYS.isEmpty() && !WardSpheres.any() && !ChargeVisuals.any() && !FieldVisuals.any() && !AreaWeatherSky.any()
+        if (level == null || (TRAILS.isEmpty() && BEAMS.isEmpty() && RAYS.isEmpty() && !WardSpheres.any() && !ChargeVisuals.any() && !FieldVisuals.any() && !VeinVisuals.any() && !AreaWeatherSky.any()
                 && !dev.logos.runtime.ConstructEntity.any() && !AnchorMarkers.showing())) return;
         CameraRenderState cam = event.getLevelRenderState().cameraRenderState;
         Quaternionf toCamera = new Quaternionf(cam.orientation).conjugate();
@@ -573,6 +575,7 @@ public final class LogosFx {
         for (LiveRay r : RAYS) r.visual().submit(level, cam, pt, pose, vfx);
         ChargeVisuals.submit(level, cam, pt, pose, vfx);
         FieldVisuals.submit(level, cam, pt, pose, vfx);
+        VeinVisuals.submit(level, cam, pt, pose, vfx);
         AreaWeatherSky.submit(level, cam, pt, pose, vfx);
         AnchorMarkers.submit(mc, cam, pt, pose, event.getSubmitNodeCollector());
         for (var e : TRAILS.entrySet()) {
@@ -784,7 +787,7 @@ public final class LogosFx {
     }
 
     /** Emissive vanilla particles of the element: cheap, bright and instantly recognisable. */
-    private static void accents(Level level, Element el, Vec3 at, int count, double spread, double speed) {
+    static void accents(Level level, Element el, Vec3 at, int count, double spread, double speed) {
         if (nearCamera(at)) return;
         ParticleOptions type = switch (el) {
             case FIRE -> ParticleTypes.FLAME;

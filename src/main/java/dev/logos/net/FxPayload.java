@@ -70,7 +70,15 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
         /** A body entered that field ({@code on-enter}): (x,y,z) is its centre, {@code look} its network id. */
         FIELD_ENTER,
         /** That field ceased to exist, at (x,y,z). */
-        FIELD_END;
+        FIELD_END,
+        /**
+         * One head of a vein ({@code vein}), re-sent every tick under {@code id} while it crawls: {@code variant} is which
+         * head (a ring has many), (x,y,z) where it stands on the ground, (ax,ay,az) its level heading, {@code size} its
+         * width and {@code spin} its height.
+         */
+        VEIN_HOLD,
+        /** That head crawls no further, at (x,y,z); {@code size} is 1 if it struck something or a wall, else 0. */
+        VEIN_END;
 
         public static final Kind[] VALUES = values();
     }

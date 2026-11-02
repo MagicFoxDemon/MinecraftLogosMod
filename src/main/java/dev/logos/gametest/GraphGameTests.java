@@ -50,6 +50,7 @@ final class GraphGameTests {
         switchChooseRoundtrip(h);
         formRefsRoundtrip(h);
         constructSizesFollowShape(h);
+        veinKeywordsFollowPath(h);
         creatureLookRoundtrip(h);
         speciesRoundtrip(h);
         h.succeed();
@@ -112,6 +113,26 @@ final class GraphGameTests {
         SpellGraph box = GraphBuilder.build(Compiler.compile("(spell :mana 100 (construct :shape box :width 2 :height 6 :depth 4))"));
         GraphCompiler.Result b = GraphCompiler.compile(box);
         h.assertTrue(b.ok() && b.source().contains(":width 2") && b.source().contains(":height 6") && b.source().contains(":depth 4"), "a box keeps all three: " + b.source());
+    }
+
+    /** A vein node shows only the keywords its motion uses: a sweep its angle and radius, a ring its range and angle, a line its range. */
+    private static void veinKeywordsFollowPath(GameTestHelper h) {
+        SpellGraph graph = GraphBuilder.build(Compiler.compile("(spell :mana 100 (vein :motion sweep :spread 120 :radius 5 :ccw))"));
+        var node = graph.getNodes().stream().filter(n -> n instanceof dev.logos.graph.RuneNodes.Vein).map(n -> (dev.logos.graph.RuneNodes.Vein) n).findFirst().orElseThrow();
+        h.assertTrue(!RuneNode.hidden(node.in(RuneNode.kw("spread"))) && !RuneNode.hidden(node.in(RuneNode.kw("radius"))) && RuneNode.hidden(node.in(RuneNode.kw("range"))),
+                "a sweep shows its angle and radius, not a range");
+        GraphCompiler.Result r = GraphCompiler.compile(graph);
+        h.assertTrue(r.ok() && r.source().contains(":spread 120") && r.source().contains(":radius 5") && r.source().contains(":ccw"), "the sweep must survive: " + r.source());
+        node.in(RuneNode.kw("motion")).getEmbeddedValue().setValue(dev.logos.lang.Motion.RING);
+        node.model().defineNode();
+        h.assertTrue(!RuneNode.hidden(node.in(RuneNode.kw("range"))) && !RuneNode.hidden(node.in(RuneNode.kw("spread"))) && RuneNode.hidden(node.in(RuneNode.kw("radius"))),
+                "a ring shows its range and angle, not a radius");
+        node.in(RuneNode.kw("motion")).getEmbeddedValue().setValue(dev.logos.lang.Motion.FORWARD);
+        node.model().defineNode();
+        h.assertTrue(!RuneNode.hidden(node.in(RuneNode.kw("range"))) && RuneNode.hidden(node.in(RuneNode.kw("spread"))) && RuneNode.hidden(node.in(RuneNode.kw("radius"))),
+                "a line shows its range only");
+        GraphCompiler.Result line = GraphCompiler.compile(graph);
+        h.assertTrue(line.ok() && !line.source().contains(":spread") && !line.source().contains(":radius"), "a line drops the sweep's angle and radius: " + line.source());
     }
 
     /** A form's or summon's kept body becomes the node's own output wire, and this form becomes its context node. */
@@ -184,6 +205,7 @@ final class GraphGameTests {
                 new Case(dev.logos.graph.EnumValues.Kind.ELEMENT, "(damage caster 1)", "damage", "element", "fire"),
                 new Case(dev.logos.graph.EnumValues.Kind.MOTION, "(projectile)", "projectile", RuneNode.kw("motion"), "homing"),
                 new Case(dev.logos.graph.EnumValues.Kind.SHAPE, "(construct)", "construct", RuneNode.kw("shape"), "dome"),
+                new Case(dev.logos.graph.EnumValues.Kind.MOTION, "(vein)", "vein", RuneNode.kw("motion"), "ring"),
                 new Case(dev.logos.graph.EnumValues.Kind.WEATHER, "(weather rain)", "weather", "weather", "snow"));
         for (Case c : cases) {
             SpellGraph graph = GraphBuilder.build(Compiler.compile("(spell :mana 1000 " + c.source() + ")"));

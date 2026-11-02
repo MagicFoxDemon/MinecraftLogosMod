@@ -185,6 +185,19 @@ public final class Vfx {
     }
 
     /**
+     * Head {@code head} of vein {@code id} (a ring has many), re-sent every tick while it crawls: standing at {@code at} on
+     * the ground, heading {@code dir} along it, {@code width} wide and {@code height} high.
+     */
+    public static void vein(ServerLevel level, int id, int head, Vec3 at, Vec3 dir, Element e, double width, double height) {
+        send(level, Kind.VEIN_HOLD, e, head, at, dir, (float) width, id, new Guise(NONE, height, NONE));
+    }
+
+    /** That head crawls no further, at {@code at}: it {@code struck} something or a wall, or else ran out or off an edge. */
+    public static void veinEnd(ServerLevel level, int id, int head, Vec3 at, Element e, boolean struck) {
+        send(level, Kind.VEIN_END, e, head, at, Vec3.ZERO, struck ? 1 : 0, id);
+    }
+
+    /**
      * What a burst says happened, so clients can show the act and not only the element: harm, healing, a
      * ward raised, a force applied ({@code push}, {@code pull}, {@code disarm}), a potion effect by how it
      * reads, or anything else ({@code GENERIC}). Synced by ordinal; append only.

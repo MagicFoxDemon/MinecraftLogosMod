@@ -68,6 +68,17 @@ final class RuneEmblems {
                 "##....#.#",
                 ".......#.",
                 "........."}, "beam");
+        // A line crawling along the ground, its spikes rising towards the head.
+        put(new String[]{
+                ".........",
+                ".........",
+                "........#",
+                "......#.#",
+                "....#.#.#",
+                "..#.#.#.#",
+                "+++++++++",
+                "#########",
+                "........."}, "vein");
         // Stones set into a wall.
         put(new String[]{
                 ".........",

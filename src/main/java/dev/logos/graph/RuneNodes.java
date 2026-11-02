@@ -50,6 +50,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "vein", group = FORM, graphTypes = SpellGraph.class)
+    public static class Vein extends RuneNode {
+        public Vein() {
+            super("vein");
+        }
+    }
+
     @NodeAttribute(name = "ray", group = FORM, graphTypes = SpellGraph.class)
     public static class Ray extends RuneNode {
         public Ray() {
@@ -965,6 +972,7 @@ public final class RuneNodes {
         BY_RUNE.put("field", Field::new);
         BY_RUNE.put("beam", Beam::new);
         BY_RUNE.put("construct", Construct::new);
+        BY_RUNE.put("vein", Vein::new);
         BY_RUNE.put("ray", Ray::new);
         BY_RUNE.put("split", Split::new);
         BY_RUNE.put("nearest", Nearest::new);
