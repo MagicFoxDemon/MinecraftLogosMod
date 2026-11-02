@@ -246,7 +246,7 @@ public final class RuneNodes {
         }
     }
 
-    @NodeAttribute(name = "imbue", group = EFFECT, graphTypes = SpellGraph.class)
+    @NodeAttribute(name = "imbue", group = FORM, graphTypes = SpellGraph.class)
     public static class Imbue extends RuneNode {
         public Imbue() {
             super("imbue");

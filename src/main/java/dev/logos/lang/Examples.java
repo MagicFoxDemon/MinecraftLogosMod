@@ -260,6 +260,23 @@ public final class Examples {
                     (launch target 0.5)))
                 """);
 
+        add("flame-blade", """
+                ; 焰刃：魔力缠绕在自己的主手上，30 秒内每一记蓄满的攻击（连同射出的箭）再烧 4 点
+                ; 展开 6 + 每秒维持 1，命中时才花伤害的魔力
+                (spell :name "焰刃" :mana 80
+                  (imbue caster :life 30
+                    (on-hit (damage target 4 fire))))
+                """);
+
+        add("sword-wave", """
+                ; 剑气：缠绕的手每次蓄满挥动（打空也算）都斩出一道短程魔弹
+                (spell :name "剑气" :mana 110
+                  (imbue caster :life 20
+                    (on-swing
+                      (projectile :speed 2 :life 0.6
+                        (on-hit (damage target 5 physical))))))
+                """);
+
         // ---- 作用于方块、掉落物、玩家与维度 ----
 
         add("harvest", """

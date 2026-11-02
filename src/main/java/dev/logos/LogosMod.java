@@ -748,9 +748,9 @@ public class LogosMod {
     /** On a chunk: the spread mana in its air (dev.logos.runtime.ManaField); saved only while there is some. */
     public static final Supplier<AttachmentType<Double>> MANA_FIELD = ATTACHMENTS.register("mana_field",
             () -> AttachmentType.builder(() -> 0.0).serialize(com.mojang.serialization.Codec.DOUBLE.fieldOf("mana"), v -> v > 0).build());
-    /** On a living entity: the mana wrap about its hand (dev.logos.runtime.ManaWrap), synced to everyone who sees it. */
+    /** On a living entity: the mana wrap about its hand (dev.logos.runtime.ManaWrap), synced to everyone who sees it; only a plain wrap is saved, a spell's ends with its spell. */
     public static final Supplier<AttachmentType<dev.logos.runtime.ManaWrap>> MANA_WRAP = ATTACHMENTS.register("mana_wrap",
-            () -> AttachmentType.builder(() -> dev.logos.runtime.ManaWrap.NONE).serialize(dev.logos.runtime.ManaWrap.CODEC, w -> w.until() > 0)
+            () -> AttachmentType.builder(() -> dev.logos.runtime.ManaWrap.NONE).serialize(dev.logos.runtime.ManaWrap.CODEC, w -> w.until() > 0 && w.amount() > 0)
                     .sync(dev.logos.runtime.ManaWrap.STREAM_CODEC).build());
     /** On a mob: the UUID of the player possessing it (dev.logos.runtime.Possession), synced so their client steers it; never saved. */
     public static final Supplier<AttachmentType<java.util.UUID>> POSSESSOR = ATTACHMENTS.register("possessor",
@@ -877,6 +877,7 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
         registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);
         registrar.playToServer(dev.logos.net.StaffFillPayload.TYPE, dev.logos.net.StaffFillPayload.CODEC, dev.logos.net.StaffFillPayload::handle);
+        registrar.playToServer(dev.logos.net.WrapSwingPayload.TYPE, dev.logos.net.WrapSwingPayload.CODEC, dev.logos.net.WrapSwingPayload::handle);
         registrar.playToServer(dev.logos.net.VoiceCastPayload.TYPE, dev.logos.net.VoiceCastPayload.CODEC, dev.logos.net.VoiceCastPayload::handle);
         registrar.playToServer(dev.logos.net.ColossusControlPayload.TYPE, dev.logos.net.ColossusControlPayload.CODEC, dev.logos.net.ColossusControlPayload::handle);
         registrar.playToServer(dev.logos.net.DragonControlPayload.TYPE, dev.logos.net.DragonControlPayload.CODEC, dev.logos.net.DragonControlPayload::handle);
