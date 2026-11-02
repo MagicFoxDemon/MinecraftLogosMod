@@ -73,8 +73,9 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
         FIELD_END,
         /**
          * One head of a vein ({@code vein}), re-sent every tick under {@code id} while it crawls: {@code variant} is which
-         * head (a ring has many), (x,y,z) where it stands on the ground, (ax,ay,az) its level heading, {@code size} its
-         * width and {@code spin} its height.
+         * head (a ring has many), (x,y,z) where it stands on the ground, (ax,ay,az) its heading along it, {@code size} its
+         * width, {@code spin} its height and {@code look} the face of the blocks it is on (a {@code Direction}'s 3D data
+         * value; up, the top of the ground, unless it climbs).
          */
         VEIN_HOLD,
         /** That head crawls no further, at (x,y,z); {@code size} is 1 if it struck something or a wall, else 0. */

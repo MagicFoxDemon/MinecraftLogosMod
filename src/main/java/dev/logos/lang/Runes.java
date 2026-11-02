@@ -331,13 +331,15 @@ public final class Runes {
 
         def("vein", FORM, ACTION).yields(Type.FORM)
                 .kw("from", POS, "here").kw("dir", DIR, "aim").kw("motion", Type.MOTION, "forward").kw("spread", NUM, "360").kw("radius", NUM, "3")
-                .kw("speed", NUM, "0.6").kw("range", NUM, "16").kw("width", NUM, "1").kw("height", NUM, "1").kw("pierce", NUM, "0").flag("ccw")
-                .on("on-hit", true, "碰到实体时").on("on-step", false, "每走上一块新的地面方块，起步那块也算（here 是那块方块）")
-                .on("on-impact", false, "撞上翻不过去的墙时（here 是那个方块）")
+                .kw("speed", NUM, "0.6").kw("range", NUM, "16").kw("width", NUM, "1").kw("height", NUM, "1").kw("pierce", NUM, "0").flag("ccw").flag("climb")
+                .on("on-hit", true, "碰到实体时").on("on-step", false, "每走上一块新的方块，起步那块也算；爬墙时墙面、天花板上的方块也算（here 是那块方块）")
+                .on("on-impact", false, "撞上翻不过去的墙时（here 是那个方块）；爬墙时不会撞墙")
                 .on("on-expire", false, "消散时（走完射程、寿命结束、撞墙、穿透耗尽或地面断开）")
                 .stab(4).doc("游脉：贴着地面往前爬的一道脉络——藤蔓生长、地火蔓延、剑气贴地、冰刺破土。"
                         + "从 :from 往下最多 6 格找到地面起步（找不到则不成形，也不花魔力），沿 :dir 的水平方向前进，能迈上 1 格高的台阶、顺着地面往下最多 4 格，"
                         + "在液体表面也能走；撞上更高的墙时 on-impact，地面断开超过 4 格时消散。"
+                        + ":climb 爬墙：贴着任何方块表面爬，撞上墙就爬上墙，墙顶接着翻过去，能沿着天花板走，走到屋檐、悬崖边就绕过边沿往下爬，不会掉下去也不会撞墙；"
+                        + "离开地面时笔直前进，回到地面后才按运动拐弯、摆动、追踪或沿弧线走。"
                         + ":motion 运动：与魔弹共用 forward 直行、homing 追踪（拐向最近的敌人）、wander 游走（随机拐弯，偏离原方向不超过 60°）；"
                         + "游脉独有 snake 蛇行（左右摆动着前进）、ring 环扩（从起点向四周同时扩散，:spread 度以内，默认 360 是整圈，以 :dir 为中线）、"
                         + "sweep 弧扫（以 :from 为圆心、:radius 为半径，沿 :spread 度的弧扫过去，以 :dir 为中线，从上往下看默认顺时针，即从施法者左边扫到右边，:ccw 逆时针；扫完整段弧为止，不看 :range）。"
@@ -364,6 +366,7 @@ public final class Runes {
                     if (!c.inst().spend(VeinObj.cost(motion, range, width, height, arc.spread(), arc.radius()), "vein")) return null;
                     var obj = new VeinObj(n, c.at(from.moved(ground)), ground, dir, motion, speed, range, width, height,
                             (int) clamp(num(kw(n, "pierce"), c), 0, 99), arc);
+                    if (n.flags.contains("climb")) obj.climb();
                     SpellRuntime.spawn(obj);
                     Vfx.sound(from.level(), ground, Vfx.sound(n.element), 0.5f, 0.8f);
                     return c.inst().dead ? null : obj;

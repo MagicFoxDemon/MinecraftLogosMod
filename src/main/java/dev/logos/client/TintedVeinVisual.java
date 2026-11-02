@@ -25,30 +25,37 @@ final class TintedVeinVisual implements VeinVisual {
 
     @Override
     public boolean tick(Level level, LiveVein vein) {
+        Vec3 n = vein.normal();
         if (vein.ended()) {
             if (vein.sinceEnd() == 1 && vein.struck()) {
-                LogosFx.accents(level, element, vein.pos().add(0, vein.height() / 2, 0), 10, vein.width() / 2, 0.06);
+                LogosFx.accents(level, element, vein.pos().add(n.scale(vein.height() / 2)), 10, vein.width() / 2, 0.06);
             }
             return false;
         }
         RandomSource r = level.getRandom();
         Vec3 from = vein.prev(), to = vein.pos();
-        Vec3 side = new Vec3(-vein.dir().z, 0, vein.dir().x);
+        // Across the surface it is on, square to its heading.
+        Vec3 side = vein.dir().cross(n);
+        if (side.lengthSqr() < 1e-6) side = new Vec3(-vein.dir().z, 0, vein.dir().x);
+        side = side.lengthSqr() < 1e-6 ? Vec3.ZERO : side.normalize();
         int motes = Math.max(1, (int) Math.ceil(from.distanceTo(to) / SPACING));
         for (int k = 0; k < motes; k++) {
             Vec3 at = from.lerp(to, (k + r.nextDouble()) / motes).add(side.scale((r.nextDouble() - 0.5) * vein.width()));
-            LogosFx.accents(level, element, at.add(0, 0.08, 0), 1, 0.03, 0.01);
-            if (k % 2 == 0) crumb(level, r, at);
+            LogosFx.accents(level, element, at.add(n.scale(0.08)), 1, 0.03, 0.01);
+            if (k % 2 == 0) crumb(level, r, at, n);
         }
-        LogosFx.accents(level, element, to.add(0, vein.height() / 2, 0), 2, Math.min(vein.width(), vein.height()) / 3, 0.02);
+        LogosFx.accents(level, element, to.add(n.scale(vein.height() / 2)), 2, Math.min(vein.width(), vein.height()) / 3, 0.02);
         return true;
     }
 
-    /** A crumb of the ground at {@code at}, kicked up. */
-    private static void crumb(Level level, RandomSource r, Vec3 at) {
-        BlockState ground = level.getBlockState(BlockPos.containing(at.x, at.y - 0.1, at.z));
+    /** A crumb of the block whose surface (facing {@code n}) is at {@code at}, kicked off it. */
+    private static void crumb(Level level, RandomSource r, Vec3 at, Vec3 n) {
+        BlockState ground = level.getBlockState(BlockPos.containing(at.subtract(n.scale(0.1))));
         if (ground.isAir() || !ground.getFluidState().isEmpty()) return;
-        level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, ground), at.x, at.y + 0.05, at.z,
-                (r.nextDouble() - 0.5) * 0.1, 0.1 + r.nextDouble() * 0.1, (r.nextDouble() - 0.5) * 0.1);
+        Vec3 p = at.add(n.scale(0.05));
+        // Off the surface, scattered a little along it.
+        Vec3 jitter = new Vec3((r.nextDouble() - 0.5) * 0.1, (r.nextDouble() - 0.5) * 0.1, (r.nextDouble() - 0.5) * 0.1);
+        Vec3 v = n.scale(0.1 + r.nextDouble() * 0.1).add(jitter.subtract(n.scale(jitter.dot(n))));
+        level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, ground), p.x, p.y, p.z, v.x, v.y, v.z);
     }
 }

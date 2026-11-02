@@ -14,6 +14,7 @@ import dev.logos.lang.Element;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -21,7 +22,7 @@ import net.minecraft.world.level.block.Blocks;
 /**
  * The vein's shared look, from real casts: a fire vein crawls from under its caster's feet and steps up onto a
  * platform, and clients keep one head for it on the ground, then drop it once it has run out; a frost ring spreads
- * every way at once as many heads.
+ * every way at once as many heads; a fire sweep goes round an arc; a climbing frost vein goes up a wall.
  */
 @LDLRegisterClient(name = "logos_vein", group = "logos", registry = UIScenario.REGISTRY,
         environment = RegistrationEnvironment.DEV_ONLY)
@@ -96,7 +97,21 @@ public class VeinScenario implements UIScenario {
                     expect(Math.abs(off - 4) < .4, "4 from where it was cast, is " + off);
                     return true;
                 })
-                .screenshot("vein_sweep");
+                .screenshot("vein_sweep")
+                .ticks(25);
+
+        // A frost vein that climbs: up the step, over the platform, and up a wall three high at z 10.
+        s.fill(new BlockPos(-10, 102, 10), new BlockPos(10, 104, 10), Blocks.STONE.defaultBlockState())
+                .teleportPlayer(.5, 101, .5, 0, 25)
+                .ticks(2)
+                .server("a climbing frost vein", sc -> cast(sc.player(), "(vein :climb :range 16 (on-hit (freeze target 2)))"))
+                .teleportPlayer(9, 106, 2, 50, 13)
+                .waitUntil("it climbs the wall's face", ctx -> VeinVisuals.all().stream().anyMatch(v -> !v.ended()
+                        && v.face() == Direction.NORTH && v.pos().y > 103 && Math.abs(v.pos().z - 10) < 1e-3))
+                .screenshot("vein_climb")
+                .waitUntil("it comes down the far side", ctx -> VeinVisuals.all().stream().anyMatch(v -> v.face() == Direction.SOUTH))
+                .ticks(20)
+                .check("it ran out", ctx -> VeinVisuals.all().isEmpty());
         s.teardown("clear", ctx -> VeinVisuals.clear());
     }
 }
