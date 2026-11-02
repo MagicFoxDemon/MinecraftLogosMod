@@ -43,13 +43,13 @@ public enum Motion {
     }
 
     /** The vein keywords that only some motions use; the editor hides the rest, as it does a construct's sizes. */
-    public static final Set<String> SHAPED = Set.of("range", "spread", "radius");
+    public static final Set<String> SHAPED = Set.of("range", "spread", "radius", "ccw");
 
     /** Whether a vein crawling this way uses that keyword of {@link #SHAPED}: a sweep goes round its arc instead of a range. */
     public boolean uses(String keyword) {
         return switch (this) {
             case RING -> keyword.equals("range") || keyword.equals("spread");
-            case SWEEP -> keyword.equals("spread") || keyword.equals("radius");
+            case SWEEP -> keyword.equals("spread") || keyword.equals("radius") || keyword.equals("ccw");
             default -> keyword.equals("range");
         };
     }

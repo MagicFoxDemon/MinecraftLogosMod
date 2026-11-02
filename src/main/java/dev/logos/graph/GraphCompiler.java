@@ -262,7 +262,7 @@ public final class GraphCompiler {
         }
         for (Rune.Kw k : r.keywords.values()) {
             if (k.flag()) {
-                if (Boolean.TRUE.equals(n.option(RuneNode.flag(k.name()), Boolean.class))) items.add(atom(n, ":" + k.name()));
+                if (Boolean.TRUE.equals(n.option(RuneNode.flag(k.name()), Boolean.class)) && !n.hidesFlag(k.name())) items.add(atom(n, ":" + k.name()));
                 continue;
             }
             if (k.choice()) {

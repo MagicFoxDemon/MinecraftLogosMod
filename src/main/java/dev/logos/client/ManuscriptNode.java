@@ -192,11 +192,30 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
         if (getModel() instanceof PortNodeModel ports) {
             parts.add(topPortContainer = new VerticalPortContainerElement(ports,
                     PortContainerElement.VERTICAL_PORT_FILTER.and(PortContainerElement.INPUT_PORT_FILTER)));
-            parts.add(portContainerElement = new InOutPortContainerElement(ports, PortContainerElement.HORIZONTAL_PORT_FILTER));
+            parts.add(portContainerElement = new Ports(ports));
             parts.add(bottomPortContainer = new VerticalPortContainerElement(ports,
                     PortContainerElement.VERTICAL_PORT_FILTER.and(PortContainerElement.OUTPUT_PORT_FILTER)));
         }
         buildPreviewPart();
+    }
+
+    /**
+     * The toolkit's side ports, minus the rows of ports that have just been hidden: the toolkit only drops a row whose
+     * port is gone or was never hidden, so a keyword a newly picked shape or motion does not use would stay on show.
+     */
+    private static final class Ports extends InOutPortContainerElement {
+        Ports(PortNodeModel model) { super(model, PortContainerElement.HORIZONTAL_PORT_FILTER); }
+
+        @Override public void updateUIFromModel(ModelUpdateVisitor visitor) {
+            super.updateUIFromModel(visitor);
+            for (var container : java.util.List.of(getInputPortContainer(), getOutputPortContainer())) {
+                container.getPortElements().entrySet().removeIf(e -> {
+                    if (!dev.logos.graph.RuneNode.hidden(e.getKey())) return false;
+                    e.getValue().removeSelf();
+                    return true;
+                });
+            }
+        }
     }
 
     /** A connected enum port supplies the value; its legacy inline fallback only appears while unwired. */
@@ -231,7 +250,10 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
                 boolean connected = rn.rune().params.stream().anyMatch(p -> dev.logos.graph.RuneNode.isOption(p)
                         && dev.logos.graph.RuneNode.option(p).equals(option.getId())
                         && nodeModel.getInputsById().get(p.name()) != null && nodeModel.getInputsById().get(p.name()).isConnected());
-                Style.importantPipeline(getChildren().get(row++).getLayout(), l -> l.display(connected ? TaffyDisplay.NONE : TaffyDisplay.FLEX));
+                // A flag the picked shape or motion has no use for (a vein's counter-clockwise unless it sweeps).
+                boolean unused = rn.rune().keywords.values().stream().anyMatch(k -> k.flag()
+                        && dev.logos.graph.RuneNode.flag(k.name()).equals(option.getId()) && rn.hidesFlag(k.name()));
+                Style.importantPipeline(getChildren().get(row++).getLayout(), l -> l.display(connected || unused ? TaffyDisplay.NONE : TaffyDisplay.FLEX));
             }
         }
     }
