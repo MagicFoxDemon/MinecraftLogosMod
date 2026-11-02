@@ -305,12 +305,12 @@ public final class Runes {
                     return c.inst().dead ? null : obj;
                 });
 
-        def("imbue", FORM, ACTION).yields(Type.FORM).p("target", ENTITY).kw("life", NUM, "10").kw("every", NUM, "0.5")
+        def("imbue", FORM, ACTION).yields(Type.FORM).opt("target", ENTITY, "caster").kw("life", NUM, "10").kw("every", NUM, "0.5")
                 .on("on-hit", true, "这只手命中时：蓄力满九成的近战一击（生物每一击都算），以及这只手射出的箭（弓要拉满）、掷出的三叉戟命中时（here 是命中点）")
                 .on("on-swing", false, "这只手挥动时：玩家蓄力满九成的挥击，打中打空都算；生物在出手命中时（here 是眼睛，aim 是视线）")
                 .on("on-kill", true, "命中的这一击（连同 on-hit 引发的效果）击杀了目标时")
                 .on("on-tick", false, "每次脉动（here 是持有者）").on("on-expire", false, "消散时（到期、被新的缠绕取代、持有者死去或离开这个世界）")
-                .stab(4).doc("魔力缠绕：把一段术式缠在目标的主手上。缠在手上而不是物品上：拿着什么就缠在什么上，换了武器也跟着走，空手时缠在拳头上；"
+                .stab(4).doc("魔力缠绕：把一段术式缠在目标的主手上（不连目标时缠在施法者自己手上）。缠在手上而不是物品上：拿着什么就缠在什么上，换了武器也跟着走，空手时缠在拳头上；"
                         + "这只手的攻击触发它的事件，事件里 self 是被缠的那个生物，伤害和效果都算施法者的。"
                         + "每只手同时只有一段缠绕，新的取代旧的。展开 6 魔力，每次脉动维持 0.5（:every 默认 0.5 秒，缠 30 秒约 36），"
                         + "事件里的符文触发时照常从这道术式的魔力里扣，魔力耗尽缠绕即散")
