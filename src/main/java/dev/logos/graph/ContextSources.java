@@ -27,6 +27,7 @@ public final class ContextSources {
         EACH_POSITION, EACH_TARGET, BLOCK_POSITION,
         PROJECTILE_POSITION, PROJECTILE_CONTACT, PROJECTILE_AIM, HIT_TARGET, IMPACT_BLOCK,
         FIELD_POSITION, ENTER_TARGET, ENTITY_CENTER, BEAM_END, BEAM_AIM, RAY_END, RAY_AIM,
+        VEIN_HEAD, VEIN_CONTACT, VEIN_STEP, VEIN_AIM,
         CONSTRUCT_POSITION, CONSTRUCT_CONTACT, CONSTRUCT_SELF, CONSTRUCT_NORMAL,
         CONSTRUCT_TARGET, PASS_POSITION, PASS_AIM, KILLED_TARGET, FORM_SELF, NO_FORM, UNKNOWN
     }
@@ -107,6 +108,11 @@ public final class ContextSources {
                 put(scope, node, "aim", Meaning.PROJECTILE_AIM);
             }
             case "field" -> put(scope, node, "here", enter ? Meaning.ENTITY_CENTER : Meaning.FIELD_POSITION);
+            case "vein" -> {
+                put(scope, node, "here", hit ? Meaning.VEIN_CONTACT : impact ? Meaning.IMPACT_BLOCK
+                        : event.equals("on-step") ? Meaning.VEIN_STEP : Meaning.VEIN_HEAD);
+                put(scope, node, "aim", Meaning.VEIN_AIM);
+            }
             case "beam", "ray" -> {
                 put(scope, node, "here", hit || enter ? Meaning.ENTITY_CENTER : impact ? Meaning.IMPACT_BLOCK
                         : word.equals("beam") ? Meaning.BEAM_END : Meaning.RAY_END);

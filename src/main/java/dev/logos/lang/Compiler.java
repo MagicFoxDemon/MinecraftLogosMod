@@ -179,7 +179,7 @@ public final class Compiler {
                 throw err(a, "这里没有 self：只有在炼成体 (construct) 的事件里，self 才指那个炼成体");
             }
             if (t.equals("form") && !s.hasForm()) {
-                throw err(a, "这里没有此形 (form)：只有在魔弹、光柱、炼成体、领域的事件里，form 才指那个形体；在形体之后使用请接它的「此形」输出");
+                throw err(a, "这里没有此形 (form)：只有在魔弹、光柱、炼成体、领域、游脉的事件里，form 才指那个形体；在形体之后使用请接它的「此形」输出");
             }
             return Node.ctx(t, CONTEXT.get(t), l, c);
         }
@@ -499,6 +499,17 @@ public final class Compiler {
             // Only a projectile wears a creature's model; a construct is built of blocks, equip hands over items.
             case "construct" -> {
                 if (n.kw.get("look") != null && n.kw.get("look").type == Type.CREATURE) throw err(at, "炼成体的 :look 只能是方块，如 &stone");
+            }
+            // A projectile flies and a vein keeps to the ground: each takes only the motions it can travel.
+            case "projectile" -> {
+                if (n.kw.get("motion") != null && n.kw.get("motion").value instanceof Motion m && !m.flies()) {
+                    throw err(at, "魔弹不能" + m.zh + "：蛇行、环扩、弧扫是游脉贴着地面的运动");
+                }
+            }
+            case "vein" -> {
+                if (n.kw.get("motion") != null && n.kw.get("motion").value instanceof Motion m && !m.crawls()) {
+                    throw err(at, "游脉贴着地面爬，不能" + m.zh + "；可用直行、追踪、游走、蛇行、环扩、弧扫");
+                }
             }
             case "equip" -> {
                 if (n.arg(1) != null && n.arg(1).type == Type.CREATURE) throw err(at, "equip 只能给物品，如 &iron_sword，不能给生物");

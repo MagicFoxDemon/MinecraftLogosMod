@@ -41,6 +41,7 @@ import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
 import dev.logos.runtime.TimeSkipObj;
 import dev.logos.runtime.TimeStop;
+import dev.logos.runtime.VeinObj;
 import dev.logos.runtime.Vfx;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -198,11 +199,13 @@ public final class Runes {
                 .kw("look", LOOK, null).kw("spin", NUM, "0").kw("trail", PARTICLE, null)
                 .on("on-hit", true, "命中实体时").on("on-impact", false, "撞上方块时（here 是那个方块）")
                 .on("on-tick", false, "每一刻").on("on-expire", false, "消散时（撞墙/寿命结束/穿透耗尽）")
-                .stab(4).doc("弹丸：在世界中飞行的魔法实体。基础 4 魔力 + 运动符文的代价。"
+                .stab(4).doc("弹丸：在世界中飞行的魔法实体。基础 4 魔力 + 运动符文的代价（蛇行、环扩、弧扫是游脉贴地的运动，接上会报错）。"
                         + ":look &物品 让它显现为那件物品的模型（如 &mace、&fire_charge；方块物品显示为方块），写生物名则显现为那种生物的模型（如 :look zombie），:spin 是每秒翻转的圈数；"
                         + ":trail %粒子 用那种粒子代替元素尾迹（如 %portal、%end_rod）。外观与拖尾不收魔力，也不改变任何行为")
                 .exec((n, c) -> {
                     var m = motion(kw(n, "motion"), c);
+                    // Written motions are checked when compiled; a vein's worked out while it runs flies straight.
+                    if (!m.flies()) m = Motion.FORWARD;
                     if (!c.inst().spend(4 + m.mana, "projectile")) return null;
                     Place from = place(kw(n, "from"), c);
                     Node look = kw(n, "look");
@@ -299,6 +302,46 @@ public final class Runes {
                             (int) (clamp(num(kw(n, "life"), c), 0.05, 30) * 20), (int) Math.round(clamp(num(kw(n, "every"), c), 0.05, 10) * 20),
                             n.flags.contains("follow"));
                     SpellRuntime.spawn(obj);
+                    return c.inst().dead ? null : obj;
+                });
+
+        def("vein", FORM, ACTION).yields(Type.FORM)
+                .kw("from", POS, "here").kw("dir", DIR, "aim").kw("motion", Type.MOTION, "forward").kw("spread", NUM, "360").kw("radius", NUM, "3")
+                .kw("speed", NUM, "0.6").kw("range", NUM, "16").kw("width", NUM, "1").kw("height", NUM, "1").kw("pierce", NUM, "0").flag("ccw")
+                .on("on-hit", true, "碰到实体时").on("on-step", false, "每走上一块新的地面方块，起步那块也算（here 是那块方块）")
+                .on("on-impact", false, "撞上翻不过去的墙时（here 是那个方块）")
+                .on("on-expire", false, "消散时（走完射程、寿命结束、撞墙、穿透耗尽或地面断开）")
+                .stab(4).doc("游脉：贴着地面往前爬的一道脉络——藤蔓生长、地火蔓延、剑气贴地、冰刺破土。"
+                        + "从 :from 往下最多 6 格找到地面起步（找不到则不成形，也不花魔力），沿 :dir 的水平方向前进，能迈上 1 格高的台阶、顺着地面往下最多 4 格，"
+                        + "在液体表面也能走；撞上更高的墙时 on-impact，地面断开超过 4 格时消散。"
+                        + ":motion 运动：与魔弹共用 forward 直行、homing 追踪（拐向最近的敌人）、wander 游走（随机拐弯，偏离原方向不超过 60°）；"
+                        + "游脉独有 snake 蛇行（左右摆动着前进）、ring 环扩（从起点向四周同时扩散，:spread 度以内，默认 360 是整圈，以 :dir 为中线）、"
+                        + "sweep 弧扫（以 :from 为圆心、:radius 为半径，沿 :spread 度的弧扫过去，以 :dir 为中线，从上往下看默认顺时针，即从施法者左边扫到右边，:ccw 逆时针；扫完整段弧为止，不看 :range）。"
+                        + "抛物、环绕、折返离不开空中，接上会报错。"
+                        + ":width 宽、:height 高是碰到实体的范围；每个实体只碰一次，:pierce 是还能穿过几个。"
+                        + "展开 4 + 运动的代价（直行 0、游走 1、蛇行 1、弧扫 1、环扩 2、追踪 3）+ 0.05×宽×高×爬过的长度："
+                        + "一般是射程；环扩是射程×π×角度/360（不低于射程）；弧扫是弧长，半径×角度（弧度）")
+                .exec((n, c) -> {
+                    Place from = place(kw(n, "from"), c);
+                    // Written motions are checked when compiled; one worked out while it runs and unfit for the ground goes straight on.
+                    Motion motion = motion(kw(n, "motion"), c);
+                    if (!motion.crawls()) motion = Motion.FORWARD;
+                    Vec3 dir = vec(kw(n, "dir"), c);
+                    // Aimed straight up or down, it sets off the way the caster faces.
+                    if (dir.x * dir.x + dir.z * dir.z < 1e-6) dir = Vec3.directionFromRotation(0, c.inst().caster.getYRot());
+                    var arc = new VeinObj.Arc(from.pos(), clamp(num(kw(n, "spread"), c), 1, 360), clamp(num(kw(n, "radius"), c), 0.5, 32),
+                            n.flags.contains("ccw"));
+                    // A sweep starts on its arc, the rest where they are cast.
+                    Vec3 start = motion == Motion.SWEEP ? VeinObj.sweepStart(dir, arc) : from.pos();
+                    Vec3 ground = VeinObj.groundBelow(from.level(), start, c.inst().caster);
+                    if (ground == null) return null;
+                    double speed = clamp(num(kw(n, "speed"), c), 0.1, 2), range = clamp(num(kw(n, "range"), c), 1, 64);
+                    double width = clamp(num(kw(n, "width"), c), 0.25, 4), height = clamp(num(kw(n, "height"), c), 0.25, 4);
+                    if (!c.inst().spend(VeinObj.cost(motion, range, width, height, arc.spread(), arc.radius()), "vein")) return null;
+                    var obj = new VeinObj(n, c.at(from.moved(ground)), ground, dir, motion, speed, range, width, height,
+                            (int) clamp(num(kw(n, "pierce"), c), 0, 99), arc);
+                    SpellRuntime.spawn(obj);
+                    Vfx.sound(from.level(), ground, Vfx.sound(n.element), 0.5f, 0.8f);
                     return c.inst().dead ? null : obj;
                 });
 
@@ -1055,7 +1098,7 @@ public final class Runes {
                 });
         def("move", EFFECT, ACTION).p("construct", BODY).p("to", POS).kw("speed", NUM, "0.2").stab(1)
                 .doc("移动本术式的形体：炼成体与领域以 :speed 格/刻 滑到那里（炼成体到达时 on-arrive，站在上面的一起带走；跟随施法者的领域从此留在原地）；"
-                        + "魔弹以自己的速度改道飞向那里并继续飞过去；光柱改从那里发出。通常写 (move form …) 或 (move self …)。1 魔力 + 每格 0.1")
+                        + "魔弹以自己的速度改道飞向那里并继续飞过去；光柱改从那里发出；游脉以自己的速度改朝那里爬（环扩不受影响）。通常写 (move form …) 或 (move self …)。1 魔力 + 每格 0.1")
                 .exec((n, c) -> {
                     SpellObject f = ownForm(n.arg(0), c);
                     if (f == null) return null;
@@ -1065,14 +1108,14 @@ public final class Runes {
                     return null;
                 });
         def("halt", EFFECT, ACTION).p("construct", BODY)
-                .doc("让本术式的形体停住：炼成体与领域停在原地（领域也不再跟随施法者），魔弹悬停（仍会击中碰到它的），光柱定住起点与方向。寿命照走。免费")
+                .doc("让本术式的形体停住：炼成体与领域停在原地（领域也不再跟随施法者），魔弹悬停（仍会击中碰到它的），光柱定住起点与方向，游脉停在原地（仍会碰到走进来的）。寿命照走。免费")
                 .exec((n, c) -> {
                     SpellObject f = ownForm(n.arg(0), c);
                     if (f != null) f.halt();
                     return null;
                 });
         def("turn", EFFECT, ACTION).p("form", BODY).p("dir", DIR)
-                .doc("转向：让本术式的形体朝向某方向。魔弹以自己的速度改朝那边飞；光柱改指那边（不再跟随视线）；墙、圆盾等炼成体原地转过去（跟随施法者的墙和圆盾仍随视线）；领域没有朝向。免费")
+                .doc("转向：让本术式的形体朝向某方向。魔弹以自己的速度改朝那边飞；光柱改指那边（不再跟随视线）；墙、圆盾等炼成体原地转过去（跟随施法者的墙和圆盾仍随视线）；游脉改朝那边的水平方向爬（追猎从此不再追，环扩不受影响）；领域没有朝向。免费")
                 .exec((n, c) -> {
                     SpellObject f = ownForm(n.arg(0), c);
                     if (f != null) f.turn(vec(n.arg(1), c));
@@ -1684,7 +1727,7 @@ public final class Runes {
         def("mana-left", VALUE, NUM).doc("本次法术剩余的魔力").exec((n, c) -> c.inst().mana);
         def("depth", VALUE, NUM).doc("当前递归层数").exec((n, c) -> (double) c.depth());
         def("life-of", VALUE, NUM).p("form", Type.FORM)
-                .doc("形之寿：一个形体（魔弹、光柱、炼成体、领域）走过了自己寿命的几分，0 是刚展开，1 是寿终；已经消散的也是 1。"
+                .doc("形之寿：一个形体（魔弹、光柱、炼成体、领域、游脉）走过了自己寿命的几分，0 是刚展开，1 是寿终；已经消散的也是 1。"
                         + "形体事件里接 form（此形），形体之后接它的「此形」输出。配合调和、波可让效果随寿命变化。免费")
                 .exec((n, c) -> eval(n.arg(0), c) instanceof SpellObject o ? o.progress() : 1.0);
         def("mix", VALUE, NUM).p("a", NUM).p("b", NUM).p("alpha", NUM)

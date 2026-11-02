@@ -266,8 +266,8 @@ public final class GraphBuilder {
         for (var e : s.kw.entrySet()) {
             if (s.defaulted.contains(e.getKey())) continue;
             vy = value(e.getValue(), n.in(RuneNode.kw(e.getKey())), x - LANE_W, vy);
-            // A construct's shape decides which size inputs show: redraw so the hidden ones follow it.
-            if (e.getValue().type == dev.logos.lang.Type.SHAPE) n.model().defineNode();
+            // A construct's shape (a vein's motion) decides which inputs show: redraw so the hidden ones follow it.
+            if (e.getValue().type == dev.logos.lang.Type.SHAPE || e.getValue().type == dev.logos.lang.Type.MOTION) n.model().defineNode();
         }
         return vy;
     }

@@ -109,6 +109,9 @@ public class SpellEditorLocalizationScenario implements UIScenario {
                     for (var shape : ConstructShape.values()) {
                         ctx.check("translated shape choice " + shape.name(), Language.getInstance().has("dev.logos.lang.ConstructShape." + shape.name()));
                     }
+                    for (var motion : dev.logos.lang.Motion.values()) {
+                        ctx.check("translated motion choice " + motion.name(), Language.getInstance().has("dev.logos.lang.Motion." + motion.name()));
+                    }
                     ctx.check("library inspection leaves the drawing intact", graph.getNodeModels().size() == before);
                     ctx.log("Localized spell library nodes: " + count);
                     try {

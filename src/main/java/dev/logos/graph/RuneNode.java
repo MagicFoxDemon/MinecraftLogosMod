@@ -1,5 +1,6 @@
 package dev.logos.graph;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -198,14 +199,19 @@ public abstract class RuneNode extends LogosNode {
         PortModel shape = null;
         for (Rune.Kw k : r.keywords.values()) {
             if (k.flag() || k.choice()) continue;
-            if (k.type() == Type.SHAPE) {
-                // Picking a shape redraws the node with only the sizes that shape uses.
+            if (k.type() == Type.SHAPE || k.type() == Type.MOTION) {
+                // Picking a shape (or a vein's motion) redraws the node with only the keywords it uses. A form lists only
+                // the motions it can take: a vein keeps to the ground, a projectile flies.
+                ITypeConfigurable picker = k.type() == Type.SHAPE
+                        ? selector(ConstructShape.WALL, "dev.logos.lang.ConstructShape.", List.of(ConstructShape.values()))
+                        : selector(Motion.FORWARD, "dev.logos.lang.Motion.", Arrays.stream(Motion.values())
+                                .filter(word().equals("vein") ? Motion::crawls : Motion::flies).toList());
                 shape = (PortModel) context.addInputPort(kw(k.name()), LTypes.of(k.type(), false)).withDisplayName(NodeTerms.parameter(word(), k.name()))
-                        .withDefaultValue(defaultValue(k.type(), k.defaultSrc(), k.name())).withConfigurable(shapeSelector()).build();
+                        .withDefaultValue(defaultValue(k.type(), k.defaultSrc(), k.name())).withConfigurable(picker).build();
                 continue;
             }
             PortModel port = input(context, kw(k.name()), NodeTerms.parameter(word(), k.name()), k.type(), false, k.defaultSrc(), k.name());
-            // Kept but hidden, so a size set for another shape is not lost on the way.
+            // Kept but hidden, so a value set for another shape or motion is not lost on the way.
             if (shape != null && unused(shape, k.name())) port.setOptions(PortModelOptions.HIDDEN);
         }
         for (Rune.EventSpec e : r.events.values()) {
@@ -224,38 +230,40 @@ public abstract class RuneNode extends LogosNode {
     }
 
     /**
-     * A construct keyword its shape does not use (a shield's width, a wall's radius), hidden on the node.
-     * While the shape is computed rather than picked, nothing is hidden.
+     * A keyword its shape or motion does not use (a shield's width, a wall's radius, a vein's range when it sweeps), hidden
+     * on the node. While the shape or motion is computed rather than picked, nothing is hidden.
      */
     private static boolean unused(PortModel shape, String keyword) {
-        if (!ConstructShape.SHAPED.contains(keyword)) return false;
-        ConstructShape s = picked(shape);
-        return s != null && !s.uses(keyword);
+        return switch (picked(shape)) {
+            case ConstructShape s -> ConstructShape.SHAPED.contains(keyword) && !s.uses(keyword);
+            case Motion m -> Motion.SHAPED.contains(keyword) && !m.uses(keyword);
+            case null, default -> false;
+        };
     }
 
-    /** Whether this port is a construct size its shape hides; the graph compiler leaves those out. */
+    /** Whether this port is a keyword its shape or motion hides; the graph compiler leaves those out. */
     public static boolean hidden(@Nullable PortModel port) {
         return port != null && port.getOptions() == PortModelOptions.HIDDEN;
     }
 
-    /** The picked shape: the inline choice, or a shape card wired in; null when something else computes it. */
-    private static @Nullable ConstructShape picked(PortModel port) {
+    /** The picked shape or motion: the inline choice, or a card wired in; null when something else computes it. */
+    private static @Nullable Object picked(PortModel port) {
         if (port.isConnected()) {
-            return LogosNode.of(port.getConnectedPorts().getFirst()) instanceof EnumValues.Value v && v.kind == EnumValues.Kind.SHAPE
-                    ? ConstructShape.parse(v.value()) : null;
+            if (!(LogosNode.of(port.getConnectedPorts().getFirst()) instanceof EnumValues.Value v)) return null;
+            return v.kind == EnumValues.Kind.SHAPE ? ConstructShape.parse(v.value()) : v.kind == EnumValues.Kind.MOTION ? Motion.parse(v.value()) : null;
         }
-        return port.getEmbeddedValue() != null && port.getEmbeddedValue().getValue() instanceof ConstructShape s ? s : null;
+        return port.getEmbeddedValue() != null ? port.getEmbeddedValue().getValue() : null;
     }
 
-    /** The shape dropdown; a new pick redefines the node so its size inputs follow. */
-    private ITypeConfigurable shapeSelector() {
+    /** The shape or motion dropdown, offering {@code choices}; a new pick redefines the node so its inputs follow. */
+    private <E extends Enum<E>> ITypeConfigurable selector(E fallback, String names, List<E> choices) {
+        Class<E> kind = fallback.getDeclaringClass();
         return (value, type) -> IConfigurable.create(group -> {
-            ConstructShape initial = value.getValue() instanceof ConstructShape s ? s : ConstructShape.WALL;
-            group.addConfigurator(new SelectorConfigurator<>("", () -> value.getValue() instanceof ConstructShape s ? s : initial, s -> {
+            E initial = kind.isInstance(value.getValue()) ? kind.cast(value.getValue()) : fallback;
+            group.addConfigurator(new SelectorConfigurator<>("", () -> kind.isInstance(value.getValue()) ? kind.cast(value.getValue()) : initial, s -> {
                 value.setValue(s);
                 model().defineNode();
-            }, initial, value.forceUpdate(), List.of(ConstructShape.values()),
-                    s -> Component.translatable("dev.logos.lang.ConstructShape." + s.name()).getString()));
+            }, initial, value.forceUpdate(), choices, s -> Component.translatable(names + s.name()).getString()));
         });
     }
 

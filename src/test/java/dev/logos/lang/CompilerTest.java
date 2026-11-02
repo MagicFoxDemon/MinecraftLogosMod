@@ -576,6 +576,33 @@ class CompilerTest {
     }
 
     @Test
+    void veinTakesTheMotionsOfTheGroundAndPricesThem() {
+        Node vein = Compiler.compile("(vein :motion ring :range 8 (on-step (lightning here)) (on-hit (damage target 2)))").body().getFirst();
+        assertEquals(Motion.RING, vein.kw.get("motion").value);
+        assertEquals("snake", Compiler.compile("(vein :motion snake)").body().getFirst().kw.get("motion").show());
+        // Forward, homing and wander suit both forms; a vein keeps to the ground, a projectile to the air.
+        for (String shared : List.of("forward", "homing", "wander")) {
+            Compiler.compile("(vein :motion " + shared + ")");
+            Compiler.compile("(projectile :motion " + shared + ")");
+        }
+        for (String air : List.of("arc", "orbit", "boomerang")) assertError("(vein :motion " + air + ")", "游脉贴着地面爬");
+        for (String ground : List.of("snake", "ring", "sweep")) assertError("(projectile :motion " + ground + ")", "魔弹不能");
+        // 4 + 0.05 × width × height × range, plus the motion's surcharge; a ring's round is π times as long.
+        assertEquals(4.8, Compiler.compile("(spell :mana 20 (vein))").profile().estimate(), 1e-6);
+        assertEquals(8, Compiler.compile("(spell :mana 20 (vein :motion homing :width 2 :range 10))").profile().estimate(), 1e-6);
+        // The estimate is shown to a tenth.
+        assertEquals(6 + 0.8 * Math.PI, Compiler.compile("(spell :mana 20 (vein :motion ring))").profile().estimate(), 0.05);
+        // Part of a ring: its round shrinks with the angle, never below one line.
+        assertEquals(6 + 0.8 * Math.PI / 3, Compiler.compile("(spell :mana 20 (vein :motion ring :spread 120))").profile().estimate(), 0.05);
+        assertEquals(6.8, Compiler.compile("(spell :mana 20 (vein :motion ring :spread 30))").profile().estimate(), 0.05);
+        // A sweep crawls its arc, radius × angle, whatever its range.
+        Node sweep = Compiler.compile("(vein :motion sweep :spread 90 :radius 4 :ccw)").body().getFirst();
+        assertEquals(Motion.SWEEP, sweep.kw.get("motion").value);
+        assertTrue(sweep.flags.contains("ccw"));
+        assertEquals(5 + 0.1 * Math.PI, Compiler.compile("(spell :mana 20 (vein :motion sweep :spread 90 :radius 4 :range 60))").profile().estimate(), 0.05);
+    }
+
+    @Test
     void recursionCostsStability() {
         Spell plain = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1)))");
         Spell rec = Compiler.compile("(ray :to (nearest) (on-hit (damage target 1) (recurse)))");
