@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+
+import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -36,6 +39,8 @@ public final class VeinVisuals {
 
     private static final Map<Long, LiveVein> LIVE = new HashMap<>();
     private static final List<LiveVein> ENDED = new ArrayList<>();
+    /** Client scenes only: makes the visuals in place of {@link VeinVisual#create}. */
+    private static @Nullable BiFunction<Element, Boolean, VeinVisual> substitute;
 
     private VeinVisuals() {}
 
@@ -48,7 +53,8 @@ public final class VeinVisuals {
         long now = ClientCharges.ticks();
         LiveVein v = LIVE.get(key(id, head));
         if (v == null) {
-            v = new LiveVein(id, head, element, VeinVisual.create(element, linger > 0), at, now);
+            VeinVisual visual = substitute != null ? substitute.apply(element, linger > 0) : VeinVisual.create(element, linger > 0);
+            v = new LiveVein(id, head, element, visual, at, now);
             v.linger = linger;
             LIVE.put(key(id, head), v);
         }
@@ -143,5 +149,11 @@ public final class VeinVisuals {
         LIVE.clear();
         ENDED.forEach(v -> v.visual.end());
         ENDED.clear();
+    }
+
+    /** Client scenes only: draw veins with {@code visuals} instead of the elements' own (null restores them). */
+    public static void substitute(@Nullable BiFunction<Element, Boolean, VeinVisual> visuals) {
+        clear();
+        substitute = visuals;
     }
 }

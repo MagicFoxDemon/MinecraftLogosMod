@@ -14,7 +14,8 @@ import net.minecraft.world.level.Level;
  * <p>
  * A vein that lingers ({@code :linger}) is a different thing to see, and every element gets a look for each: without it
  * something that passes over the ground (a sword's qi skimming along it), with it something the ground keeps (spikes
- * thrust up out of it). The shared lingering look is {@link TintedLingeringVeinVisual}. A lingering head is kept until what
+ * thrust up out of it). The shared lingering look is {@link TintedLingeringVeinVisual}; {@link CrystalVeinVisual} is
+ * the shared part of the spiky ones. A lingering head is kept until what
  * it crawled over has faded ({@link LiveVein#linger} ticks after it was crawled over), or until the vein is gone.
  */
 public interface VeinVisual {
@@ -30,8 +31,24 @@ public interface VeinVisual {
     /** Dropped (it finished, the level went away, or it outlived its cap): stop anything still playing. */
     default void end() {}
 
-    /** The look of a head of {@code element}: of one that leaves what it crawled over behind if it {@code lingers}. */
+    /**
+     * The look of a head of {@code element}: of one that leaves what it crawled over behind if it {@code lingers}.
+     * Each element picks its two looks in its own {@code <Element>Veins}.
+     */
     static VeinVisual create(Element element, boolean lingers) {
+        return switch (element) {
+            case FIRE -> FireVeins.create(lingers);
+            case FROST -> FrostVeins.create(lingers);
+            case LIGHTNING -> LightningVeins.create(lingers);
+            case VOID -> VoidVeins.create(lingers);
+            case PHYSICAL -> PhysicalVeins.create(lingers);
+            case ARCANE -> ArcaneVeins.create(lingers);
+            case LIFE -> LifeVeins.create(lingers);
+        };
+    }
+
+    /** The shared looks every element starts on, in its colours. */
+    static VeinVisual tinted(Element element, boolean lingers) {
         return lingers ? new TintedLingeringVeinVisual(element) : new TintedVeinVisual(element);
     }
 }
