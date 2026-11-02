@@ -55,9 +55,9 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * ridden movement as a familiar mount ({@link FamiliarRiding}); its own AI stands idle meanwhile,
  * as a ridden horse's does. Left click is its melee blow and the use button its own skill
  * ({@link PossessionSkills}) or else its ranged attack, if it has one ({@link #strike},
- * {@link #shoot}). While the player holds the instinct key they let go
- * ({@link #instinct}): its own AI acts again, at what they aimed at if anything, with its own
- * attacks and animations, which reaches what no generic blow can (another mod's creatures above all).
+ * {@link #shoot}). Pressing the instinct key, the player lets go for a while ({@link #instinct}):
+ * its own AI acts again, at what they aimed at if anything, with its own attacks and animations,
+ * which reaches what no generic blow can (another mod's creatures above all).
  * <p>
  * Whatever hurts the body hurts the player (their own armour and totems apply), and nothing else
  * does; creatures that go for the hidden player go for the body instead. It ends when the time is
@@ -74,6 +74,8 @@ public final class Possession {
     public static final float BACKLASH = 0.25f;
     /** Ticks between two blows or shots. */
     public static final int ATTACK_INTERVAL = 20;
+    /** How long the instinct key lets the creature act on its own, at most. */
+    public static final int INSTINCT_TICKS = 200;
     /** The value of {@link LogosMod#POSSESSOR} on a creature nobody possesses. */
     public static final UUID NOBODY = new UUID(0, 0);
     /** Entity types that can never be possessed, besides players and bosses ({@code #c:bosses}). */
@@ -94,6 +96,9 @@ public final class Possession {
         final long until;
         long nextAttack;
         long nextSkill;
+        /** While its instincts act: when they stop, and what it was set on (null: nothing). */
+        long instinctUntil;
+        @Nullable LivingEntity instinctTarget;
 
         Session(ServerPlayer player, Mob mob, Mannequin body, long until) {
             this.player = player;
@@ -204,23 +209,37 @@ public final class Possession {
     }
 
     /**
-     * The instinct key, held ({@code on}) or let go. Held, the player stops steering and the creature's
-     * own AI acts: at {@code target} if it is something it may go for (not the player or itself, nor
-     * another player PvP would spare), as a familiar ordered to attack does; otherwise as it would
-     * anyway. Let go, its target is dropped and the player steers again.
+     * The instinct key: pressed ({@code on}), the player stops steering for up to {@link #INSTINCT_TICKS}
+     * and the creature's own AI acts: at {@code target} if it is something it may go for (not the
+     * player or itself, nor another player PvP would spare), as a familiar ordered to attack does;
+     * otherwise as it would anyway. Pressed again (or once the time is up, or that target is dead or
+     * lost to it), its target is dropped and the player steers again.
      */
     public static void instinct(ServerPlayer p, @Nullable Entity target, boolean on) {
         Session s = ACTIVE.get(p.getUUID());
         if (s == null || instinct(s.mob) == on) return;
         s.mob.setData(LogosMod.INSTINCT, on);
         if (!on) {
+            s.instinctTarget = null;
             Familiars.aim(s.mob, null);
+            p.sendOverlayMessage(Component.translatable("logos.possess.steer"));
             return;
         }
+        s.instinctUntil = s.mob.level().getGameTime() + INSTINCT_TICKS;
+        s.instinctTarget = null;
         if (target instanceof LivingEntity t && t != s.mob && t != p && t.isAlive() && t.level() == s.mob.level()
                 && !(t instanceof Player other && !p.canHarmPlayer(other))) {
             Familiars.aim(s.mob, t);
+            s.instinctTarget = t;
         }
+        p.sendOverlayMessage(Component.translatable("logos.possess.instinct", INSTINCT_TICKS / 20, Component.keybind("key.logos.instinct")));
+    }
+
+    /** Whether the creature's instincts have had their time, or lost what they were set on. */
+    private static boolean instinctSpent(Session s) {
+        LivingEntity t = s.instinctTarget;
+        return s.mob.level().getGameTime() >= s.instinctUntil
+                || t != null && (!t.isAlive() || t.level() != s.mob.level() || s.mob.getTarget() != t);
     }
 
     /** Left click: the creature's own melee blow at {@code target}, if within its reach (otherwise only a swing). */
@@ -331,6 +350,7 @@ public final class Possession {
         p.setAirSupply(p.getMaxAirSupply());
         p.resetFallDistance();
         PossessionSkills.tick(p, s.mob);
+        if (instinct(s.mob) && instinctSpent(s)) instinct(p, null, false);
         if (left <= 100 && left % 20 == 0) p.sendOverlayMessage(Component.translatable("logos.possess.ending", left / 20));
     }
 

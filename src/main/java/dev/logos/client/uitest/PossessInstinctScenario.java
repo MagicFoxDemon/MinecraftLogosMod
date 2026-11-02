@@ -22,8 +22,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Real-client check of the instinct key: inside a wolf, looking at a cow, the player holds V and the
- * wolf runs at the cow by itself (their client no longer steers it); letting go, they steer again.
+ * Real-client check of the instinct key: inside a wolf, looking at a cow, the player presses V and the
+ * wolf runs at the cow by itself (their client no longer steers it); pressing it again, they steer again.
  * Run: {@code gradlew runClient -PldTest=logos_possess_instinct}.
  */
 @LDLRegisterClient(name = "logos_possess_instinct", group = "logos", registry = UIScenario.REGISTRY,
@@ -61,12 +61,12 @@ public class PossessInstinctScenario implements UIScenario {
                     if (!Possession.start(p, wolf, 60)) throw new AssertionError("the possession did not start");
                 })
                 .ticks(10)
-                .step("look at the cow and hold the instinct key", ctx -> {
+                .step("look at the cow and press the instinct key", ctx -> {
                     var p = Minecraft.getInstance().player;
                     p.setYRot(0);
                     p.setXRot(0);
                     from = p.getVehicle().position();
-                    instinctKey().setDown(true);
+                    KeyMapping.click(instinctKey().getKey());
                 })
                 .ticks(10)
                 .step("the wolf acts on its own", ctx -> {
@@ -82,7 +82,7 @@ public class PossessInstinctScenario implements UIScenario {
                     if (moved < 2) throw new AssertionError("the wolf only moved " + moved + " blocks");
                 })
                 .screenshot("instinct")
-                .step("let go", ctx -> instinctKey().setDown(false))
+                .step("press it again", ctx -> KeyMapping.click(instinctKey().getKey()))
                 .ticks(10)
                 .step("steering again", ctx -> {
                     var p = Minecraft.getInstance().player;
