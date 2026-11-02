@@ -104,6 +104,7 @@ public final class LogosClient {
         if (!event.isCanceled()) DragonInput.onInteraction(event);
         if (!event.isCanceled()) ColossusInput.onInteraction(event);
         if (!event.isCanceled()) StaffInput.onInteraction(event);
+        if (!event.isCanceled()) WrapSwingInput.onInteraction(event);
     }
 
     @SubscribeEvent

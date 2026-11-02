@@ -176,10 +176,10 @@ public final class Compiler {
                 throw err(a, "这里没有 target：只有在 on-hit / on-enter / on-kill / each 内部，或 受伤/攻击/击杀 启式中，才存在被选中的对象");
             }
             if (t.equals("self") && !s.hasSelf()) {
-                throw err(a, "这里没有 self：只有在炼成体 (construct) 的事件里，self 才指那个炼成体");
+                throw err(a, "这里没有 self：只有在炼成体 (construct) 的事件里，self 才指那个炼成体；在魔力缠绕 (imbue) 的事件里指被缠的生物");
             }
             if (t.equals("form") && !s.hasForm()) {
-                throw err(a, "这里没有此形 (form)：只有在魔弹、光柱、炼成体、领域的事件里，form 才指那个形体；在形体之后使用请接它的「此形」输出");
+                throw err(a, "这里没有此形 (form)：只有在魔弹、光柱、炼成体、领域、魔力缠绕的事件里，form 才指那个形体；在形体之后使用请接它的「此形」输出");
             }
             return Node.ctx(t, CONTEXT.get(t), l, c);
         }
@@ -395,9 +395,9 @@ public final class Compiler {
         for (var e : evRaw.entrySet()) {
             Rune.EventSpec spec = r.events.get(e.getKey());
             Scope inner = s.enter(spec.bindsTarget());
-            // Inside a form's events, form names that body; inside a construct's, self also names its entity.
+            // Inside a form's events, form names that body; inside a construct's, self also names its entity, inside a wrap's its holder.
             if (r.yields == Type.FORM) inner = new Scope(inner.hasTarget(), inner.vars(), inner.facts(), inner.depth(),
-                    inner.hasSelf() || r.name.equals("construct"), true);
+                    inner.hasSelf() || r.name.equals("construct") || r.name.equals("imbue"), true);
             n.events.put(e.getKey(), statements(e.getValue(), inner));
         }
         if (!bodyRaw.isEmpty()) n.body.addAll(statements(bodyRaw, r.bodyBindsTarget ? s.enter(true) : s));

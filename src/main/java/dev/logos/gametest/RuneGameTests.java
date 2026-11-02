@@ -14,6 +14,7 @@ import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.TimeStop;
 import dev.logos.runtime.Vfx;
+import dev.logos.runtime.WrapObj;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -294,7 +295,7 @@ final class RuneGameTests {
                 "once time resumes, the player should move again and take 4; health " + p.getHealth()));
     }
 
-    /** imbue wraps the target's hand: its blows deal the extra element damage on top, whatever it holds, priced by the formula; 0 seconds takes it off. */
+    /** imbue winds a spell about the target's hand: its blows set off on-hit (self is the holder), whatever it holds; it costs 6 to wind. */
     static void imbueMobBlows(GameTestHelper h) {
         ServerPlayer p = caster(h);
         var wrapped = mob(h, EntityType.HUSK);
@@ -305,10 +306,11 @@ final class RuneGameTests {
         for (var m : List.of(wrapped, plain)) m.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
         for (var m : List.of(hit, control)) m.setNoAi(true);
 
-        var inst = Casting.cast(p, Casting.compile("(spell :mana 20 (imbue (nearest :radius 2.5) 3 10 arcane))"), null, null);
-        double cost = ManaWrap.cost(Element.ARCANE, 3, 10);
-        h.assertTrue(inst != null && Math.abs(inst.mana - (20 - 1 - cost)) < 1e-6, "imbue should cost " + cost + ", left " + (inst == null ? "-" : inst.mana));
-        h.assertTrue(ManaWrap.of(wrapped) != null && ManaWrap.of(plain) == null, "only the nearest husk is wrapped");
+        var inst = Casting.cast(p, Casting.compile(
+                "(spell :mana 30 (imbue (nearest :radius 2.5) :life 10 (on-hit (damage target 3 arcane) (mark self #wielder))))"), null, null);
+        h.assertTrue(inst != null && Math.abs(inst.mana - (30 - 1 - WrapObj.DEPLOY)) < 1e-6, "imbue should cost " + WrapObj.DEPLOY + ", left " + (inst == null ? "-" : inst.mana));
+        ManaWrap w = ManaWrap.of(wrapped);
+        h.assertTrue(w != null && w.amount() == 0 && w.element() == Element.ARCANE && ManaWrap.of(plain) == null, "only the nearest husk is wrapped, in arcane");
         // Swapping what the hand holds keeps the wrap: it is on the hand.
         wrapped.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
         plain.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
@@ -318,27 +320,118 @@ final class RuneGameTests {
         h.succeedWhen(() -> {
             float extra = (hit0 - hit.getHealth()) - (control0 - control.getHealth());
             h.assertTrue(Math.abs(extra - 3) < 1e-3, "the wrapped blow should deal 3 more, dealt " + extra + " more");
-            Casting.cast(p, Casting.compile("(imbue (nearest :radius 2.5) 3 0)"), null, null);
-            h.assertTrue(ManaWrap.of(wrapped) == null, "0 seconds takes the wrap off");
+            h.assertTrue(StatusData.stacks(wrapped, new Status("#wielder")) == 1, "self should be the wrapped husk");
         });
     }
 
-    /** A player's wrapped blow is scaled by its charge and lands only on the entity aimed at, not on one the sweep catches. */
+    /** A player's blow counts only charged to 90%, and only on the entity aimed at, not on one the sweep catches. */
     static void imbuePlayerBlow(GameTestHelper h) {
         ServerPlayer p = caster(h);
         var aimed = mob(h, EntityType.HUSK);
         var swept = h.spawn(EntityType.HUSK, new Vec3(2.5, 2, 3.5));
         swept.setNoAi(true);
-        ManaWrap.wrap(p, Element.ARCANE, 4, 30);
-        float charge = p.getAttackStrengthScale(.5f);
-        float aimed0 = aimed.getHealth(), swept0 = swept.getHealth();
-        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p, aimed));
-        aimed.hurtServer(h.getLevel(), aimed.damageSources().playerAttack(p), 1);
-        swept.hurtServer(h.getLevel(), swept.damageSources().playerAttack(p), 1);
-        h.succeedWhen(() -> {
-            float extra = (aimed0 - aimed.getHealth()) - (swept0 - swept.getHealth());
-            h.assertTrue(Math.abs(extra - 4 * charge) < 1e-3, "the aimed blow should deal 4 × charge " + charge + " more, dealt " + extra + " more");
+        Casting.cast(p, Casting.compile("(spell :mana 50 (imbue caster :life 30 (on-hit (mark target #hit))))"), null, null);
+        h.assertTrue(WrapObj.on(p) != null, "the caster's hand should be wrapped");
+        // A blow straight after another is weak: it does not count.
+        p.resetAttackStrengthTicker();
+        blow(h, p, aimed);
+        h.runAfterDelay(2, () -> {
+            h.assertTrue(StatusData.stacks(aimed, new Status("#hit")) == 0, "a weak blow should not set off on-hit");
+            charged(p);
+            blow(h, p, aimed);
+            swept.hurtServer(h.getLevel(), swept.damageSources().playerAttack(p), 1);
+            h.succeedWhen(() -> {
+                h.assertTrue(StatusData.stacks(aimed, new Status("#hit")) == 1, "a charged blow should set off on-hit");
+                h.assertTrue(StatusData.stacks(swept, new Status("#hit")) == 0, "the swept husk should not");
+            });
         });
+    }
+
+    /** As a player's attack lands: what they aimed at, then the blow. */
+    private static void blow(GameTestHelper h, ServerPlayer p, net.minecraft.world.entity.LivingEntity t) {
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p, t));
+        t.invulnerableTime = 0;
+        t.hurtServer(h.getLevel(), t.damageSources().playerAttack(p), 1);
+    }
+
+    /** Fully charges {@code p}'s next blow (the mock player is not ticked, so its attack timer never runs). */
+    private static void charged(ServerPlayer p) {
+        try {
+            var f = net.minecraft.world.entity.LivingEntity.class.getDeclaredField("attackStrengthTicker");
+            f.setAccessible(true);
+            f.setInt(p, 1000);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Arrows a wrapped hand looses set off on-hit (a bow's only fully drawn), and so do thrown tridents. */
+    static void imbueArrows(GameTestHelper h) {
+        FamiliarGameTests.forceAround(h, 1);
+        ServerPlayer p = caster(h);
+        var full = h.spawn(EntityType.HUSK, new Vec3(2.5, 2, 6.5));
+        var weak = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 6.5));
+        var speared = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        for (var m : List.of(full, weak, speared)) m.setNoAi(true);
+        Casting.cast(p, Casting.compile("(spell :mana 50 (imbue caster :life 30 (on-hit (mark target #hit))))"), null, null);
+        var level = h.getLevel();
+        var crit = new net.minecraft.world.entity.projectile.arrow.Arrow(level, p, new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
+        crit.setCritArrow(true);
+        var limp = new net.minecraft.world.entity.projectile.arrow.Arrow(level, p, new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
+        var trident = new net.minecraft.world.entity.projectile.arrow.ThrownTrident(level, p, new ItemStack(Items.TRIDENT));
+        loose(h, crit, full);
+        loose(h, limp, weak);
+        loose(h, trident, speared);
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.stacks(full, new Status("#hit")) == 1, "a full-draw arrow should set off on-hit");
+            h.assertTrue(StatusData.stacks(speared, new Status("#hit")) == 1, "a thrown trident should set off on-hit");
+            h.assertTrue(weak.getHealth() < weak.getMaxHealth() && StatusData.stacks(weak, new Status("#hit")) == 0,
+                    "a half-drawn arrow should hurt without setting off on-hit");
+        });
+    }
+
+    /** Sends {@code arrow} from just in front of {@code t}, straight at its middle. */
+    private static void loose(GameTestHelper h, net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow, net.minecraft.world.entity.LivingEntity t) {
+        Vec3 at = t.position().add(0, t.getBbHeight() / 2, -2.5);
+        arrow.setPos(at);
+        arrow.shoot(0, 0, 1, 1.5f, 0);
+        h.getLevel().addFreshEntity(arrow);
+    }
+
+    /** A mob's blow is its swing: on-swing then on-hit; a blow that kills sets off on-kill. A player's swings are held to the hand's pace. */
+    static void imbueSwingAndKill(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var husk = mob(h, EntityType.HUSK);
+        var pig = h.spawn(EntityType.PIG, new Vec3(4.5, 2, 6.5));
+        pig.setNoAi(true);
+        pig.setHealth(1);
+        Casting.cast(p, Casting.compile("(spell :mana 50 (imbue (nearest :radius 2.5) :life 30"
+                + " (on-swing (mark self #swung)) (on-kill (mark self #killed))))"), null, null);
+        h.assertTrue(WrapObj.on(husk) != null, "the husk should be wrapped");
+        husk.doHurtTarget(h.getLevel(), pig);
+        // The player's own wrap: each counted swing hurts the nearest enemy (the husk) by 1; a second straight after does not count.
+        Casting.cast(p, Casting.compile("(spell :mana 50 (imbue caster :life 30 (on-swing (damage (nearest :radius 3) 1 arcane))))"), null, null);
+        float husk0 = husk.getHealth();
+        WrapObj own = WrapObj.on(p);
+        h.assertTrue(own != null, "the player's hand should be wrapped");
+        own.swingOf(p);
+        own.swingOf(p);
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.stacks(husk, new Status("#swung")) == 1, "the husk's blow should set off on-swing");
+            h.assertTrue(!pig.isAlive() && StatusData.stacks(husk, new Status("#killed")) == 1, "the killing blow should set off on-kill");
+            h.assertTrue(Math.abs(husk0 - husk.getHealth() - 1) < 1e-3, "two swings at once should count once, dealt " + (husk0 - husk.getHealth()));
+        });
+    }
+
+    /** It is kept up like a field: when the spell's mana runs dry the wrap comes off. */
+    static void imbueUpkeep(GameTestHelper h) {
+        FamiliarGameTests.forceAround(h, 1);
+        ServerPlayer p = caster(h);
+        var husk = mob(h, EntityType.HUSK);
+        // 1 for nearest and 6 to wind leaves 1.5: three pulses of 0.5, then the fourth runs dry.
+        Casting.cast(p, Casting.compile("(spell :mana 8.5 (imbue (nearest :radius 2.5) :life 30))"), null, null);
+        h.assertTrue(ManaWrap.of(husk) != null, "the wrap should be on");
+        h.succeedWhen(() -> h.assertTrue(ManaWrap.of(husk) == null && WrapObj.on(husk) == null, "the wrap should come off once the mana runs dry"));
     }
 
     /** Life can't be written in a spell, but a wrap given through the API (an addon's creatures) works like any other. */
@@ -361,12 +454,19 @@ final class RuneGameTests {
         });
     }
 
-    /** A wrap comes off its holder when its time is up. */
+    /** A wrap comes off its holder when its time is up, running on-expire; a new one replaces the old, and a plain one replaces a spell's. */
     static void imbueRunsOut(GameTestHelper h) {
         FamiliarGameTests.forceAround(h, 1);
+        ServerPlayer p = caster(h);
         var husk = mob(h, EntityType.HUSK);
-        ManaWrap.wrap(husk, Element.FIRE, 2, .1);
-        h.assertTrue(ManaWrap.of(husk) != null, "the wrap should be on");
-        h.succeedWhen(() -> h.assertTrue(!husk.hasData(LogosMod.MANA_WRAP), "the wrap should come off after 2 ticks"));
+        Casting.cast(p, Casting.compile("(spell :mana 20 (imbue (nearest :radius 2.5) :life 30 (on-expire (mark self #replaced))))"), null, null);
+        h.assertTrue(WrapObj.on(husk) != null, "the spell wrap should be on");
+        ManaWrap.wrap(husk, Element.FIRE, 2, 30);
+        h.assertTrue(WrapObj.on(husk) == null && ManaWrap.of(husk).amount() == 2 && StatusData.stacks(husk, new Status("#replaced")) == 1,
+                "a plain wrap should replace the spell's, which runs on-expire");
+        Casting.cast(p, Casting.compile("(spell :mana 20 (imbue (nearest :radius 2.5) :life 0.1 (on-expire (mark self #ended))))"), null, null);
+        h.assertTrue(ManaWrap.of(husk) != null && ManaWrap.of(husk).amount() == 0, "a spell wrap should replace the plain one");
+        h.succeedWhen(() -> h.assertTrue(!husk.hasData(LogosMod.MANA_WRAP) && StatusData.stacks(husk, new Status("#ended")) == 1,
+                "the wrap should come off after 2 ticks and run on-expire"));
     }
 }
