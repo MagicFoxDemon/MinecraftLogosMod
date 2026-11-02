@@ -17,7 +17,10 @@ import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
-/** The vein: it crawls over the ground, steps up and stops at walls, strikes what it meets, sways, spreads as a ring, and obeys halt and turn. */
+/**
+ * The vein: it crawls over the ground, steps up and stops at walls (or climbs over everything), strikes what it meets,
+ * sways, spreads as a ring, and obeys halt and turn.
+ */
 final class VeinGameTests {
     private VeinGameTests() {}
 
@@ -75,6 +78,37 @@ final class VeinGameTests {
             h.assertTrue(vein.progress() == 1, way + ": it should end once round its arc");
             h.assertTrue(vein.position().distanceTo(last) < 0.6, way + " should end at " + last + ", ends at " + vein.position());
         }
+        h.succeed();
+    }
+
+    /**
+     * Climbing, it goes over everything in its way without stopping: up a pillar, back along the underside of the
+     * overhang the pillar holds up, round the overhang's far end onto its top, along that, down the other side of the
+     * overhang and the pillar, and on over the ground.
+     */
+    static void climb(GameTestHelper h) {
+        ServerPlayer p = caster(h, 0.5, 4.5);
+        // A pillar at x 6, two high, under a one-block overhang from x 2 to 6 at height 4.
+        h.setBlock(6, 2, 4, Blocks.STONE);
+        h.setBlock(6, 3, 4, Blocks.STONE);
+        for (int x = 2; x <= 6; x++) h.setBlock(x, 4, 4, Blocks.STONE);
+        var vein = vein(h, p, "(vein (on-impact (mark caster #wall)))", new Vec3(0.5, 2, 4.5), new Vec3(1, 0, 0), Motion.FORWARD, 0.5, 22);
+        vein.climb();
+        Vec3 o = h.absoluteVec(Vec3.ZERO);
+        boolean underside = false, top = false;
+        for (int k = 0; k < 60 && vein.progress() < 1; k++) {
+            vein.tick();
+            Vec3 at = vein.position().subtract(o);
+            h.assertTrue(Math.abs(at.z - 4.5) < 1e-6, "it should keep to its line, z " + at.z);
+            underside |= Math.abs(at.y - 4) < 1e-3 && at.x > 2.2 && at.x < 5.8;
+            top |= Math.abs(at.y - 5) < 1e-3 && at.x > 2.2 && at.x < 6.8;
+        }
+        h.assertTrue(underside, "it should crawl back along the overhang's underside");
+        h.assertTrue(top, "it should come round onto the overhang's top");
+        Vec3 end = vein.position().subtract(o);
+        h.assertTrue(vein.progress() == 1 && Math.abs(end.y - 2) < 1e-3 && end.x > 7.5 && end.x < 9,
+                "it should come down past the pillar and end on the ground beyond, ended at " + end);
+        h.assertTrue(StatusData.stacks(p, new Status("#wall")) == 0, "climbing, nothing is a wall to it");
         h.succeed();
     }
 

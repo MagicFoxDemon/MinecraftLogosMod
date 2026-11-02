@@ -603,6 +603,10 @@ class CompilerTest {
         assertEquals(Motion.SWEEP, sweep.kw.get("motion").value);
         assertTrue(sweep.flags.contains("ccw"));
         assertEquals(5 + 0.1 * Math.PI, Compiler.compile("(spell :mana 20 (vein :motion sweep :spread 90 :radius 4 :range 60))").profile().estimate(), 0.05);
+        // Climbing goes with any motion and costs nothing more.
+        Node climbing = Compiler.compile("(vein :motion snake :climb)").body().getFirst();
+        assertTrue(climbing.flags.contains("climb"));
+        assertEquals(5.8, Compiler.compile("(spell :mana 20 (vein :motion snake :climb))").profile().estimate(), 0.05);
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.Direction;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -43,7 +44,7 @@ public final class VeinVisuals {
     }
 
     /** Head {@code head} of vein {@code id} stands at {@code at} (see {@code FxPayload.Kind.VEIN_HOLD}). */
-    static void hold(int id, int head, Element element, Vec3 at, Vec3 dir, float width, float height) {
+    static void hold(int id, int head, Element element, Vec3 at, Vec3 dir, Direction face, float width, float height) {
         long now = ClientCharges.ticks();
         LiveVein v = LIVE.get(key(id, head));
         if (v == null) {
@@ -52,6 +53,7 @@ public final class VeinVisuals {
         }
         v.pos = at;
         if (dir.lengthSqr() > 1e-6) v.dir = dir.normalize();
+        v.face = face;
         v.width = width;
         v.height = height;
         v.heard = now;

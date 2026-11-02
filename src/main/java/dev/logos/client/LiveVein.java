@@ -1,6 +1,7 @@
 package dev.logos.client;
 
 import dev.logos.lang.Element;
+import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -17,6 +18,7 @@ public final class LiveVein {
     /** Where it stood at the last client tick: the stretch from here to {@link #pos} is what it crawled since. */
     Vec3 prev;
     Vec3 dir = new Vec3(0, 0, 1);
+    Direction face = Direction.UP;
     float width = 1, height = 1;
     long heard;
     boolean ended;
@@ -45,8 +47,14 @@ public final class LiveVein {
     /** Where it stood at the last client tick. */
     public Vec3 prev() { return prev; }
 
-    /** Its level heading. */
+    /** Its heading along the surface it is on. */
     public Vec3 dir() { return dir; }
+
+    /** The face of the blocks it is on: up (the top of the ground) unless it climbs. */
+    public Direction face() { return face; }
+
+    /** Out of the surface it is on, a unit vector. */
+    public Vec3 normal() { return new Vec3(face.getStepX(), face.getStepY(), face.getStepZ()); }
 
     public float width() { return width; }
 

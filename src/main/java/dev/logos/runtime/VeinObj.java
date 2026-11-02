@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.lang.Node;
 import dev.logos.lang.Motion;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
@@ -24,7 +25,8 @@ import net.minecraft.world.phys.Vec3;
  * Salt form "vein": a line that crawls over the ground from where it was cast, the way a vine grows or ground fire
  * spreads. It steps up {@link #STEP} and follows the ground down {@link #DROP}, until it has gone its range, struck
  * what it may strike, or run into a wall. A {@link Motion#RING} sets out every way at once (or every way over part of
- * a round), as many heads; a {@link Motion#SWEEP} goes round an arc about a centre.
+ * a round), as many heads; a {@link Motion#SWEEP} goes round an arc about a centre. One that {@link #climb}s keeps to
+ * whatever surface it is on instead, walls and ceilings too.
  */
 public final class VeinObj extends SpellObject {
     /** The highest step it climbs, and how far down it follows the ground, in blocks. */
@@ -40,6 +42,10 @@ public final class VeinObj extends SpellObject {
     private static final double LIFT = 0.05;
     /** How far short of a wall it stops, and how far past a stride it looks for one. */
     private static final double SKIN = 0.05;
+    /** How far below the surface it has stepped off a climbing head looks back for the face round the edge. */
+    private static final double EDGE = 0.1;
+    /** The most faces a climbing head turns onto in one stride (into a corner and out of it again, say). */
+    private static final int TURNS = 4;
 
     private final Motion motion;
     private final double speed, range, width, height;
@@ -49,6 +55,8 @@ public final class VeinObj extends SpellObject {
     private Vec3 course;
     private boolean seeking;
     private boolean halted;
+    /** Whether it crawls over every surface (up walls, along ceilings, round edges) instead of keeping to the ground. */
+    private boolean climbs;
     private double travelled;
     private final Set<UUID> struck = new HashSet<>();
     /** Whether its hits only heal or ward, so it may land on its own side. */
@@ -127,7 +135,25 @@ public final class VeinObj extends SpellObject {
 
     /** The block standing at {@code at} is on, by position: a ray down a block's very edge may report either neighbour. */
     private static BlockPos under(Vec3 at) {
-        return BlockPos.containing(at.x, at.y - 1e-3, at.z);
+        return under(at, Direction.UP);
+    }
+
+    /** The block whose {@code face} {@code at} lies on. */
+    private static BlockPos under(Vec3 at, Direction face) {
+        return BlockPos.containing(at.subtract(normal(face).scale(1e-3)));
+    }
+
+    private static Vec3 normal(Direction face) {
+        return new Vec3(face.getStepX(), face.getStepY(), face.getStepZ());
+    }
+
+    /**
+     * From now on it crawls over every surface: up a wall it meets, along a ceiling, round the edge of a roof or a cliff and
+     * down the other side, never falling and never stopped by a block. Off the ground it goes straight on; its motion
+     * sways, wanders, seeks or bends it again once it is back on a floor.
+     */
+    public void climb() {
+        climbs = true;
     }
 
     /**
@@ -191,17 +217,19 @@ public final class VeinObj extends SpellObject {
 
     /**
      * Crawls {@code dir} from now on, swaying or wandering about it if its motion does; a seeking one stops seeking, and a
-     * sweep leaves its arc.
+     * sweep leaves its arc. Climbing a wall or a ceiling, it goes the way {@code dir} lies along that surface.
      */
     @Override
     public void turn(Vec3 dir) {
         if (motion == Motion.RING || new Vec3(dir.x, 0, dir.z).lengthSqr() < 1e-6) return;
+        Head h = heads.getFirst();
+        Vec3 along = h.face == Direction.UP ? level(dir) : dir.subtract(normal(h.face).scale(dir.dot(normal(h.face))));
+        if (along.lengthSqr() < 1e-6) return;
         course = level(dir);
         seeking = false;
         bending = false;
         halted = false;
-        Head h = heads.getFirst();
-        h.dir = course;
+        h.dir = along.normalize();
         h.wander = 0;
     }
 
@@ -219,7 +247,7 @@ public final class VeinObj extends SpellObject {
             return;
         }
         if (age == 1 && !step(under(origin), heading())) return;
-        if (seeking && age > 2) seek();
+        if (seeking && age > 2 && heads.getFirst().face == Direction.UP) seek();
         if (halted) {
             for (Head h : heads) if (h.alive && !strike(h, h.pos, h.pos)) return;
             if (heads.stream().noneMatch(h -> h.alive)) {
@@ -245,12 +273,13 @@ public final class VeinObj extends SpellObject {
     }
 
     private void show() {
-        for (Head h : heads) if (h.alive) Vfx.vein(level, id, h.index, h.pos, h.dir, node.element, width, height);
+        for (Head h : heads) if (h.alive) Vfx.vein(level, id, h.index, h.pos, h.dir, h.face, node.element, width, height);
     }
 
     /** Crawls {@code h} on by {@code ds}; false if it is gone meanwhile. */
     private boolean advance(Head h, double ds) {
         Vec3 dir = steer(h, ds);
+        if (climbs) return climb(h, dir, ds);
         Vec3 from = h.pos;
         // Rise to the highest step it may take (or just under a ceiling), go forward, then fall to the ground.
         Vec3 up = clip(from.add(0, LIFT, 0), from.add(0, STEP + LIFT, 0), ClipContext.Fluid.NONE);
@@ -298,6 +327,90 @@ public final class VeinObj extends SpellObject {
         return true;
     }
 
+    /**
+     * Crawls climbing {@code h} on by {@code ds} along the face it is on, heading {@code dir}: into a wall, it turns up onto
+     * that wall; past the end of its face, it turns round the edge onto the face beyond. False if it is gone meanwhile.
+     */
+    private boolean climb(Head h, Vec3 dir, double ds) {
+        double left = ds;
+        for (int turns = 0; left > 1e-9; turns++) {
+            if (turns > TURNS) {
+                // Wedged somewhere it cannot get out of within a stride.
+                stop(h, false);
+                return true;
+            }
+            Vec3 n = normal(h.face), from = h.pos, lifted = from.add(n.scale(LIFT)), ahead = lifted.add(dir.scale(left));
+            BlockHitResult wall = level.clip(new ClipContext(lifted, ahead.add(dir.scale(SKIN)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, inst.caster));
+            boolean blocked = wall.getType() != HitResult.Type.MISS;
+            Vec3 stopped = Constructs.stopSpell(level, inst, lifted, blocked ? wall.getLocation() : ahead, ConstructObj.BLOCK_COST, node.element, hitDamage, true);
+            if (stopped != null) {
+                Vec3 to = stopped.subtract(dir.scale(SKIN)).subtract(n.scale(LIFT));
+                if (!crawl(h, from, to, dir, h.face)) return false;
+                if (h.alive) stop(h, true);
+                return true;
+            }
+            Vec3 to;
+            Direction next;
+            if (blocked) {
+                // Into a wall: onto it, the way that leads up from the face it was on.
+                to = wall.getLocation();
+                next = wall.getDirection();
+                left -= lifted.distanceTo(to);
+            } else {
+                BlockHitResult ground = level.clip(new ClipContext(ahead, ahead.subtract(n.scale(LIFT + EDGE)), ClipContext.Block.COLLIDER,
+                        h.face == Direction.UP ? ClipContext.Fluid.ANY : ClipContext.Fluid.NONE, inst.caster));
+                if (ground.getType() != HitResult.Type.MISS && !ground.isInside()) {
+                    if (!crawl(h, from, ground.getLocation(), dir, h.face)) return false;
+                    break;
+                }
+                // Past the end of its face: back round the edge onto the face beyond, just below the corner.
+                Vec3 below = ahead.subtract(n.scale(LIFT + EDGE));
+                BlockHitResult edge = level.clip(new ClipContext(below, below.subtract(dir.scale(left + SKIN)), ClipContext.Block.COLLIDER,
+                        ClipContext.Fluid.NONE, inst.caster));
+                if (edge.getType() == HitResult.Type.MISS || edge.isInside() || normal(edge.getDirection()).dot(dir) <= 0) {
+                    stop(h, false);
+                    return true;
+                }
+                to = edge.getLocation();
+                next = edge.getDirection();
+                left = Math.max(0, below.distanceTo(to) - EDGE);
+            }
+            if (!crawl(h, from, to, dir, next)) return false;
+            if (!h.alive) return true;
+            dir = round(dir, n, normal(next));
+            h.dir = dir;
+        }
+        if (!h.alive) return true;
+        h.dir = dir;
+        h.crawled += ds;
+        return true;
+    }
+
+    /**
+     * Moves {@code h} from {@code a} to {@code b} onto that face of the blocks, striking on the way and stepping on a new block
+     * it reaches. False if it is gone meanwhile; it may also have stopped on something it struck.
+     */
+    private boolean crawl(Head h, Vec3 a, Vec3 b, Vec3 dir, Direction onto) {
+        if (!strike(h, a, b)) return false;
+        if (!h.alive) return true;
+        h.pos = b;
+        h.face = onto;
+        if (motion != Motion.RING) pos = b;
+        BlockPos block = under(b, h.face);
+        if (block.equals(h.lastStep)) return true;
+        h.lastStep = block;
+        return step(block, dir);
+    }
+
+    /**
+     * {@code dir} turned round the edge between a face with normal {@code from} and one with normal {@code to}: what it had
+     * across the edge now goes along the new face, what it had along the edge it keeps.
+     */
+    private static Vec3 round(Vec3 dir, Vec3 from, Vec3 to) {
+        Vec3 turned = dir.subtract(to.add(from).scale(dir.dot(to)));
+        return turned.lengthSqr() < 1e-9 ? from : turned.normalize();
+    }
+
     /** Runs on-step on {@code block}; false if it is gone meanwhile. */
     private boolean step(BlockPos block, Vec3 dir) {
         Interp.fire(node, "on-step", ctx.at(Place.center(level, block)).aiming(dir));
@@ -317,6 +430,8 @@ public final class VeinObj extends SpellObject {
 
     /** The way {@code h} goes for its next {@code ds}, by its motion. */
     private Vec3 steer(Head h, double ds) {
+        // Up a wall or along a ceiling it goes straight on.
+        if (h.face != Direction.UP) return h.dir;
         return switch (motion) {
             case SNAKE -> {
                 // Its sideways offset follows sway·sin(k·s): the heading leans by the slope of that wave.
@@ -358,19 +473,19 @@ public final class VeinObj extends SpellObject {
 
     /**
      * Strikes whatever stands where {@code h} crawled from {@code a} to {@code b}: as wide as the vein (or, in a ring, as the
-     * gap to the next head, so the ring has no holes) and as high. False if it is gone meanwhile.
+     * gap to the next head, so the ring has no holes) and as high off the face it is on. False if it is gone meanwhile.
      */
     private boolean strike(Head h, Vec3 a, Vec3 b) {
         double between = arc.spread() >= 360 - 1e-6 ? Math.PI * 2 / heads.size() : arc.radians() / Math.max(1, heads.size() - 1);
         double gap = motion == Motion.RING ? between * travelled : 0;
         double half = Math.max(width, gap) / 2;
-        AABB box = new AABB(Math.min(a.x, b.x) - half, Math.min(a.y, b.y), Math.min(a.z, b.z) - half,
-                Math.max(a.x, b.x) + half, Math.max(a.y, b.y) + height, Math.max(a.z, b.z) + half);
+        Vec3 n = normal(h.face);
+        AABB box = new AABB(a, b).inflate(n.x == 0 ? half : 0, n.y == 0 ? half : 0, n.z == 0 ? half : 0).expandTowards(n.scale(height));
         List<Entity> found = level.getEntities(inst.caster, box, e -> !struck.contains(e.getUUID()) && Targeting.mayHit(inst, e, helps));
         found.sort(Comparator.comparingDouble(e -> e.distanceToSqr(a)));
         for (Entity e : found) {
             struck.add(e.getUUID());
-            Vec3 at = new Vec3(e.getX(), b.y, e.getZ());
+            Vec3 at = h.face == Direction.UP ? new Vec3(e.getX(), b.y, e.getZ()) : b;
             Interp.fire(node, "on-hit", ctx.on(e, at).aiming(h.dir));
             if (gone()) return false;
             if (h.pierceLeft-- <= 0) {
@@ -411,6 +526,8 @@ public final class VeinObj extends SpellObject {
         double crawled;
         /** A meandering head's angle off its course. */
         double wander;
+        /** The face of the blocks it crawls on: the top of the ground unless it climbs. */
+        Direction face = Direction.UP;
         @Nullable BlockPos lastStep;
 
         Head(int index, Vec3 pos, Vec3 dir, int pierce) {
