@@ -189,7 +189,8 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     double length = motion == Motion.SWEEP ? radius * Math.toRadians(spread) : out;
                     reach(motion == Motion.SWEEP ? radius : out);
                     if (ring) group = true;
-                    own = dev.logos.runtime.VeinObj.cost(motion, out, kwNum(n, "width", 1), kwNum(n, "height", 1), spread, radius);
+                    double linger = Math.min(Math.max(kwNum(n, "linger", 0), 0), dev.logos.runtime.VeinObj.LINGER_MAX);
+                    own = dev.logos.runtime.VeinObj.cost(motion, out, kwNum(n, "width", 1), kwNum(n, "height", 1), spread, radius, linger);
                     // A step for each block crawled; a ring's every head steps on its own.
                     double steps = Math.ceil(length) * (ring ? dev.logos.runtime.VeinObj.ringHeads(out, spread) : 1);
                     double hits = ring ? ASSUMED_TARGETS : Math.min(kwNum(n, "pierce", 0) + 1, 2);

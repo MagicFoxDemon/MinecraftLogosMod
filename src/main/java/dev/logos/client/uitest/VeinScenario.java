@@ -22,7 +22,8 @@ import net.minecraft.world.level.block.Blocks;
 /**
  * The vein's shared look, from real casts: a fire vein crawls from under its caster's feet and steps up onto a
  * platform, and clients keep one head for it on the ground, then drop it once it has run out; a frost ring spreads
- * every way at once as many heads; a fire sweep goes round an arc; a climbing frost vein goes up a wall.
+ * every way at once as many heads; a fire sweep goes round an arc; a climbing frost vein goes up a wall; and what a
+ * lingering vein crawled over stays shown after its head stops, then fades.
  */
 @LDLRegisterClient(name = "logos_vein", group = "logos", registry = UIScenario.REGISTRY,
         environment = RegistrationEnvironment.DEV_ONLY)
@@ -112,6 +113,22 @@ public class VeinScenario implements UIScenario {
                 .waitUntil("it comes down the far side", ctx -> VeinVisuals.all().stream().anyMatch(v -> v.face() == Direction.SOUTH))
                 .ticks(20)
                 .check("it ran out", ctx -> VeinVisuals.all().isEmpty());
+
+        // A physical vein that lingers three seconds: after its head stops, what it crawled over stays.
+        s.teleportPlayer(.5, 101, .5, 0, 25)
+                .ticks(2)
+                .server("a lingering vein", sc -> cast(sc.player(), "(vein :linger 3 :range 8 (on-hit (damage target 2)))"))
+                .teleportPlayer(9, 106, 2, 50, 13)
+                .waitUntil("its head has stopped", ctx -> !VeinVisuals.all().isEmpty() && VeinVisuals.all().stream().allMatch(LiveVein::ended))
+                .ticks(6)
+                .check("what it crawled over is still shown", ctx -> {
+                    List<LiveVein> all = VeinVisuals.all();
+                    expect(all.size() == 1 && all.getFirst().linger() == 60, "one head lingering 60 ticks");
+                    return true;
+                })
+                .screenshot("vein_linger")
+                .ticks(70)
+                .check("it faded", ctx -> VeinVisuals.all().isEmpty());
         s.teardown("clear", ctx -> VeinVisuals.clear());
     }
 }

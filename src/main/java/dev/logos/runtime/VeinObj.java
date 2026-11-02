@@ -1,5 +1,6 @@
 package dev.logos.runtime;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -26,7 +27,8 @@ import net.minecraft.world.phys.Vec3;
  * spreads. It steps up {@link #STEP} and follows the ground down {@link #DROP}, until it has gone its range, struck
  * what it may strike, or run into a wall. A {@link Motion#RING} sets out every way at once (or every way over part of
  * a round), as many heads; a {@link Motion#SWEEP} goes round an arc about a centre. One that {@link #climb}s keeps to
- * whatever surface it is on instead, walls and ceilings too.
+ * whatever surface it is on instead, walls and ceilings too. One that {@link #linger}s leaves what it crawled over
+ * behind for a while, striking what touches it as its head would.
  */
 public final class VeinObj extends SpellObject {
     /** The highest step it climbs, and how far down it follows the ground, in blocks. */
@@ -46,6 +48,10 @@ public final class VeinObj extends SpellObject {
     private static final double EDGE = 0.1;
     /** The most faces a climbing head turns onto in one stride (into a corner and out of it again, say). */
     private static final int TURNS = 4;
+    /** What lingering costs, per block crawled and second lingered, at a width and height of one. */
+    public static final double LINGER_COST = 0.02;
+    /** The longest it may linger, in seconds. */
+    public static final double LINGER_MAX = 30;
 
     private final Motion motion;
     private final double speed, range, width, height;
@@ -57,6 +63,15 @@ public final class VeinObj extends SpellObject {
     private boolean halted;
     /** Whether it crawls over every surface (up walls, along ceilings, round edges) instead of keeping to the ground. */
     private boolean climbs;
+    /** How long what it crawled over stays and strikes, in ticks; 0 if it goes as it crawls on. */
+    private int lingerTicks;
+    /** Whether its heads have all stopped, so only what it left behind (if anything) is still there. */
+    private boolean settled;
+    /** The stretches it crawled over that are still there, laid longest ago first. */
+    private final ArrayDeque<Laid> trail = new ArrayDeque<>();
+
+    /** A stretch it crawled over: what touches {@code box} is struck until tick {@code until}, as a head heading {@code dir} on that {@code face}, {@code y} high, would strike it. */
+    private record Laid(AABB box, int until, Vec3 dir, Direction face, double y) {}
     private double travelled;
     private final Set<UUID> struck = new HashSet<>();
     /** Whether its hits only heal or ward, so it may land on its own side. */
@@ -157,16 +172,17 @@ public final class VeinObj extends SpellObject {
     }
 
     /**
-     * What it costs to set out: 4, the motion's surcharge, and 0.05 × width × height × how far it crawls. A ring's round is
-     * π times as long (less for part of a ring, never under one line); a sweep crawls its arc, radius × angle.
+     * What it costs to set out: 4, the motion's surcharge, and 0.05 × width × height × how far it crawls, and for what it
+     * leaves behind {@link #LINGER_COST} × width × height × that length × the seconds it lingers. A ring's round is π times
+     * as long (less for part of a ring, never under one line); a sweep crawls its arc, radius × angle.
      */
-    public static double cost(Motion motion, double range, double width, double height, double spread, double radius) {
+    public static double cost(Motion motion, double range, double width, double height, double spread, double radius, double linger) {
         double length = switch (motion) {
             case RING -> range * Math.max(1, Math.PI * Math.min(spread, 360) / 360);
             case SWEEP -> radius * Math.toRadians(spread);
             default -> range;
         };
-        return 4 + motion.mana + 0.05 * width * height * length;
+        return 4 + motion.mana + 0.05 * width * height * length + LINGER_COST * width * height * length * linger;
     }
 
     /** The heads a ring sets out with: about one for every two blocks of its widest round, fewer for part of one. */
@@ -239,41 +255,81 @@ public final class VeinObj extends SpellObject {
         halted = true;
     }
 
+    /**
+     * From now on what it crawls over stays for {@code ticks} after, striking what touches it as its head would (once each,
+     * the same as the head), and it lasts until the last of that has gone.
+     */
+    public void linger(int ticks) {
+        lingerTicks = Math.max(0, ticks);
+    }
+
     @Override
     public void tick() {
         if (isEnded()) return;
-        if (++age > life) {
+        if (++age > life + lingerTicks) {
             end();
             return;
         }
         if (age == 1 && !step(under(origin), heading())) return;
-        if (seeking && age > 2 && heads.getFirst().face == Direction.UP) seek();
-        if (halted) {
-            for (Head h : heads) if (h.alive && !strike(h, h.pos, h.pos)) return;
-            if (heads.stream().noneMatch(h -> h.alive)) {
-                end();
-                return;
-            }
-        } else {
-            for (double left = speed; left > 1e-9; ) {
-                double ds = Math.min(STRIDE, left);
-                left -= ds;
-                for (Head h : heads) {
-                    if (h.alive && !advance(h, ds)) return;
-                }
-                travelled += ds;
-                if (heads.stream().noneMatch(h -> h.alive) || travelled >= range) {
-                    show();
-                    end();
-                    return;
-                }
-            }
+        if (!settled && !crawl()) return;
+        if (!touch()) return;
+        if (settled && trail.isEmpty()) {
+            end();
+            return;
         }
         show();
     }
 
+    /** One tick of its heads crawling (or, halted, striking where they stand); false if it is gone meanwhile. */
+    private boolean crawl() {
+        if (seeking && age > 2 && heads.getFirst().face == Direction.UP) seek();
+        if (halted) {
+            for (Head h : heads) if (h.alive && !strike(h, h.pos, h.pos)) return false;
+            settled = heads.stream().noneMatch(h -> h.alive);
+            return true;
+        }
+        for (double left = speed; left > 1e-9; ) {
+            double ds = Math.min(STRIDE, left);
+            left -= ds;
+            for (Head h : heads) {
+                if (h.alive && !advance(h, ds)) return false;
+            }
+            travelled += ds;
+            if (heads.stream().noneMatch(h -> h.alive) || travelled >= range) {
+                show();
+                for (Head h : heads) if (h.alive) stop(h, false);
+                settled = true;
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Strikes what touches what it left behind, as its head would, once the stretches laid longest ago have gone; false if
+     * it is gone meanwhile.
+     */
+    private boolean touch() {
+        while (!trail.isEmpty() && trail.peekFirst().until() < age) trail.pollFirst();
+        if (trail.isEmpty()) return true;
+        AABB all = trail.peekFirst().box();
+        for (Laid l : trail) all = all.minmax(l.box());
+        for (Entity e : level.getEntities(inst.caster, all, e -> !struck.contains(e.getUUID()) && Targeting.mayHit(inst, e, helps))) {
+            AABB body = e.getBoundingBox();
+            for (Laid l : trail) {
+                if (!l.box().intersects(body)) continue;
+                struck.add(e.getUUID());
+                Vec3 at = l.face() == Direction.UP ? new Vec3(e.getX(), l.y(), e.getZ()) : e.position();
+                Interp.fire(node, "on-hit", ctx.on(e, at).aiming(l.dir()));
+                if (gone()) return false;
+                break;
+            }
+        }
+        return true;
+    }
+
     private void show() {
-        for (Head h : heads) if (h.alive) Vfx.vein(level, id, h.index, h.pos, h.dir, h.face, node.element, width, height);
+        for (Head h : heads) if (h.alive) Vfx.vein(level, id, h.index, h.pos, h.dir, h.face, node.element, width, height, lingerTicks);
     }
 
     /** Crawls {@code h} on by {@code ds}; false if it is gone meanwhile. */
@@ -481,6 +537,7 @@ public final class VeinObj extends SpellObject {
         double half = Math.max(width, gap) / 2;
         Vec3 n = normal(h.face);
         AABB box = new AABB(a, b).inflate(n.x == 0 ? half : 0, n.y == 0 ? half : 0, n.z == 0 ? half : 0).expandTowards(n.scale(height));
+        if (lingerTicks > 0 && !a.equals(b)) trail.addLast(new Laid(box, age + lingerTicks, h.dir, h.face, b.y));
         List<Entity> found = level.getEntities(inst.caster, box, e -> !struck.contains(e.getUUID()) && Targeting.mayHit(inst, e, helps));
         found.sort(Comparator.comparingDouble(e -> e.distanceToSqr(a)));
         for (Entity e : found) {
@@ -507,12 +564,19 @@ public final class VeinObj extends SpellObject {
     @Override
     protected void onEnded() {
         for (Head h : heads) if (h.alive) Vfx.veinEnd(level, id, h.index, h.pos, node.element, false);
+        // Clients keep showing what it left behind for as long as it lingers; it has gone sooner.
+        if (lingerTicks > 0) Vfx.veinFade(level, id, node.element, pos);
     }
 
-    /** {@link #progress} counts how far it has crawled as well as how long it has lasted, whichever is further. */
+    /**
+     * {@link #progress} counts how far it has crawled as well as how long it has lasted, whichever is further; once it
+     * lingers, how long it has lasted of its crawl and its lingering together.
+     */
     @Override
     public double progress() {
-        return Math.max(super.progress(), isEnded() ? 1 : Math.min(1, travelled / range));
+        if (isEnded()) return 1;
+        if (lingerTicks > 0) return Math.min(1, (double) age / (life + lingerTicks));
+        return Math.max(super.progress(), Math.min(1, travelled / range));
     }
 
     /** One end that crawls: a line has one, a ring many. */

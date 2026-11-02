@@ -607,6 +607,9 @@ class CompilerTest {
         Node climbing = Compiler.compile("(vein :motion snake :climb)").body().getFirst();
         assertTrue(climbing.flags.contains("climb"));
         assertEquals(5.8, Compiler.compile("(spell :mana 20 (vein :motion snake :climb))").profile().estimate(), 0.05);
+        // Leaving what it crawled over behind costs 0.02 × width × height × length × seconds, at most 30 seconds.
+        assertEquals(4.8 + 0.02 * 16 * 5, Compiler.compile("(spell :mana 20 (vein :linger 5))").profile().estimate(), 0.05);
+        assertEquals(4.8 + 0.02 * 16 * 30, Compiler.compile("(spell :mana 20 (vein :linger 99))").profile().estimate(), 0.05);
     }
 
     @Test
