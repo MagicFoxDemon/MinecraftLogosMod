@@ -25,6 +25,8 @@ import dev.logos.runtime.Group;
  */
 public record SpellProfile(Intent primary, List<Intent> intents, boolean declared, double range, double estimate, List<String> assumptions) {
     public static final int ASSUMED_TARGETS = 3, ASSUMED_BLOCKS = 5, ASSUMED_DEPTH = 3;
+    /** A wrapped hand is reckoned to strike once this many seconds. */
+    public static final double BLOW_SECONDS = 2;
     /** When several intents are found, the one it is filed under: harm first, then help. */
     private static final List<Intent> PRIORITY = List.of(Intent.AREA, Intent.STRIKE, Intent.CONTROL, Intent.HEAL, Intent.WARD, Intent.MOVE, Intent.UTILITY);
     private static final Set<String> GROUP_SELECTORS = Set.of("enemies", "entities", "players", "items", "hit-list", "marked");
@@ -169,6 +171,16 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = 6 + 0.5 * pulses + repeated(n, "on-tick", true) * pulses + events(n, "on-enter", true) * ASSUMED_TARGETS + events(n, "on-expire", true);
                     if (n.events.containsKey("on-enter")) assumptions.add("领域按进入 " + ASSUMED_TARGETS + " 个目标估算");
                 }
+                case "imbue" -> {
+                    double life = kwNum(n, "life", 10);
+                    double pulses = Math.max(1, life / Math.max(0.05, kwNum(n, "every", 0.5)));
+                    double blows = Math.max(1, Math.ceil(life / BLOW_SECONDS));
+                    own = 6 + 0.5 * pulses + repeated(n, "on-tick", inGroup) * pulses
+                            + (repeated(n, "on-hit", inGroup) + repeated(n, "on-swing", inGroup)) * blows
+                            + events(n, "on-kill", inGroup) + events(n, "on-expire", inGroup);
+                    if (n.events.containsKey("on-hit") || n.events.containsKey("on-swing")) assumptions.add("魔力缠绕按每 " + Node.fmt(BLOW_SECONDS) + " 秒一击估算");
+                    found.add(Intent.WARD);
+                }
                 case "vein" -> {
                     Motion motion = n.kw.get("motion") != null && n.kw.get("motion").value instanceof Motion m && m.crawls() ? m : Motion.FORWARD;
                     boolean ring = motion == Motion.RING;
@@ -259,11 +271,6 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = 20.0 / 5 * Math.sqrt(Math.clamp(argNum(n, 1, 30), 1, 600));
                     assumptions.add("附身按目标 20 点当前生命估算；附身自己的使魔免费");
                     found.add(Intent.CONTROL);
-                }
-                case "imbue" -> {
-                    Element el = n.arg(3) != null && n.arg(3).value instanceof Element e ? e : Element.ARCANE;
-                    own = dev.logos.runtime.ManaWrap.cost(el, argNum(n, 1, 4), argNum(n, 2, 30)) * count(n.arg(0));
-                    found.add(Intent.WARD);
                 }
                 case "potion" -> {
                     String id = String.valueOf(n.arg(1) == null ? "" : n.arg(1).value).replace("minecraft:", "");
@@ -367,7 +374,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
 
         private static boolean priced(String rune) {
             return switch (rune) {
-                case "projectile", "beam", "construct", "field", "ray", "damage", "drain", "damage-all", "execute" -> true;
+                case "projectile", "beam", "construct", "field", "imbue", "ray", "damage", "drain", "damage-all", "execute" -> true;
                 default -> false;
             };
         }

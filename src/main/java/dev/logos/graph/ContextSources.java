@@ -29,7 +29,8 @@ public final class ContextSources {
         FIELD_POSITION, ENTER_TARGET, ENTITY_CENTER, BEAM_END, BEAM_AIM, RAY_END, RAY_AIM,
         VEIN_HEAD, VEIN_CONTACT, VEIN_STEP, VEIN_AIM,
         CONSTRUCT_POSITION, CONSTRUCT_CONTACT, CONSTRUCT_SELF, CONSTRUCT_NORMAL,
-        CONSTRUCT_TARGET, PASS_POSITION, PASS_AIM, KILLED_TARGET, FORM_SELF, NO_FORM, UNKNOWN
+        CONSTRUCT_TARGET, PASS_POSITION, PASS_AIM, KILLED_TARGET, FORM_SELF, NO_FORM,
+        WRAP_SELF, WRAP_POSITION, WRAP_CONTACT, WRAP_AIM, UNKNOWN
     }
 
     public record Binding(Meaning meaning, LogosNode source) {}
@@ -120,6 +121,16 @@ public final class ContextSources {
             }
             // A switch's fallback runs where the switch stands.
             case "switch" -> { }
+            case "imbue" -> {
+                put(scope, node, "self", Meaning.WRAP_SELF);
+                put(scope, node, "here", switch (event) {
+                    case "on-hit" -> Meaning.WRAP_CONTACT;
+                    case "on-kill" -> Meaning.ENTITY_CENTER;
+                    default -> Meaning.WRAP_POSITION;
+                });
+                put(scope, node, "aim", Meaning.WRAP_AIM);
+                if (event.equals("on-kill")) put(scope, node, "target", Meaning.KILLED_TARGET);
+            }
             case "construct" -> {
                 put(scope, node, "self", Meaning.CONSTRUCT_SELF);
                 put(scope, node, "here", switch (event) {

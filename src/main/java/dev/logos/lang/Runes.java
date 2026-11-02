@@ -28,7 +28,6 @@ import dev.logos.runtime.Filter;
 import dev.logos.runtime.Lightning;
 import dev.logos.runtime.Limits;
 import dev.logos.runtime.ManaInfusion;
-import dev.logos.runtime.ManaWrap;
 import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.Place;
 import dev.logos.runtime.ProjectileObj;
@@ -43,6 +42,7 @@ import dev.logos.runtime.TimeSkipObj;
 import dev.logos.runtime.TimeStop;
 import dev.logos.runtime.VeinObj;
 import dev.logos.runtime.Vfx;
+import dev.logos.runtime.WrapObj;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -303,6 +303,30 @@ public final class Runes {
                             n.flags.contains("follow"));
                     SpellRuntime.spawn(obj);
                     return c.inst().dead ? null : obj;
+                });
+
+        def("imbue", FORM, ACTION).yields(Type.FORM).p("target", ENTITY).kw("life", NUM, "10").kw("every", NUM, "0.5")
+                .on("on-hit", true, "这只手命中时：蓄力满九成的近战一击（生物每一击都算），以及这只手射出的箭（弓要拉满）、掷出的三叉戟命中时（here 是命中点）")
+                .on("on-swing", false, "这只手挥动时：玩家蓄力满九成的挥击，打中打空都算；生物在出手命中时（here 是眼睛，aim 是视线）")
+                .on("on-kill", true, "命中的这一击（连同 on-hit 引发的效果）击杀了目标时")
+                .on("on-tick", false, "每次脉动（here 是持有者）").on("on-expire", false, "消散时（到期、被新的缠绕取代、持有者死去或离开这个世界）")
+                .stab(4).doc("魔力缠绕：把一段术式缠在目标的主手上。缠在手上而不是物品上：拿着什么就缠在什么上，换了武器也跟着走，空手时缠在拳头上；"
+                        + "这只手的攻击触发它的事件，事件里 self 是被缠的那个生物，伤害和效果都算施法者的。"
+                        + "每只手同时只有一段缠绕，新的取代旧的。展开 6 魔力，每次脉动维持 0.5（:every 默认 0.5 秒，缠 30 秒约 36），"
+                        + "事件里的符文触发时照常从这道术式的魔力里扣，魔力耗尽缠绕即散")
+                .exec((n, c) -> {
+                    List<LivingEntity> ts = living(n.arg(0), c);
+                    if (ts.isEmpty()) return null;
+                    LivingEntity t = ts.get(0);
+                    if (!c.inst().spend(WrapObj.DEPLOY, "imbue")) return null;
+                    var obj = new WrapObj(n, c, t, (int) (clamp(num(kw(n, "life"), c), 0.05, 3600) * 20),
+                            (int) Math.round(clamp(num(kw(n, "every"), c), 0.05, 10) * 20));
+                    SpellRuntime.spawn(obj);
+                    if (c.inst().dead) return null;
+                    obj.wear();
+                    c.inst().affected.add(t.getUUID());
+                    Vfx.burst(lv(t), Targeting.center(t), n.element, 12);
+                    return obj;
                 });
 
         def("vein", FORM, ACTION).yields(Type.FORM)
@@ -904,24 +928,6 @@ public final class Runes {
                     if (!c.inst().spend(dev.logos.runtime.Possession.cost(mob, p, s), "possess")) return null;
                     Vfx.burst(lv(p), p, null, Element.ARCANE, Vfx.Burst.FORCE);
                     if (dev.logos.runtime.Possession.start(p, mob, s)) c.inst().affected.add(mob.getUUID());
-                    return null;
-                });
-        def("imbue", EFFECT, ACTION).each("target").p("amount", NUM).p("seconds", NUM).opt("element", ELEMENT, "arcane").stab(2)
-                .doc("魔力缠绕：目标主手的每次近战攻击额外造成若干点该元素的伤害，持续若干秒。缠在手上而不是物品上："
-                        + "拿着什么就缠在什么上，换了武器也跟着走，空手时缠在拳头上。玩家的这份伤害随攻击蓄力缩放，只给瞄准的那个目标，横扫不算；"
-                        + "受施法者元素增幅和目标抗性影响。再次缠绕会取代上一次，点数或秒数为 0 即解除。"
-                        + "每个目标 0.178 × 元素系数 × 点数^1.2 × 秒数^1.1 魔力：缠 4 点 30 秒时火焰约 28、物理 32、虚空 59，点数和时长越大越贵")
-                .exec((n, c) -> {
-                    double amt = Math.max(0, num(n.arg(1), c));
-                    double s = Math.max(0, num(n.arg(2), c));
-                    Element el = element(n.arg(3), c);
-                    double cost = ManaWrap.cost(el, amt, s);
-                    for (LivingEntity t : living(n.arg(0), c)) {
-                        if (!c.inst().spend(cost, "imbue")) return null;
-                        ManaWrap.wrap(t, el, amt, s);
-                        c.inst().affected.add(t.getUUID());
-                        Vfx.burst(lv(t), Targeting.center(t), el, 12);
-                    }
                     return null;
                 });
         def("push", EFFECT, ACTION).each("target").p("strength", NUM).kw("from", POS, "here").stab(1).doc("推离某点（掉落物也可以）。每单位力 1.5 魔力")
@@ -1727,7 +1733,7 @@ public final class Runes {
         def("mana-left", VALUE, NUM).doc("本次法术剩余的魔力").exec((n, c) -> c.inst().mana);
         def("depth", VALUE, NUM).doc("当前递归层数").exec((n, c) -> (double) c.depth());
         def("life-of", VALUE, NUM).p("form", Type.FORM)
-                .doc("形之寿：一个形体（魔弹、光柱、炼成体、领域、游脉）走过了自己寿命的几分，0 是刚展开，1 是寿终；已经消散的也是 1。"
+                .doc("形之寿：一个形体（魔弹、光柱、炼成体、领域、魔力缠绕、游脉）走过了自己寿命的几分，0 是刚展开，1 是寿终；已经消散的也是 1。"
                         + "形体事件里接 form（此形），形体之后接它的「此形」输出。配合调和、波可让效果随寿命变化。免费")
                 .exec((n, c) -> eval(n.arg(0), c) instanceof SpellObject o ? o.progress() : 1.0);
         def("mix", VALUE, NUM).p("a", NUM).p("b", NUM).p("alpha", NUM)

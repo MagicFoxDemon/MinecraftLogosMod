@@ -336,13 +336,16 @@ class CompilerTest {
     }
 
     @Test
-    void imbueCostsMoreThanLinearForBigWraps() {
-        // 0.178 × element factor × points^1.2 × seconds^1.1 (the estimate is rounded to 0.1): about points × seconds × 0.33 × factor
-        // at 4 points for 30 seconds, steeper beyond.
-        assertEquals(27.7, Compiler.compile("(imbue caster 4 30 fire)").profile().estimate(), 0.051);
-        assertEquals(0.178 * Math.pow(10, 1.2) * Math.pow(60, 1.1), Compiler.compile("(imbue caster 10 60)").profile().estimate(), 0.051);
-        assertError("(imbue caster 4 30 life)", "未知的词");
-        assertError("(imbue here 4 30)", "实体");
+    void imbueIsKeptUpLikeAField() {
+        // 6 to wind, 0.5 a pulse (every 0.5 s by default): 30 seconds is 6 + 60 × 0.5.
+        assertEquals(36, Compiler.compile("(imbue caster :life 30)").profile().estimate(), 0.051);
+        // Its blows are reckoned one every 2 seconds: 10 seconds is 5 blows.
+        double blow = Compiler.compile("(damage caster 4 fire)").profile().estimate();
+        assertEquals(6 + 20 * 0.5 + 5 * blow, Compiler.compile("(imbue caster :life 10 (on-hit (damage target 4 fire)))").profile().estimate(), 0.051);
+        // self names the holder in its events, and only there.
+        Compiler.compile("(imbue caster (on-swing (mark self #swung)) (on-kill (heal self 2)))");
+        assertError("(mark self #x)", "self");
+        assertError("(imbue here)", "实体");
     }
 
     @Test
