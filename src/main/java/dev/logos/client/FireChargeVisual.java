@@ -16,15 +16,31 @@ import net.minecraft.world.phys.Vec3;
  * The fire charge: the shared charge (see CHARGE_VFX.md) in hotter colours (a white-gold heart, orange-gold,
  * a dark red), with the sun-rayed circle (Unreal MagicCircle 06) innermost under a colossal charge, and two
  * light touches of its own for the grand and colossal tiers: a few embers drifting up off the circle and
- * dying out, and a flickering corona round the held ball.
+ * dying out, and a flickering corona round the held ball. A colossal charge burns in its own aura of flame
+ * ({@link FireChargeAura}, after NS_Charge_AuraBrust_Root) in place of the shared pillar.
  */
 final class FireChargeVisual extends ChargeCore {
     /** Radius of the held ball by tier, as {@link ChargeHead} draws it. */
     private static final float[] BALL = {.09f, .13f, .19f, .28f};
 
+    private final FireChargeAura aura;
+
     FireChargeVisual() {
         super(ChargeStyle.colours(0xFFF4D6, 0xFF7414, 0xA81C00).withCircles("charge/circle_17", "charge/circle_18",
-                "charge/circle_16", "charge/circle_03", "charge/circle_11", "fire_charge/sun_circle", "charge/circle_17"));
+                "charge/circle_16", "charge/circle_03", "charge/circle_11", "fire_charge/sun_circle", "charge/circle_17").withOwnAura());
+        aura = new FireChargeAura(style);
+    }
+
+    @Override
+    public boolean tick(Level level, LiveCharge charge) {
+        boolean core = super.tick(level, charge);
+        return aura.tick(level.getRandom(), charge) || core;
+    }
+
+    @Override
+    public void end() {
+        super.end();
+        aura.end();
     }
 
     @Override
@@ -34,6 +50,7 @@ final class FireChargeVisual extends ChargeCore {
         ChargeParts.View view = ChargeParts.View.of(camera);
         pose.pushPose();
         pose.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+        aura.submit(charge, view, partialTick, pose, out);
         embers(charge, view, partialTick, pose, out);
         corona(charge, view, partialTick, pose, out);
         pose.popPose();
