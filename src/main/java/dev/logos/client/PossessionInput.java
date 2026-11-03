@@ -89,8 +89,8 @@ final class PossessionInput {
         if (Possession.possessing(Minecraft.getInstance().player)) event.setCanceled(true);
     }
 
-    /** What the player aims at from the creature's eyes, up to a block in the way. */
-    private static @Nullable Entity aimed(Player p) {
+    /** What the player aims at from the creature's eyes (or their own, riding nothing), up to a block in the way. */
+    static @Nullable Entity aimed(Player p) {
         Entity mob = p.getVehicle();
         Vec3 eye = p.getEyePosition();
         Vec3 end = eye.add(p.getLookAngle().scale(AIM_RANGE));

@@ -80,7 +80,8 @@ public final class IncarnationView {
         shell.setShiftKeyDown(p.isShiftKeyDown());
         shell.setSprinting(p.isSprinting());
         shell.setInvisible(p.isInvisible());
-        shell.setRemainingFireTicks(p.getRemainingFireTicks());
+        // A client knows only whether a player burns (a synced flag), not for how long.
+        shell.setRemainingFireTicks(p.isOnFire() ? 1 : 0);
         shell.swinging = p.swinging;
         shell.swingTime = p.swingTime;
         shell.swingingArm = p.swingingArm;

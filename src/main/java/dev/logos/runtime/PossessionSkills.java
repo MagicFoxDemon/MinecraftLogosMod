@@ -29,8 +29,13 @@ import net.minecraft.world.entity.projectile.ShulkerBullet;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
 import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge;
+import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.EntityBasedExplosionDamageCalculator;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.ExplosionDamageCalculator;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
@@ -39,25 +44,36 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * A possessed creature's own skill, on its possessor's use button (see {@link Possession#shoot}):
- * the move vanilla gives it in its AI, done where the player looks. Creatures with none shoot as
- * before if they can. Free, but each has a cooldown near vanilla's. Another mod gives its own
- * creatures one with {@link #register}.
+ * A creature's own skill, on the use button of the player inside it ({@link Possession#shoot}) or
+ * of the player who has become one ({@link Incarnation#skill}): the move vanilla gives it in its
+ * AI, done where the player looks. Possessed creatures with none shoot as before if they can.
+ * Free, but each has a cooldown near vanilla's. Another mod gives its own creatures one with
+ * {@link #register}.
  */
 public final class PossessionSkills {
-    /** One creature's skill: done by {@code mob} for {@code player}, at {@code target} if they aim at one it may hit. */
+    /**
+     * One creature's skill: done by {@code mob} for {@code player}, at {@code target} if they aim at
+     * one it may hit. {@code mob} is the body that acts: the possessed creature, or the incarnated
+     * player themself ({@code mob == player}), so a skill that needs the creature's own class must
+     * do without it for a player.
+     */
     @FunctionalInterface
     public interface Skill {
         /** Whether it went off (only then does its cooldown start). */
-        boolean use(ServerLevel level, Mob mob, ServerPlayer player, @Nullable LivingEntity target);
+        boolean use(ServerLevel level, LivingEntity mob, ServerPlayer player, @Nullable LivingEntity target);
     }
 
     public record Entry(Skill skill, int cooldown) {}
 
     private static final Map<EntityType<?>, Entry> SKILLS = new HashMap<>();
     /** Rams under way: the goat and the tick its charge is spent. */
-    private static final Map<Mob, Long> RAMMING = new WeakHashMap<>();
+    private static final Map<LivingEntity, Long> RAMMING = new WeakHashMap<>();
     private static final int RAM_TICKS = 10;
+    /** Incarnated creepers whose fuse is lit, and the tick it runs out (a possessed one has its own). */
+    private static final Map<LivingEntity, Long> FUSES = new WeakHashMap<>();
+    /** A creeper's fuse and blast radius, as vanilla's. */
+    private static final int FUSE_TICKS = 30;
+    private static final float CREEPER_BLAST = 3;
 
     private PossessionSkills() {}
 
@@ -67,13 +83,23 @@ public final class PossessionSkills {
     }
 
     public static @Nullable Entry of(Entity mob) {
-        return SKILLS.get(mob.getType());
+        return of(mob.getType());
+    }
+
+    public static @Nullable Entry of(EntityType<?> type) {
+        return SKILLS.get(type);
     }
 
     static {
         // Its fuse, as when it nears a player; the blast ends the possession, without the backlash of being killed.
+        // An incarnated creeper's blast spares the player and gives them back their shape.
         register(EntityType.CREEPER, 40, (level, mob, p, target) -> {
-            ((Creeper) mob).ignite();
+            if (mob instanceof Creeper c) {
+                c.ignite();
+            } else {
+                FUSES.put(mob, level.getGameTime() + FUSE_TICKS);
+                sound(mob, SoundEvents.CREEPER_PRIMED, 1, 0.5f);
+            }
             return true;
         });
         register(EntityType.ENDERMAN, 20, PossessionSkills::teleport);
@@ -81,15 +107,17 @@ public final class PossessionSkills {
         register(EntityType.GHAST, 40, PossessionSkills::ghast);
         register(EntityType.BREEZE, 30, (level, mob, p, target) -> {
             Vec3 look = p.getLookAngle();
-            Projectile.spawnProjectileUsingShoot(new BreezeWindCharge((Breeze) mob, level), level, ItemStack.EMPTY, look.x, look.y, look.z, 0.7f, 1);
-            mob.playSound(SoundEvents.BREEZE_SHOOT, 1.5f, 1);
+            // A player who has become a breeze throws the player's own wind charge, from their eyes.
+            Projectile charge = mob instanceof Breeze b ? new BreezeWindCharge(b, level) : new WindCharge(p, level, p.getX(), p.getEyeY(), p.getZ());
+            Projectile.spawnProjectileUsingShoot(charge, level, ItemStack.EMPTY, look.x, look.y, look.z, 0.7f, 1);
+            sound(mob, SoundEvents.BREEZE_SHOOT, 1.5f, 1);
             return true;
         });
         register(EntityType.EVOKER, 100, PossessionSkills::fangs);
         register(EntityType.SHULKER, 30, (level, mob, p, target) -> {
             if (target == null) return false;
             level.addFreshEntity(new ShulkerBullet(level, mob, target, Direction.Axis.Y));
-            mob.playSound(SoundEvents.SHULKER_SHOOT, 2, (mob.getRandom().nextFloat() - mob.getRandom().nextFloat()) * 0.2f + 1);
+            sound(mob, SoundEvents.SHULKER_SHOOT, 2, (mob.getRandom().nextFloat() - mob.getRandom().nextFloat()) * 0.2f + 1);
             return true;
         });
         register(EntityType.WARDEN, 40, PossessionSkills::sonicBoom);
@@ -99,13 +127,21 @@ public final class PossessionSkills {
             mob.setDeltaMovement(look.x * 1.2, mob.getDeltaMovement().y + 0.1, look.z * 1.2);
             mob.hurtMarked = true; // the push reaches the possessor's client, which moves the goat
             RAMMING.put(mob, level.getGameTime() + RAM_TICKS);
-            mob.playSound(SoundEvents.GOAT_PREPARE_RAM, 1, 1);
+            sound(mob, SoundEvents.GOAT_PREPARE_RAM, 1, 1);
             return true;
         });
     }
 
-    /** Each server tick of a possession: a ramming goat strikes the first creature it runs into. */
-    static void tick(ServerPlayer p, Mob mob) {
+    /**
+     * Each server tick of a possession or incarnation ({@code mob} is the body): a ramming goat strikes
+     * the first creature it runs into; an incarnated creeper's fuse burns down.
+     */
+    static void tick(ServerPlayer p, LivingEntity mob) {
+        Long fuse = FUSES.get(mob);
+        if (fuse != null && mob.level() instanceof ServerLevel level && level.getGameTime() >= fuse) {
+            FUSES.remove(mob);
+            if (Incarnation.formType(p) == EntityType.CREEPER) blast(level, p);
+        }
         Long until = RAMMING.get(mob);
         if (until == null || !(mob.level() instanceof ServerLevel level)) return;
         if (level.getGameTime() > until) {
@@ -115,23 +151,50 @@ public final class PossessionSkills {
         for (LivingEntity hit : level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(0.4), e -> fair(p, mob, e))) {
             RAMMING.remove(mob);
             Vec3 push = hit.position().subtract(mob.position()).multiply(1, 0, 1).normalize();
-            hit.hurtServer(level, level.damageSources().mobAttack(mob), (float) mob.getAttributeValue(Attributes.ATTACK_DAMAGE));
+            hit.hurtServer(level, level.damageSources().mobAttack(mob), (float) blow(mob));
             double resist = 1 - hit.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
             hit.push(push.x * 2.5 * resist, 0.4 * resist, push.z * 2.5 * resist);
             hit.hurtMarked = true;
-            mob.playSound(SoundEvents.GOAT_RAM_IMPACT, 1, 1);
+            sound(mob, SoundEvents.GOAT_RAM_IMPACT, 1, 1);
             return;
         }
     }
 
+    /** An incarnated creeper's blast, where the player stands: it hurts and throws everything else, never them, and ends the form. */
+    private static void blast(ServerLevel level, ServerPlayer p) {
+        ExplosionDamageCalculator sparing = new EntityBasedExplosionDamageCalculator(p) {
+            @Override
+            public boolean shouldDamageEntity(Explosion explosion, Entity entity) {
+                return entity != p && super.shouldDamageEntity(explosion, entity);
+            }
+
+            @Override
+            public float getKnockbackMultiplier(Entity entity) {
+                return entity == p ? 0 : super.getKnockbackMultiplier(entity);
+            }
+        };
+        level.explode(p, null, sparing, p.getX(), p.getY(), p.getZ(), CREEPER_BLAST, false, Level.ExplosionInteraction.MOB);
+        Incarnation.end(p);
+    }
+
+    /** The body's own blow: a creature's attack damage, or for an incarnated player their form's (not what they hold). */
+    private static double blow(LivingEntity mob) {
+        return mob instanceof Player p ? Incarnation.formDamage(p) : mob.getAttributeValue(Attributes.ATTACK_DAMAGE);
+    }
+
+    /** A sound from the body that its own player hears too (a player's own playSound leaves them out). */
+    private static void sound(LivingEntity mob, net.minecraft.sounds.SoundEvent event, float volume, float pitch) {
+        mob.level().playSound(null, mob.getX(), mob.getY(), mob.getZ(), event, mob.getSoundSource(), volume, pitch);
+    }
+
     /** Something a possessed creature's skill may hurt: not itself or its possessor, nor a player PvP would spare. */
-    static boolean fair(ServerPlayer p, Mob mob, @Nullable Entity e) {
+    static boolean fair(ServerPlayer p, LivingEntity mob, @Nullable Entity e) {
         return e instanceof LivingEntity t && t != mob && t != p && t.isAlive() && t.level() == mob.level()
                 && !(t instanceof Player other && !p.canHarmPlayer(other));
     }
 
     /** The enderman's: to the block face under the player's gaze, within 32 blocks, as it teleports anywhere (onto ground, never into walls). */
-    private static boolean teleport(ServerLevel level, Mob mob, ServerPlayer p, @Nullable LivingEntity target) {
+    private static boolean teleport(ServerLevel level, LivingEntity mob, ServerPlayer p, @Nullable LivingEntity target) {
         Vec3 eye = p.getEyePosition();
         HitResult hit = level.clip(new ClipContext(eye, eye.add(p.getLookAngle().scale(32)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mob));
         if (!(hit instanceof BlockHitResult block) || hit.getType() != HitResult.Type.BLOCK) return false;
@@ -140,12 +203,12 @@ public final class PossessionSkills {
         if (!mob.randomTeleport(to.getX() + 0.5, to.getY(), to.getZ() + 0.5, true)) return false;
         level.gameEvent(GameEvent.TELEPORT, from, GameEvent.Context.of(mob));
         level.playSound(null, from.x, from.y, from.z, SoundEvents.ENDERMAN_TELEPORT, mob.getSoundSource(), 1, 1);
-        mob.playSound(SoundEvents.ENDERMAN_TELEPORT, 1, 1);
+        sound(mob, SoundEvents.ENDERMAN_TELEPORT, 1, 1);
         return true;
     }
 
     /** The blaze's: three small fireballs, a little spread, where the player looks. */
-    private static boolean blaze(ServerLevel level, Mob mob, ServerPlayer p, @Nullable LivingEntity target) {
+    private static boolean blaze(ServerLevel level, LivingEntity mob, ServerPlayer p, @Nullable LivingEntity target) {
         Vec3 look = p.getLookAngle();
         for (int i = 0; i < 3; i++) {
             var r = mob.getRandom();
@@ -159,9 +222,9 @@ public final class PossessionSkills {
     }
 
     /** The ghast's: one fireball of its own blast power, from four blocks before it, as it fires. */
-    private static boolean ghast(ServerLevel level, Mob mob, ServerPlayer p, @Nullable LivingEntity target) {
+    private static boolean ghast(ServerLevel level, LivingEntity mob, ServerPlayer p, @Nullable LivingEntity target) {
         Vec3 look = p.getLookAngle();
-        LargeFireball ball = new LargeFireball(level, mob, look, ((Ghast) mob).getExplosionPower());
+        LargeFireball ball = new LargeFireball(level, mob, look, mob instanceof Ghast g ? g.getExplosionPower() : 1);
         ball.setPos(mob.getX() + look.x * 4, mob.getY(0.5) + 0.5, mob.getZ() + look.z * 4);
         level.addFreshEntity(ball);
         level.levelEvent(null, 1016, mob.blockPosition(), 0);
@@ -169,7 +232,7 @@ public final class PossessionSkills {
     }
 
     /** The evoker's: sixteen fangs in a line where the player looks, rising one after another, each on the ground there. */
-    private static boolean fangs(ServerLevel level, Mob mob, ServerPlayer p, @Nullable LivingEntity target) {
+    private static boolean fangs(ServerLevel level, LivingEntity mob, ServerPlayer p, @Nullable LivingEntity target) {
         Vec3 look = p.getLookAngle();
         float angle = (float) Mth.atan2(look.z, look.x);
         double minY = mob.getY() - 4, maxY = mob.getY() + 1;
@@ -177,12 +240,12 @@ public final class PossessionSkills {
             double reach = 1.25 * (i + 1);
             fang(level, mob, mob.getX() + Mth.cos(angle) * reach, mob.getZ() + Mth.sin(angle) * reach, minY, maxY, angle, i);
         }
-        mob.playSound(SoundEvents.EVOKER_CAST_SPELL, 1, 1);
+        sound(mob, SoundEvents.EVOKER_CAST_SPELL, 1, 1);
         return true;
     }
 
     /** One fang on the first solid ground below {@code maxY}, down to {@code minY}; none where there is none (as an evoker's own). */
-    private static void fang(ServerLevel level, Mob mob, double x, double z, double minY, double maxY, float angle, int delay) {
+    private static void fang(ServerLevel level, LivingEntity mob, double x, double z, double minY, double maxY, float angle, int delay) {
         BlockPos pos = BlockPos.containing(x, maxY, z);
         do {
             BlockPos below = pos.below();
@@ -202,7 +265,7 @@ public final class PossessionSkills {
     }
 
     /** The warden's: its sonic boom at the creature the player aims at, within its reach (15 across, 20 up or down), through anything. */
-    private static boolean sonicBoom(ServerLevel level, Mob mob, ServerPlayer p, @Nullable LivingEntity target) {
+    private static boolean sonicBoom(ServerLevel level, LivingEntity mob, ServerPlayer p, @Nullable LivingEntity target) {
         if (target == null || !mob.closerThan(target, 15, 20)) return false;
         Vec3 source = mob.getEyePosition().subtract(0, 0.5, 0);
         Vec3 delta = target.getEyePosition().subtract(source);
@@ -211,8 +274,8 @@ public final class PossessionSkills {
             Vec3 at = source.add(dir.scale(i));
             level.sendParticles(ParticleTypes.SONIC_BOOM, at.x, at.y, at.z, 1, 0, 0, 0, 0);
         }
-        mob.playSound(SoundEvents.WARDEN_SONIC_BOOM, 3, 1);
-        level.broadcastEntityEvent(mob, (byte) 62);
+        sound(mob, SoundEvents.WARDEN_SONIC_BOOM, 3, 1);
+        if (mob instanceof Mob) level.broadcastEntityEvent(mob, (byte) 62); // its own animation; a player has none
         if (target.hurtServer(level, level.damageSources().sonicBoom(mob), 10)) {
             double resist = 1 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
             target.push(dir.x * 2.5 * resist, dir.y * 0.5 * resist, dir.z * 2.5 * resist);
@@ -222,7 +285,7 @@ public final class PossessionSkills {
     }
 
     /** The ravager's: a roar that hurts and throws back what stands within four blocks (illagers are spared the hurt, as by its own). */
-    private static boolean roar(ServerLevel level, Mob mob, ServerPlayer p, @Nullable LivingEntity target) {
+    private static boolean roar(ServerLevel level, LivingEntity mob, ServerPlayer p, @Nullable LivingEntity target) {
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(4), e -> fair(p, mob, e))) {
             if (!(e instanceof AbstractIllager)) e.hurtServer(level, level.damageSources().mobAttack(mob), 6);
             double dx = e.getX() - mob.getX(), dz = e.getZ() - mob.getZ();
@@ -230,9 +293,9 @@ public final class PossessionSkills {
             e.push(dx / d * 4, 0.2, dz / d * 4);
             e.hurtMarked = true;
         }
-        mob.playSound(SoundEvents.RAVAGER_ROAR, 1, 1);
+        sound(mob, SoundEvents.RAVAGER_ROAR, 1, 1);
         level.gameEvent(mob, GameEvent.ENTITY_ACTION, mob.position());
-        level.broadcastEntityEvent(mob, (byte) 69);
+        if (mob instanceof Mob) level.broadcastEntityEvent(mob, (byte) 69);
         return true;
     }
 }

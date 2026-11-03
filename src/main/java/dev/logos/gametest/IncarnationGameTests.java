@@ -140,6 +140,80 @@ final class IncarnationGameTests {
     }
 
     /**
+     * A form's skill on the use button: a blaze throws three fireballs of the player's, once per
+     * cooldown; an evoker (hands) only with an empty main hand; a creeper's fuse burns 1.5 s, then
+     * its blast hurts the cow and spares the player, who is themself again.
+     */
+    static void skills(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        ServerLevel level = h.getLevel();
+        p.setGameMode(GameType.CREATIVE);
+        h.assertTrue(Incarnation.start(p, EntityType.BLAZE, 30) && Incarnation.skillOnUse(p), "a blaze's use button should be its skill");
+        Incarnation.skill(p, null);
+        Incarnation.skill(p, null);
+        var balls = level.getEntitiesOfClass(net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball.class, p.getBoundingBox().inflate(4));
+        h.assertTrue(balls.size() == 3 && balls.stream().allMatch(b -> b.getOwner() == p), "one volley of three fireballs of the player's, found " + balls.size());
+        balls.forEach(net.minecraft.world.entity.Entity::discard);
+
+        h.assertTrue(Incarnation.start(p, EntityType.EVOKER, 30), "an evoker form should be taken");
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BREAD));
+        h.assertTrue(!Incarnation.skillOnUse(p), "with something in hand an evoker uses it");
+        p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        h.assertTrue(Incarnation.skillOnUse(p), "empty-handed, an evoker casts its fangs");
+        h.assertTrue(Incarnation.start(p, EntityType.PIG, 30) && !Incarnation.skillOnUse(p), "a pig has no skill");
+
+        h.assertTrue(Incarnation.start(p, EntityType.CREEPER, 30), "a creeper form should be taken");
+        p.setGameMode(GameType.SURVIVAL);
+        var cow = h.spawn(EntityType.COW, new Vec3(6.5, 2, 4.5));
+        float health = p.getHealth(), cowHealth = cow.getHealth();
+        Incarnation.skill(p, null);
+        h.assertTrue(Incarnation.active(p), "the fuse should burn before the blast");
+        h.succeedWhen(() -> {
+            h.assertTrue(!Incarnation.active(p), "the blast should end the form");
+            h.assertTrue(!cow.isAlive() || cow.getHealth() < cowHealth, "the blast should hurt the cow");
+            h.assertTrue(p.getHealth() == health, "the blast should spare the player, health " + p.getHealth() + " of " + health);
+        });
+    }
+
+    /**
+     * What a form is like besides its body, by tags: a cat falls unhurt and a pig does not; a strider
+     * stands on lava's surface; a cod out of water runs out of breath a tick at a time.
+     */
+    static void traits(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        ServerLevel level = h.getLevel();
+        p.setGameMode(GameType.CREATIVE);
+        h.assertTrue(Incarnation.start(p, EntityType.CAT, 30), "a cat form should be taken");
+        p.setGameMode(GameType.SURVIVAL);
+        float health = p.getHealth();
+        p.hurtServer(level, level.damageSources().fall(), 4);
+        h.assertTrue(p.getHealth() == health, "a cat should take no fall damage");
+        p.setGameMode(GameType.CREATIVE);
+        h.assertTrue(Incarnation.start(p, EntityType.PIG, 30), "a pig form should be taken");
+        p.setGameMode(GameType.SURVIVAL);
+        health = p.getHealth();
+        p.hurtServer(level, level.damageSources().fall(), 4);
+        h.assertTrue(p.getHealth() < health, "a pig should be hurt by a fall");
+
+        p.setGameMode(GameType.CREATIVE);
+        h.assertTrue(Incarnation.start(p, EntityType.STRIDER, 30) && Incarnation.walksOnLava(p), "a strider should walk on lava");
+        net.minecraft.core.BlockPos lava = h.absolutePos(new net.minecraft.core.BlockPos(1, 1, 7));
+        level.setBlockAndUpdate(lava, net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState());
+        p.snapTo(lava.getX() + 0.5, lava.getY() + 1.05, lava.getZ() + 0.5, 0, 0);
+        var surface = dev.logos.runtime.WaterWalking.withSurface(level.getBlockState(lava), level, lava,
+                net.minecraft.world.phys.shapes.CollisionContext.of(p), net.minecraft.world.phys.shapes.Shapes.empty());
+        h.assertTrue(!surface.isEmpty(), "lava should hold a strider up");
+
+        Vec3 home = h.absoluteVec(new Vec3(4.5, 2, 4.5));
+        p.snapTo(home.x, home.y, home.z, 0, 0);
+        h.assertTrue(Incarnation.start(p, EntityType.COD, 30), "a cod form should be taken");
+        p.setGameMode(GameType.SURVIVAL);
+        int air = p.getAirSupply();
+        // (Water hurting an enderman needs a player whose own tick notices the water: the client scenario logos_incarnate_traits.)
+        h.succeedWhen(() -> h.assertTrue(p.getAirSupply() < air - 10, "a cod out of water should run out of breath, air " + p.getAirSupply() + " of " + air));
+    }
+
+    /**
      * 解除化身: one's own form, for free; another player's (with :players) for its price less the part
      * used — an iron golem 25 s into 100 s: 100 / 5 × (√100 − √25) = 100.
      */

@@ -15,6 +15,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -24,9 +25,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -38,6 +43,7 @@ import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.ICancellableEvent;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -59,7 +65,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * breathing water from the creature itself, flight from flying pathfinding, a flying animal, no
  * gravity, or the config list {@code incarnationFliers}. Health keeps its share of the maximum both
  * ways. Only the creatures in the config list {@code incarnationHands} keep the use of hands; any
- * other strikes with its own body and cannot use, place or mine.
+ * other strikes with its own body and cannot use, place or mine. A creature with a skill of its own
+ * ({@link PossessionSkills}) has it on the use button: always without hands, with an empty main hand otherwise.
  * <p>
  * It ends when the time is up, when 万咒皆终 reaches it, when 解除化身 undoes it, or when the player
  * presses the revert key (V by default; {@link #end}).
@@ -103,6 +110,24 @@ public final class Incarnation {
     private static final Map<Player, @Nullable Identifier> SIZED_SERVER = Collections.synchronizedMap(new WeakHashMap<>()),
             SIZED_CLIENT = Collections.synchronizedMap(new WeakHashMap<>());
 
+    /**
+     * What a form does that nothing about the creature tells, as entity tags packs may change. Daylight
+     * burning and fall immunity come from vanilla's own tags (#minecraft:burn_in_daylight,
+     * #minecraft:fall_damage_immune), which other mods fill for their creatures.
+     */
+    public static final TagKey<EntityType<?>> CLIMBS = trait("climbs"), SLOW_FALLS = trait("slow_falls"), WALKS_ON_LAVA = trait("walks_on_lava"),
+            HURT_BY_WATER = trait("hurt_by_water"), NEEDS_WATER = trait("needs_water");
+    private static final double CLIMB_SPEED = 0.2, SLOW_FALL = 0.6;
+    /** A fish-form player's breath out of water, which vanilla would refill every tick. */
+    private static final Map<java.util.UUID, Integer> DRY_AIR = new java.util.HashMap<>();
+
+    private static TagKey<EntityType<?>> trait(String name) {
+        return TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "incarnation/" + name));
+    }
+
+    /** When each player's form skill may be used again (game time); not saved, as no cooldown outlasts much. */
+    private static final Map<java.util.UUID, Long> NEXT_SKILL = new java.util.HashMap<>();
+
     private Incarnation() {}
 
     /** The form {@code e} has taken, on either side; null if it is not an incarnated player. */
@@ -131,6 +156,34 @@ public final class Incarnation {
     private static double base(EntityType<?> type, Holder<Attribute> a, double fallback) {
         AttributeSupplier s = body(type);
         return s != null && s.hasAttribute(a) ? s.getBaseValue(a) : fallback;
+    }
+
+    /** The blow of {@code p}'s form itself: its attack damage, 1 if it has none (or {@code p} has no form). */
+    public static double formDamage(Player p) {
+        EntityType<?> type = formType(p);
+        return type == null ? 1 : base(type, Attributes.ATTACK_DAMAGE, 1);
+    }
+
+    /**
+     * Whether {@code p}'s use button is their form's skill now, on either side: its creature has one
+     * ({@link PossessionSkills}), and either it has no hands or its main hand is empty (a hand that
+     * holds something uses it).
+     */
+    public static boolean skillOnUse(@Nullable Player p) {
+        Form f = form(p);
+        EntityType<?> type = formType(p);
+        return f != null && type != null && PossessionSkills.of(type) != null && (!f.hands() || p.getMainHandItem().isEmpty());
+    }
+
+    /** The use button as a skill: its form's own, at {@code target} if it may hit it, once its cooldown is over. */
+    public static void skill(ServerPlayer p, @Nullable Entity target) {
+        if (!skillOnUse(p)) return;
+        PossessionSkills.Entry skill = PossessionSkills.of(formType(p));
+        long now = p.level().getGameTime();
+        if (now < NEXT_SKILL.getOrDefault(p.getUUID(), 0L)) return;
+        if (skill.skill().use((ServerLevel) p.level(), p, p, PossessionSkills.fair(p, p, target) ? (LivingEntity) target : null)) {
+            NEXT_SKILL.put(p.getUUID(), now + skill.cooldown());
+        }
     }
 
     /** Its maximum health / 5 × √seconds, as possessing it at full health would cost. */
@@ -183,6 +236,7 @@ public final class Incarnation {
                 LogosConfig.incarnationHands(id.toString()));
         float share = p.getHealth() / p.getMaxHealth();
         p.setData(LogosMod.FORM, f);
+        NEXT_SKILL.remove(p.getUUID()); // a new body, rested
         shape(p, type);
         p.setHealth(share * p.getMaxHealth());
         p.refreshDimensions();
@@ -197,6 +251,7 @@ public final class Incarnation {
         if (f == null) return;
         float share = p.getHealth() / p.getMaxHealth();
         p.setData(LogosMod.FORM, Form.NONE);
+        DRY_AIR.remove(p.getUUID());
         shape(p, null);
         p.setHealth(share * p.getMaxHealth());
         p.refreshDimensions();
@@ -236,13 +291,26 @@ public final class Incarnation {
 
     // ---- Events ---------------------------------------------------------------------------------
 
-    /** On both sides, a player is resized when their form changes: a synced form arrives on clients this way. */
+    /**
+     * On both sides, a player is resized when their form changes (a synced form arrives on clients
+     * this way), and moves as it does: a climber goes up the wall it walks into (sneaking, it holds
+     * on), a slow faller drifts down. The player's own client moves them, so this runs there too.
+     */
     @SubscribeEvent
     static void onTick(PlayerTickEvent.Pre event) {
         Player p = event.getEntity();
         Form f = form(p);
         Identifier now = f == null ? null : f.type();
         if (!Objects.equals((p.level().isClientSide() ? SIZED_CLIENT : SIZED_SERVER).put(p, now), now)) p.refreshDimensions();
+        EntityType<?> type = formType(p);
+        if (type == null || p.getAbilities().flying) return;
+        Vec3 v = p.getDeltaMovement();
+        if (has(type, CLIMBS) && p.horizontalCollision) {
+            p.setDeltaMovement(v.x, p.isShiftKeyDown() ? Math.max(v.y, 0) : CLIMB_SPEED, v.z);
+            p.resetFallDistance();
+        } else if (has(type, SLOW_FALLS) && !p.onGround() && v.y < 0) {
+            p.setDeltaMovement(v.multiply(1, SLOW_FALL, 1));
+        }
     }
 
     @SubscribeEvent
@@ -265,15 +333,63 @@ public final class Incarnation {
         }
         // Changing game mode resets what a player may do; a flying form keeps its wings.
         if (f.flies() && !sp.getAbilities().mayfly) fly(sp, true);
-        if (f.gills()) sp.setAirSupply(sp.getMaxAirSupply());
+        if (has(type, NEEDS_WATER)) breatheWater(sp);
+        else if (f.gills()) sp.setAirSupply(sp.getMaxAirSupply());
+        PossessionSkills.tick(sp, sp);
+        if (has(type, EntityTypeTags.BURN_IN_DAYLIGHT)) burnInDaylight(sp);
+        if (has(type, HURT_BY_WATER) && sp.isInWaterOrRain()) sp.hurtServer(sp.level(), sp.damageSources().drown(), 1);
         if (type.fireImmune() && sp.isOnFire()) sp.clearFire();
         if (left <= 100 && left % 20 == 0) sp.sendOverlayMessage(Component.translatable("logos.incarnate.ending", left / 20));
     }
 
-    /** A form that fire cannot touch keeps the player from burning. */
+    /** Whether {@code type} is in {@code tag}. */
+    private static boolean has(EntityType<?> type, TagKey<EntityType<?>> tag) {
+        return type.builtInRegistryHolder().is(tag);
+    }
+
+    /** A fish's breath: full in water; out of it, it runs out a tick at a time and then drowns them, as a fish's does. */
+    private static void breatheWater(ServerPlayer sp) {
+        if (sp.isInWater()) {
+            DRY_AIR.remove(sp.getUUID());
+            sp.setAirSupply(sp.getMaxAirSupply());
+            return;
+        }
+        int air = DRY_AIR.getOrDefault(sp.getUUID(), sp.getMaxAirSupply()) - 1;
+        if (air <= -20) {
+            air = 0;
+            sp.hurtServer(sp.level(), sp.damageSources().dryOut(), 2);
+        }
+        DRY_AIR.put(sp.getUUID(), air);
+        sp.setAirSupply(Math.max(air, 0));
+    }
+
+    /** Daylight sets an undead form alight as it does the creature (a helmet takes it instead and wears), unless rain, water or snow is on them or the sky is out of sight. */
+    private static void burnInDaylight(ServerPlayer sp) {
+        ServerLevel level = sp.level();
+        if (!level.environmentAttributes().getValue(EnvironmentAttributes.MONSTERS_BURN, sp.position())) return;
+        float light = sp.getLightLevelDependentMagicValue();
+        if (light <= 0.5f || sp.getRandom().nextFloat() * 30 >= (light - 0.4f) * 2 || sp.isInWaterOrRain() || sp.isInPowderSnow || sp.wasInPowderSnow
+                || !level.canSeeSky(BlockPos.containing(sp.getX(), sp.getEyeY(), sp.getZ()))) return;
+        ItemStack helmet = sp.getItemBySlot(EquipmentSlot.HEAD);
+        if (helmet.isEmpty()) {
+            sp.igniteForSeconds(8);
+        } else if (helmet.isDamageableItem()) {
+            helmet.hurtAndBreak(sp.getRandom().nextInt(2), sp, EquipmentSlot.HEAD);
+        }
+    }
+
+    /** A form that fire cannot touch keeps the player from burning; one that falls unhurt (#minecraft:fall_damage_immune) or slowly takes no fall. */
     @SubscribeEvent
     static void onDamage(LivingIncomingDamageEvent event) {
-        if (event.getSource().is(DamageTypeTags.IS_FIRE) && formType(event.getEntity()) instanceof EntityType<?> t && t.fireImmune()) event.setCanceled(true);
+        if (!(formType(event.getEntity()) instanceof EntityType<?> t)) return;
+        if (event.getSource().is(DamageTypeTags.IS_FIRE) && t.fireImmune()) event.setCanceled(true);
+        if (event.getSource().is(DamageTypeTags.IS_FALL) && (has(t, EntityTypeTags.FALL_DAMAGE_IMMUNE) || has(t, SLOW_FALLS))) event.setCanceled(true);
+    }
+
+    /** On either side: whether {@code e} is a player whose form walks on lava ({@code #logos:incarnation/walks_on_lava}), as a strider does. */
+    public static boolean walksOnLava(@Nullable Entity e) {
+        EntityType<?> type = formType(e);
+        return type != null && has(type, WALKS_ON_LAVA);
     }
 
     /** Without hands, a blow is the creature's own: its attack damage (1 if it has none), whatever the player holds. */
@@ -287,7 +403,7 @@ public final class Incarnation {
         EntityType<?> type = formType(sp);
         float strength = sp.getAttackStrengthScale(0.5f);
         sp.resetAttackStrengthTicker();
-        if (type != null) t.hurtServer(sp.level(), sp.damageSources().playerAttack(sp), (float) base(type, Attributes.ATTACK_DAMAGE, 1) * strength);
+        if (type != null) t.hurtServer(sp.level(), sp.damageSources().playerAttack(sp), (float) formDamage(sp) * strength);
     }
 
     // Without hands, nothing is used, placed, mined or handled.
