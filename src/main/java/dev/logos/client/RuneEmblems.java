@@ -428,6 +428,17 @@ final class RuneEmblems {
                 "#.#.....#",
                 "##.....#.",
                 "..#####.."}, "end-all");
+        // The beast's legs falling away from a figure standing whole again.
+        put(new String[]{
+                "...###...",
+                "...###...",
+                "....#....",
+                "..#####..",
+                "....#....",
+                "...#.#...",
+                "..#...#..",
+                "+.......+",
+                ".+.+.+.+."}, "revert");
         // A circle broken into motes: the body let go.
         put(new String[]{
                 "..#.#.#..",

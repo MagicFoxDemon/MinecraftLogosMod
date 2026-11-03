@@ -23,7 +23,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Real-client check of incarnation: the player becomes a zombie (hands: it holds their sword and
  * wears their helmet, seen from behind and walking), then a pig (no hand in first person, a pig
- * from behind), then a bat that flies, and is themself again once it wears off.
+ * from behind) that the revert key undoes, then a bat that flies, and is themself again once it wears off.
  * Run: {@code gradlew runClient -PldTest=logos_incarnate_view}.
  */
 @LDLRegisterClient(name = "logos_incarnate_view", group = "logos", registry = UIScenario.REGISTRY,
@@ -82,6 +82,14 @@ public class IncarnateViewScenario implements UIScenario {
                 .step("first person: no hand", ctx -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON))
                 .ticks(5)
                 .screenshot("pig_first_person")
+                .step("press the revert key", ctx -> net.minecraft.client.KeyMapping.click(java.util.Arrays.stream(Minecraft.getInstance().options.keyMappings)
+                        .filter(k -> k.getName().equals("key.logos.revert")).findFirst().orElseThrow().getKey()))
+                .ticks(5)
+                .step("no longer a pig", ctx -> {
+                    var p = Minecraft.getInstance().player;
+                    if (Incarnation.active(p)) throw new AssertionError("the revert key did not undo the pig");
+                    if (Math.abs(p.getBbHeight() - 1.8f) > 1e-3) throw new AssertionError("not their own height: " + p.getBbHeight());
+                })
                 .server("become a bat", sc -> {
                     if (!Incarnation.start(sc.player(), EntityType.BAT, 2)) throw new AssertionError("no bat");
                     sc.player().getAbilities().flying = true;

@@ -354,6 +354,14 @@ class CompilerTest {
     }
 
     @Test
+    void revertIsFreeOnOneselfAndTakesTargets() {
+        // Undoing one's own form is free; another's price is only known when the spell runs.
+        assertEquals(0, Compiler.compile("(revert)").profile().estimate(), 1e-6);
+        Compiler.compile("(spell :players true (revert (nearest-player :radius 8)))");
+        assertError("(revert here)", "实体");
+    }
+
+    @Test
     void imbueIsKeptUpLikeAField() {
         // 6 to wind, 0.5 a pulse (every 0.5 s by default): 30 seconds is 6 + 60 × 0.5.
         assertEquals(36, Compiler.compile("(imbue caster :life 30)").profile().estimate(), 0.051);

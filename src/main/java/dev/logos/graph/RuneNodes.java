@@ -456,6 +456,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "revert", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Revert extends RuneNode {
+        public Revert() {
+            super("revert");
+        }
+    }
+
     @NodeAttribute(name = "copy", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Copy extends RuneNode {
         public Copy() {
@@ -1046,6 +1053,7 @@ public final class RuneNodes {
         BY_RUNE.put("turn", Turn::new);
         BY_RUNE.put("disperse", Disperse::new);
         BY_RUNE.put("end-all", EndAll::new);
+        BY_RUNE.put("revert", Revert::new);
         BY_RUNE.put("if", If::new);
         BY_RUNE.put("switch", Switch::new);
         BY_RUNE.put("each", Each::new);

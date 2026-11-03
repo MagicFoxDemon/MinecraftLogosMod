@@ -308,6 +308,11 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = 2;
                     assumptions.add("万咒皆终按熄灭一个已耗尽的术式估算；实际要付被熄灭术式剩下的魔力");
                 }
+                case "revert" -> {
+                    own = 0;
+                    assumptions.add("解除自己的化身免费；解除别人的化身要付它还没用掉的价格");
+                    found.add(Intent.UTILITY);
+                }
                 case "blink" -> {
                     own = (2 + 0.5 * 10) * count(n.arg(1));
                     assumptions.add("瞬移按 10 格估算");

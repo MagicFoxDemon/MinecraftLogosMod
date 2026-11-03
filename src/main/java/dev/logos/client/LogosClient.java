@@ -53,6 +53,7 @@ public final class LogosClient {
         event.register(SPELL_WHEEL);
         event.register(ColossusInput.MODE);
         event.register(PossessionInput.INSTINCT);
+        event.register(IncarnationInput.REVERT);
     }
 
     @SubscribeEvent
@@ -126,6 +127,7 @@ public final class LogosClient {
     static void onClientTickStart(ClientTickEvent.Pre event) {
         ConstructRiding.tick();
         PossessionInput.tick();
+        IncarnationInput.tick();
         DragonInput.tick();
         ColossusInput.tick();
         StaffInput.tick();

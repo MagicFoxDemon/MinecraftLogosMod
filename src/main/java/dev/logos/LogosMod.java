@@ -889,6 +889,7 @@ public class LogosMod {
         registrar.playToServer(dev.logos.net.ColossusControlPayload.TYPE, dev.logos.net.ColossusControlPayload.CODEC, dev.logos.net.ColossusControlPayload::handle);
         registrar.playToServer(dev.logos.net.DragonControlPayload.TYPE, dev.logos.net.DragonControlPayload.CODEC, dev.logos.net.DragonControlPayload::handle);
         registrar.playToServer(dev.logos.net.PossessControlPayload.TYPE, dev.logos.net.PossessControlPayload.CODEC, dev.logos.net.PossessControlPayload::handle);
+        registrar.playToServer(dev.logos.net.RevertPayload.TYPE, dev.logos.net.RevertPayload.CODEC, dev.logos.net.RevertPayload::handle);
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
         registrar.playToClient(dev.logos.net.ChargePayload.TYPE, dev.logos.net.ChargePayload.CODEC);
         registrar.playToClient(dev.logos.net.AreaWeatherPayload.TYPE, dev.logos.net.AreaWeatherPayload.CODEC);
