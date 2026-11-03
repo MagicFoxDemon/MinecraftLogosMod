@@ -21,7 +21,9 @@ import net.minecraft.world.phys.Vec3;
  * ray's runes ({@code arcane_ray/runes}) slowly circling the ball as it fills and while it is held, each
  * glowing and dimming on its own, with two four-point glints ({@code arcane_ray/glint}) winking between
  * them in turn. Let go, the runes are flung out and go out; dropped, they dim away with the ball. They are
- * not drawn in first person, where the orbit would cross the middle of the view.
+ * not drawn in first person, where the orbit would cross the middle of the view. A colossal charge has its own
+ * aura round the caster in place of the shared pillar ({@link ArcaneChargeAura}, after Unreal's
+ * NS_Charge_MagicLift_Root).
  */
 final class ArcaneChargeVisual extends ChargeCore {
     /** Runes round the ball, by tier (none below grand). */
@@ -30,15 +32,37 @@ final class ArcaneChargeVisual extends ChargeCore {
     private static final float[] ORBIT = {0, 0, .62f, .95f}, SIZE = {0, 0, .095f, .13f};
     private static final float RELEASE = 9, FIZZLE = 14;
 
+    private final ArcaneChargeAura aura;
+
     ArcaneChargeVisual() {
         super(ChargeStyle.of(Element.ARCANE).withCircles("charge/circle_17", "arcane_charge/circle_12", "charge/circle_16",
-                "charge/circle_03", "arcane_charge/circle_04", "charge/circle_15", "charge/circle_17"));
+                "charge/circle_03", "arcane_charge/circle_04", "charge/circle_15", "charge/circle_17").withOwnAura());
+        aura = new ArcaneChargeAura(style);
+    }
+
+    @Override
+    public boolean tick(Level level, LiveCharge charge) {
+        boolean core = super.tick(level, charge);
+        boolean own = aura.tick(level.getRandom(), charge);
+        return core || own;
+    }
+
+    @Override
+    public void end() {
+        super.end();
+        aura.end();
     }
 
     @Override
     public void submit(Level level, LiveCharge charge, CameraRenderState camera, float partialTick, PoseStack pose, SubmitNodeCollector out) {
         super.submit(level, charge, camera, partialTick, pose, out);
         int tier = charge.tier();
+        if (tier == 3) {
+            pose.pushPose();
+            pose.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+            aura.submit(charge, View.of(camera), partialTick, pose, out);
+            pose.popPose();
+        }
         // In first person the orbit would cross the middle of the view: the runes are only for onlookers.
         if (RUNES[tier] == 0 || charge.firstPerson()) return;
         float show = 1, spread = 1;
