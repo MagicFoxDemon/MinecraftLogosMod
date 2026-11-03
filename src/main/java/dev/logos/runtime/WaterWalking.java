@@ -2,6 +2,7 @@ package dev.logos.runtime;
 
 import dev.logos.LogosMod;
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
@@ -22,6 +23,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
  * flowing, or the water in a waterlogged block) holds its bearer up like ground. They walk on it,
  * and a fall onto it hurts like a fall onto ground, since they never get into the fluid to break
  * it. Sneaking sinks through; a bearer under the surface who is not sneaking floats up to it.
+ * A player incarnated as a strider ({@link Incarnation#walksOnLava}) walks on lava the same way.
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class WaterWalking extends MobEffect {
@@ -42,7 +44,7 @@ public final class WaterWalking extends MobEffect {
         FluidState fluid = state.getFluidState();
         if (fluid.isEmpty() || context.isDescending() || context.isPlacement()
                 || !(context instanceof EntityCollisionContext c) || !(c.getEntity() instanceof LivingEntity walker)
-                || !walker.hasEffect(LogosMod.WATER_WALKING)) return shape;
+                || !(walker.hasEffect(LogosMod.WATER_WALKING) || fluid.is(FluidTags.LAVA) && Incarnation.walksOnLava(walker))) return shape;
         // Only the top of a column of fluid is a surface.
         if (level.getFluidState(pos.above()).getType().isSame(fluid.getType())) return shape;
         float height = fluid.getOwnHeight();
@@ -57,7 +59,7 @@ public final class WaterWalking extends MobEffect {
     @SubscribeEvent
     static void onTick(EntityTickEvent.Pre event) {
         if (!(event.getEntity() instanceof LivingEntity walker) || walker.isDescending() || !walker.isInFluidType()
-                || !walker.hasEffect(LogosMod.WATER_WALKING)) return;
+                || !(walker.hasEffect(LogosMod.WATER_WALKING) || walker.isInLava() && Incarnation.walksOnLava(walker))) return;
         Vec3 v = walker.getDeltaMovement();
         if (v.y < RISE) walker.setDeltaMovement(v.x, RISE, v.z);
     }

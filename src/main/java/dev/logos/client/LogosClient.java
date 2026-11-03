@@ -102,6 +102,7 @@ public final class LogosClient {
     static void onUse(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
         ConstructPlacement.onUse(event);
         if (!event.isCanceled()) PossessionInput.onInteraction(event);
+        if (!event.isCanceled()) IncarnationInput.onInteraction(event);
         if (!event.isCanceled()) DragonInput.onInteraction(event);
         if (!event.isCanceled()) ColossusInput.onInteraction(event);
         if (!event.isCanceled()) StaffInput.onInteraction(event);
