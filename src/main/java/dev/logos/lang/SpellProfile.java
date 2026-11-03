@@ -273,6 +273,10 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = (2 + Math.min(argNum(n, 2, 30), 600) * 0.2 * (Math.max(scale, 1 / scale) - 1)) * count(n.arg(0));
                     found.add(Intent.UTILITY);
                 }
+                case "water-walk" -> {
+                    own = Math.clamp(argNum(n, 1, 60), 0, 600) * 0.3 * count(n.arg(0));
+                    found.add(Intent.MOVE);
+                }
                 case "possess" -> {
                     own = 20.0 / 5 * Math.sqrt(Math.clamp(argNum(n, 1, 30), 1, 600));
                     assumptions.add("附身按目标 20 点当前生命估算；附身自己的使魔免费");

@@ -603,6 +603,9 @@ public class LogosMod {
     /** 缩放: a timed change of the vanilla scale attribute. */
     public static final DeferredHolder<net.minecraft.world.effect.MobEffect, net.minecraft.world.effect.MobEffect> RESIZED =
             MOB_EFFECTS.register("resized", dev.logos.runtime.Resized::new);
+    /** 水上行走: the surface of any fluid holds its bearer up (dev.logos.runtime.WaterWalking). */
+    public static final DeferredHolder<net.minecraft.world.effect.MobEffect, net.minecraft.world.effect.MobEffect> WATER_WALKING =
+            MOB_EFFECTS.register("water_walking", dev.logos.runtime.WaterWalking::new);
 
     /** 焚式: a data-driven enchantment (data/logos/enchantment/formula_immolation.json). */
     public static final net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> FORMULA_IMMOLATION =

@@ -136,6 +136,94 @@ final class WorldGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * water-walk: a fluid's surface holds its bearer up, water or lava, still or flowing, or in a
+     * waterlogged block; sneaking sinks through. A pig in water comes up and stands on it, a pig on
+     * lava stands there unburnt, and a pig that falls onto water is hurt as on ground while one
+     * without the effect splashes in unhurt.
+     */
+    static void waterWalk(GameTestHelper h) {
+        FamiliarGameTests.forceAround(h, 1);
+        ServerPlayer p = caster(h);
+        // A stone tub two deep: water at x 2–5, lava at x 7–10.
+        for (int x = 1; x <= 11; x++) for (int z = 2; z <= 6; z++) {
+            h.setBlock(x, 1, z, Blocks.STONE);
+            boolean wall = x == 1 || x == 6 || x == 11 || z == 2 || z == 6;
+            for (int y = 2; y <= 3; y++) h.setBlock(x, y, z, wall ? Blocks.STONE : x < 6 ? Blocks.WATER : Blocks.LAVA);
+        }
+        double surface = h.absolutePos(new BlockPos(0, 3, 0)).getY() + 8 / 9.0F;
+        var swimmer = h.spawn(EntityType.PIG, new BlockPos(3, 2, 4));
+        var onLava = h.spawn(EntityType.PIG, new BlockPos(8, 4, 4));
+        var faller = h.spawn(EntityType.PIG, new BlockPos(4, 5, 4));
+        var control = h.spawn(EntityType.PIG, new BlockPos(2, 5, 3));
+        // As if dropped from ten blocks up (the test box has a ceiling).
+        faller.fallDistance = control.fallDistance = 10;
+        castAt(h, p, "(water-walk (entities :radius 1) 30)", new BlockPos(3, 2, 4));
+        castAt(h, p, "(water-walk (entities :radius 1) 30)", new BlockPos(8, 4, 4));
+        castAt(h, p, "(water-walk (entities :radius 1) 30)", new BlockPos(4, 5, 4));
+        h.assertTrue(faller.hasEffect(LogosMod.WATER_WALKING) && !control.hasEffect(LogosMod.WATER_WALKING), "only the faller should walk on water");
+
+        var level = h.getLevel();
+        BlockPos water = h.absolutePos(new BlockPos(5, 3, 5));
+        p.addEffect(new net.minecraft.world.effect.MobEffectInstance(LogosMod.WATER_WALKING, 200));
+        p.snapTo(water.getX() + 0.5, surface + 0.05, water.getZ() + 0.5);
+        h.assertTrue(Math.abs(top(level, water, p) - 8 / 9.0) < 1e-4, "still water should hold the player up at its surface");
+        p.setShiftKeyDown(true);
+        h.assertTrue(top(level, water, p) < 0, "sneaking should sink through");
+        p.setShiftKeyDown(false);
+        p.snapTo(water.getX() + 0.5, surface - 0.3, water.getZ() + 0.5);
+        h.assertTrue(top(level, water, p) < 0, "from under the surface there is nothing to stand on");
+        BlockPos lava = h.absolutePos(new BlockPos(9, 3, 5));
+        p.snapTo(lava.getX() + 0.5, surface + 0.05, lava.getZ() + 0.5);
+        h.assertTrue(Math.abs(top(level, lava, p) - 8 / 9.0) < 1e-4, "lava should hold the player up too");
+        BlockPos flowing = h.absolutePos(new BlockPos(8, 2, 8));
+        h.setBlock(new BlockPos(8, 2, 8), Blocks.WATER.defaultBlockState().setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, 4));
+        p.snapTo(flowing.getX() + 0.5, flowing.getY() + 0.5, flowing.getZ() + 0.5);
+        h.assertTrue(Math.abs(top(level, flowing, p) - 4 / 9.0) < 1e-4, "flowing water should hold the player up at its lower surface, got " + top(level, flowing, p));
+        BlockPos slab = h.absolutePos(new BlockPos(6, 2, 8));
+        h.setBlock(new BlockPos(6, 2, 8), Blocks.OAK_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.SlabBlock.WATERLOGGED, true));
+        p.snapTo(slab.getX() + 0.5, slab.getY() + 0.95, slab.getZ() + 0.5);
+        h.assertTrue(Math.abs(top(level, slab, p) - 8 / 9.0) < 1e-4, "the water in a waterlogged slab should hold the player up above the slab");
+        p.removeEffect(LogosMod.WATER_WALKING);
+        p.snapTo(water.getX() + 0.5, surface + 0.05, water.getZ() + 0.5);
+        h.assertTrue(top(level, water, p) < 0, "without the effect water holds nobody up");
+
+        // The pigs keep their AI, and to them the water is now ground to wander on (or to panic across
+        // once hurt), so each is checked as it gets there rather than at the end.
+        boolean[] seen = new boolean[4];
+        h.onEachTick(() -> {
+            h.assertTrue(!onLava.isOnFire() && onLava.getHealth() == onLava.getMaxHealth(),
+                    "standing on lava should not burn, at " + h.relativeVec(onLava.position()));
+            seen[0] |= standsOn(swimmer, surface);
+            seen[1] |= standsOn(onLava, surface);
+            if (!seen[2] && faller.onGround()) {
+                seen[2] = true;
+                h.assertTrue(standsOn(faller, surface), "the falling pig should land on the water, at " + h.relativeVec(faller.position()));
+                h.assertTrue(faller.getHealth() < faller.getMaxHealth(), "a fall onto the water should hurt like a fall onto ground");
+            }
+            seen[3] |= control.isInWater();
+            h.assertTrue(control.getHealth() == control.getMaxHealth(), "a pig without the effect should splash in unhurt");
+        });
+        h.succeedWhen(() -> {
+            h.assertTrue(seen[0], "the pig in the water should come up and stand on it, at " + swimmer.getY());
+            h.assertTrue(seen[1], "the pig on lava should stand on it, at " + onLava.getY());
+            h.assertTrue(seen[2], "the falling pig should land");
+            h.assertTrue(seen[3], "the pig without the effect should fall into the water");
+            // Long enough on the lava to have caught fire if it were in it.
+            h.assertTrue(h.getTick() > 60, "waiting on the lava");
+        });
+    }
+
+    /** The top of {@code pos}'s collision for {@code e}, or −1 when there is none. */
+    private static double top(Level level, BlockPos pos, net.minecraft.world.entity.Entity e) {
+        var shape = level.getBlockState(pos).getCollisionShape(level, pos, net.minecraft.world.phys.shapes.CollisionContext.of(e));
+        return shape.isEmpty() ? -1 : shape.max(Direction.Axis.Y);
+    }
+
+    private static boolean standsOn(net.minecraft.world.entity.LivingEntity e, double surface) {
+        return e.onGround() && Math.abs(e.getY() - surface) < 1e-3 && !e.isInLiquid();
+    }
+
     /** grow ages crops; decay rolls them back, drops leaves and destroys flowers. */
     static void growAndDecay(GameTestHelper h) {
         ServerPlayer p = caster(h);

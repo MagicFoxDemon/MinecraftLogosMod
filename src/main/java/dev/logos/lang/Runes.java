@@ -923,6 +923,22 @@ public final class Runes {
                     }
                     return null;
                 });
+        def("water-walk", EFFECT, ACTION).each("target").opt("seconds", NUM, "60").stab(1)
+                .doc("水上行走（状态 water_walking），持续若干秒（最长 600，默认 60）：任何流体的表面都像地面一样托住目标，"
+                        + "水、熔岩、模组流体，静止的、流动的，含水方块里的水都算，可以在上面走、跑、跳。从高处落到流体表面，和落在地上一样受到摔落伤害。"
+                        + "潜行沉入流体；不潜行时泡在流体里会浮回表面。站在熔岩表面不会着火，掉进去照样会。牛奶能解除。每个目标每秒 0.3 魔力")
+                .exec((n, c) -> {
+                    double s = clamp(num(n.arg(1), c), 0, 600);
+                    int ticks = (int) Math.round(s * 20);
+                    if (ticks <= 0) return null;
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        if (!c.inst().spend(s * 0.3, "water-walk")) return null;
+                        t.addEffect(new MobEffectInstance(LogosMod.WATER_WALKING, ticks), c.inst().caster);
+                        c.inst().affected.add(t.getUUID());
+                        Vfx.burst(lv(t), t, null, Element.ARCANE, Vfx.Burst.POTION_BENEFICIAL);
+                    }
+                    return null;
+                });
         def("possess", EFFECT, ACTION).p("target", ENTITY).opt("seconds", NUM, "30").stab(3)
                 .doc("附身：灵魂离开身体，进入一只生物，用自己的按键操控它若干秒（1～600，默认 30）：移动、跳跃，左键是它的近战，"
                         + "右键是它的专属技能（苦力怕自爆、末影人传送、烈焰人和恶魂的火球、唤魔者的尖牙、监守者的音波等），没有专属技能的会射击的生物（骷髅、女巫等）右键射击。它自己的 AI 暂停。身体留在原地，受到的伤害都由你承受，"

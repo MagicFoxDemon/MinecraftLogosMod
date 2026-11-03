@@ -345,6 +345,15 @@ class CompilerTest {
     }
 
     @Test
+    void waterWalkCostsPerSecond() {
+        // 0.3 a second, 60 seconds by default, at most 600.
+        assertEquals(18, Compiler.compile("(water-walk caster)").profile().estimate(), 1e-6);
+        assertEquals(3, Compiler.compile("(water-walk caster 10)").profile().estimate(), 1e-6);
+        assertEquals(180, Compiler.compile("(water-walk caster 5000)").profile().estimate(), 1e-6);
+        assertError("(water-walk here)", "实体");
+    }
+
+    @Test
     void imbueIsKeptUpLikeAField() {
         // 6 to wind, 0.5 a pulse (every 0.5 s by default): 30 seconds is 6 + 60 × 0.5.
         assertEquals(36, Compiler.compile("(imbue caster :life 30)").profile().estimate(), 0.051);
