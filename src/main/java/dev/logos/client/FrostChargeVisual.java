@@ -19,25 +19,42 @@ import net.minecraft.world.phys.Vec3;
  * crystal lattice (Unreal MagicCircle 23), and three light touches of its own, only on the big tiers:
  * a few snowflakes drifting slowly down round a grand or colossal caster, a faint cold mist lying round the
  * colossal circles, and small ice crystals circling a grand or colossal ball while it is held. All of it is
- * deterministic from the charge's clock, so nothing is kept between frames.
+ * deterministic from the charge's clock, so nothing is kept between frames. A colossal charge wraps the caster in
+ * its own aura in place of the shared pillar: {@link ChargeAuraEvoke} (after NS_Charge_EvokeEnergy_Root) in frost's
+ * colours, its broad flames thinner so the caster still reads by day, with ice crystals carried up it and cold mist
+ * rolling off it ({@link FrostChargeAura}).
  */
 final class FrostChargeVisual extends ChargeCore {
     /** The held ball's radius by tier, as {@link ChargeHead} draws it. */
     private static final float[] BALL = {.09f, .13f, .19f, .28f};
 
+    /** How much the aura's two broad flames show: frost's pale palette would bury the caster in daylight at full. */
+    private static final float BODY = .55f;
+    private final ChargeAuraEvoke aura;
+
     FrostChargeVisual() {
         super(frost());
+        aura = new ChargeAuraEvoke(new ChargeAuraEvoke.Look(style.light(), style.main(), style.deep(), ChargeAuraEvokeParts.Accent.PLAIN,
+                ChargeAuraEvokeParts.sprite("charge_aura/basic_dot", true), false, BODY));
     }
 
     private static ChargeStyle frost() {
         ChargeStyle s = ChargeStyle.of(Element.FROST);
         return s.withCircles(s.elaborate(), s.grandOuter(), s.grandInner(), s.colossalOuter(), "frost_charge/circle_23",
-                s.colossalInner(), s.raised());
+                s.colossalInner(), s.raised()).withOwnAura();
     }
 
     @Override
     public void submit(Level level, LiveCharge charge, CameraRenderState camera, float partialTick, PoseStack pose, SubmitNodeCollector out) {
         super.submit(level, charge, camera, partialTick, pose, out);
+        if (charge.tier() == 3) {
+            View aView = View.of(camera);
+            pose.pushPose();
+            pose.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+            aura.submit(charge, aView, partialTick, pose, out);
+            FrostChargeAura.submit(charge, aView, partialTick, pose, out, style);
+            pose.popPose();
+        }
         int tier = charge.tier();
         if (tier < 2) return;
         View view = View.of(camera);
@@ -138,5 +155,17 @@ final class FrostChargeVisual extends ChargeCore {
                 ChargeParts.frame(pose, buf, view, at, size, (float) (now * .05 + i * 1.3), i % 4, 2, 2, argb(alpha, color));
             }
         });
+    }
+
+    @Override
+    public boolean tick(Level level, LiveCharge charge) {
+        boolean core = super.tick(level, charge);
+        return charge.tier() == 3 ? aura.tick(level.getRandom(), charge) || core : core;
+    }
+
+    @Override
+    public void end() {
+        super.end();
+        aura.end();
     }
 }

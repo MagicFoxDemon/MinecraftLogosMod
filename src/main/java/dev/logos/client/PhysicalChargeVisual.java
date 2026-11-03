@@ -17,19 +17,36 @@ import net.minecraft.world.phys.Vec3;
  * The physical charge: the shared charge in colourless white over a cool steel-blue shade (so it still reads
  * against a bright sky), with the pressure of the air round the big ones. Held grand and colossal balls sit in
  * a faint ring of squeezed air that breathes with them, and the colossal one keeps pulling rings of air in onto
- * itself; a colossal release cracks out in a short white cross flash (the physical impact's), as it bursts.
+ * itself; a colossal release cracks out in a short white cross flash (the physical impact's), as it bursts. A
+ * colossal charge wraps the caster in its own aura in place of the shared pillar: {@link ChargeAuraEvoke} (after
+ * NS_Charge_EvokeEnergy_Root), colourless, with rings of compressed air closing in round it and streaks of air
+ * drawn up it ({@link PhysicalChargeAura}).
  */
 final class PhysicalChargeVisual extends ChargeCore {
     /** The shared ball's radius once full, by tier (as {@link ChargeHead} draws it). */
     private static final float[] BALL = {.09f, .13f, .19f, .28f};
 
+    /** How much the aura's broad flames show: colourless white over the caster would bury it in daylight at full. */
+    private static final float BODY = .5f;
+    private final ChargeAuraEvoke aura;
+
     PhysicalChargeVisual() {
-        super(ChargeStyle.colours(0xFFFFFF, 0xC4D2EC, 0x6E84AA));
+        super(ChargeStyle.colours(0xFFFFFF, 0xC4D2EC, 0x6E84AA).withOwnAura());
+        aura = new ChargeAuraEvoke(new ChargeAuraEvoke.Look(style.light(), style.main(), style.deep(), ChargeAuraEvokeParts.Accent.PLAIN,
+                ChargeAuraEvokeParts.sprite("charge_aura/basic_dot", true), false, BODY));
     }
 
     @Override
     public void submit(Level level, LiveCharge charge, CameraRenderState camera, float partialTick, PoseStack pose, SubmitNodeCollector out) {
         super.submit(level, charge, camera, partialTick, pose, out);
+        if (charge.tier() == 3) {
+            ChargeParts.View aView = ChargeParts.View.of(camera);
+            pose.pushPose();
+            pose.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+            aura.submit(charge, aView, partialTick, pose, out);
+            PhysicalChargeAura.submit(charge, aView, partialTick, pose, out, style);
+            pose.popPose();
+        }
         int tier = charge.tier();
         if (tier < 2) return;
         LiveCharge.Phase phase = charge.phase();
@@ -83,5 +100,17 @@ final class PhysicalChargeVisual extends ChargeCore {
         float a = (1 - k) * (1 - k) * (fp ? .3f : 1) * clear;
         out.submitCustomGeometry(stack, ChargeParts.add("physical_impact/cross"), (pose, buf) ->
                 ChargeParts.sprite(pose, buf, view, tip, size, 0, argb(a, style.light())));
+    }
+
+    @Override
+    public boolean tick(Level level, LiveCharge charge) {
+        boolean core = super.tick(level, charge);
+        return charge.tier() == 3 ? aura.tick(level.getRandom(), charge) || core : core;
+    }
+
+    @Override
+    public void end() {
+        super.end();
+        aura.end();
     }
 }
