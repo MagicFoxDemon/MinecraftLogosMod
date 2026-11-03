@@ -959,7 +959,7 @@ public final class Runes {
                         + " 次，Boss " + dev.logos.runtime.Familiars.BOSS_KILLS + " 次）。体型、视线高度、生命上限、攻击、护甲、速度、跳跃都变成它的，"
                         + "生命按比例换算；会飞的能飞（连按两次跳跃），水生的不会溺水，免疫火焰的不怕火。只有配置 incarnationHands 里的生物还能用手："
                         + "拿东西、放方块、挖掘、施法；其他生物用自己的身体攻击。背包仍是你的，化身时死亡就是真的死亡；下线不会解除。"
-                        + "时间到或被万咒皆终熄灭时恢复原样；再次化身会换成新的生物。不能化身为玩家和魔力生命体，周围要容得下它的体型。"
+                        + "时间到、被万咒皆终熄灭或用解除化身（revert）时恢复原样，自己也可以随时按 V 免费解除（按键可在设置里改）；再次化身会换成新的生物。不能化身为玩家和魔力生命体，周围要容得下它的体型。"
                         + "魔力 = 它的最大生命值 ÷ 5 × √秒数")
                 .exec((n, c) -> {
                     if (!(c.inst().caster instanceof ServerPlayer p) || p instanceof FakePlayer) return null;
@@ -1217,6 +1217,21 @@ public final class Runes {
                     if (c.inst().caster instanceof ServerPlayer p) {
                         p.sendSystemMessage(Component.literal(ended == 0 ? "万咒皆终：范围内没有可以熄灭的术式"
                                 : "万咒皆终：熄灭了 " + ended + " 个术式，花费 " + Node.fmt(paid) + " 魔力").withStyle(ChatFormatting.GRAY));
+                    }
+                    return null;
+                });
+        def("revert", EFFECT, ACTION).eachOr("target", "caster").stab(1)
+                .doc("解除化身：让化身的玩家恢复原样。不连目标时是你自己，免费；也可以接别的玩家或一群实体，解除他们的化身（其他玩家要 :players true），"
+                        + "每个付他这次化身的价格减去已经用掉的部分：它的最大生命值 ÷ 5 × (√总秒数 − √已过秒数)。没在化身的目标不受影响")
+                .exec((n, c) -> {
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        if (!(t instanceof ServerPlayer p) || !dev.logos.runtime.Incarnation.active(p)) continue;
+                        boolean own = p == c.inst().caster;
+                        if (!own && !c.inst().spend(dev.logos.runtime.Incarnation.unusedCost(p), "revert")) return null;
+                        dev.logos.runtime.Incarnation.end(p);
+                        c.inst().affected.add(p.getUUID());
+                        Vfx.burst(lv(p), p, null, Element.ARCANE, Vfx.Burst.FORCE);
+                        if (!own) p.sendSystemMessage(Component.literal("✗ 你的化身被解除").withStyle(ChatFormatting.RED));
                     }
                     return null;
                 });

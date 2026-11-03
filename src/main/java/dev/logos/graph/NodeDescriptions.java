@@ -401,7 +401,7 @@ public final class NodeDescriptions {
             Map.entry("possess/param/target", "要附身的生物，须在 128 格内；不能是玩家、Boss 或载着别人的生物。"),
             Map.entry("possess/param/seconds", "附身时长，范围 1～600 秒，默认 30。"),
             Map.entry("incarnate/intro", "自己变成一种生物：体型、视线高度、生命上限、攻击、护甲、速度都变成它的，会飞的能飞，水生的不会溺水，免疫火焰的不怕火。背包仍是你的，化身时死亡就是真的死亡。"),
-            Map.entry("incarnate/note", "魔力 = 它的最大生命值 ÷ 5 × √秒数。要先击杀够数（普通生物 49 次，Boss 7 次），和召唤使魔一样。只有配置 incarnationHands 里的生物还能用手；时间到或被万咒皆终熄灭时恢复原样，下线不会解除。"),
+            Map.entry("incarnate/note", "魔力 = 它的最大生命值 ÷ 5 × √秒数。要先击杀够数（普通生物 49 次，Boss 7 次），和召唤使魔一样。只有配置 incarnationHands 里的生物还能用手；时间到、被万咒皆终熄灭或用解除化身（revert）时恢复原样，自己也可以随时按 V 免费解除（按键可在设置里改），下线不会解除。"),
             Map.entry("incarnate/param/creature", "要变成的生物，如 zombie、bat、模组id:生物名；不能是玩家和魔力生命体。"),
             Map.entry("incarnate/param/seconds", "化身时长，范围 1～600 秒，默认 30。"),
             Map.entry("push/intro", "将目标向远离中心的方向推开。"),
@@ -485,6 +485,9 @@ public final class NodeDescriptions {
             Map.entry("disperse/intro", "令本次术式的一个形体立刻消散。"),
             Map.entry("disperse/note", "不消耗魔力。和寿命走完一样，会触发它的消散时事件，可以做成「收回时爆开」。只能散去本术式的形体。"),
             Map.entry("disperse/param/form", "要散去的形体，必须属于本次术式。"),
+            Map.entry("revert/intro", "解除化身：让化身的玩家恢复原样。不连目标时解除你自己的化身。"),
+            Map.entry("revert/note", "解除自己的免费。解除别人的（其他玩家要开启玩家开关），付他这次化身的价格减去已经用掉的部分：它的最大生命值 ÷ 5 × (√总秒数 − √已过秒数)。"),
+            Map.entry("revert/param/target", "要恢复原样的玩家；也可连接实体群，逐个解除。没在化身的不受影响。未连接时是你自己。"),
             Map.entry("end-all/intro", "熄灭范围内的术式，包括别人的。范围里每有一个形体（魔弹、光柱、炼成体、领域、区域天气、时间加速……），它所属的整个术式就被熄灭：它在别处的形体、排着队的延迟与重复一起消失。"),
             Map.entry("end-all/note", "离中心最近的先停。每熄灭一个术式，付它此刻剩下的魔力 + 2；付不起就跳过它，继续停后面付得起的，所以刚放出的大法术难停、快耗尽的容易停。"
                     + "被熄灭的术式不触发消散时事件。施法者自己的其他术式也会停；其他玩家的术式需要开启术式的影响玩家；魔力生命体、巨像与术式发射器的术式都可以停。"

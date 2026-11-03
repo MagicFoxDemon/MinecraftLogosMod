@@ -61,7 +61,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * ways. Only the creatures in the config list {@code incarnationHands} keep the use of hands; any
  * other strikes with its own body and cannot use, place or mine.
  * <p>
- * It ends when the time is up, or when 万咒皆终 reaches it ({@link #end}).
+ * It ends when the time is up, when 万咒皆终 reaches it, when 解除化身 undoes it, or when the player
+ * presses the revert key (V by default; {@link #end}).
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class Incarnation {
@@ -78,17 +79,20 @@ public final class Incarnation {
             Attributes.JUMP_STRENGTH, Attributes.GRAVITY, Attributes.SAFE_FALL_DISTANCE, Attributes.FALL_DAMAGE_MULTIPLIER,
             Attributes.WATER_MOVEMENT_EFFICIENCY, Attributes.OXYGEN_BONUS, Attributes.BURNING_TIME);
 
-    /** The creature a player is, until when, and what it can do that is not an attribute. */
-    public record Form(Identifier type, long until, boolean flies, boolean gills, boolean hands) {
-        public static final Form NONE = new Form(Identifier.fromNamespaceAndPath("minecraft", "player"), 0, false, false, true);
+    /** The creature a player is, since and until when (game time; {@code since} is {@link #UNKNOWN} if it was saved before it was kept), and what it can do that is not an attribute. */
+    public record Form(Identifier type, long since, long until, boolean flies, boolean gills, boolean hands) {
+        /** The start of a form saved before its start was kept. */
+        public static final long UNKNOWN = Long.MIN_VALUE;
+        public static final Form NONE = new Form(Identifier.fromNamespaceAndPath("minecraft", "player"), 0, 0, false, false, true);
         public static final MapCodec<Form> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
                 Identifier.CODEC.fieldOf("type").forGetter(Form::type),
+                Codec.LONG.optionalFieldOf("since", UNKNOWN).forGetter(Form::since),
                 Codec.LONG.fieldOf("until").forGetter(Form::until),
                 Codec.BOOL.fieldOf("flies").forGetter(Form::flies),
                 Codec.BOOL.fieldOf("gills").forGetter(Form::gills),
                 Codec.BOOL.fieldOf("hands").forGetter(Form::hands)).apply(i, Form::new));
         public static final StreamCodec<ByteBuf, Form> STREAM_CODEC = StreamCodec.composite(
-                Identifier.STREAM_CODEC, Form::type, ByteBufCodecs.VAR_LONG, Form::until,
+                Identifier.STREAM_CODEC, Form::type, ByteBufCodecs.VAR_LONG, Form::since, ByteBufCodecs.VAR_LONG, Form::until,
                 ByteBufCodecs.BOOL, Form::flies, ByteBufCodecs.BOOL, Form::gills, ByteBufCodecs.BOOL, Form::hands, Form::new);
     }
 
@@ -141,6 +145,20 @@ public final class Incarnation {
         return f == null || type == null ? 0 : cost(type, Math.max(0, f.until() - p.level().getGameTime()) / 20.0);
     }
 
+    /**
+     * What undoing {@code p}'s form costs another: its whole price less the part already used,
+     * max health / 5 × (√total seconds − √seconds gone); 0 if they have none. A form saved before its
+     * start was kept counts as begun now, so this is the price for the seconds it has left.
+     */
+    public static double unusedCost(ServerPlayer p) {
+        Form f = form(p);
+        EntityType<?> type = formType(p);
+        if (f == null || type == null) return 0;
+        long now = p.level().getGameTime();
+        long since = f.since() == Form.UNKNOWN ? now : Math.min(f.since(), now);
+        return Math.max(0, cost(type, (f.until() - since) / 20.0) - cost(type, (now - since) / 20.0));
+    }
+
     /** Why {@code p} cannot become a {@code type} now, or null if they can. */
     public static @Nullable String refuse(ServerPlayer p, @Nullable EntityType<?> type) {
         if (type == null) return "没有这种生物";
@@ -160,7 +178,8 @@ public final class Incarnation {
         Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
         boolean flies = shell.isNoGravity() || shell instanceof FlyingAnimal || shell.getNavigation() instanceof FlyingPathNavigation
                 || LogosConfig.incarnationFlier(id.toString());
-        Form f = new Form(id, p.level().getGameTime() + Math.max(1, Math.round(seconds * 20)), flies, shell.canBreatheUnderwater(),
+        long now = p.level().getGameTime();
+        Form f = new Form(id, now, now + Math.max(1, Math.round(seconds * 20)), flies, shell.canBreatheUnderwater(),
                 LogosConfig.incarnationHands(id.toString()));
         float share = p.getHealth() / p.getMaxHealth();
         p.setData(LogosMod.FORM, f);
@@ -168,7 +187,7 @@ public final class Incarnation {
         p.setHealth(share * p.getMaxHealth());
         p.refreshDimensions();
         fly(p, flies);
-        p.sendOverlayMessage(Component.translatable("logos.incarnate.start", type.getDescription(), (int) Math.round(seconds)));
+        p.sendOverlayMessage(Component.translatable("logos.incarnate.start", type.getDescription(), (int) Math.round(seconds), Component.keybind("key.logos.revert")));
         return true;
     }
 

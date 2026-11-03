@@ -138,4 +138,35 @@ final class IncarnationGameTests {
         h.assertTrue(!Incarnation.active(other), "with :players the other player's form should end");
         h.succeed();
     }
+
+    /**
+     * 解除化身: one's own form, for free; another player's (with :players) for its price less the part
+     * used — an iron golem 25 s into 100 s: 100 / 5 × (√100 − √25) = 100.
+     */
+    static void revert(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.setGameMode(GameType.CREATIVE);
+        h.assertTrue(Incarnation.start(p, EntityType.ZOMBIE, 100), "the caster should become a zombie");
+        SpellInstance own = cast(p, "(spell :mana 10 (revert))");
+        h.assertTrue(!Incarnation.active(p), "the caster's own form should be undone");
+        h.assertTrue(own.injected - own.mana < 1e-6, "undoing one's own form should be free, cost " + (own.injected - own.mana));
+
+        @SuppressWarnings("removal")
+        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        other.snapTo(p.getX() + 2, p.getY(), p.getZ(), 0, 0);
+        other.setGameMode(GameType.CREATIVE);
+        h.assertTrue(Incarnation.start(other, EntityType.IRON_GOLEM, 100), "the other player should become an iron golem");
+        Incarnation.Form f = Incarnation.form(other);
+        long now = h.getLevel().getGameTime();
+        other.setData(dev.logos.LogosMod.FORM, new Incarnation.Form(f.type(), now - 25 * 20, now + 75 * 20, f.flies(), f.gills(), f.hands()));
+        h.assertTrue(Math.abs(Incarnation.unusedCost(other) - 100) < 1e-6, "the unused part should cost 100, costs " + Incarnation.unusedCost(other));
+
+        cast(p, "(spell :mana 200 (revert (nearest-player :radius 4)))");
+        h.assertTrue(Incarnation.active(other), "without :players another player's form should hold");
+        SpellInstance undo = cast(p, "(spell :mana 200 :players true (revert (nearest-player :radius 4)))");
+        h.assertTrue(!Incarnation.active(other), "with :players the other player's form should be undone");
+        double paid = undo.injected - undo.mana;
+        h.assertTrue(paid >= 100 - 1e-6 && paid <= 102, "it should cost 100 (and the selector), cost " + paid);
+        h.succeed();
+    }
 }
