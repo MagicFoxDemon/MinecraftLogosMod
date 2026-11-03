@@ -350,6 +350,17 @@ final class RuneEmblems {
                 "##+++++#.",
                 ".#.#.#.#.",
                 ".#.#.#.#."}, "incarnate");
+        // A boot standing on rippling water.
+        put(new String[]{
+                "..##.....",
+                "..#+#....",
+                "..#+#....",
+                "..#++###.",
+                "..######.",
+                ".........",
+                ".##...##.",
+                "#..###..#",
+                "........."}, "water-walk");
         // A drop of mana falling into a bowl that fills: mana given away.
         put(new String[]{
                 "....#....",

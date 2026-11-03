@@ -267,6 +267,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "water-walk", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class WaterWalk extends RuneNode {
+        public WaterWalk() {
+            super("water-walk");
+        }
+    }
+
     @NodeAttribute(name = "possess", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Possess extends RuneNode {
         public Possess() {
@@ -1010,6 +1017,7 @@ public final class RuneNodes {
         BY_RUNE.put("potion", Potion::new);
         BY_RUNE.put("imbue", Imbue::new);
         BY_RUNE.put("resize", Resize::new);
+        BY_RUNE.put("water-walk", WaterWalk::new);
         BY_RUNE.put("possess", Possess::new);
         BY_RUNE.put("incarnate", Incarnate::new);
         BY_RUNE.put("push", Push::new);
