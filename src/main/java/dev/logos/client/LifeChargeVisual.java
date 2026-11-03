@@ -15,15 +15,17 @@ import net.minecraft.world.phys.Vec3;
  * The life charge (see CHARGE_VFX.md): the shared charge in life's green, its hot centre warmed towards the
  * gold of the life ray and beam, and for grand and colossal charges a few leaves drifting slowly down round
  * the caster, swaying and turning over as they fall (drawn as the life beam's leaves, {@link LifeBeamParts}).
- * Ordinary and elaborate charges are colour only.
+ * Ordinary and elaborate charges are colour only. A colossal charge has, in place of the shared pillar, wind
+ * called up round the caster with leaves riding it ({@link LifeChargeAura}).
  */
 final class LifeChargeVisual extends ChargeCore {
     /** Green as before, with a warm golden white at the centre (after the ray's 0xF6FFE0 and the beam's gold motes). */
-    private static final ChargeStyle STYLE = ChargeStyle.colours(0xFAF4C4, 0x40E050, 0x1A9A30);
+    private static final ChargeStyle STYLE = ChargeStyle.colours(0xFAF4C4, 0x40E050, 0x1A9A30).withOwnAura();
     /** Leaf tints: the beam's greens, now and then one of gold. */
     private static final int[] LEAF = {0x2FB83A, 0x58E83A, 0x8FE83A, 0xB8F25A, 0x46C95A, 0xF0D262};
 
     private final List<LifeBeamParts.Mote> leaves = new ArrayList<>();
+    private final LifeChargeAura aura = new LifeChargeAura(STYLE, LEAF);
     private float owed;
 
     LifeChargeVisual() {
@@ -43,7 +45,8 @@ final class LifeChargeVisual extends ChargeCore {
             int cap = c.tier() == 3 ? 16 : 6;
             for (owed += rate * more; owed >= 1; owed--) if (leaves.size() < cap) leaf(level.getRandom(), c, now);
         }
-        return core || !leaves.isEmpty();
+        boolean wind = aura.tick(level, c);
+        return core || !leaves.isEmpty() || wind;
     }
 
     private void leaf(RandomSource r, LiveCharge c, double now) {
@@ -63,11 +66,18 @@ final class LifeChargeVisual extends ChargeCore {
     @Override
     public void submit(Level level, LiveCharge c, CameraRenderState camera, float partialTick, PoseStack pose, SubmitNodeCollector out) {
         super.submit(level, c, camera, partialTick, pose, out);
-        if (leaves.isEmpty()) return;
+        if (leaves.isEmpty() && c.tier() != 3) return;
         ChargeParts.View view = ChargeParts.View.of(camera);
         pose.pushPose();
         pose.translate(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+        aura.submit(c, view, partialTick, pose, out);
         LifeBeamParts.motes(pose, out, leaves, c.age(partialTick), view.cam(), view.right(), view.up());
         pose.popPose();
+    }
+
+    @Override
+    public void end() {
+        super.end();
+        aura.clear();
     }
 }
