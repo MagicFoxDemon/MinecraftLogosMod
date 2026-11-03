@@ -7,15 +7,17 @@ import dev.logos.lang.Element;
  * element's charge changes without drawing anything of its own. Colours are opaque RGB: {@code light} the hot
  * centre of motes, trails and the ball, {@code main} the element's colour, {@code deep} the darker shade of
  * soft glows, the pillar and the outer strips. Circles are texture paths under {@code textures/vfx/} (white
- * masks, tinted here), from the simplest under an elaborate charge to the layers of a colossal one.
+ * masks, tinted here), from the simplest under an elaborate charge to the layers of a colossal one. With
+ * {@code ownAura} the colossal charge keeps only the outermost of the shared pillar's cylinders, for an element that draws its own
+ * aura round the caster ({@link ChargeBody#aura}).
  */
 public record ChargeStyle(int light, int main, int deep, String elaborate, String grandOuter, String grandInner,
-        String colossalOuter, String colossalMiddle, String colossalInner, String raised) {
+        String colossalOuter, String colossalMiddle, String colossalInner, String raised, boolean ownAura) {
 
     /** The circles every element starts from (Unreal MagicCircle 17, 18, 16, 03, 11, 15, 17). */
     public static ChargeStyle colours(int light, int main, int deep) {
         return new ChargeStyle(light, main, deep, "charge/circle_17", "charge/circle_18", "charge/circle_16",
-                "charge/circle_03", "charge/circle_11", "charge/circle_15", "charge/circle_17");
+                "charge/circle_03", "charge/circle_11", "charge/circle_15", "charge/circle_17", false);
     }
 
     /** The element's palette (that of its projectiles, impacts, rays and beams) with the shared circles. */
@@ -33,6 +35,11 @@ public record ChargeStyle(int light, int main, int deep, String elaborate, Strin
 
     public ChargeStyle withCircles(String elaborate, String grandOuter, String grandInner, String colossalOuter,
             String colossalMiddle, String colossalInner, String raised) {
-        return new ChargeStyle(light, main, deep, elaborate, grandOuter, grandInner, colossalOuter, colossalMiddle, colossalInner, raised);
+        return new ChargeStyle(light, main, deep, elaborate, grandOuter, grandInner, colossalOuter, colossalMiddle, colossalInner, raised, ownAura);
+    }
+
+    /** The same, with the colossal pillar's cylinders left out: the element draws its own aura round the caster. */
+    public ChargeStyle withOwnAura() {
+        return new ChargeStyle(light, main, deep, elaborate, grandOuter, grandInner, colossalOuter, colossalMiddle, colossalInner, raised, true);
     }
 }

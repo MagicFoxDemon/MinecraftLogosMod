@@ -106,13 +106,33 @@
 
 颜色沿用该元素魔弹、命中、射线、光束的调色。
 
+## 巨型蓄力的元素光环（替换光柱）
+
+巨型蓄力身上的光柱圆柱体由各元素自己的“光环”取代，参考 `_ChargeGatherVFX` 包里的 Niagara 系统，照搬它们的网格、发射、运动与材质逻辑，换成本元素的颜色并加上元素特色：
+
+| 元素 | 参考系统 |
+| --- | --- |
+| 火焰 | `NS_Charge_AuraBrust_Root` |
+| 奥秘 | `NS_Charge_MagicLift_Root` |
+| 生命 | `NS_Charge_InvokeWind` |
+| 物理、寒霜、雷霆、虚空 | `NS_Charge_EvokeEnergy_Root`；虚空另加 `NS_Charge_DarkSummon` 中飞向身体的粒子 |
+
+公共入口：
+
+- `ChargeStyle.withOwnAura()`：巨型蓄力只保留公共光柱最外层的那个圆柱体（宏大的光柱、脚下的光环与上升光痕都保留），由元素自己画光环。没有调用它的元素保持原样。
+- `ChargeBody.aura(charge, partialTick)`：光柱原有的强弱曲线，光环沿用它与公共部分同步——蓄力前半程渐强、保持时缓慢起伏、释放时一闪并扩开（`widen`）后消失、放弃时淡出；返回 null 表示已经消失。尺寸按 `charge.height() / 1.8`，位置用 `charge.feet(partialTick)`。
+- `ChargeAuraMesh.get("charge_aura/<名字>")`：读取 `assets/logos/vfx_meshes/charge_aura/` 下的网格（从这些系统的静态网格导出，单位为格、Y 朝上，部分带第二套 UV），像 Niagara 的网格渲染器那样按变换、逐顶点颜色和 UV 偏移/缩放绘制。
+- 贴图从仓库外 `art/charge/gather/out/textures/vfx/charge_aura/` 按原样复制到同名路径（只复制用到的，不要改动内容或另起名字）；导出脚本、来源哈希与 Niagara 数据（`ue/assets/*.utf8.t3d`）也在 `art/charge/gather/`。需要加工过的变体时放在本分支自己的目录。
+- 第一人称与光柱相同：不画会挡住视野的部分。
+
 ## 每个元素可修改的文件
 
 - 自身 `client/<Element>ChargeVisual.java`，以及以 `<Element>Charge` 开头的专属辅助类。
 - 自身资源 `assets/logos/textures/vfx/<element>_charge/` 和 `shaders/core/<element>_charge_*`。
 - 自身专属客户端场景 `client/uitest/<Element>ChargeScenario.java`（继承 `ChargeTour`），注册名 `logos_<element>_charge`。
+- 巨型光环：几个元素共用一个参考系统时（物理、寒霜、雷霆与虚空共用 EvokeEnergy），共用的实现放在以 `ChargeAura<系统名>` 开头的辅助类与 `shaders/core/charge_aura_<系统名>_*`；`textures/vfx/charge_aura/` 只放从 `art/charge/gather/out` 原样复制的贴图。
 
-共享文件在元素分支保持只读：`ChargeVisual`、`ChargeVisuals`、`LiveCharge`、`ClientCharges`、`ChargeEffects`、`ChargeRing`、`ChargePreview`、`ChargeTour`、公共核心（`ChargeCore`、`ChargeHead`、`ChargeBody`、`ChargeStyle`、`ChargeParts` 及其资源 `textures/vfx/charge/`）、`LogosFx`、网络包、`ShaderPackOverlay`、其它元素的实现。已有的贴图（如 `heal/ring`、`heal/glow`、各元素射线和光束的贴图）直接按路径引用，不要复制出重复的美术资源。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
+共享文件在元素分支保持只读：`ChargeVisual`、`ChargeVisuals`、`LiveCharge`、`ClientCharges`、`ChargeEffects`、`ChargeRing`、`ChargePreview`、`ChargeTour`、公共核心（`ChargeCore`、`ChargeHead`、`ChargeBody`、`ChargeStyle`、`ChargeParts`、`ChargeAuraMesh` 及其资源 `textures/vfx/charge/`、`vfx_meshes/charge_aura/`）、`LogosFx`、网络包、`ShaderPackOverlay`、其它元素的实现。已有的贴图（如 `heal/ring`、`heal/glow`、各元素射线和光束的贴图）直接按路径引用，不要复制出重复的美术资源。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
 
 ## 验收
 
