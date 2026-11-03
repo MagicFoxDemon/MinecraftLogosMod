@@ -113,7 +113,7 @@ final class ChargeBody {
             default -> show = Math.max(0, 1 - since / 12) * (.6f + .4f * Mth.sin(since * 2.1f));
         }
         if (tier >= 1 && show > 0) circles(stack, out, feet, now, tier, scale * swell, Math.min(1.2f, show), pt, c);
-        if (tier >= 2 && show > 0 && !c.firstPerson()) pillar(stack, out, feet, now, tier, scale, phase, p, since);
+        if (tier >= 2 && show > 0 && !c.firstPerson()) pillar(stack, out, c, feet, now, tier, scale, pt);
         if (tier >= 2 && phase == LiveCharge.Phase.CHARGING) risingSparks(stack, out, view, feet, now, tier, scale, show);
         if (tier == 3) {
             waves(stack, out, view, feet, now, scale, c, since);
@@ -154,29 +154,42 @@ final class ChargeBody {
         out.submitCustomGeometry(stack, ChargeParts.add(texture), (pose, buf) -> ChargeParts.flat(pose, buf, c, x, z, r, turn, color));
     }
 
-    private void pillar(PoseStack stack, SubmitNodeCollector out, Vec3 feet, double now, int tier, float scale, LiveCharge.Phase phase, float p, float since) {
-        float strength, widen = 1;
-        switch (phase) {
-            case CHARGING -> strength = smooth(.05f, .45f, p);
-            case HELD -> strength = .9f + .1f * Mth.sin((float) now * .3f);
+    /**
+     * How strongly the pillar (or an element's own colossal aura in its place) shows: building over the first half of
+     * the charge, steady with a slow pulse once held, a flash that widens as it goes on release, fading on a drop.
+     * Null once it is gone. {@code widen} is the release's growth, 1 otherwise.
+     */
+    record Aura(float strength, float widen) {}
+
+    static Aura aura(LiveCharge c, float pt) {
+        float since = c.phaseAge(pt);
+        return switch (c.phase()) {
+            case CHARGING -> new Aura(smooth(.05f, .45f, c.progress(pt)), 1);
+            case HELD -> new Aura(.9f + .1f * Mth.sin((float) c.age(pt) * .3f), 1);
             case RELEASED -> {
                 float k = since / 9;
-                if (k >= 1) return;
-                strength = (1 - k) * (k < .2f ? 1.3f : 1);
-                widen = 1 + .5f * k;
+                yield k >= 1 ? null : new Aura((1 - k) * (k < .2f ? 1.3f : 1), 1 + .5f * k);
             }
             default -> {
                 float k = since / 10;
-                if (k >= 1) return;
-                strength = (1 - k) * .7f;
+                yield k >= 1 ? null : new Aura((1 - k) * .7f, 1);
             }
-        }
-        float r = (tier == 3 ? 1.25f : .95f) * scale * widen, h = (tier == 3 ? 4.4f : 2.8f) * scale;
+        };
+    }
+
+    private void pillar(PoseStack stack, SubmitNodeCollector out, LiveCharge c, Vec3 feet, double now, int tier, float scale, float pt) {
+        Aura aura = aura(c, pt);
+        if (aura == null) return;
+        float r = (tier == 3 ? 1.25f : .95f) * scale * aura.widen(), h = (tier == 3 ? 4.4f : 2.8f) * scale;
         float v = (float) (-now * .035);
-        float s = strength;
+        float s = aura.strength();
+        // A colossal charge of an element with its own aura keeps only the outermost cylinder round that aura.
+        boolean inner = tier < 3 || !style.ownAura();
         out.submitCustomGeometry(stack, ChargeParts.add("charge/pillar"), (pose, buf) -> {
-            ChargeParts.cylinder(pose, buf, feet, r, h, 28, (float) (now * .004), 3, v, 1.2f, argb(s * .55f, style.main()), argb(0, style.deep()));
-            ChargeParts.cylinder(pose, buf, feet, r * .82f, h * .8f, 24, .5f - (float) (now * .006), 2, v * 1.6f, 1, argb(s * .45f, style.light()), argb(0, style.main()));
+            if (inner) {
+                ChargeParts.cylinder(pose, buf, feet, r, h, 28, (float) (now * .004), 3, v, 1.2f, argb(s * .55f, style.main()), argb(0, style.deep()));
+                ChargeParts.cylinder(pose, buf, feet, r * .82f, h * .8f, 24, .5f - (float) (now * .006), 2, v * 1.6f, 1, argb(s * .45f, style.light()), argb(0, style.main()));
+            }
             if (tier == 3) ChargeParts.cylinder(pose, buf, feet, r * 1.35f, h * 1.15f, 32, (float) (now * .002), 4, v * .7f, 1.4f, argb(s * .25f, style.deep()), argb(0, style.deep()));
         });
         // A glow round the foot of the pillar.
