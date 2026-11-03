@@ -171,6 +171,11 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = 6 + 0.5 * pulses + repeated(n, "on-tick", true) * pulses + events(n, "on-enter", true) * ASSUMED_TARGETS + events(n, "on-expire", true);
                     if (n.events.containsKey("on-enter")) assumptions.add("领域按进入 " + ASSUMED_TARGETS + " 个目标估算");
                 }
+                case "incarnate" -> {
+                    own = 20.0 / 5 * Math.sqrt(Math.clamp(argNum(n, 1, 30), 1, 600));
+                    assumptions.add("化身按 20 点最大生命估算");
+                    found.add(Intent.UTILITY);
+                }
                 case "imbue" -> {
                     double life = kwNum(n, "life", 10);
                     double pulses = Math.max(1, life / Math.max(0.05, kwNum(n, "every", 0.5)));

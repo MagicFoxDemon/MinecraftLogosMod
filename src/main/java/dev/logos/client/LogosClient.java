@@ -110,6 +110,7 @@ public final class LogosClient {
     @SubscribeEvent
     static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
         PossessionInput.onRenderHand(event);
+        if (!event.isCanceled()) IncarnationView.onRenderHand(event);
     }
 
     @SubscribeEvent
@@ -132,6 +133,7 @@ public final class LogosClient {
 
     @SubscribeEvent
     static void onClientTick(ClientTickEvent.Post event) {
+        IncarnationView.tick();
         LogosFx.tick();
         WardSpheres.tick();
         PillarBursts.tick();

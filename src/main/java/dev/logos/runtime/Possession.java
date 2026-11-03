@@ -139,7 +139,7 @@ public final class Possession {
 
     /** Whether {@code p} may go into {@code mob} now: one at a time, in the same world, within {@link #RANGE}. */
     public static boolean canStart(ServerPlayer p, Entity mob) {
-        return possessable(mob) && !ACTIVE.containsKey(p.getUUID()) && !p.isSpectator() && !p.isSleeping() && p.isAlive()
+        return possessable(mob) && !ACTIVE.containsKey(p.getUUID()) && !Incarnation.active(p) && !p.isSpectator() && !p.isSleeping() && p.isAlive()
                 && mob.level() == p.level() && mob.distanceTo(p) <= RANGE;
     }
 
@@ -308,8 +308,12 @@ public final class Possession {
      */
     public static float speed(LivingEntity mob) {
         if (mob.isNoGravity()) return 0.3f;
-        double a = mob.getAttributeValue(Attributes.MOVEMENT_SPEED);
-        return (float) Math.clamp(a * a, 0.06, 0.15);
+        return (float) pace(mob.getAttributeValue(Attributes.MOVEMENT_SPEED));
+    }
+
+    /** A creature's walking pace in a player's terms, from its movement speed attribute: {@code a²}, kept between 0.06 and 0.15. */
+    public static double pace(double movementSpeed) {
+        return Math.clamp(movementSpeed * movementSpeed, 0.06, 0.15);
     }
 
     /** It faces exactly where the player looks (their view is its view) and jumps with their jump key. */

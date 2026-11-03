@@ -758,6 +758,10 @@ public class LogosMod {
     /** On a possessed mob: whether its possessor has let its own instincts act (dev.logos.runtime.Possession#instinct), synced so their client stops steering it; never saved. */
     public static final Supplier<AttachmentType<Boolean>> INSTINCT = ATTACHMENTS.register("instinct",
             () -> AttachmentType.builder(() -> false).sync(net.minecraft.network.codec.ByteBufCodecs.BOOL).build());
+    /** On a player: the creature they have become (dev.logos.runtime.Incarnation), synced to everyone who sees them; saved, so leaving does not end it, but gone with their death. */
+    public static final Supplier<AttachmentType<dev.logos.runtime.Incarnation.Form>> FORM = ATTACHMENTS.register("incarnation",
+            () -> AttachmentType.builder(() -> dev.logos.runtime.Incarnation.Form.NONE)
+                    .serialize(dev.logos.runtime.Incarnation.Form.CODEC, f -> f.until() > 0).sync(dev.logos.runtime.Incarnation.Form.STREAM_CODEC).build());
 
     public static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENU_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.MENU, MODID);

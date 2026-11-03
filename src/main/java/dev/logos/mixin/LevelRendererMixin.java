@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.Mannequin;
 
-/** Possession as the level draws it; see {@link PossessionView}. */
+/** Possession and incarnation as the level draws them; see {@link PossessionView} and {@link dev.logos.client.IncarnationView}. */
 @Mixin(LevelRenderer.class)
 abstract class LevelRendererMixin {
     /** The level draws whatever the local player rides even when it would cull it; not the creature they look out of. */
@@ -26,6 +26,9 @@ abstract class LevelRendererMixin {
     @WrapOperation(method = "extractVisibleEntities",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;extractEntity(Lnet/minecraft/world/entity/Entity;F)Lnet/minecraft/client/renderer/entity/state/EntityRenderState;"))
     private EntityRenderState logos$bodyAsOwner(LevelRenderer self, Entity entity, float partialTick, Operation<EntityRenderState> original) {
+        // An incarnated player is drawn as their form (see IncarnationView).
+        var shell = dev.logos.client.IncarnationView.shell(entity);
+        if (shell != null) return original.call(self, shell, partialTick);
         var owner = PossessionView.owner(entity);
         if (owner == null) return original.call(self, entity, partialTick);
         EntityRenderState state = original.call(self, owner, partialTick);

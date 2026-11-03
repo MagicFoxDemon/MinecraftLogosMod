@@ -339,6 +339,17 @@ final class RuneEmblems {
                 "#.#.#++##",
                 "#.#.####.",
                 "....#..#."}, "possess");
+        // A figure whose lower half has already become a four-legged beast.
+        put(new String[]{
+                "...###...",
+                "...###...",
+                "....#....",
+                "..#####..",
+                "....#....",
+                ".#######.",
+                "##+++++#.",
+                ".#.#.#.#.",
+                ".#.#.#.#."}, "incarnate");
         // A drop of mana falling into a bowl that fills: mana given away.
         put(new String[]{
                 "....#....",

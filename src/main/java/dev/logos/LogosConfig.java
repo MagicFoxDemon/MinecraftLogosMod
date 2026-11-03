@@ -154,6 +154,30 @@ public final class LogosConfig {
             BUILDER.pop();
         }
         BUILDER.pop();
+        BUILDER.comment("Incarnation (incarnate): what a player turned into a creature can do besides walking and biting").push("incarnation");
+    }
+
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> INCARNATION_HANDS = BUILDER
+            .comment("Creatures with hands: as one of these, a player still holds, uses and places items, mines and casts.",
+                    "Any other form strikes with its own body and cannot use its inventory. Entity ids, such as minecraft:zombie or somemod:goblin.")
+            .translation("logos.configuration.incarnationHands")
+            .defineListAllowEmpty("incarnationHands", List.of(
+                    "minecraft:zombie", "minecraft:husk", "minecraft:drowned", "minecraft:zombie_villager", "minecraft:zombified_piglin",
+                    "minecraft:skeleton", "minecraft:stray", "minecraft:bogged", "minecraft:parched", "minecraft:wither_skeleton",
+                    "minecraft:piglin", "minecraft:piglin_brute", "minecraft:vindicator", "minecraft:pillager", "minecraft:evoker",
+                    "minecraft:illusioner", "minecraft:witch", "minecraft:vex", "minecraft:allay"),
+                    () -> "", o -> o instanceof String);
+
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> INCARNATION_FLIERS = BUILDER
+            .comment("Creatures that fly though they show no sign of it (flying pathfinding, no gravity): as one of these, a player can fly.",
+                    "Creatures that do show it fly anyway. Entity ids.")
+            .translation("logos.configuration.incarnationFliers")
+            .defineListAllowEmpty("incarnationFliers", List.of(
+                    "minecraft:bat", "minecraft:ghast", "minecraft:happy_ghast", "minecraft:phantom", "minecraft:blaze"),
+                    () -> "", o -> o instanceof String);
+
+    static {
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -190,6 +214,24 @@ public final class LogosConfig {
 
     public static int maxAnchors() {
         return read(MAX_ANCHORS::getAsInt, 16);
+    }
+
+    /** Whether a creature of {@code id} has hands as an incarnation form ({@link #INCARNATION_HANDS}). */
+    public static boolean incarnationHands(String id) {
+        return listed(INCARNATION_HANDS, id);
+    }
+
+    /** Whether a creature of {@code id} flies as an incarnation form though nothing about it says so ({@link #INCARNATION_FLIERS}). */
+    public static boolean incarnationFlier(String id) {
+        return listed(INCARNATION_FLIERS, id);
+    }
+
+    private static boolean listed(ModConfigSpec.ConfigValue<List<? extends String>> list, String id) {
+        try {
+            return list.get().contains(id);
+        } catch (IllegalStateException e) {
+            return list.getDefault().contains(id);
+        }
     }
 
     public static boolean travelUnvisitedDimensions() {
