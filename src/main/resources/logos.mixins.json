@@ -13,6 +13,7 @@
     "EnderDragonMixin",
     "MobMixin",
     "PlayerMixin",
+    "AvatarMixin",
     "LevelMixin",
     "EnvironmentAttributeSystemMixin",
     "ServerLevelMixin",

@@ -187,6 +187,12 @@ public final class Familiars {
         return p.getStats().getValue(Stats.ENTITY_KILLED.get(type));
     }
 
+    /** Null if {@code p} has killed enough of {@code type} to call on it (or is in creative), else how far they are, as "击杀 n / m". */
+    public static @Nullable String locked(ServerPlayer p, EntityType<?> type) {
+        if (p.getAbilities().instabuild || kills(p, type) >= killsNeeded(type)) return null;
+        return "击杀 " + kills(p, type) + " / " + killsNeeded(type);
+    }
+
     /**
      * Summons a {@code type} bound to {@code owner} at {@code at}, named {@code nickname} if given. Costs its maximum health × 2 from
      * the spell. Returns null on success, or why not.
@@ -201,9 +207,8 @@ public final class Familiars {
                 return why;
             }
         }
-        if (!owner.getAbilities().instabuild && kills(owner, type) < killsNeeded(type)) {
-            return "还不能召唤" + name + "：击杀 " + kills(owner, type) + " / " + killsNeeded(type);
-        }
+        String locked = locked(owner, type);
+        if (locked != null) return "还不能召唤" + name + "：" + locked;
         if (of(owner).stream().filter(f -> !(f instanceof KeptFamiliar)).count() >= LogosConfig.maxFamiliars()) return "使魔已达上限 " + LogosConfig.maxFamiliars() + " 只（配置 maxFamiliars）";
         if (!(type.create(level, EntitySpawnReason.MOB_SUMMONED) instanceof Mob m)) return name + "不是能召唤的生物";
         m.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);

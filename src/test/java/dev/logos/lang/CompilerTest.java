@@ -336,6 +336,15 @@ class CompilerTest {
     }
 
     @Test
+    void incarnateCostsMaxHealthOverFiveTimesRootSeconds() {
+        // Estimated on 20 max health: 4 × √seconds, seconds 1–600, 30 by default.
+        assertEquals(20, Compiler.compile("(incarnate zombie 25)").profile().estimate(), 1e-6);
+        assertEquals(4 * Math.sqrt(30), Compiler.compile("(incarnate bat)").profile().estimate(), 0.051);
+        assertEquals(4 * Math.sqrt(600), Compiler.compile("(incarnate pig 5000)").profile().estimate(), 0.051);
+        assertError("(incarnate caster)", "生物");
+    }
+
+    @Test
     void imbueIsKeptUpLikeAField() {
         // 6 to wind, 0.5 a pulse (every 0.5 s by default): 30 seconds is 6 + 60 × 0.5.
         assertEquals(36, Compiler.compile("(imbue caster :life 30)").profile().estimate(), 0.051);

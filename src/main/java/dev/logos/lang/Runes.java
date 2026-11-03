@@ -938,6 +938,27 @@ public final class Runes {
                     if (dev.logos.runtime.Possession.start(p, mob, s)) c.inst().affected.add(mob.getUUID());
                     return null;
                 });
+        def("incarnate", EFFECT, ACTION).p("creature", CREATURE).opt("seconds", NUM, "30").stab(3)
+                .doc("化身：自己变成一种生物若干秒（1～600，默认 30）。和召唤使魔一样要先击杀够数（普通生物 " + dev.logos.runtime.Familiars.NORMAL_KILLS
+                        + " 次，Boss " + dev.logos.runtime.Familiars.BOSS_KILLS + " 次）。体型、视线高度、生命上限、攻击、护甲、速度、跳跃都变成它的，"
+                        + "生命按比例换算；会飞的能飞（连按两次跳跃），水生的不会溺水，免疫火焰的不怕火。只有配置 incarnationHands 里的生物还能用手："
+                        + "拿东西、放方块、挖掘、施法；其他生物用自己的身体攻击。背包仍是你的，化身时死亡就是真的死亡；下线不会解除。"
+                        + "时间到或被万咒皆终熄灭时恢复原样；再次化身会换成新的生物。不能化身为玩家和魔力生命体，周围要容得下它的体型。"
+                        + "魔力 = 它的最大生命值 ÷ 5 × √秒数")
+                .exec((n, c) -> {
+                    if (!(c.inst().caster instanceof ServerPlayer p) || p instanceof FakePlayer) return null;
+                    var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.tryParse((String) n.arg(0).value)).orElse(null);
+                    String why = dev.logos.runtime.Incarnation.refuse(p, type);
+                    if (why != null) {
+                        c.inst().terminate(why);
+                        return null;
+                    }
+                    double s = clamp(num(n.arg(1), c), 1, dev.logos.runtime.Incarnation.MAX_SECONDS);
+                    if (!c.inst().spend(dev.logos.runtime.Incarnation.cost(type, s), "incarnate")) return null;
+                    Vfx.burst(lv(p), p, null, Element.ARCANE, Vfx.Burst.FORCE);
+                    dev.logos.runtime.Incarnation.start(p, type, s);
+                    return null;
+                });
         def("push", EFFECT, ACTION).each("target").p("strength", NUM).kw("from", POS, "here").stab(1).doc("推离某点（掉落物也可以）。每单位力 1.5 魔力")
                 .exec((n, c) -> impulse(n, c, true));
         def("pull", EFFECT, ACTION).each("target").p("strength", NUM).kw("to", POS, "here").stab(1).doc("拉向某点（掉落物也可以：吸取物品）。每单位力 1.5 魔力")
@@ -1145,7 +1166,8 @@ public final class Runes {
         def("end-all", EFFECT, ACTION).kw("at", POS, "here").kw("radius", NUM, "6").stab(4)
                 .doc("万咒皆终：熄灭 :radius 格内有形体的术式——每碰到一个形体，就熄灭它所属的整个术式（它别处的形体与排着队的延迟、重复一起），"
                         + "不触发消散时事件。离中心最近的先停；每停一个，付它此刻剩下的魔力 + 2，付不起就跳过它。"
-                        + "施法者自己的其他术式也会停；其他玩家的术式要 :players true。已经施加的效果（时间停止、护盾、印记、药水）不受影响")
+                        + "施法者自己的其他术式也会停；其他玩家的术式要 :players true。已经施加的效果（时间停止、护盾、印记、药水）不受影响，"
+                        + "只有化身例外：范围内化身的玩家恢复原样（你自己也会；其他玩家要 :players true），每个付它剩下时间的化身价格 + 2")
                 .exec((n, c) -> {
                     Place at = place(kw(n, "at"), c);
                     double r = clamp(num(kw(n, "radius"), c), 0, 32);
@@ -1161,6 +1183,16 @@ public final class Runes {
                         if (s.caster instanceof ServerPlayer owner && owner != c.inst().caster) {
                             owner.sendSystemMessage(Component.literal("✗ 你的术式《" + s.spell.name() + "》被万咒皆终终止").withStyle(ChatFormatting.RED));
                         }
+                        ended++;
+                        paid += cost;
+                    }
+                    for (ServerPlayer t : dev.logos.runtime.Incarnation.near(at.level(), at.pos(), r)) {
+                        if (t != c.inst().caster && !c.inst().spell.affectsPlayers()) continue;
+                        double cost = 2 + dev.logos.runtime.Incarnation.remainingCost(t);
+                        if (cost > c.inst().mana + 1e-9) continue;
+                        c.inst().spend(cost, "end-all");
+                        dev.logos.runtime.Incarnation.end(t);
+                        if (t != c.inst().caster) t.sendSystemMessage(Component.literal("✗ 你的化身被万咒皆终打断").withStyle(ChatFormatting.RED));
                         ended++;
                         paid += cost;
                     }

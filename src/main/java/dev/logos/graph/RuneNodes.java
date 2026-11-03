@@ -274,6 +274,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "incarnate", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Incarnate extends RuneNode {
+        public Incarnate() {
+            super("incarnate");
+        }
+    }
+
     @NodeAttribute(name = "push", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Push extends RuneNode {
         public Push() {
@@ -1004,6 +1011,7 @@ public final class RuneNodes {
         BY_RUNE.put("imbue", Imbue::new);
         BY_RUNE.put("resize", Resize::new);
         BY_RUNE.put("possess", Possess::new);
+        BY_RUNE.put("incarnate", Incarnate::new);
         BY_RUNE.put("push", Push::new);
         BY_RUNE.put("pull", Pull::new);
         BY_RUNE.put("launch", Launch::new);
