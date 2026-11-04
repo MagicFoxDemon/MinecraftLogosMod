@@ -48,6 +48,8 @@ public final class SpellInstance {
     private final long startTick;
     private long opsTick = -1;
     private int ops;
+    /** How deep the running rune is inside a mana wrap's reach (see {@link #inWrap(java.util.function.Supplier)}). */
+    private int wrapDepth;
 
     public SpellInstance(Spell spell, LivingEntity caster, ServerLevel level, double injected, double recovery) {
         this.spell = spell;
@@ -73,10 +75,29 @@ public final class SpellInstance {
         return spend(amount, what, rune == null ? null : rune.category);
     }
 
+    /**
+     * Runs {@code body} in a mana wrap's reach: the imbue rune, its upkeep, and every rune in what the wrap
+     * sets off. There runes pay {@link SpellModifiers#wrapCost} more and deal {@link SpellModifiers#wrapPower} more.
+     */
+    public <T> T inWrap(java.util.function.Supplier<T> body) {
+        wrapDepth++;
+        try {
+            return body.get();
+        } finally {
+            wrapDepth--;
+        }
+    }
+
+    /** Whether the rune running now is in a mana wrap's reach. */
+    public boolean inWrap() {
+        return wrapDepth > 0;
+    }
+
     /** Pays {@code amount}, scaled by the caster's cost for runes of {@code category} (none: the overall cost only). */
     public boolean spend(double amount, String what, @Nullable Category category) {
         if (dead) return false;
         amount *= modifiers.cost(category);
+        if (inWrap()) amount *= modifiers.wrapCost();
         if (amount > mana + 1e-9) {
             terminate("魔力耗尽（" + what + " 需要 " + Node.fmt(amount) + "，仅剩 " + Node.fmt(mana) + "）");
             return false;

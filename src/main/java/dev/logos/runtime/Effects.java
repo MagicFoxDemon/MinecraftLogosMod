@@ -44,7 +44,8 @@ public final class Effects {
     public static boolean damage(SpellInstance inst, LivingEntity t, double amount, Element el) {
         if (!t.isAlive()) return false;
         inst.affected.add(t.getUUID());
-        return hurt(inst.caster, t, amount * inst.modifiers.damage(el), el, true);
+        double power = inst.modifiers.damage(el) * (inst.inWrap() ? inst.modifiers.wrapPower() : 1);
+        return hurt(inst.caster, t, amount * power, el, true);
     }
 
     /**

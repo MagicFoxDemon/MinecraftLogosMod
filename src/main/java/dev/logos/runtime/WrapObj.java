@@ -32,7 +32,7 @@ public final class WrapObj extends SpellObject {
     private long lastSwing = -1;
 
     public WrapObj(Node node, Ctx ctx, LivingEntity holder, int life, int every) {
-        super(node, ctx.withVar("self", holder), Targeting.center(holder), life);
+        super(node, ctx.withVar("self", holder).withVar(Ctx.IN_WRAP, true), Targeting.center(holder), life);
         this.holder = holder;
         this.every = Math.max(1, every);
     }
@@ -58,7 +58,7 @@ public final class WrapObj extends SpellObject {
         }
         pos = Targeting.center(holder);
         if (age % every == 0) {
-            if (!inst.spend(UPKEEP, "缠绕维持", Category.FORM)) return;
+            if (!inst.inWrap(() -> inst.spend(UPKEEP, "缠绕维持", Category.FORM))) return;
             Interp.fire(node, "on-tick", ctx.at(pos).aiming(heading()));
         }
     }

@@ -19,8 +19,14 @@ public final class Interp {
             case LIT -> n.type == dev.logos.lang.Type.ANCHOR ? anchor((String) n.value, c) : n.value;
             case CTX -> c.lookup((String) n.value);
             case VAR -> c.vars().get((String) n.value);
-            case CALL -> c.inst().step() ? n.rune.exec.run(n, c) : null;
+            case CALL -> !c.inst().step() ? null
+                    : wrapped(n, c) ? c.inst().inWrap(() -> n.rune.exec.run(n, c)) : n.rune.exec.run(n, c);
         };
+    }
+
+    /** The imbue rune itself, and every rune in what a wrap sets off, run in the wrap's reach. */
+    private static boolean wrapped(Node n, Ctx c) {
+        return c.vars().containsKey(Ctx.IN_WRAP) || "imbue".equals(n.rune.name);
     }
 
     /** ^name read as a place: the caster's anchor of that name. A missing anchor extinguishes the spell. */
