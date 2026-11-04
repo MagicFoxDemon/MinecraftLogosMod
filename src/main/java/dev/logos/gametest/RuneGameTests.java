@@ -462,6 +462,39 @@ final class RuneGameTests {
         });
     }
 
+    /** What {@link #dealingElement} saw from inside each hurt of the husks it watches. */
+    private static final java.util.Map<java.util.UUID, List<Element>> DEALT = new java.util.HashMap<>();
+    private static boolean watchingDealt;
+
+    /**
+     * {@link Effects#dealing} names the element while its damage is being dealt, as a shield-block event would see
+     * it: void and frost are both vanilla magic, but the element tells them apart. Outside such a hurt it is null.
+     */
+    static void dealingElement(GameTestHelper h) {
+        if (!watchingDealt) {
+            watchingDealt = true;
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent e) -> {
+                List<Element> seen = DEALT.get(e.getEntity().getUUID());
+                if (seen != null) seen.add(Effects.dealing());
+            });
+        }
+        ServerPlayer p = caster(h);
+        var husk = mob(h, EntityType.HUSK);
+        List<Element> seen = new java.util.ArrayList<>();
+        DEALT.put(husk.getUUID(), seen);
+        try {
+            Effects.damage(p, husk, 2, Element.VOID);
+            Effects.followUp(p, husk, 2, Element.FROST);
+            husk.invulnerableTime = 0;
+            husk.hurtServer(h.getLevel(), husk.damageSources().generic(), 1);
+        } finally {
+            DEALT.remove(husk.getUUID());
+        }
+        h.assertTrue(seen.equals(java.util.Arrays.asList(Element.VOID, Element.FROST, null)), "expected void, frost, then none; saw " + seen);
+        h.assertTrue(Effects.dealing() == null, "nothing should be dealt after the hurts, saw " + Effects.dealing());
+        h.succeed();
+    }
+
     /** It is kept up like a field: when the spell's mana runs dry the wrap comes off. */
     static void imbueUpkeep(GameTestHelper h) {
         FamiliarGameTests.forceAround(h, 1);

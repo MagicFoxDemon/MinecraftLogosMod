@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
  * would have dealt, and at zero it shatters. Creatures pushing against it cost nothing. A void body
  * that would deal more than the health left is not stopped at all: it passes straight through.
  */
-public final class ConstructObj extends SpellObject {
+public final class ConstructObj extends SpellObject implements SpellWard {
     /** Mana each time it stops a projectile or a spell body. */
     public static final double BLOCK_COST = 0.5;
     /** Health per mana raised into it. */
@@ -279,7 +279,8 @@ public final class ConstructObj extends SpellObject {
      * never stops bodies of the spell that raised it, so a caster can shoot out of their own shield;
      * nor a void body dealing more than the health it has left.
      */
-    @org.jspecify.annotations.Nullable Vec3 wouldStop(@org.jspecify.annotations.Nullable SpellInstance other, Vec3 from, Vec3 to, Element element, double damage) {
+    @Override
+    public @org.jspecify.annotations.Nullable Vec3 wouldStop(@org.jspecify.annotations.Nullable SpellInstance other, Vec3 from, Vec3 to, Element element, double damage) {
         if (broken() || other == inst) return null;
         if (element == Element.VOID && damage > health) return null;
         ConstructGeometry g = entity.geometry();
@@ -289,7 +290,8 @@ public final class ConstructObj extends SpellObject {
     }
 
     /** Stops a spell body at {@code at}: pays {@code cost} and takes {@code damage}. False if it could not pay. */
-    boolean stop(Vec3 at, double cost, double damage) {
+    @Override
+    public boolean stop(Vec3 at, double cost, double damage) {
         if (!inst.spend(cost, "炼成体拦截", dev.logos.lang.Category.FORM)) return false;
         if (cost >= BLOCK_COST) Vfx.burst(level, at, node.element, 6);
         absorb(damage);
