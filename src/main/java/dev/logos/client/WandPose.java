@@ -47,21 +47,30 @@ public final class WandPose {
         wands.add(LogosMod.ADEPT_WAND.get());
         wands.add(LogosMod.MASTER_WAND.get());
         LogosMod.WOOD_WANDS.forEach(w -> wands.add(w.get()));
+        LogosMod.WOOD_STAFFS.forEach(s -> wands.add(s.get()));
         event.registerItem(new IClientItemExtensions() {
             @Override
             public HumanoidModel.@Nullable ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
-                return charging(entity, hand) ? CHARGE.getValue() : null;
+                if (charging(entity, hand)) return CHARGE.getValue();
+                return hand == castingHand(entity) ? CastPoses.armPose(entity) : null;
             }
 
             @Override
             public boolean applyForgeHandTransform(PoseStack pose, LocalPlayer player, HumanoidArm arm, ItemStack stack, float partialTick,
                     float equipProcess, float swingProcess) {
                 InteractionHand hand = arm == player.getMainArm() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-                if (!charging(player, hand)) return false;
+                if (!charging(player, hand)) {
+                    return hand == castingHand(player) && CastPoses.handInView(pose, player, arm, stack, partialTick, equipProcess);
+                }
                 handInView(pose, player, arm, partialTick, equipProcess);
                 return true;
             }
         }, wands.toArray(net.minecraft.world.item.Item[]::new));
+    }
+
+    /** The hand a held pose ({@link CastPoses}) shows in: the main hand when it holds a wand, else the off hand. */
+    private static InteractionHand castingHand(LivingEntity entity) {
+        return entity.getMainHandItem().getItem() instanceof dev.logos.item.WandItem ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
     }
 
     /** Whether {@code entity} is charging the wand in {@code hand}. */

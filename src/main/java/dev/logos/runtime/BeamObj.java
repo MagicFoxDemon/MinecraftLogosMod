@@ -41,6 +41,9 @@ public final class BeamObj extends SpellObject {
     private Vec3 start;
     /** Set by move, halt or turn: from then on its start and direction no longer follow the caster or its :from/:dir. */
     private Vec3 heldFrom, heldDir;
+    /** The caster's pose while it lasts, when the cast leads with this beam (see {@link CastPose#lead}). */
+    private CastPose.@Nullable Hold pose;
+    private boolean posed;
 
     public BeamObj(Node node, Ctx ctx, double radius, double range, int life, int every, @Nullable Node fromNode, @Nullable Node dirNode, int trail) {
         super(node, ctx, ctx.here(), life);
@@ -110,6 +113,7 @@ public final class BeamObj extends SpellObject {
     @Override
     protected void onEnded() {
         Vfx.beamEnd(level, id, pos, node.element);
+        if (pose != null) pose.release();
     }
 
     @Override
@@ -117,6 +121,11 @@ public final class BeamObj extends SpellObject {
         if (++age > life || inst.caster.isRemoved() || (fromNode == null && heldFrom == null && inst.caster.level() != level)) {
             end();
             return;
+        }
+        // Held from its first tick, once it is surely in the world: a beam refused at spawn never ends to let go.
+        if (!posed) {
+            posed = true;
+            if (inst.spell.trigger().equals("cast") && CastPose.lead(inst.spell) == node) pose = CastPose.hold(inst.caster, CastPose.BEAM);
         }
         Vec3 from = heldFrom != null ? heldFrom : fromNode == null ? inst.caster.getEyePosition() : Interp.vec(fromNode, ctx);
         Vec3 d = heldDir != null ? heldDir : dirNode == null ? gaze(from) : Interp.vec(dirNode, ctx);
