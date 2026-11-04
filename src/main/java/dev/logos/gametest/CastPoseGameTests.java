@@ -62,6 +62,31 @@ final class CastPoseGameTests {
         holds(h, "(spell :mana 100 (split 2 (beam :radius 0.3 :life 1 :every 0.5)))", 2);
     }
 
+    /**
+     * The gesture a cast plays is read off the first statement after the invocation alone: each form its own,
+     * split looked through, anything else the plain cast, and a leading beam none (it holds instead).
+     */
+    static void gestureByLead(GameTestHelper h) {
+        String[][] cases = {
+                {"(spell (projectile))", "logos:projectile"},
+                {"(spell (ray :range 4))", "logos:ray"},
+                {"(spell (field :radius 3 :life 1 :every 0.5))", "logos:field"},
+                {"(spell (construct :shape wall :width 3 :height 2 :life 2))", "logos:construct"},
+                {"(spell (vein))", "logos:vein"},
+                {"(spell (imbue caster :life 2))", "logos:imbue"},
+                {"(spell (split 3 (projectile)))", "logos:projectile"},
+                {"(spell (heal caster 1) (projectile))", "logos:cast"},
+                {"(spell (ray :range 4) (field :radius 3 :life 1 :every 0.5))", "logos:ray"},
+                {"(spell (beam :life 1))", null},
+        };
+        for (String[] c : cases) {
+            var g = CastPose.gesture(Casting.compile(c[0]));
+            String got = g == null ? null : g.toString();
+            h.assertTrue(java.util.Objects.equals(got, c[1]), c[0] + " should play " + c[1] + ", plays " + got);
+        }
+        h.succeed();
+    }
+
     /** A beam that is not the first statement holds nothing. */
     static void laterBeamHoldsNothing(GameTestHelper h) {
         holds(h, "(spell :mana 100 (ray :range 4) (beam :radius 0.3 :life 1 :every 0.5))", 0);

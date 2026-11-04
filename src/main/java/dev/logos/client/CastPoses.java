@@ -45,16 +45,40 @@ public final class CastPoses {
     /** Holds are sent again every {@link dev.logos.runtime.CastPose#REFRESH_TICKS}; one unheard of this long is over. */
     private static final int STALE_TICKS = 30;
 
-    /** How one pose is drawn. Each method blends toward the pose by {@code weight}, 0 (the plain hold) to 1. */
+    /**
+     * How one pose is drawn. Each method blends toward the pose by {@code weight}, 0 (the plain hold) to 1;
+     * the forms with {@code age} (ticks since it began, partial tick included) are the ones called, and by
+     * default hand on to the forms without, which suit a pose that stays still.
+     */
     public interface Pose {
+        /**
+         * Ticks a one-shot pose ({@link dev.logos.runtime.CastPose#play}) plays for, its easing in and out
+         * included; it ends by itself after that. 0 (the default) for a pose held until let go.
+         */
+        default int duration() {
+            return 0;
+        }
+
         /** Third person: the arm holding the item, which still has the plain item hold on it. */
-        void arm(HumanoidModel<?> model, HumanoidRenderState state, HumanoidArm arm, ItemStack held, float weight);
+        default void arm(HumanoidModel<?> model, HumanoidRenderState state, HumanoidArm arm, ItemStack held, float weight) {}
+
+        default void arm(HumanoidModel<?> model, HumanoidRenderState state, HumanoidArm arm, ItemStack held, float weight, float age) {
+            arm(model, state, arm, held, weight);
+        }
 
         /** Third person: turns the item in the hand, after it has been put there (as a wrist would). */
         default void item(ArmedEntityRenderState state, PoseStack pose, HumanoidArm arm, ItemStack held, float weight) {}
 
+        default void item(ArmedEntityRenderState state, PoseStack pose, HumanoidArm arm, ItemStack held, float weight, float age) {
+            item(state, pose, arm, held, weight);
+        }
+
         /** First person: moves the hand from where the plain hold puts it (already applied to {@code pose}). */
         default void hand(PoseStack pose, LocalPlayer player, HumanoidArm arm, ItemStack held, float partialTick, float weight) {}
+
+        default void hand(PoseStack pose, LocalPlayer player, HumanoidArm arm, ItemStack held, float partialTick, float weight, float age) {
+            hand(pose, player, arm, held, partialTick, weight);
+        }
     }
 
     /** The arm pose any posed hand is drawn with, added to {@link HumanoidModel.ArmPose} through META-INF/enumextensions.json. */
@@ -68,6 +92,8 @@ public final class CastPoses {
     private static final class Held {
         final Identifier pose;
         final long start;
+        /** A one-shot's length in ticks; 0 for a hold. */
+        final int duration;
         long seen;
         /** Client tick it was let go at; -1 while held. */
         long released = -1;
@@ -75,18 +101,38 @@ public final class CastPoses {
         Held(Identifier pose, long now) {
             this.pose = pose;
             this.start = this.seen = now;
+            Pose p = POSES.get(pose);
+            this.duration = p == null ? 0 : Math.max(0, p.duration());
+        }
+
+        float age(long now, float partialTick) {
+            return now - start + partialTick;
+        }
+
+        /** Whether it still shows as held: a hold until let go, a one-shot until it has played. */
+        boolean on(long now) {
+            return duration > 0 ? now - start < duration : released < 0;
         }
 
         float weight(long now, float partialTick) {
-            float t = now - start + partialTick;
+            float t = age(now, partialTick);
+            if (duration > 0) {
+                // A short gesture eases in and out over at most a quarter of itself each way.
+                float in = Math.min(EASE_IN, duration / 4f), out = Math.min(EASE_OUT, duration / 4f);
+                return Math.min(smooth(t / in), 1 - smooth((t - (duration - out)) / out));
+            }
             float in = smooth(t / EASE_IN);
             if (released < 0) return in;
             return Math.min(in, 1 - smooth((now - released + partialTick) / EASE_OUT));
         }
+
+        boolean over(long now) {
+            return duration > 0 ? now - start > duration : released >= 0 && now - released > EASE_OUT;
+        }
     }
 
-    /** The pose an entity shows now, and how far it is on. */
-    public record Active(Identifier pose, float weight) {}
+    /** The pose an entity shows now, how far it is on, and how many ticks since it began. */
+    public record Active(Identifier pose, float weight, float age) {}
 
     private CastPoses() {}
 
@@ -111,19 +157,22 @@ public final class CastPoses {
         h.seen = now;
     }
 
-    /** What {@code entityId} shows now: its latest hold still held, else the latest still easing out. Null if none. */
+    /**
+     * What {@code entityId} shows now: the latest pose still on (a hold not let go, a one-shot still
+     * playing), else the latest still easing out. Null if none.
+     */
     public static @Nullable Active of(int entityId, float partialTick) {
         var holds = HELD.get(entityId);
         if (holds == null || holds.isEmpty()) return null;
         long now = ClientCharges.ticks();
         Held shown = null;
         for (Held h : holds.values()) {
-            if (!POSES.containsKey(h.pose)) continue;
-            if (h.released < 0 || shown == null || shown.released >= 0) shown = h;
+            if (!POSES.containsKey(h.pose) || h.over(now)) continue;
+            if (h.on(now) || shown == null || !shown.on(now)) shown = h;
         }
         if (shown == null) return null;
         float w = shown.weight(now, partialTick);
-        return w > 0 ? new Active(shown.pose, w) : null;
+        return w > 0 ? new Active(shown.pose, w, shown.age(now, partialTick)) : null;
     }
 
     public static @Nullable Active of(@Nullable Entity entity, float partialTick) {
@@ -144,7 +193,7 @@ public final class CastPoses {
         if (a == null) return false;
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
         pose.translate(side * 0.56f, -0.52f + equipProcess * -0.6f, -0.72f);
-        POSES.get(a.pose).hand(pose, player, arm, held, partialTick, a.weight);
+        POSES.get(a.pose).hand(pose, player, arm, held, partialTick, a.weight, a.age);
         return true;
     }
 
@@ -153,7 +202,7 @@ public final class CastPoses {
         if ((arm == HumanoidArm.RIGHT ? state.rightArmPose : state.leftArmPose) != HOLD.getValue()) return;
         if (!(state instanceof AvatarRenderState avatar)) return;
         Active a = of(avatar.id, state.partialTick);
-        if (a != null) POSES.get(a.pose).item(state, pose, arm, held, a.weight);
+        if (a != null) POSES.get(a.pose).item(state, pose, arm, held, a.weight, a.age);
     }
 
     private static void poseArm(HumanoidModel<?> model, HumanoidRenderState state, HumanoidArm arm) {
@@ -163,7 +212,7 @@ public final class CastPoses {
         part.yRot = 0;
         if (!(state instanceof AvatarRenderState avatar)) return;
         Active a = of(avatar.id, state.partialTick);
-        if (a != null) POSES.get(a.pose).arm(model, state, arm, state.getUseItemStackForArm(arm), a.weight);
+        if (a != null) POSES.get(a.pose).arm(model, state, arm, state.getUseItemStackForArm(arm), a.weight, a.age);
     }
 
     /** Smoothly 0 → 1 over {@code t} from 0 to 1. */
@@ -183,8 +232,8 @@ public final class CastPoses {
         HELD.entrySet().removeIf(e -> {
             if (level.getEntity(e.getKey()) == null) return true;
             e.getValue().values().removeIf(h -> {
-                if (h.released < 0 && now - h.seen > STALE_TICKS) h.released = now;
-                return h.released >= 0 && now - h.released > EASE_OUT;
+                if (h.duration == 0 && h.released < 0 && now - h.seen > STALE_TICKS) h.released = now;
+                return h.over(now);
             });
             return e.getValue().isEmpty();
         });
