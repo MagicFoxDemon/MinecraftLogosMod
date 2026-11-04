@@ -158,6 +158,11 @@ public final class Casting {
             Vfx.sound(level, origin, SoundEvents.EVOKER_CAST_SPELL, 0.6f, 1.4f);
             Vfx.cast(level, caster.position().add(0, 0.1, 0), Compiler.inferElement(spell.body()));
         }
+        // The caster's arm plays the cast by the form it leads with (a leading beam holds its own pose instead).
+        if (spell.trigger().equals("cast")) {
+            var gesture = CastPose.gesture(spell);
+            if (gesture != null) CastPose.play(caster, gesture);
+        }
         inst.hold();
         try {
             Interp.run(spell.body(), ctx);

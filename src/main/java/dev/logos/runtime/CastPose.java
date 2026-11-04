@@ -33,6 +33,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class CastPose {
     /** Beam (光柱): the wand held out along the gaze until the beam ends. */
     public static final Identifier BEAM = Identifier.fromNamespaceAndPath(LogosMod.MODID, "beam");
+    /** One-shot gestures a cast plays by the form it leads with ({@link #gesture}); {@link #CAST} when it leads with no form. */
+    public static final Identifier CAST = id("cast"), PROJECTILE = id("projectile"), RAY = id("ray"), FIELD = id("field"),
+            CONSTRUCT = id("construct"), VEIN = id("vein"), IMBUE = id("imbue");
+    private static final Map<String, Identifier> GESTURES = Map.of("projectile", PROJECTILE, "ray", RAY, "field", FIELD,
+            "construct", CONSTRUCT, "vein", VEIN, "imbue", IMBUE);
     /** How often a lasting hold is sent again, for players who came close after it began. */
     public static final int REFRESH_TICKS = 10;
 
@@ -76,6 +81,28 @@ public final class CastPose {
         HOLDS.put(h.id, h);
         send(caster, new CastPosePayload(caster.getId(), h.id, pose, true));
         return h;
+    }
+
+    /**
+     * Plays {@code pose} once on {@code caster}: the client gives it the length its drawing says, and it
+     * ends by itself, so there is nothing to release. It shows over a held pose while it plays.
+     */
+    public static void play(LivingEntity caster, Identifier pose) {
+        send(caster, new CastPosePayload(caster.getId(), nextId++, pose, true));
+    }
+
+    /**
+     * The gesture a cast of {@code spell} plays: its leading form's ({@link #lead}), or {@link #CAST} when it
+     * leads with no form. Null for a beam, which holds {@link #BEAM} for as long as it lasts instead.
+     */
+    public static @Nullable Identifier gesture(Spell spell) {
+        Node lead = lead(spell);
+        if (lead == null) return CAST;
+        return lead.rune.name.equals("beam") ? null : GESTURES.getOrDefault(lead.rune.name, CAST);
+    }
+
+    private static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(LogosMod.MODID, path);
     }
 
     /** The poses {@code caster} is holding now, oldest first (the tests read it). */
