@@ -384,6 +384,8 @@
   "attribute.logos.spell_cost": "Spell Cost",
   "attribute.logos.channel_speed": "Channel Speed",
   "attribute.logos.heal_power": "Heal Power",
+  "attribute.logos.wrap_cost": "Mana Wrap Cost",
+  "attribute.logos.wrap_power": "Mana Wrap Power",
   "attribute.logos.mana_regeneration": "Mana Regeneration",
   "attribute.logos.physical_spell_power": "Physical Spell Power",
   "attribute.logos.physical_spell_resistance": "Physical Spell Resistance",

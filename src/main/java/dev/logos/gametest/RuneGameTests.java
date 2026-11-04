@@ -423,6 +423,45 @@ final class RuneGameTests {
         });
     }
 
+    /**
+     * wrap_cost and wrap_power reach the imbue rune and what its events set off, nothing else: here 0.7 and 1.3
+     * make the wind (and the nearest it reads) cost 30% less and the on-hit damage deal 30% more and cost 30% less,
+     * while damage dealt outside the wrap is not raised.
+     */
+    static void imbueWrapModifiers(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        var id = net.minecraft.resources.Identifier.fromNamespaceAndPath(LogosMod.MODID, "test_wrap_focus");
+        p.getAttribute(dev.logos.runtime.SpellModifiers.WRAP_COST).addTransientModifier(
+                new net.minecraft.world.entity.ai.attributes.AttributeModifier(id, -0.3, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+        p.getAttribute(dev.logos.runtime.SpellModifiers.WRAP_POWER).addTransientModifier(
+                new net.minecraft.world.entity.ai.attributes.AttributeModifier(id, 0.3, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+        var wrapped = mob(h, EntityType.HUSK);
+        var plain = h.spawn(EntityType.HUSK, new Vec3(1.5, 2, 6.5));
+        plain.setNoAi(true);
+        var hit = h.spawn(EntityType.PIG, new Vec3(4.5, 2, 6.5));
+        var control = h.spawn(EntityType.PIG, new Vec3(1.5, 2, 8.5));
+        var outside = h.spawn(EntityType.PIG, new Vec3(7.5, 2, 8.5));
+        for (var m : List.of(wrapped, plain)) m.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        for (var m : List.of(hit, control, outside)) m.setNoAi(true);
+
+        var inst = Casting.cast(p, Casting.compile(
+                "(spell :mana 30 (imbue (nearest :radius 2.5) :life 10 (on-hit (damage target 3 arcane))))"), null, null);
+        double paid = (1 + WrapObj.DEPLOY) * 0.7;
+        h.assertTrue(inst != null && Math.abs(inst.mana - (30 - paid)) < 1e-6, "the wind should cost " + paid + ", left " + (inst == null ? "-" : inst.mana));
+        float out0 = outside.getHealth();
+        Effects.damage(inst, outside, 3, Element.ARCANE);
+        h.assertTrue(Math.abs((out0 - outside.getHealth()) - 3) < 1e-3, "damage outside a wrap should not be raised, dealt " + (out0 - outside.getHealth()));
+        float hit0 = hit.getHealth(), control0 = control.getHealth();
+        double before = inst.mana;
+        wrapped.doHurtTarget(h.getLevel(), hit);
+        plain.doHurtTarget(h.getLevel(), control);
+        h.succeedWhen(() -> {
+            float extra = (hit0 - hit.getHealth()) - (control0 - control.getHealth());
+            h.assertTrue(Math.abs(extra - 3.9) < 1e-3, "the wrapped blow should deal 3.9 more, dealt " + extra + " more");
+            h.assertTrue(Math.abs((before - inst.mana) - 2.1) < 1e-6, "the on-hit damage should cost 2.1, cost " + (before - inst.mana));
+        });
+    }
+
     /** It is kept up like a field: when the spell's mana runs dry the wrap comes off. */
     static void imbueUpkeep(GameTestHelper h) {
         FamiliarGameTests.forceAround(h, 1);
