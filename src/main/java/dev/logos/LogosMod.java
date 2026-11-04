@@ -897,6 +897,7 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.ManaFieldPayload.TYPE, dev.logos.net.ManaFieldPayload.CODEC);
         registrar.playToClient(dev.logos.net.PillarBurstPayload.TYPE, dev.logos.net.PillarBurstPayload.CODEC);
         registrar.playToClient(dev.logos.net.ManaTornadoPayload.TYPE, dev.logos.net.ManaTornadoPayload.CODEC);
+        registrar.playToClient(dev.logos.net.CastPosePayload.TYPE, dev.logos.net.CastPosePayload.CODEC);
         registrar.playToServer(dev.logos.net.AnchorEditPayload.TYPE, dev.logos.net.AnchorEditPayload.CODEC, dev.logos.net.AnchorEditPayload::handle);
         registrar.playToServer(dev.logos.net.AlchemyCardPayload.TYPE, dev.logos.net.AlchemyCardPayload.CODEC, dev.logos.net.AlchemyCardPayload::handle);
         registrar.playToServer(dev.logos.net.SageAskPayload.TYPE, dev.logos.net.SageAskPayload.CODEC, dev.logos.net.SageAskPayload::handle);

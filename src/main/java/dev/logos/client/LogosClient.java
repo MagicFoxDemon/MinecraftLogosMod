@@ -35,6 +35,7 @@ public final class LogosClient {
         event.register(dev.logos.net.LifeformCorePayload.TYPE, (payload, ctx) -> dev.logos.runtime.Lifeforms.opening(ctx.player(), payload.entityId()));
         event.register(dev.logos.net.PillarBurstPayload.TYPE, (payload, ctx) -> PillarBursts.receive(payload));
         event.register(dev.logos.net.ManaTornadoPayload.TYPE, (payload, ctx) -> ManaTornados.receive(payload));
+        event.register(dev.logos.net.CastPosePayload.TYPE, (payload, ctx) -> CastPoses.receive(payload));
     }
 
     @SubscribeEvent

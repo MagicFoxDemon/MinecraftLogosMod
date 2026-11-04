@@ -8,6 +8,15 @@
         "class": "dev/logos/client/WandPose",
         "field": "CHARGE"
       }
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "LOGOS_CAST_HOLD",
+      "constructor": "(ZZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": {
+        "class": "dev/logos/client/CastPoses",
+        "field": "HOLD"
+      }
     }
   ]
 }
