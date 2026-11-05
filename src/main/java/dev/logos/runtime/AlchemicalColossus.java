@@ -410,9 +410,9 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
         if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return super.hurtServer(level, source, amount);
-        // Like the ender dragon's body: a quarter of the blow, and at least a little of any blow.
+        // Like the ender dragon's body: a quarter of the blow, and at least a little of any blow. Void damage meets neither that nor its devices.
         float taken = amount / 4 + Math.min(amount, 1);
-        taken = shieldedDamage(source, taken);
+        taken = source.is(Effects.VOID) ? amount : shieldedDamage(source, taken);
         if (taken <= 0) return false;
         if (isBerserk() && taken >= getHealth()) {
             // A frenzy cannot be killed, only burnt out.

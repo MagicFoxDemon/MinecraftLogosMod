@@ -1,7 +1,9 @@
 package dev.logos.runtime;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -15,9 +17,13 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingUseTotemEvent;
 
 /** Sulfur: the ways a spell changes the world. */
 @EventBusSubscriber(modid = LogosMod.MODID)
@@ -30,6 +36,14 @@ public final class Effects {
      * fire protection, fire resistance and fire immunity all turn it aside, credited to the attacker.
      */
     public static final ResourceKey<DamageType> FIRE = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "spell_fire"));
+
+    /**
+     * Void damage: true damage, close to falling out of the world. Armour, shields, protection, the resistance effect,
+     * spell resistance, a creature's own damage cuts and (by config) absorption do not touch it, and it does not knock
+     * back. It leaves out {@code bypasses_invulnerability}, so creative players, invulnerable entities and invulnerable
+     * states (a charging wither, a time stop) are still safe, and a totem of undying still works unless configured off.
+     */
+    public static final ResourceKey<DamageType> VOID = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "spell_void"));
 
     /** True while a spell is dealing damage, so passive triggers do not re-enter themselves. */
     private static int spellDepth;
@@ -86,12 +100,14 @@ public final class Effects {
         if (el == Element.FROST && t.fireImmune()) amt *= 2;
         if (el == Element.LIGHTNING && t.isInWaterOrRain()) amt *= 1.5;
         amt *= SpellModifiers.taken(t, el);
-        // Physical is a melee hit, fire is vanilla fire, and the rest are vanilla magic, which armour does not stop.
+        // Physical is a melee hit, fire is vanilla fire, void is true damage, and the rest are vanilla magic, which armour does not stop.
         DamageSource src;
         if (el == Element.PHYSICAL) {
             src = attacker instanceof Player p ? t.damageSources().playerAttack(p) : t.damageSources().mobAttack(attacker);
         } else if (el == Element.FIRE) {
             src = t.damageSources().source(FIRE, attacker, attacker);
+        } else if (el == Element.VOID) {
+            src = new VoidHit(t.damageSources().source(VOID, attacker, attacker).typeHolder(), attacker, (float) amt);
         } else {
             src = t.damageSources().indirectMagic(attacker, attacker);
         }
@@ -113,6 +129,33 @@ public final class Effects {
         } finally {
             dealing = outer;
         }
+    }
+
+    /** A void hit that remembers its full amount, so a cut made on its way to the health bar can be undone. */
+    private static final class VoidHit extends DamageSource {
+        final float amount;
+
+        VoidHit(Holder<DamageType> type, LivingEntity attacker, float amount) {
+            super(type, attacker, attacker);
+            this.amount = amount;
+        }
+    }
+
+    /**
+     * Last in line, so it undoes whatever a creature's hurtServer (the ender dragon's body) or another handler (a
+     * colossus's seat) cut from a void hit on its way here. By config the hit also goes past absorption, which it leaves intact.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    static void onVoidIncoming(LivingIncomingDamageEvent event) {
+        if (!event.getSource().is(VOID)) return;
+        if (event.getSource() instanceof VoidHit hit && event.getAmount() < hit.amount) event.setAmount(hit.amount);
+        if (LogosConfig.voidIgnoresAbsorption()) event.addReductionModifier(DamageContainer.Reduction.ABSORPTION, (container, absorbed) -> 0);
+    }
+
+    /** By config, a totem of undying does not save its holder from void damage. */
+    @SubscribeEvent
+    static void onUseTotem(LivingUseTotemEvent event) {
+        if (event.getSource().is(VOID) && LogosConfig.voidIgnoresTotem()) event.setCanceled(true);
     }
 
     /** Kills outright (execute). */

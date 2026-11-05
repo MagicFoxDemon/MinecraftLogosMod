@@ -29,7 +29,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
  * <li>{@code spell_power}, {@code <element>_spell_power}: multipliers (base 1) on the damage a spell deals;
  * they multiply each other. Damage, not cost: the rune still pays for the amount written.
  * <li>{@code spell_resistance}, {@code <element>_spell_resistance}: the share (0 to 1) of spell damage the
- * bearer does not take; they stack as {@code (1 − all) × (1 − element)}.
+ * bearer does not take; they stack as {@code (1 − all) × (1 − element)}. Void damage ignores both.
  * <li>{@code spell_vulnerability}, {@code <element>_spell_vulnerability}: how much more spell damage the bearer
  * takes (base 0; 0.5 is half as much again), kept apart from resistance so a debuff and a ward can both hold;
  * they multiply in as {@code (1 + all) × (1 + element)}.
@@ -130,10 +130,10 @@ public final class SpellModifiers {
         return category == null ? baseCost : cost[category.ordinal()];
     }
 
-    /** The share of {@code element} spell damage that {@code target} takes: less by its resistances, more by its vulnerabilities. */
+    /** The share of {@code element} spell damage that {@code target} takes: less by its resistances (void has none to meet), more by its vulnerabilities. */
     public static double taken(LivingEntity target, Element element) {
-        return (1 - value(target, SPELL_RESISTANCE)) * (1 - value(target, RESISTANCE.get(element)))
-                * (1 + value(target, SPELL_VULNERABILITY)) * (1 + value(target, VULNERABILITY.get(element)));
+        double resisted = element == Element.VOID ? 1 : (1 - value(target, SPELL_RESISTANCE)) * (1 - value(target, RESISTANCE.get(element)));
+        return resisted * (1 + value(target, SPELL_VULNERABILITY)) * (1 + value(target, VULNERABILITY.get(element)));
     }
 
     /** How much faster {@code caster} charges: flow scales by it and surge by its square, so a charge takes 1/speed as long. */

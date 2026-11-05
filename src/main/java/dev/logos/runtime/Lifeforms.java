@@ -267,8 +267,8 @@ public final class Lifeforms {
     @SubscribeEvent
     static void onDamage(LivingIncomingDamageEvent event) {
         LivingEntity victim = event.getEntity();
-        // Its alchemical devices take their share first (a mana ward, say), whatever the damage comes from.
-        if (victim instanceof ManaLifeform shielded && !victim.level().isClientSide()) {
+        // Its alchemical devices take their share first (a mana ward, say), whatever the damage comes from, except void.
+        if (victim instanceof ManaLifeform shielded && !victim.level().isClientSide() && !event.getSource().is(Effects.VOID)) {
             event.setAmount(shielded.shieldedDamage(event.getSource(), event.getAmount()));
         }
         if (Effects.inSpell() || victim.level().isClientSide()) return;

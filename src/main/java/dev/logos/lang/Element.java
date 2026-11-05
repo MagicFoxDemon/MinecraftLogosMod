@@ -9,6 +9,7 @@ public enum Element {
     FIRE("火焰", 0.7, true),
     FROST("寒霜", 1.0, true),
     LIGHTNING("雷霆", 1.1, true),
+    // Dearest: true damage (see Effects.VOID), which almost nothing turns aside.
     VOID("虚空", 1.5, true),
     // Also how a spell with no element looks.
     ARCANE("奥秘", 1.0, true),

@@ -178,6 +178,21 @@ public final class LogosConfig {
 
     static {
         BUILDER.pop();
+        BUILDER.comment("Void damage: true damage, close to falling out of the world").push("voidDamage");
+    }
+
+    public static final ModConfigSpec.BooleanValue VOID_IGNORES_ABSORPTION = BUILDER
+            .comment("Whether void damage goes straight to health past absorption (spell shields, golden apples), leaving the absorption intact.")
+            .translation("logos.configuration.voidIgnoresAbsorption")
+            .define("voidIgnoresAbsorption", true);
+
+    public static final ModConfigSpec.BooleanValue VOID_IGNORES_TOTEM = BUILDER
+            .comment("Whether void damage kills through a totem of undying.")
+            .translation("logos.configuration.voidIgnoresTotem")
+            .define("voidIgnoresTotem", false);
+
+    static {
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -237,6 +252,22 @@ public final class LogosConfig {
     public static boolean travelUnvisitedDimensions() {
         try {
             return TRAVEL_UNVISITED_DIMENSIONS.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return false;
+        }
+    }
+
+    public static boolean voidIgnoresAbsorption() {
+        try {
+            return VOID_IGNORES_ABSORPTION.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+    }
+
+    public static boolean voidIgnoresTotem() {
+        try {
+            return VOID_IGNORES_TOTEM.getAsBoolean();
         } catch (IllegalStateException e) {
             return false;
         }

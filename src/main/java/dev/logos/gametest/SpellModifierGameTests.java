@@ -2,6 +2,7 @@ package dev.logos.gametest;
 
 import java.util.List;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.item.SpellPages;
 import dev.logos.lang.Category;
@@ -21,13 +22,19 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
@@ -174,6 +181,98 @@ final class SpellModifierGameTests {
         buff(c, SpellModifiers.resistanceAttribute(Element.PHYSICAL), 0.5);
         cast(p, "(damage (nearest :radius 6) 2)");
         near(h, c.getHealth(), 10 - 4.5 - 2, "2 physical at ½ × 2");
+        h.succeed();
+    }
+
+    /** Armour, the resistance effect, spell resistance and absorption leave 2 void at 2, which does not knock back; vulnerability still adds. */
+    static void voidIsTrueDamage(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow c = cow(h);
+        buff(c, Attributes.ARMOR, 20);
+        c.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 4));
+        buff(c, SpellModifiers.SPELL_RESISTANCE, 0.9);
+        buff(c, SpellModifiers.resistanceAttribute(Element.VOID), 0.9);
+        Effects.shield(c, 4);
+        cast(p, "(damage (nearest :radius 6) 2 void)");
+        near(h, c.getHealth(), 8, "2 void through every defence");
+        near(h, c.getAbsorptionAmount(), 4, "absorption left intact");
+        h.assertTrue(c.getDeltaMovement().horizontalDistanceSqr() < 1e-6, "void should not knock back: " + c.getDeltaMovement());
+        buff(c, SpellModifiers.vulnerabilityAttribute(Element.VOID), 0.5);
+        cast(p, "(damage (nearest :radius 6) 2 void)");
+        near(h, c.getHealth(), 5, "2 void at ×1.5 vulnerability");
+        h.succeed();
+    }
+
+    /** A survival player's protection and resistance do not stop void; a creative player takes none at all. */
+    static void voidOnPlayers(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        p.setGameMode(GameType.SURVIVAL);
+        p.connection.markClientLoaded();
+        ItemStack chest = new ItemStack(Items.DIAMOND_CHESTPLATE);
+        chest.enchant(h.getLevel().registryAccess().getOrThrow(Enchantments.PROTECTION), 4);
+        p.setItemSlot(EquipmentSlot.CHEST, chest);
+        p.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 4));
+        Cow c = cow(h);
+        float health = p.getHealth();
+        Effects.damage(c, p, 4, Element.VOID);
+        near(h, p.getHealth(), health - 4, "4 void through protection and resistance");
+        p.setGameMode(GameType.CREATIVE);
+        p.invulnerableTime = 0;
+        Effects.damage(c, p, 4, Element.VOID);
+        near(h, p.getHealth(), health - 4, "a creative player takes no void damage");
+        h.succeed();
+    }
+
+    /** With the option off, absorption takes void damage as it takes any other. */
+    static void voidAbsorptionOption(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow c = cow(h);
+        Effects.shield(c, 4);
+        LogosConfig.VOID_IGNORES_ABSORPTION.set(false);
+        try {
+            cast(p, "(damage (nearest :radius 6) 2 void)");
+        } finally {
+            LogosConfig.VOID_IGNORES_ABSORPTION.set(true);
+        }
+        near(h, c.getHealth(), 10, "absorption took the hit");
+        near(h, c.getAbsorptionAmount(), 2, "absorption spent");
+        h.succeed();
+    }
+
+    /** By default a totem saves its holder from void damage; with the option on, it does not and is not spent. */
+    static void voidTotemOption(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow saved = cow(h);
+        saved.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+        Effects.damage(p, saved, 100, Element.VOID);
+        h.assertTrue(saved.isAlive() && saved.getMainHandItem().isEmpty(), "the totem should save it and be spent");
+        Cow lost = h.spawn(EntityType.COW, new Vec3(1.5, 2, 3.5));
+        lost.setNoAi(true);
+        lost.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+        LogosConfig.VOID_IGNORES_TOTEM.set(true);
+        try {
+            Effects.damage(p, lost, 100, Element.VOID);
+        } finally {
+            LogosConfig.VOID_IGNORES_TOTEM.set(false);
+        }
+        h.assertTrue(!lost.isAlive() && !lost.getMainHandItem().isEmpty(), "void should kill through the totem, unspent");
+        h.succeed();
+    }
+
+    /** What cuts magic damage on a creature does not cut void: a witch's resistance, the ender dragon's body. Other creatures' void hits count on the dragon too. */
+    static void voidIgnoresCreatureCuts(GameTestHelper h) {
+        Cow attacker = h.spawn(EntityType.COW, new Vec3(4.5, 2, 1.5));
+        attacker.setNoAi(true);
+        Witch witch = h.spawn(EntityType.WITCH, new Vec3(1.5, 2, 1.5));
+        witch.setNoAi(true);
+        float witchHealth = witch.getHealth();
+        Effects.damage(attacker, witch, 8, Element.VOID);
+        near(h, witch.getHealth(), witchHealth - 8, "8 void on a witch");
+        EnderDragon dragon = h.spawn(EntityType.ENDER_DRAGON, new Vec3(4.5, 3, 7.5));
+        float dragonHealth = dragon.getHealth();
+        Effects.damage(attacker, dragon, 40, Element.VOID);
+        near(h, dragon.getHealth(), dragonHealth - 40, "40 void on the dragon's body");
+        dragon.discard();
         h.succeed();
     }
 
