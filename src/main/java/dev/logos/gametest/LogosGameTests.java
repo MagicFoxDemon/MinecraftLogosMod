@@ -52,14 +52,14 @@ public final class LogosGameTests {
             "emitter_pulse_casts_once", "emitter_full_casts_and_pays_extra", "emitter_spells_leave_through_itself", "emitter_edit_swaps_the_invocation", "offset_follows_the_facing", "dividers_measure_from_the_emitter",
             "alchemy_table_halves", "alchemy_table_automation", "alchemy_table_tank", "alchemy_table_mana", "alchemy_table_bottles", "alchemy_table_free_mana",
             "spell_modifier_element_power", "spell_modifier_resistance", "spell_modifier_fire_is_vanilla_fire", "spell_modifier_arcane_damage", "spell_modifier_creature_life_damage",
-            "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "spell_modifier_heal_power", "spell_modifier_vulnerability",
+            "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "spell_modifier_heal_power", "spell_modifier_vulnerability", "spell_modifier_void_true_damage", "spell_modifier_void_on_players", "spell_modifier_void_absorption_option", "spell_modifier_void_totem_option", "spell_modifier_void_creature_cuts",
             "buff_potions_brew", "buff_potions_dissolve", "buff_potions_effects", "element_effects_every_element", "herbs_grow_in_jars",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
             "lifeform_hovers", "lifeform_combo", "lifeform_charges_its_cast", "lifeform_charge_returns_when_target_gone", "lifeform_heals_master", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_unaimed_beam_heals_master", "lifeform_unaimed_beam_strikes_foe", "lifeform_declared_heal_spares_master", "lifeform_forages", "lifeform_role",
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
-            "colossus_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
+            "colossus_armour", "colossus_void_ignores_armour", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
             "colossus_grabs_big", "colossus_grabs_from_reach", "colossus_defends_itself", "colossus_orders_before_self_defense", "colossus_stomps_small_foes", "colossus_grabs_rider", "colossus_lets_go_when_killed", "colossus_punches_crowd", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_cannon_strikes_at_once", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered", "colossus_jumps_off",
             "leech_hunts_richest", "leech_clings_and_drains", "leech_knocked_off", "leech_drains_familiar_health", "leech_splits", "leech_offspring_do_not_split", "leech_bane_and_death", "leech_familiar_obeys",
             "jar_crop_empty_substrates", "jar_crop_tagged_substrates", "magic_crop_seed_loot", "magic_crop_ground_growth",
@@ -202,6 +202,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("leech_bane_and_death", () -> LeechGameTests::baneAndDeath);
         FUNCTIONS.register("leech_familiar_obeys", () -> LeechGameTests::familiarObeys);
         FUNCTIONS.register("colossus_armour", () -> ColossusGameTests::armour);
+        FUNCTIONS.register("colossus_void_ignores_armour", () -> ColossusGameTests::voidIgnoresArmour);
         FUNCTIONS.register("colossus_spawn_egg_player", () -> ColossusSpawnEggGameTests::player);
         FUNCTIONS.register("colossus_spawn_egg_dispenser", () -> ColossusSpawnEggGameTests::dispenser);
         FUNCTIONS.register("colossus_spawn_egg_disabled", () -> ColossusSpawnEggGameTests::disabled);
@@ -374,6 +375,11 @@ public final class LogosGameTests {
         FUNCTIONS.register("spell_modifier_element_power", () -> SpellModifierGameTests::elementPowerBoostsItsElement);
         FUNCTIONS.register("spell_modifier_heal_power", () -> SpellModifierGameTests::healPowerScalesHealing);
         FUNCTIONS.register("spell_modifier_vulnerability", () -> SpellModifierGameTests::vulnerabilityAddsToDamageTaken);
+        FUNCTIONS.register("spell_modifier_void_true_damage", () -> SpellModifierGameTests::voidIsTrueDamage);
+        FUNCTIONS.register("spell_modifier_void_on_players", () -> SpellModifierGameTests::voidOnPlayers);
+        FUNCTIONS.register("spell_modifier_void_absorption_option", () -> SpellModifierGameTests::voidAbsorptionOption);
+        FUNCTIONS.register("spell_modifier_void_totem_option", () -> SpellModifierGameTests::voidTotemOption);
+        FUNCTIONS.register("spell_modifier_void_creature_cuts", () -> SpellModifierGameTests::voidIgnoresCreatureCuts);
         FUNCTIONS.register("spell_modifier_resistance", () -> SpellModifierGameTests::resistanceTurnsAsideItsElement);
         FUNCTIONS.register("spell_modifier_fire_is_vanilla_fire", () -> SpellModifierGameTests::fireIsVanillaFire);
         FUNCTIONS.register("spell_modifier_arcane_damage", () -> SpellModifierGameTests::arcaneDamageHasItsOwnPower);

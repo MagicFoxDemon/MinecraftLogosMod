@@ -705,7 +705,8 @@ public final class Runes {
     private static void effects() {
         def("damage", EFFECT, ACTION).each("target").p("amount", NUM).opt("element", ELEMENT, "physical")
                 .on("on-kill", true, "目标因此死亡时").stab(2)
-                .doc("造成伤害。每点伤害消耗：火0.7 物理0.8 冰/奥秘1.0 雷1.1 虚空1.5")
+                .doc("造成伤害。每点伤害消耗：火0.7 物理0.8 冰/奥秘1.0 雷1.1 虚空1.5。"
+                        + "虚空是真实伤害：无视护甲、盾牌、保护附魔、抗性提升、魔法抗性和生物自身的减伤，默认也无视伤害吸收，但伤不到创造模式玩家")
                 .exec((n, c) -> {
                     double amt = Math.max(0, num(n.arg(1), c));
                     Element el = element(n.arg(2), c);

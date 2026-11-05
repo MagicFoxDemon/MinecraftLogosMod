@@ -1,10 +1,12 @@
 package dev.logos.gametest;
 
 import dev.logos.LogosMod;
+import dev.logos.lang.Element;
 import dev.logos.runtime.AlchemicalColossus;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Colossi;
 import dev.logos.runtime.ColossusMind;
+import dev.logos.runtime.Effects;
 import dev.logos.runtime.Familiars;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
@@ -40,6 +42,24 @@ final class ColossusGameTests {
         h.assertTrue(c.mana() == 50000 && c.maxMana() == 50000, "a full visible pool of 50000, got " + c.mana() + "/" + c.maxMana());
         c.hurtServer(h.getLevel(), h.getLevel().damageSources().generic(), 40);
         h.assertTrue(Math.abs(c.getHealth() - 789) < 0.01, "40 damage should take 40/4 + 1 = 11, health " + c.getHealth());
+        h.succeed();
+    }
+
+    /** Void damage takes all of itself from the colossus, past the quarter its frame leaves; a frenzy still only burns out. */
+    static void voidIgnoresArmour(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        AlchemicalColossus c = raise(h, p, new Vec3(5, 2, 5));
+        var attacker = h.spawn(EntityType.COW, new Vec3(1.5, 2, 5.5));
+        attacker.setNoAi(true);
+        Effects.damage(attacker, c, 40, Element.VOID);
+        h.assertTrue(Math.abs(c.getHealth() - 760) < 0.01, "40 void should take 40, health " + c.getHealth());
+        p.setGameMode(GameType.SURVIVAL);
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(LogosMod.TAINTED_MANA_SHARD.get()));
+        c.interact(p, InteractionHand.MAIN_HAND, c.position());
+        h.assertTrue(c.isBerserk(), "an unstable fuel should send it berserk");
+        c.invulnerableTime = 0;
+        Effects.damage(attacker, c, 100000, Element.VOID);
+        h.assertTrue(c.isAlive() && !c.isBerserk() && c.isTempered(), "void should burn a frenzy out, not kill it");
         h.succeed();
     }
 
