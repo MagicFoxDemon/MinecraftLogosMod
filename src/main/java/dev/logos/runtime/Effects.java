@@ -33,11 +33,22 @@ public final class Effects {
 
     /** True while a spell is dealing damage, so passive triggers do not re-enter themselves. */
     private static int spellDepth;
+    /** The element of the damage being dealt right now; see {@link #dealing}. */
+    private static @org.jspecify.annotations.Nullable Element dealing;
 
     private Effects() {}
 
     public static boolean inSpell() {
         return spellDepth > 0;
+    }
+
+    /**
+     * The element of the elemental damage being dealt right now (a spell's, or a creature's through {@link #damage}),
+     * for code running inside the hurt, such as a shield-block event: every element but physical and fire is vanilla
+     * magic, so the damage type alone does not tell them apart. Null outside such a hurt.
+     */
+    public static @org.jspecify.annotations.Nullable Element dealing() {
+        return dealing;
     }
 
     /** Applies elemental damage. Returns true if the target died from it. */
@@ -87,15 +98,21 @@ public final class Effects {
         ServerLevel level = (ServerLevel) t.level();
         Vfx.burst(level, t, attacker.level() == level ? attacker.getEyePosition() : null, el, Vfx.Burst.DAMAGE);
         if (amt <= 0) return false;
-        if (!spell) return t.hurtServer(level, src, (float) amt) && !t.isAlive();
-        t.invulnerableTime = 0;
-        spellDepth++;
+        Element outer = dealing;
+        dealing = el;
         try {
-            t.hurtServer(level, src, (float) amt);
+            if (!spell) return t.hurtServer(level, src, (float) amt) && !t.isAlive();
+            t.invulnerableTime = 0;
+            spellDepth++;
+            try {
+                t.hurtServer(level, src, (float) amt);
+            } finally {
+                spellDepth--;
+            }
+            return !t.isAlive();
         } finally {
-            spellDepth--;
+            dealing = outer;
         }
-        return !t.isAlive();
     }
 
     /** Kills outright (execute). */

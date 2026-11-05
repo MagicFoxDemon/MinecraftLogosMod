@@ -56,22 +56,40 @@ public final class Constructs {
         return false;
     }
 
+    /** Add-ons' wards (see {@link SpellWard}), asked along with the constructs. */
+    private static final List<SpellWard.Source> WARDS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /** Hands an add-on's wards over to {@link #stopSpell}: once, at mod construction. */
+    public static void addWards(SpellWard.Source source) {
+        WARDS.add(source);
+    }
+
     /**
-     * The first point where a construct stops a body of {@code inst} flying {@code from → to}, or null.
-     * Only that construct pays {@code cost}, and takes {@code damage} when {@code strikes} (a beam holds
+     * The first point where a construct or a ward stops a body of {@code inst} flying {@code from → to}, or null.
+     * Only that one pays {@code cost}, and takes {@code damage} when {@code strikes} (a beam holds
      * against it every tick but strikes once a pulse). A void body stronger than a construct's health
      * passes it by, so {@code damage} is also what decides that, struck or not.
      */
     public static @Nullable Vec3 stopSpell(ServerLevel level, @Nullable SpellInstance inst, Vec3 from, Vec3 to, double cost,
                                            Element element, double damage, boolean strikes) {
-        ConstructObj best = null;
+        SpellWard best = null;
         Vec3 bestAt = null;
-        for (ConstructEntity c : ConstructEntity.near(level, new AABB(from, to))) {
+        AABB path = new AABB(from, to);
+        for (ConstructEntity c : ConstructEntity.near(level, path)) {
             if (c.owner == null) continue;
             Vec3 at = c.owner.wouldStop(inst, from, to, element, damage);
             if (at != null && (bestAt == null || at.distanceToSqr(from) < bestAt.distanceToSqr(from))) {
                 best = c.owner;
                 bestAt = at;
+            }
+        }
+        for (SpellWard.Source source : WARDS) {
+            for (SpellWard w : source.near(level, path)) {
+                Vec3 at = w.wouldStop(inst, from, to, element, damage);
+                if (at != null && (bestAt == null || at.distanceToSqr(from) < bestAt.distanceToSqr(from))) {
+                    best = w;
+                    bestAt = at;
+                }
             }
         }
         return best != null && best.stop(bestAt, cost, strikes ? damage : 0) ? bestAt : null;

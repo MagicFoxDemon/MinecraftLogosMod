@@ -1,8 +1,11 @@
 package dev.logos.gametest;
 
+import dev.logos.lang.Element;
 import dev.logos.runtime.Casting;
+import dev.logos.runtime.Constructs;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellInstance;
+import dev.logos.runtime.SpellWard;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -283,6 +287,62 @@ final class ConstructGameTests {
             h.succeedWhen(() -> {
                 h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "the strong void shot should pass the wall and hit");
                 h.assertTrue(Math.abs(wall.health() - 12) < 1e-6, "passing through takes nothing from the wall, left " + wall.health());
+            });
+        });
+    }
+
+    /** Husks carrying a test ward (see {@link #wardedHusk}), and the mana each has left to pay with. */
+    private static final java.util.Map<java.util.UUID, double[]> WARDED = new java.util.HashMap<>();
+    private static boolean wardsAdded;
+
+    /**
+     * A husk carrying a ward the way an add-on's guarding weapon would: it stops other spells' bodies 0.6 out from
+     * its box, paying the stop's cost and the body's damage from {@code mana}.
+     */
+    private static Husk wardedHusk(GameTestHelper h, double x, double y, double z, double mana) {
+        if (!wardsAdded) {
+            wardsAdded = true;
+            Constructs.addWards((level, area) -> level.getEntitiesOfClass(Husk.class, area.inflate(1), e -> WARDED.containsKey(e.getUUID()))
+                    .stream().map(TestWard::new).toList());
+        }
+        Husk husk = husk(h, x, y, z);
+        WARDED.put(husk.getUUID(), new double[] {mana});
+        return husk;
+    }
+
+    private record TestWard(Husk husk) implements SpellWard {
+        @Override
+        public Vec3 wouldStop(SpellInstance inst, Vec3 from, Vec3 to, Element element, double damage) {
+            AABB box = husk.getBoundingBox().inflate(0.6);
+            return box.contains(from) ? null : box.clip(from, to).orElse(null);
+        }
+
+        @Override
+        public boolean stop(Vec3 at, double cost, double damage) {
+            double[] mana = WARDED.get(husk.getUUID());
+            if (mana == null || mana[0] < cost + damage) return false;
+            mana[0] -= cost + damage;
+            return true;
+        }
+    }
+
+    /**
+     * An add-on's ward stops another spell's projectile the way a wall does, paying the stop (0.5) and the shot's
+     * damage (5) from 8; with 2.5 left it cannot pay for the next one, which gets through.
+     */
+    static void wardStopsOtherSpells(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Husk husk = wardedHusk(h, 4.5, 2, 8.5, 8);
+        shoot(h, p, "(damage target 5)");
+        h.runAfterDelay(20, () -> {
+            double left = WARDED.get(husk.getUUID())[0];
+            h.assertTrue(husk.getHealth() == husk.getMaxHealth(), "the ward let the shot through");
+            h.assertTrue(Math.abs(left - 2.5) < 1e-6, "the ward should pay 0.5 + 5, left " + left);
+            shoot(h, p, "(damage target 5)");
+            h.succeedWhen(() -> {
+                h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "a ward that cannot pay should let the shot through");
+                h.assertTrue(Math.abs(WARDED.get(husk.getUUID())[0] - 2.5) < 1e-6, "a ward that cannot pay should pay nothing");
+                WARDED.remove(husk.getUUID());
             });
         });
     }
