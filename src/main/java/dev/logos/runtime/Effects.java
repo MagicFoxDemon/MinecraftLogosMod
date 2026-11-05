@@ -107,7 +107,7 @@ public final class Effects {
         } else if (el == Element.FIRE) {
             src = t.damageSources().source(FIRE, attacker, attacker);
         } else if (el == Element.VOID) {
-            src = new VoidHit(t.damageSources().source(VOID, attacker, attacker).typeHolder(), attacker, (float) amt);
+            src = voidHit(attacker, t, (float) amt);
         } else {
             src = t.damageSources().indirectMagic(attacker, attacker);
         }
@@ -129,6 +129,10 @@ public final class Effects {
         } finally {
             dealing = outer;
         }
+    }
+
+    private static DamageSource voidHit(LivingEntity attacker, LivingEntity t, float amount) {
+        return new VoidHit(t.damageSources().source(VOID, attacker, attacker).typeHolder(), attacker, amount);
     }
 
     /** A void hit that remembers its full amount, so a cut made on its way to the health bar can be undone. */
@@ -158,13 +162,13 @@ public final class Effects {
         if (event.getSource().is(VOID) && LogosConfig.voidIgnoresTotem()) event.setCanceled(true);
     }
 
-    /** Kills outright (execute). */
+    /** Kills outright (execute): a void hit past all counting, so only what stops void damage stops it. */
     public static boolean kill(SpellInstance inst, LivingEntity t) {
         inst.affected.add(t.getUUID());
         t.invulnerableTime = 0;
         spellDepth++;
         try {
-            t.hurtServer((ServerLevel) t.level(), t.damageSources().indirectMagic(inst.caster, inst.caster), Float.MAX_VALUE);
+            t.hurtServer((ServerLevel) t.level(), voidHit(inst.caster, t, Float.MAX_VALUE), Float.MAX_VALUE);
         } finally {
             spellDepth--;
         }
