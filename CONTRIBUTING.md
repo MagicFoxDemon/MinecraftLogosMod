@@ -106,7 +106,7 @@ gh pr create --fill                # 或在网页上开 PR
 - `runtime/`：法术执行。`Interp` 求值，`Casting` 施放与载页上限、焚式，`SpellInstance` 魔力池与游离魔力，`Familiars` / `FamiliarEvents` / `DragonFamiliar` / `FamiliarRiding` 使魔，`Construct*` 炼成体，`Anchors` 锚点，`Filter` ⊙ 筛选。
   - 持续施法姿势：服务端 `CastPose.hold(施法者, 姿势 id)` 开始保持一个姿势，返回的 `Hold.release()` 结束（施法者消失或死亡时自动结束）；客户端在 `client/CastPoses.register` 登记每个姿势 id 怎么画，物品在自己的 `getArmPose` / `applyForgeHandTransform` 里调用 `CastPoses.armPose` / `handInView`（Logos 的法杖与长杖在 `WandPose` 里接好了）。附属包可以用同一套接口加自己的姿势。术式以光柱开头（启式后的第一条语句，`split` 会往里看一层）时，施法者举杖保持到光柱结束（`client/BeamPose`）。
   - 一次性施法动作：`CastPose.play(施法者, 姿势 id)` 播放一次，不用释放；时长由客户端的姿势自己给（`Pose.duration()`，0 表示持续姿势），画法方法带 `age`（已播放的刻数）。每次施放（`:trigger cast`）按启式后的第一条语句选动作（`CastPose.gesture`）：魔弹、射线、领域、炼成体、游脉、缠绕各有一个，其他开头用普通施法，光柱开头不播（改为持姿）。动作在 `client/CastGestures`，侧面/正面截图场景 `logos_cast_gestures`，第一人称 `logos_cast_gestures_view`。
-  - 法术拦截：魔弹、光柱、游脉、巨像的掌心炮每走一步都问 `Constructs.stopSpell`，由离得最近、愿意拦的那个付费拦下。除了炼成体，附属包可以用 `Constructs.addWards` 登记自己的 `SpellWard`（比如能挡法术的武器）。格挡事件里要分辨这一下是什么元素时用 `Effects.dealing()`：除物理、火以外的元素伤害都是原版 `indirect_magic`，光看伤害类型分不出来。
+  - 法术拦截：魔弹、光柱、游脉、巨像的掌心炮每走一步都问 `Constructs.stopSpell`，由离得最近、愿意拦的那个付费拦下。除了炼成体，附属包可以用 `Constructs.addWards` 登记自己的 `SpellWard`（比如能挡法术的武器）。格挡事件里要分辨这一下是什么元素时用 `Effects.dealing()`：除物理、火、虚空以外的元素伤害都是原版 `indirect_magic`，光看伤害类型分不出来。
 - `graph/`：LDLib2 节点编辑器。`RuneNodes` 每个符文一个节点类，`GraphCompiler` 图 → 源码，`GraphBuilder` 源码 → 图。
 - `item/`、`block/`：法杖、载页（`PageTier` 品级）、典籍、编纂台、拓印台。
 - `mixin/`：对原版的少量改动，登记在 `src/main/resources/logos.mixins.json`。

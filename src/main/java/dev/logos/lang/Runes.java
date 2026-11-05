@@ -1022,7 +1022,7 @@ public final class Runes {
                     return null;
                 });
         def("execute", EFFECT, ACTION).p("target", ENTITY).on("on-kill", true, "处决成功时").stab(6)
-                .doc("处决：直接终结生命。代价由证明决定：4×(已证明的生命上界)×(已证明状态的折减)。前提失效会引发悖论反噬")
+                .doc("处决：以虚空真实伤害直接终结生命，抗性提升和伤害吸收都挡不住，不死图腾按虚空的配置。代价由证明决定：4×(已证明的生命上界)×(已证明状态的折减)。前提失效会引发悖论反噬")
                 .exec(Runes::execute);
         def("blink", EFFECT, ACTION).p("pos", POS).eachOr("target", "caster").stab(2)
                 .doc("把目标瞬移到某位置，可以跨维度（配合 in-dimension）。目标不写时是施法者自己；也可以接 target 或实体群，"

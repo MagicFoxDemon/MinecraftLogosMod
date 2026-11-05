@@ -276,6 +276,29 @@ final class SpellModifierGameTests {
         h.succeed();
     }
 
+    /** Execute strikes as void: full resistance does not save its target, and absorption is left as it was; a totem still does, unless configured off. */
+    static void executeIsVoid(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow c = cow(h);
+        c.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 4));
+        Effects.shield(c, 4);
+        cast(p, "(execute (nearest :radius 6))");
+        h.assertTrue(!c.isAlive(), "execute should go through resistance V and absorption");
+        Cow saved = cow(h);
+        saved.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+        cast(p, "(execute (nearest :radius 6))");
+        h.assertTrue(saved.isAlive() && saved.getMainHandItem().isEmpty(), "the totem should save it and be spent");
+        saved.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+        LogosConfig.VOID_IGNORES_TOTEM.set(true);
+        try {
+            cast(p, "(execute (nearest :radius 6))");
+        } finally {
+            LogosConfig.VOID_IGNORES_TOTEM.set(false);
+        }
+        h.assertTrue(!saved.isAlive(), "with the option on, execute should kill through the totem");
+        h.succeed();
+    }
+
     /** Effect runes at ½ cost pay half; a selector (binding) still pays in full until the overall cost drops too. */
     static void nodeCostScalesItsCategory(GameTestHelper h) {
         ServerPlayer p = caster(h);
