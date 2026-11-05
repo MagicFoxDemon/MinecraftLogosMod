@@ -17,8 +17,10 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -30,6 +32,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.cow.Cow;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.monster.Witch;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -296,6 +299,49 @@ final class SpellModifierGameTests {
             LogosConfig.VOID_IGNORES_TOTEM.set(false);
         }
         h.assertTrue(!saved.isAlive(), "with the option on, execute should kill through the totem");
+        h.succeed();
+    }
+
+    /**
+     * A creature that refuses every blow a player is behind, whatever kind, as Friends&Foes' rascal does. Off, the option
+     * leaves void and execute refused; on, void is out-of-world damage and execute is /kill, which also reach a creative
+     * player, an invulnerable creature and past a totem.
+     */
+    static void outOfWorldOption(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Cow refusing = new Cow(EntityType.COW, h.getLevel()) {
+            @Override
+            public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+                return !(source.getEntity() instanceof Player) && super.hurtServer(level, source, amount);
+            }
+        };
+        refusing.setNoAi(true);
+        Vec3 at = h.absoluteVec(new Vec3(4.5, 2, 3.5));
+        refusing.snapTo(at.x, at.y, at.z, 0, 0);
+        h.getLevel().addFreshEntity(refusing);
+        cast(p, "(damage (nearest :radius 6) 2 void)");
+        near(h, refusing.getHealth(), 10, "off, it refuses void from a player");
+        cast(p, "(execute (nearest :radius 6))");
+        h.assertTrue(refusing.isAlive(), "off, it refuses execute from a player");
+        LogosConfig.VOID_IS_OUT_OF_WORLD.set(true);
+        try {
+            cast(p, "(damage (nearest :radius 6) 2 void)");
+            near(h, refusing.getHealth(), 8, "on, 2 void lands");
+            p.setGameMode(GameType.CREATIVE);
+            p.connection.markClientLoaded();
+            float health = p.getHealth();
+            Effects.damage(refusing, p, 4, Element.VOID);
+            near(h, p.getHealth(), health - 4, "on, void reaches a creative player");
+            cast(p, "(execute (nearest :radius 6))");
+            h.assertTrue(!refusing.isAlive(), "on, execute kills it");
+            Cow guarded = cow(h);
+            guarded.setInvulnerable(true);
+            guarded.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+            cast(p, "(execute (nearest :radius 6))");
+            h.assertTrue(!guarded.isAlive() && !guarded.getMainHandItem().isEmpty(), "on, execute kills past invulnerability and an unspent totem");
+        } finally {
+            LogosConfig.VOID_IS_OUT_OF_WORLD.set(false);
+        }
         h.succeed();
     }
 

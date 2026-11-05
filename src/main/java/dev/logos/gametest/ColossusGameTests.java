@@ -1,5 +1,6 @@
 package dev.logos.gametest;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
 import dev.logos.runtime.AlchemicalColossus;
@@ -72,6 +73,22 @@ final class ColossusGameTests {
         Casting.cast(p, Casting.compile("(spell :mana 100000 (execute (nearest :radius 12)))"), null, null);
         h.assertTrue(c.isAlive(), "execute must not kill a colossus");
         h.assertTrue(c.mana() == 0 && c.isDormant(), "its mana wiped and powered down: " + c.mana() + ", dormant " + c.isDormant());
+        h.succeed();
+    }
+
+    /** Configured as /kill, execute kills a colossus instead of powering it down. */
+    static void executeAsKill(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        @SuppressWarnings("removal")
+        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        AlchemicalColossus c = raise(h, other, new Vec3(5, 2, 5));
+        LogosConfig.VOID_IS_OUT_OF_WORLD.set(true);
+        try {
+            Casting.cast(p, Casting.compile("(spell :mana 100000 (execute (nearest :radius 12)))"), null, null);
+        } finally {
+            LogosConfig.VOID_IS_OUT_OF_WORLD.set(false);
+        }
+        h.assertTrue(!c.isAlive() || c.isDeadOrDying(), "execute as /kill should kill a colossus, health " + c.getHealth());
         h.succeed();
     }
 
