@@ -1627,8 +1627,8 @@ public final class Runes {
             sp.sendSystemMessage(Component.literal("∴ 处决 " + t.getName().getString() + " · 代价 " + Node.fmt(cost)
                     + (proof.isEmpty() ? "（无证明）" : " · 证明 " + proof.stream().map(Fact::describe).toList())).withStyle(ChatFormatting.DARK_PURPLE));
         }
-        // A colossus is not killed by a proof: its mana is wiped and it powers down (a frenzy burns out).
-        if (t instanceof dev.logos.runtime.AlchemicalColossus colossus) {
+        // A colossus is not killed by a proof: its mana is wiped and it powers down (a frenzy burns out). Configured as /kill, it dies like anything else.
+        if (t instanceof dev.logos.runtime.AlchemicalColossus colossus && !LogosConfig.voidIsOutOfWorld()) {
             colossus.drainAll();
             return null;
         }

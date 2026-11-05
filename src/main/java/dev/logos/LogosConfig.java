@@ -191,6 +191,12 @@ public final class LogosConfig {
             .translation("logos.configuration.voidIgnoresTotem")
             .define("voidIgnoresTotem", false);
 
+    public static final ModConfigSpec.BooleanValue VOID_IS_OUT_OF_WORLD = BUILDER
+            .comment("The real thing: void damage becomes vanilla's out-of-world damage with no attacker, and execute does what /kill does (a colossus dies too).",
+                    "Nothing stops it: creative players, invulnerable entities and totems included (voidIgnoresTotem no longer matters). Kills earn no experience or credit.")
+            .translation("logos.configuration.voidIsOutOfWorld")
+            .define("voidIsOutOfWorld", false);
+
     static {
         BUILDER.pop();
     }
@@ -268,6 +274,14 @@ public final class LogosConfig {
     public static boolean voidIgnoresTotem() {
         try {
             return VOID_IGNORES_TOTEM.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return false;
+        }
+    }
+
+    public static boolean voidIsOutOfWorld() {
+        try {
+            return VOID_IS_OUT_OF_WORLD.getAsBoolean();
         } catch (IllegalStateException e) {
             return false;
         }

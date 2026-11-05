@@ -24,6 +24,7 @@ import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingUseTotemEvent;
+import org.jspecify.annotations.Nullable;
 
 /** Sulfur: the ways a spell changes the world. */
 @EventBusSubscriber(modid = LogosMod.MODID)
@@ -132,14 +133,21 @@ public final class Effects {
     }
 
     private static DamageSource voidHit(LivingEntity attacker, LivingEntity t, float amount) {
+        // Configured as the real thing it is vanilla's own, with no attacker: nothing that looks at who struck can refuse it, and no one is credited.
+        if (LogosConfig.voidIsOutOfWorld()) return new VoidHit(t.damageSources().fellOutOfWorld().typeHolder(), null, amount);
         return new VoidHit(t.damageSources().source(VOID, attacker, attacker).typeHolder(), attacker, amount);
+    }
+
+    /** Whether {@code source} is void damage, in either of its configured forms. */
+    public static boolean isVoid(DamageSource source) {
+        return source.is(VOID) || source instanceof VoidHit;
     }
 
     /** A void hit that remembers its full amount, so a cut made on its way to the health bar can be undone. */
     private static final class VoidHit extends DamageSource {
         final float amount;
 
-        VoidHit(Holder<DamageType> type, LivingEntity attacker, float amount) {
+        VoidHit(Holder<DamageType> type, @Nullable LivingEntity attacker, float amount) {
             super(type, attacker, attacker);
             this.amount = amount;
         }
@@ -151,7 +159,7 @@ public final class Effects {
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     static void onVoidIncoming(LivingIncomingDamageEvent event) {
-        if (!event.getSource().is(VOID)) return;
+        if (!isVoid(event.getSource())) return;
         if (event.getSource() instanceof VoidHit hit && event.getAmount() < hit.amount) event.setAmount(hit.amount);
         if (LogosConfig.voidIgnoresAbsorption()) event.addReductionModifier(DamageContainer.Reduction.ABSORPTION, (container, absorbed) -> 0);
     }
@@ -162,13 +170,14 @@ public final class Effects {
         if (event.getSource().is(VOID) && LogosConfig.voidIgnoresTotem()) event.setCanceled(true);
     }
 
-    /** Kills outright (execute): a void hit past all counting, so only what stops void damage stops it. */
+    /** Kills outright (execute): a void hit past all counting, so only what stops void damage stops it; configured as the real thing, what /kill does. */
     public static boolean kill(SpellInstance inst, LivingEntity t) {
         inst.affected.add(t.getUUID());
         t.invulnerableTime = 0;
         spellDepth++;
         try {
-            t.hurtServer((ServerLevel) t.level(), voidHit(inst.caster, t, Float.MAX_VALUE), Float.MAX_VALUE);
+            if (LogosConfig.voidIsOutOfWorld()) t.kill((ServerLevel) t.level());
+            else t.hurtServer((ServerLevel) t.level(), voidHit(inst.caster, t, Float.MAX_VALUE), Float.MAX_VALUE);
         } finally {
             spellDepth--;
         }
