@@ -66,6 +66,7 @@ public final class LogosGameTests {
             "lifeform_hovers", "lifeform_combo", "lifeform_charges_its_cast", "lifeform_charge_returns_when_target_gone", "lifeform_heals_master", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_unaimed_beam_heals_master", "lifeform_unaimed_beam_strikes_foe", "lifeform_declared_heal_spares_master", "lifeform_forages", "lifeform_role",
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
             "colossus_armour", "colossus_void_ignores_armour", "colossus_execute_as_kill", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
+            "mana_hud_off_action_bar", "mana_hud_sends_on_change", "mana_hud_rate_capped", "mana_hud_hides_without_wand", "mana_hud_wording",
             "colossus_grabs_big", "colossus_grabs_from_reach", "colossus_defends_itself", "colossus_orders_before_self_defense", "colossus_stomps_small_foes", "colossus_grabs_rider", "colossus_lets_go_when_killed", "colossus_punches_crowd", "colossus_punches_dragon", "colossus_cannon", "colossus_cannon_unbroken", "colossus_cannon_strikes_at_once", "colossus_frenzy", "colossus_board", "colossus_drive_controls", "colossus_carries_master_still", "colossus_flower_cooldown", "colossus_rider_sheltered", "colossus_jumps_off",
             "leech_hunts_richest", "leech_clings_and_drains", "leech_knocked_off", "leech_drains_familiar_health", "leech_splits", "leech_offspring_do_not_split", "leech_bane_and_death", "leech_familiar_obeys",
             "jar_crop_empty_substrates", "jar_crop_tagged_substrates", "magic_crop_seed_loot", "magic_crop_ground_growth",
@@ -117,6 +118,11 @@ public final class LogosGameTests {
         FUNCTIONS.register("graph_errors_point_at_nodes", () -> GraphGameTests::errorsPointAtNodes);
         FUNCTIONS.register("context_wire_meanings", () -> ContextSourceGameTests::meanings);
         FUNCTIONS.register("config_limits_apply", () -> LogosGameTests::configLimits);
+        FUNCTIONS.register("mana_hud_off_action_bar", () -> ManaHudGameTests::offActionBar);
+        FUNCTIONS.register("mana_hud_sends_on_change", () -> ManaHudGameTests::sendsOnChange);
+        FUNCTIONS.register("mana_hud_rate_capped", () -> ManaHudGameTests::rateCapped);
+        FUNCTIONS.register("mana_hud_hides_without_wand", () -> ManaHudGameTests::hidesWithoutWand);
+        FUNCTIONS.register("mana_hud_wording", () -> ManaHudGameTests::wording);
         FUNCTIONS.register("world_toggle_state", () -> WorldGameTests::toggleState);
         FUNCTIONS.register("world_resize", () -> WorldGameTests::resize);
         FUNCTIONS.register("world_water_walk", () -> WorldGameTests::waterWalk);

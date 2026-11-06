@@ -29,8 +29,8 @@ public final class PlayerMagic {
     public boolean trace;
     /** Not persisted: passive spell name → game tick when it may fire again. */
     public final Map<String, Long> cooldowns = new HashMap<>();
-    /** Not persisted: the mana HUD stays quiet until this tick so alerts remain readable. */
-    public long hudQuietUntil;
+    /** Not persisted: what the client last heard its mana HUD shows, spell included (see {@link ManaHud}). */
+    public dev.logos.net.@org.jspecify.annotations.Nullable ManaHudPayload hudSent;
     /** Not persisted: the wand cast being charged, if any (see {@link Charging}). */
     public Charging.@org.jspecify.annotations.Nullable Charge charge;
     /** Not persisted: the staff being filled, if any (see {@link StaffCharging}). */
@@ -55,9 +55,8 @@ public final class PlayerMagic {
         return p.getData(LogosMod.PLAYER_MAGIC);
     }
 
-    /** Shows an action-bar alert and holds the mana HUD back for two seconds. */
+    /** Shows an action-bar alert. */
     public static void alert(ServerPlayer p, Component message) {
-        of(p).hudQuietUntil = p.level().getGameTime() + 40;
         p.sendOverlayMessage(message);
     }
 }
