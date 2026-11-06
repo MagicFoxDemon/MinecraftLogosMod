@@ -132,8 +132,13 @@ public final class BeamObj extends SpellObject {
         start = from;
         if (inst.dead) return;
         if (d.lengthSqr() > 1e-6) dir = d.normalize();
+        // Coming out of a chunk nothing has loaded, it has nothing to shine through; into one, it stops at the border.
+        if (!SpellWorld.loaded(level, from)) {
+            end();
+            return;
+        }
 
-        Vec3 end = from.add(dir.scale(range));
+        Vec3 end = SpellWorld.reach(level, from, from.add(dir.scale(range)));
         BlockPos blocked = null;
         BlockHitResult bh = level.clip(new ClipContext(from, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, inst.caster));
         if (bh.getType() != HitResult.Type.MISS) {

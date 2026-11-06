@@ -155,7 +155,7 @@ public final class Targeting {
         BlockPos c = BlockPos.containing(at);
         List<Place> out = new ArrayList<>();
         for (BlockPos p : BlockPos.betweenClosed(c.offset(-r, -r, -r), c.offset(r, r, r))) {
-            if (Vec3.atCenterOf(p).distanceTo(at) > radius + 0.5) continue;
+            if (Vec3.atCenterOf(p).distanceTo(at) > radius + 0.5 || !SpellWorld.loaded(level, p)) continue;
             BlockState s = level.getBlockState(p);
             if (s.isAir() || !filter.testBlock(s)) continue;
             out.add(Place.center(level, p.immutable()));

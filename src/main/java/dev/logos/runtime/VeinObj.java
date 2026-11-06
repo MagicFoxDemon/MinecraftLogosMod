@@ -199,7 +199,7 @@ public final class VeinObj extends SpellObject {
 
     /** The top of the first surface (a liquid's too) at most {@link #FIND_GROUND} below {@code at}, or null. */
     public static @Nullable Vec3 groundBelow(net.minecraft.server.level.ServerLevel level, Vec3 at, Entity caster) {
-        BlockHitResult hit = level.clip(new ClipContext(at, at.add(0, -FIND_GROUND, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, caster));
+        BlockHitResult hit = SpellWorld.clip(level, at, at.add(0, -FIND_GROUND, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, caster);
         return hit.getType() == HitResult.Type.MISS ? null : hit.getLocation();
     }
 
@@ -335,6 +335,11 @@ public final class VeinObj extends SpellObject {
     /** Crawls {@code h} on by {@code ds}; false if it is gone meanwhile. */
     private boolean advance(Head h, double ds) {
         Vec3 dir = steer(h, ds);
+        // At a chunk nothing has loaded it ends as at any other edge. Everything a stride looks at lies within this.
+        if (!SpellWorld.loaded(level, h.pos, ds + LIFT + SKIN + EDGE)) {
+            stop(h, false);
+            return true;
+        }
         if (climbs) return climb(h, dir, ds);
         Vec3 from = h.pos;
         // Rise to the highest step it may take (or just under a ceiling), go forward, then fall to the ground.

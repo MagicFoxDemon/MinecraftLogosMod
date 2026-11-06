@@ -110,6 +110,7 @@ public final class FreeManaEntity extends Entity {
 
     /** {@code pos}, or the first open block above it if it lies inside something solid. */
     private static Vec3 open(ServerLevel level, Vec3 pos) {
+        if (!SpellWorld.loaded(level, pos)) return pos;
         BlockPos b = BlockPos.containing(pos);
         for (int up = 0; up <= 3; up++) {
             BlockPos p = b.above(up);
@@ -125,7 +126,7 @@ public final class FreeManaEntity extends Entity {
         for (int tries = 0; tries < 32; tries++) {
             BlockPos p = base.offset(r.nextIntBetweenInclusive(-SCATTER_RANGE, SCATTER_RANGE), r.nextIntBetweenInclusive(-3, 4),
                     r.nextIntBetweenInclusive(-SCATTER_RANGE, SCATTER_RANGE));
-            if (p.distSqr(base) <= SCATTER_RANGE * SCATTER_RANGE && level.isInWorldBounds(p) && level.isEmptyBlock(p)) return Vec3.atCenterOf(p);
+            if (p.distSqr(base) <= SCATTER_RANGE * SCATTER_RANGE && level.isInWorldBounds(p) && SpellWorld.loaded(level, p) && level.isEmptyBlock(p)) return Vec3.atCenterOf(p);
         }
         return caster.getEyePosition().add(0, 1, 0);
     }
