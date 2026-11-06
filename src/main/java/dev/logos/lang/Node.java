@@ -29,6 +29,10 @@ public final class Node {
     public Object meta;
     /** For forms: the element inferred from their payload, used to derive visuals. */
     public Element element = Element.ARCANE;
+    /** For forms: whether its hit handlers only heal or ward, so it may land on its own side. Set when compiled, so spawning one walks nothing. */
+    public boolean helpsOnHit;
+    /** For forms: what one on-hit deals as written, so a construct that stops it takes as much. Set when compiled, like {@link #helpsOnHit}. */
+    public double hitDamage;
 
     private Node(Kind kind, Type type, Object value, Rune rune, int line, int col) {
         this.kind = kind;

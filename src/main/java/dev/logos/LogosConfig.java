@@ -43,6 +43,12 @@ public final class LogosConfig {
             .translation("logos.configuration.maxOpsPerTick")
             .defineInRange("maxOpsPerTick", 800, 1, Integer.MAX_VALUE);
 
+    public static final ModConfigSpec.IntValue MAX_OPS_PER_TICK_GLOBAL = BUILDER
+            .comment("Interpreter steps all spells together may take per tick. Past this, spell bodies and delayed tasks wait for the next tick, taking turns, instead of going out.",
+                    "Spell code set off by events (casts, melee hits, constructs) cannot wait, but its steps count. A step is not a fixed cost: lower this if running spells lag the server.")
+            .translation("logos.configuration.maxOpsPerTickGlobal")
+            .defineInRange("maxOpsPerTickGlobal", 40000, 1, Integer.MAX_VALUE);
+
     public static final ModConfigSpec.IntValue MAX_FAMILIARS = BUILDER
             .comment("How many summoned familiars one player may have at once.")
             .translation("logos.configuration.maxFamiliars")
@@ -226,6 +232,10 @@ public final class LogosConfig {
 
     public static int maxOpsPerTick() {
         return read(MAX_OPS_PER_TICK::getAsInt, 800);
+    }
+
+    public static int maxOpsPerTickGlobal() {
+        return read(MAX_OPS_PER_TICK_GLOBAL::getAsInt, 40000);
     }
 
     public static int maxFamiliars() {

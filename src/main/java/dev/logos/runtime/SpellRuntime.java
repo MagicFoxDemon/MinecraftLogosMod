@@ -1,10 +1,13 @@
 package dev.logos.runtime;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
@@ -17,20 +20,51 @@ public final class SpellRuntime {
     private static final long REPORT_EVERY = 1200;
     private static final int REPORTS_KEPT = 256;
 
-    private record Task(SpellInstance inst, long due, Runnable action) {}
+    /** A delayed continuation. Soonest due goes first; of those due the same tick, the first scheduled. */
+    private record Task(SpellInstance inst, long due, long order, Runnable action) implements Comparable<Task> {
+        @Override
+        public int compareTo(Task o) {
+            return due != o.due ? Long.compare(due, o.due) : Long.compare(order, o.order);
+        }
+    }
 
     private static final List<SpellObject> OBJECTS = new ArrayList<>();
     private static final List<SpellObject> SPAWNED = new ArrayList<>();
-    private static final List<Task> TASKS = new ArrayList<>();
+    /** A dead spell's tasks wait in here until they come up. */
+    private static final PriorityQueue<Task> TASKS = new PriorityQueue<>();
     private static final List<Task> SCHEDULED = new ArrayList<>();
     /** When each failure last logged its stack; see {@link #report}. */
     private static final Map<String, Long> REPORTED = new HashMap<>();
     private static long now;
+    private static long nextOrder;
+    /** Interpreter steps taken since the last {@link #tick} ended, events included; and how many that was for the tick before. */
+    private static long steps, stepsLastTick;
+    /** Whether forms go before tasks this tick: they did not get to run last tick, and tasks did. */
+    private static boolean formsFirst;
 
     private SpellRuntime() {}
 
     public static long now() {
         return now;
+    }
+
+    /** One interpreter step of any spell, for the budget all of them share per tick ({@code maxOpsPerTickGlobal}). */
+    static void countStep() {
+        steps++;
+    }
+
+    /** Delayed tasks waiting, including any a dead spell left behind that have not come up yet. */
+    public static int pendingTasks() {
+        return TASKS.size() + SCHEDULED.size();
+    }
+
+    public static int liveForms() {
+        return OBJECTS.size() + SPAWNED.size();
+    }
+
+    /** The interpreter steps of the last tick that ended; a command runs before this tick's are in. */
+    public static long stepsLastTick() {
+        return stepsLastTick;
     }
 
     /**
@@ -76,8 +110,22 @@ public final class SpellRuntime {
     }
 
     public static void schedule(SpellInstance inst, int ticks, Runnable action) {
+        if (pendingTasks() >= Limits.MAX_GLOBAL_TASKS) {
+            TASKS.removeIf(SpellRuntime::dropIfDead);
+            SCHEDULED.removeIf(SpellRuntime::dropIfDead);
+        }
+        if (pendingTasks() >= Limits.MAX_GLOBAL_TASKS) {
+            inst.terminate("世界的法则已饱和（全局任务上限）");
+            return;
+        }
         inst.hold();
-        SCHEDULED.add(new Task(inst, now + Math.max(0, ticks), action));
+        SCHEDULED.add(new Task(inst, now + Math.max(0, ticks), nextOrder++, action));
+    }
+
+    private static boolean dropIfDead(Task t) {
+        if (!t.inst.dead) return false;
+        t.inst.release();
+        return true;
     }
 
     public static void tick() {
@@ -87,10 +135,28 @@ public final class SpellRuntime {
         TASKS.addAll(SCHEDULED);
         SCHEDULED.clear();
 
-        for (int i = 0; i < TASKS.size(); i++) {
-            Task t = TASKS.get(i);
-            if (t.due > now && !t.inst.dead) continue;
-            TASKS.remove(i--);
+        // Events have taken their steps already and cannot wait; however many, the queues still get to move a little.
+        long limit = Math.max(LogosConfig.maxOpsPerTickGlobal(), steps + 1);
+        boolean tasksDone, formsDone;
+        if (formsFirst) {
+            formsDone = tickForms(limit);
+            tasksDone = runTasks(limit);
+        } else {
+            tasksDone = runTasks(limit);
+            formsDone = tickForms(limit);
+        }
+        // What had to wait goes first, or in turn when both did, so that neither queue can starve the other.
+        formsFirst = tasksDone ? !formsDone : !formsDone && !formsFirst;
+        stepsLastTick = steps;
+        steps = 0;
+    }
+
+    /** Runs what is due, oldest first, until the tick's steps run out. Returns whether it ran all of it. */
+    private static boolean runTasks(long limit) {
+        while (!TASKS.isEmpty() && TASKS.peek().due <= now) {
+            Task t = TASKS.peek();
+            if (!t.inst.dead && steps >= limit) return false;
+            TASKS.poll();
             try {
                 if (!t.inst.dead) t.action.run();
             } catch (StackOverflowError | RuntimeException e) {
@@ -98,8 +164,15 @@ public final class SpellRuntime {
             }
             t.inst.release();
         }
+        return true;
+    }
 
+    /** Ticks the forms in turn until the tick's steps run out; the ones not reached start the next tick. Returns whether it reached them all. */
+    private static boolean tickForms(long limit) {
+        int reached = 0;
         for (SpellObject o : OBJECTS) {
+            if (!o.inst.dead && steps >= limit) break;
+            reached++;
             try {
                 if (o.inst.dead) o.dissolve();
                 else {
@@ -111,7 +184,10 @@ public final class SpellRuntime {
                 o.dissolve();
             }
         }
+        boolean all = reached == OBJECTS.size();
+        if (!all) Collections.rotate(OBJECTS, -reached);
         OBJECTS.removeIf(SpellObject::isEnded);
+        return all;
     }
 
     /**

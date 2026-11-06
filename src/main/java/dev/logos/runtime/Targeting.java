@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-import dev.logos.lang.Intent;
 import dev.logos.lang.Node;
-import dev.logos.lang.SpellProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -71,16 +69,9 @@ public final class Targeting {
                 && !(e instanceof ArmorStand) && mayAffect(inst, e);
     }
 
-    /**
-     * Whether {@code form}'s hit handlers (on-hit, on-enter) only heal or ward. Read from what they do,
-     * not the page's declared {@code :intent}, so a damaging page filed under HEAL still spares its own side.
-     */
+    /** Whether {@code form}'s hit handlers only heal or ward, as worked out when it was compiled ({@link Node#helpsOnHit}). */
     public static boolean helpsOnHit(Node form) {
-        List<Node> handlers = new ArrayList<>();
-        for (String event : List.of("on-hit", "on-enter")) handlers.addAll(form.events.getOrDefault(event, List.of()));
-        if (handlers.isEmpty()) return false;
-        for (Intent i : SpellProfile.of(handlers, List.of()).intents()) if (i != Intent.HEAL && i != Intent.WARD) return false;
-        return true;
+        return form.helpsOnHit;
     }
 
     public static List<LivingEntity> enemiesNear(SpellInstance inst, ServerLevel level, Vec3 at, double radius, boolean fresh) {
@@ -89,11 +80,11 @@ public final class Targeting {
 
     public static List<Entity> near(SpellInstance inst, ServerLevel level, Vec3 at, double radius, boolean fresh, Predicate<Entity> filter) {
         double r = Math.max(0, Math.min(radius, 64));
-        return level.getEntities(inst.caster, new AABB(at, at).inflate(r), filter::test).stream()
-                .filter(e -> center(e).distanceTo(at) <= r + e.getBbWidth() / 2)
-                .filter(e -> !fresh || !inst.affected.contains(e.getUUID()))
-                .sorted(Comparator.comparingDouble(e -> center(e).distanceToSqr(at)))
-                .toList();
+        // Distance first: most of what the box catches stops there, before the costlier filter (isEnemy) is asked.
+        List<Entity> found = level.getEntities(inst.caster, new AABB(at, at).inflate(r), e -> center(e).distanceTo(at) <= r + e.getBbWidth() / 2
+                && (!fresh || !inst.affected.contains(e.getUUID())) && filter.test(e));
+        found.sort(Comparator.comparingDouble(e -> center(e).distanceToSqr(at)));
+        return found;
     }
 
     /**

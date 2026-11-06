@@ -36,7 +36,9 @@ import dev.logos.lang.Rune;
 import dev.logos.lang.Runes;
 import dev.logos.lang.Spell;
 import dev.logos.runtime.Casting;
+import dev.logos.runtime.Limits;
 import dev.logos.runtime.PlayerMagic;
+import dev.logos.runtime.SpellRuntime;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -97,6 +99,7 @@ public final class LogosCommands {
                 .then(Commands.literal("kit").executes(LogosCommands::kit))
                 .then(Commands.literal("anchors").executes(LogosCommands::anchors))
                 .then(Commands.literal("mind").executes(LogosCommands::mind))
+                .then(Commands.literal("stats").executes(LogosCommands::stats))
                 // Until alchemy can build one: raise an alchemical colossus before you.
                 .then(Commands.literal("colossus").executes(c -> colossus(c, null))
                         .then(Commands.argument("name", StringArgumentType.greedyString()).executes(c -> colossus(c, StringArgumentType.getString(c, "name")))))
@@ -259,6 +262,15 @@ public final class LogosCommands {
         }
         if (n == 0) c.getSource().sendFailure(net.minecraft.network.chat.Component.literal("附近没有你的魔力生命体或巨像"));
         return n;
+    }
+
+    /** Debug: how much the running spells ask of the server: what waits, what lives, and the last tick's interpreter steps. */
+    private static int stats(CommandContext<CommandSourceStack> c) {
+        String line = "术式运行：待执行任务 " + SpellRuntime.pendingTasks() + " / " + Limits.MAX_GLOBAL_TASKS
+                + " · 存活形体 " + SpellRuntime.liveForms() + " / " + Limits.MAX_GLOBAL_OBJECTS
+                + " · 上一刻运算 " + SpellRuntime.stepsLastTick() + " / " + dev.logos.LogosConfig.maxOpsPerTickGlobal() + " 步";
+        c.getSource().sendSuccess(() -> Component.literal(line).withStyle(ChatFormatting.AQUA), false);
+        return 1;
     }
 
     private static int anchors(CommandContext<CommandSourceStack> c) throws CommandSyntaxException {

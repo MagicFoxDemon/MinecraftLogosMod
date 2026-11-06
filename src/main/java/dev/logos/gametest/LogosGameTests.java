@@ -38,6 +38,7 @@ public final class LogosGameTests {
             "projectile_impact_expiry", "projectile_impact_wall", "projectile_impact_piercing",
             "example_npc_heal", "example_npc_group_heal", "rune_species_filter", "example_prismatic_volley_budget",
             "fireball_hits_and_bursts", "chain_lightning_bounces", "execute_with_proof_is_cheap", "execute_without_proof_starves",
+            "spell_tasks_many_due_at_once", "spell_tasks_in_order", "spell_tasks_cap", "spell_budget_defers_forms", "spell_budget_defers_tasks", "spell_budget_forms_and_tasks_take_turns", "spell_budget_events_count", "spell_budget_ordinary_spells", "spell_forms_keep_compiled_results", "spell_stats_command", "spell_near_asks_distance_first", "spell_trace_only_for_readers",
             "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "context_wire_meanings", "config_limits_apply",
             "world_toggle_state", "world_resize", "world_water_walk", "world_possess_body", "world_possess_backlash", "world_possess_limits", "world_possess_attacks", "world_possess_inventory", "world_possess_instinct", "world_possess_instinct_time", "world_possess_skill_shots", "world_possess_skill_moves", "world_incarnate_body", "world_incarnate_abilities", "world_incarnate_end_all", "world_incarnate_revert", "world_incarnate_skills", "world_incarnate_traits", "world_use_block", "world_use_block_item", "world_grow_and_decay", "world_players_flag", "world_nearest_player", "end_all_others", "end_all_own", "form_ops_projectile", "form_ops_beam", "form_ops_field", "form_ops_spells", "form_ops_vein", "vein_terrain", "vein_strikes", "vein_ring", "vein_snake", "vein_sweep", "vein_ring_sector", "vein_climb", "vein_linger", "value_random", "value_mix", "value_round_clamp", "value_wave", "value_choose", "value_spot_around", "value_spot_in", "world_switch", "world_form_refs", "world_blink_target", "world_items_magnet", "world_nether_step", "world_time_skip", "world_weather_global", "world_weather_area", "world_lightning",
             "world_wand_casts_selected_page", "world_wood_wands_craft", "world_crystal_page_needs_adhesive", "world_echo_page_upgrade_keeps_spell", "world_sage_page_upgrade_keeps_spell", "world_transmuted_page_upgrade_keeps_spell", "world_chalk_page_upgrade_keeps_spell", "world_firmament_page_upgrade_keeps_spell",
@@ -78,6 +79,18 @@ public final class LogosGameTests {
         FUNCTIONS.register("projectile_impact_expiry", () -> ProjectileImpactGameTests::expiry);
         FUNCTIONS.register("projectile_impact_wall", () -> ProjectileImpactGameTests::block);
         FUNCTIONS.register("projectile_impact_piercing", () -> ProjectileImpactGameTests::piercing);
+        FUNCTIONS.register("spell_tasks_many_due_at_once", () -> SpellBudgetGameTests::manyDueAtOnce);
+        FUNCTIONS.register("spell_tasks_in_order", () -> SpellBudgetGameTests::tasksInOrder);
+        FUNCTIONS.register("spell_tasks_cap", () -> SpellBudgetGameTests::taskCap);
+        FUNCTIONS.register("spell_budget_defers_forms", () -> SpellBudgetGameTests::defersForms);
+        FUNCTIONS.register("spell_budget_defers_tasks", () -> SpellBudgetGameTests::defersTasks);
+        FUNCTIONS.register("spell_budget_forms_and_tasks_take_turns", () -> SpellBudgetGameTests::takeTurns);
+        FUNCTIONS.register("spell_budget_events_count", () -> SpellBudgetGameTests::eventsCount);
+        FUNCTIONS.register("spell_budget_ordinary_spells", () -> SpellBudgetGameTests::ordinarySpells);
+        FUNCTIONS.register("spell_forms_keep_compiled_results", () -> SpellBudgetGameTests::formsKeepCompiledResults);
+        FUNCTIONS.register("spell_stats_command", () -> SpellBudgetGameTests::statsCommand);
+        FUNCTIONS.register("spell_near_asks_distance_first", () -> SpellBudgetGameTests::nearAsksDistanceFirst);
+        FUNCTIONS.register("spell_trace_only_for_readers", () -> SpellBudgetGameTests::traceOnlyForReaders);
         FUNCTIONS.register("fireball_hits_and_bursts", () -> LogosGameTests::fireball);
         FUNCTIONS.register("beam_follows_gaze", () -> LogosGameTests::beamFollowsGaze);
         FUNCTIONS.register("cast_pose_beam_holds", () -> CastPoseGameTests::beamHolds);
@@ -435,9 +448,11 @@ public final class LogosGameTests {
     private static void onRegisterTests(RegisterGameTestsEvent event) {
         Holder<TestEnvironmentDefinition<?>> env = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf());
         for (String name : TESTS) {
+            // Tests of one environment run side by side, batch by batch: one of its own has the server to itself.
+            Holder<TestEnvironmentDefinition<?>> batch = SpellBudgetGameTests.ALONE.contains(name) ? event.registerEnvironment(id(name), new TestEnvironmentDefinition.AllOf()) : env;
             event.registerTest(id(name), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id(name)),
                     // 400 ticks: polled tests finish as soon as they pass; the headroom is for a loaded machine.
-                    new TestData<>(env, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
+                    new TestData<>(batch, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
         }
     }
 

@@ -162,7 +162,7 @@ public final class Casting {
         Ctx ctx = new Ctx(inst, level, origin, caster.getLookAngle(), target, Map.of(), 0, 0);
         if (!charged) {
             Vfx.sound(level, origin, SoundEvents.EVOKER_CAST_SPELL, 0.6f, 1.4f);
-            Vfx.cast(level, caster.position().add(0, 0.1, 0), Compiler.inferElement(spell.body()));
+            Vfx.cast(level, caster.position().add(0, 0.1, 0), spell.element());
         }
         // The caster's arm plays the cast by the form it leads with (a leading beam holds its own pose instead).
         if (spell.trigger().equals("cast")) {

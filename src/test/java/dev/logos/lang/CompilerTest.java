@@ -701,6 +701,48 @@ class CompilerTest {
         if (failed[0] != null) throw new AssertionError("a spell at the nesting limit did not compile", failed[0]);
     }
 
+    private static Node form(String src) {
+        return Compiler.compile("(spell :mana 50 " + src + ")").body().getFirst();
+    }
+
+    @Test
+    void formsKnowFromCompilingWhetherTheirHitsOnlyHelp() {
+        assertTrue(form("(projectile (on-hit (heal target 2)))").helpsOnHit);
+        assertTrue(form("(beam (on-enter (shield target 2)))").helpsOnHit);
+        assertTrue(form("(field (on-enter (heal target 2)) (on-tick (damage (nearest) 2 fire)))").helpsOnHit, "only on-hit and on-enter decide");
+        assertFalse(form("(projectile (on-hit (damage target 2)))").helpsOnHit);
+        assertFalse(form("(projectile (on-hit (heal target 2) (damage target 2)))").helpsOnHit);
+        assertFalse(form("(projectile)").helpsOnHit, "no hit handlers help nobody");
+        assertFalse(form("(ray (on-hit (damage target 2)))").helpsOnHit);
+        assertFalse(Compiler.compile("(spell :mana 50 :intent heal (projectile (on-hit (damage target 2))))").body().getFirst().helpsOnHit, "what it does decides, not what it declares");
+        // A form inside another's handlers knows for itself.
+        Node outer = form("(projectile (on-hit (heal target 2) (projectile (on-hit (damage target 2)))))");
+        assertFalse(outer.helpsOnHit);
+        assertFalse(outer.events.get("on-hit").getLast().helpsOnHit);
+    }
+
+    @Test
+    void formsKnowFromCompilingWhatOneHitDeals() {
+        assertEquals(5, form("(projectile (on-hit (damage target 3 fire) (drain target 2)))").hitDamage);
+        assertEquals(3, form("(projectile (on-hit (damage-all (enemies) 3)))").hitDamage);
+        assertEquals(3, form("(projectile (on-hit (repeat 4 (damage target 3))))").hitDamage, "written once, counted once");
+        assertEquals(0, form("(projectile (on-hit (damage target (hp target))))").hitDamage, "a computed amount is not known yet");
+        assertEquals(0, form("(beam (on-enter (damage target 4)))").hitDamage, "only on-hit counts");
+        Node outer = form("(projectile (on-hit (projectile (on-hit (damage target 9)))))");
+        assertEquals(0, outer.hitDamage, "the forms it launches are not its own hit");
+        assertEquals(9, outer.events.get("on-hit").getFirst().hitDamage);
+    }
+
+    @Test
+    void aSpellKnowsFromCompilingHowItLooks() {
+        assertEquals(Element.FIRE, Compiler.compile("(spell :mana 50 (damage (nearest) 3 fire))").element());
+        assertEquals(Element.ARCANE, Compiler.compile("(spell :mana 50 (mark caster #seen))").element());
+        for (String src : Examples.ALL.values()) {
+            Spell s = Compiler.compile(src);
+            assertEquals(Compiler.inferElement(s.body()), s.element(), s.name());
+        }
+    }
+
     private static void assertError(String src, String fragment) {
         LogosError e = assertThrows(LogosError.class, () -> Compiler.compile(src), src);
         System.out.println(src + "  →  " + e.describe());
