@@ -93,6 +93,7 @@ gh pr create --fill                # 或在网页上开 PR
 
 - 改了行为就要有测试：语言、编译器的改动加单元测试（`src/test/.../CompilerTest.java`），运行时行为加世界内测试（`src/main/java/dev/logos/gametest/`）。
 - 新的世界内测试要同时在 `gametest/LogosGameTests.java` 的名单 `TESTS` 和 `FUNCTIONS.register` 里登记。
+- `gametest/` 和 `client/uitest/` 只在开发运行时存在，`jar` 任务把它们排除在发布包之外。所以主代码不能引用这两个包（`TestCodeStaysOutTest` 会检查），否则玩家那边会缺类崩溃。
 - 偶发失败（同一个测试重跑就过）要在 PR 里说明，不要靠多跑几次蒙混过去；能修就修测试的时序问题（见下文「测试的坑」）。
 - 如实写明验证到了哪一层：编译通过、单元测试、世界内测试、无窗口客户端测试、进游戏手动看过。没做到的那层不能说"已验证"。
 - 版本号在 `gradle.properties` 的 `mod_version`，由维护者在发布可试玩版本时修改；普通 PR 不要改。

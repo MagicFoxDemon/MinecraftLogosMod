@@ -148,6 +148,12 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 }
 
+// Tests stay out of what players download. Development runs use the compiled classes, so they still have them;
+// nothing outside these two packages may refer to them (TestCodeStaysOutTest checks).
+tasks.named('jar', Jar) {
+    exclude 'dev/logos/gametest/**', 'dev/logos/client/uitest/**'
+}
+
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
