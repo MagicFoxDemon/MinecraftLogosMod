@@ -204,11 +204,24 @@ public final class SpellRuntime {
         return List.copyOf(spells);
     }
 
+    /**
+     * The server is stopping: every spell ends where it stands, silently, and nothing it held stays behind. It may run
+     * with the worlds already closed (after a crash), so its spells settle nothing there; see {@link SpellInstance#abandon}.
+     */
     public static void clear() {
+        List<SpellObject> bodies = new ArrayList<>(OBJECTS);
+        bodies.addAll(SPAWNED);
         OBJECTS.clear();
         SPAWNED.clear();
+        for (SpellObject o : bodies) {
+            o.inst.abandon();
+            o.dissolve();
+        }
         TASKS.clear();
         SCHEDULED.clear();
         REPORTED.clear();
+        WrapObj.clear();
+        ManaWrap.clear();
+        SpellCasters.clear();
     }
 }

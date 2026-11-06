@@ -28,6 +28,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /**
@@ -93,7 +94,7 @@ public record ManaWrap(Element element, double amount, long until) {
 
     // ---- blows -------------------------------------------------------------------------------------
 
-    /** The player whose attack is under way, what they aimed at, and how charged the blow was (read before vanilla resets it). */
+    /** On the server, the player whose attack is under way, what they aimed at, and how charged the blow was (read before vanilla resets it). */
     private static @Nullable Player swinging;
     private static @Nullable Entity swung;
     private static float charge;
@@ -104,9 +105,25 @@ public record ManaWrap(Element element, double amount, long until) {
 
     @SubscribeEvent
     static void onAttack(AttackEntityEvent event) {
+        // A client runs the attack too, on its own thread, but only the server's blow lands.
+        if (event.getEntity().level().isClientSide()) return;
         swinging = event.getEntity();
         swung = event.getTarget();
         charge = swinging.getAttackStrengthScale(.5f);
+    }
+
+    @SubscribeEvent
+    static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (swinging != event.getEntity()) return;
+        swinging = null;
+        swung = null;
+    }
+
+    /** Forgets every blow under way and every shot in the air, as the runtime is cleared: what they carry holds on to a spell and its world. */
+    static void clear() {
+        swinging = null;
+        swung = null;
+        LOOSED.clear();
     }
 
     @SubscribeEvent
@@ -130,6 +147,7 @@ public record ManaWrap(Element element, double amount, long until) {
             if (a instanceof Player p) {
                 if (p != swinging || t != swung) return;
                 swinging = null;
+                swung = null;
                 if (charge < CHARGE) return;
             }
             ManaWrap w = of(a);

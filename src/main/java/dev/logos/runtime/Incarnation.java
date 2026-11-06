@@ -50,7 +50,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -314,6 +316,18 @@ public final class Incarnation {
     }
 
     @SubscribeEvent
+    static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        DRY_AIR.remove(event.getEntity().getUUID());
+        NEXT_SKILL.remove(event.getEntity().getUUID());
+    }
+
+    @SubscribeEvent
+    static void onServerStopped(ServerStoppedEvent event) {
+        DRY_AIR.clear();
+        NEXT_SKILL.clear();
+    }
+
+    @SubscribeEvent
     static void onServerTick(ServerTickEvent.Post event) {
         for (ServerLevel level : event.getServer().getAllLevels()) {
             for (ServerPlayer p : List.copyOf(level.players())) {
@@ -354,7 +368,8 @@ public final class Incarnation {
             sp.setAirSupply(sp.getMaxAirSupply());
             return;
         }
-        int air = DRY_AIR.getOrDefault(sp.getUUID(), sp.getMaxAirSupply()) - 1;
+        // Without an entry (just out of the water, or back from a logout) it goes on from the breath they have.
+        int air = DRY_AIR.getOrDefault(sp.getUUID(), sp.getAirSupply()) - 1;
         if (air <= -20) {
             air = 0;
             sp.hurtServer(sp.level(), sp.damageSources().dryOut(), 2);

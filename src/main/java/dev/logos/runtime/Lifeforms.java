@@ -44,6 +44,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 /**
  * Mana lifeforms: their summoning (level, mana, the per-player limit), the registry that keeps that
@@ -84,10 +87,33 @@ public final class Lifeforms {
         }
     }
 
-    /** Which lifeform's core each player is opening; set on both sides just before the panel opens. */
-    private static final Map<UUID, Integer> OPENING = new HashMap<>();
+    /**
+     * Which lifeform's core each player is opening; set on both sides just before the panel opens. One map per side, as
+     * both run in a single-player game, on two threads. Network ids mean nothing outside the world they were given in.
+     */
+    private static final Map<UUID, Integer> OPENING_SERVER = new HashMap<>(), OPENING_CLIENT = new HashMap<>();
 
     private Lifeforms() {}
+
+    private static Map<UUID, Integer> openingOn(Player player) {
+        return player.level().isClientSide() ? OPENING_CLIENT : OPENING_SERVER;
+    }
+
+    @SubscribeEvent
+    static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        OPENING_SERVER.remove(event.getEntity().getUUID());
+    }
+
+    @SubscribeEvent
+    static void onServerStopped(ServerStoppedEvent event) {
+        OPENING_SERVER.clear();
+    }
+
+    /** The client leaves a level, for another or by disconnecting. */
+    @SubscribeEvent
+    static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) OPENING_CLIENT.clear();
+    }
 
     /** The registry for {@code m}'s kind: colossi and lifeforms are counted apart. */
     private static Registry registry(MinecraftServer server, Mob m) {
@@ -188,20 +214,20 @@ public final class Lifeforms {
 
     /** Opens {@code lf}'s core for its master: the client is told which lifeform first, then the panel opens. */
     public static void openCore(ServerPlayer player, ManaLifeform lf) {
-        OPENING.put(player.getUUID(), lf.getId());
+        opening(player, lf.getId());
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new dev.logos.net.LifeformCorePayload(lf.getId()));
         PlayerUIMenuType.openUI(player, CORE_UI);
     }
 
     /** The entity {@code player} is opening a panel for (a lifeform's core, a colossus's devices), on either side. */
     public static @Nullable Entity openingEntity(Player player) {
-        Integer id = OPENING.get(player.getUUID());
+        Integer id = openingOn(player).get(player.getUUID());
         return id == null ? null : player.level().getEntity(id);
     }
 
     /** Client side: the server is about to open {@code entityId}'s core. */
     public static void opening(Player player, int entityId) {
-        OPENING.put(player.getUUID(), entityId);
+        openingOn(player).put(player.getUUID(), entityId);
     }
 
     /** Registered at startup: the panel for whichever lifeform the player is opening. */
@@ -209,14 +235,12 @@ public final class Lifeforms {
         PlayerUIMenuType.register(CORE_UI, player -> new PlayerUIMenuType.PlayerUIHolder() {
             @Override
             public ModularUI createUI(Player p) {
-                Integer id = OPENING.get(p.getUUID());
-                return corePanel(p, id == null ? null : p.level().getEntity(id) instanceof ManaLifeform lf ? lf : null);
+                return corePanel(p, openingEntity(p) instanceof ManaLifeform lf ? lf : null);
             }
 
             @Override
             public boolean isStillValid(Player p) {
-                Integer id = OPENING.get(p.getUUID());
-                return id != null && p.level().getEntity(id) instanceof ManaLifeform lf && lf.core.stillValid(p);
+                return openingEntity(p) instanceof ManaLifeform lf && lf.core.stillValid(p);
             }
         });
     }

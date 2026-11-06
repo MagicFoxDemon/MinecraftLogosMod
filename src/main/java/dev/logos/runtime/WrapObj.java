@@ -37,6 +37,11 @@ public final class WrapObj extends SpellObject {
         this.every = Math.max(1, every);
     }
 
+    /** Forgets every wrap, as the runtime is cleared: a wrap kept here would hold on to its spell and the world it ran in. */
+    static void clear() {
+        WORN.clear();
+    }
+
     /** The spell wrap {@code t} wears, if any. */
     public static @Nullable WrapObj on(LivingEntity t) {
         WrapObj w = WORN.get(t.getUUID());
