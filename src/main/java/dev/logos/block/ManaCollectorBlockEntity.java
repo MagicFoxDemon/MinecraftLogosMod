@@ -60,7 +60,7 @@ public class ManaCollectorBlockEntity extends BlockEntity implements ManaVessel 
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, ManaCollectorBlockEntity collector) {
-        if (!(level instanceof ServerLevel server) || !ManaField.working(level)) return;
+        if (!(level instanceof ServerLevel server) || !ManaField.working(level, pos)) return;
         double room = MAX_MANA - collector.mana;
         double ambient = ManaField.drawAmbient(server, pos, room);
         double spread = ManaField.drawSpread(server, pos, room - ambient);

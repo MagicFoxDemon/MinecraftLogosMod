@@ -56,6 +56,7 @@ public final class LogosGameTests {
             "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "spell_modifier_heal_power", "spell_modifier_vulnerability", "spell_modifier_void_out_of_world_option", "spell_modifier_void_true_damage", "spell_modifier_void_on_players", "spell_modifier_void_absorption_option", "spell_modifier_void_totem_option", "spell_modifier_void_creature_cuts", "spell_modifier_execute_is_void",
             "buff_potions_brew", "buff_potions_dissolve", "buff_potions_effects", "element_effects_every_element", "herbs_grow_in_jars",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
+            "mana_count_follows_blocks", "mana_work_skips_insulation", "mana_small_moves_stay_unsaved", "mana_reload_keeps_count_and_value", "mana_devices_take_turns",
             "spell_chunks_block_runes", "spell_chunks_projectile", "spell_chunks_option_keeps_flying", "spell_chunks_beam_ray_look", "spell_chunks_vein", "spell_chunks_blink_lands",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
@@ -315,6 +316,11 @@ public final class LogosGameTests {
         FUNCTIONS.register("alchemy_crafts_maintenance_kit", () -> AlchemyGameTests::craftsMaintenanceKit);
         FUNCTIONS.register("alchemy_crafts_table", () -> AlchemyGameTests::craftsAlchemyTable);
         FUNCTIONS.register("alchemy_bottles_drinkable", () -> AlchemyGameTests::bottlesAreDrinkable);
+        FUNCTIONS.register("mana_count_follows_blocks", () -> ManaFieldHotPathGameTests::countFollowsBlocks);
+        FUNCTIONS.register("mana_work_skips_insulation", () -> ManaFieldHotPathGameTests::workSkipsInsulation);
+        FUNCTIONS.register("mana_small_moves_stay_unsaved", () -> ManaFieldHotPathGameTests::smallMovesStayUnsaved);
+        FUNCTIONS.register("mana_reload_keeps_count_and_value", () -> ManaFieldHotPathGameTests::reloadKeepsCountAndValue);
+        FUNCTIONS.register("mana_devices_take_turns", () -> ManaFieldHotPathGameTests::devicesTakeTurns);
         FUNCTIONS.register("process_ferments", () -> AlchemyGameTests::processFerments);
         FUNCTIONS.register("process_designates_and_routes", () -> AlchemyGameTests::processDesignatesAndRoutes);
         FUNCTIONS.register("process_dissolves_water_bottles", () -> AlchemyGameTests::processDissolvesWaterBottles);

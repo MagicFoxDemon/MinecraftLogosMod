@@ -8,9 +8,11 @@ import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
-import dev.logos.block.CaputMortuumBlock;
 import dev.logos.net.ManaFieldPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
@@ -20,7 +22,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -42,7 +43,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * side. It flows back where collectors draw a chunk down, and leaks away slowly ({@link #LEAK}) as
  * entropic mana that nothing can collect again.</li>
  * </ul>
- * Spread mana is saved with its chunk and stands still while the chunk is unloaded. Clients are told
+ * Spread mana is saved with its chunk, to within {@link #SAVE_STEP}, and stands still while the chunk is unloaded. Clients are told
  * each chunk's level roughly (0 to {@link #LEVELS}) for the motes drifting in it.
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
@@ -66,6 +67,8 @@ public final class ManaField {
             Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_rich"));
     /** Ticks between workings of the field. */
     public static final int PERIOD = 20;
+    /** How far a chunk's spread mana moves before the chunk asks to be saved again: a saved world comes back within this of the live value. */
+    public static final double SAVE_STEP = 1;
     /** Of a chunk's flow excess, the part that moves in one working: small enough for four neighbours at once. */
     private static final double FLOW = 0.2;
     private static final double EPS = 0.01;
@@ -81,17 +84,42 @@ public final class ManaField {
 
     private ManaField() {}
 
-    /** Whether this tick the field is worked, and the blocks that use it act. */
+    /** Whether this tick the field is worked. */
     public static boolean working(Level level) {
         return level.getGameTime() % PERIOD == 0;
     }
 
+    /** Whether this tick a block at {@code pos} that uses the field acts: once a second, each in its own tick so a crowd of them does not act at once. */
+    public static boolean working(Level level, BlockPos pos) {
+        return level.getGameTime() % PERIOD == Math.floorMod(pos.asLong(), PERIOD);
+    }
+
     // ---- spread mana ------------------------------------------------------------------------------
+
+    /**
+     * A chunk's spread mana as its attachment holds it. It changes in place, because {@code setData} would mark
+     * the chunk for saving every second over a leak of hundredths of a point; {@link #set} does that only past {@link #SAVE_STEP}.
+     */
+    public static final class Air {
+        public static final MapCodec<Air> CODEC = Codec.DOUBLE.xmap(Air::new, Air::mana).fieldOf("mana");
+
+        private double mana;
+        /** How far it has moved since its chunk last asked to be saved. */
+        private double moved;
+
+        public Air(double mana) {
+            this.mana = mana;
+        }
+
+        public double mana() {
+            return mana;
+        }
+    }
 
     /** A chunk's spread mana, without giving a chunk that has none an attachment. */
     private static double mana(LevelChunk chunk) {
-        Double mana = chunk.getExistingDataOrNull(LogosMod.MANA_FIELD);
-        return mana == null ? 0 : mana;
+        Air air = chunk.getExistingDataOrNull(LogosMod.MANA_FIELD);
+        return air == null ? 0 : air.mana;
     }
 
     /**
@@ -102,13 +130,26 @@ public final class ManaField {
         return LogosConfig.manaSpreadThreshold() + LogosConfig.caputMortuumInsulation() * (insulation(a) + insulation(b));
     }
 
-    /** Blocks of caput mortuum in a chunk, counted by their markers, at most {@link #MAX_INSULATION}. */
+    /** Blocks of caput mortuum in a chunk, at most {@link #MAX_INSULATION}: the count their markers keep, so the chunk's block entities are not walked. */
     public static int insulation(LevelChunk chunk) {
-        int n = 0;
-        for (BlockEntity be : chunk.getBlockEntities().values()) {
-            if (be instanceof CaputMortuumBlock.Marker && ++n >= MAX_INSULATION) break;
-        }
-        return n;
+        insulationAsked++;
+        Map<Long, Integer> counts = chunk.getLevel().getExistingDataOrNull(LogosMod.CAPUT_MORTUUM_COUNTS);
+        return counts == null ? 0 : Math.min(MAX_INSULATION, counts.getOrDefault(chunk.getPos().pack(), 0));
+    }
+
+    /**
+     * A marker of caput mortuum came to ({@code by} 1) or left ({@code by} -1) the chunk {@code pos} is in. Markers
+     * also leave as their chunk unloads and come back as it loads, so a chunk's entry lasts only while it has some.
+     */
+    public static void countMarker(ServerLevel level, BlockPos pos, int by) {
+        level.getData(LogosMod.CAPUT_MORTUUM_COUNTS).merge(ChunkPos.pack(pos), by, (a, b) -> a + b == 0 ? null : a + b);
+    }
+
+    private static long insulationAsked;
+
+    /** How many times any chunk's insulation has been asked for: how the tests see that {@link #work} did not need it. */
+    public static long insulationAsked() {
+        return insulationAsked;
     }
 
     private static @Nullable LevelChunk loaded(ServerLevel level, long chunk) {
@@ -154,7 +195,13 @@ public final class ManaField {
     static void set(ServerLevel level, LevelChunk chunk, double mana) {
         long key = chunk.getPos().pack();
         double value = mana < EPS ? 0 : Math.min(CAP, mana);
-        chunk.setData(LogosMod.MANA_FIELD, value);
+        Air air = chunk.getData(LogosMod.MANA_FIELD);
+        air.moved += Math.abs(value - air.mana);
+        air.mana = value;
+        if (air.moved > SAVE_STEP) {
+            air.moved = 0;
+            chunk.markUnsaved();
+        }
         Set<Long> active = ACTIVE.computeIfAbsent(level, l -> new HashSet<>());
         if (value > 0) active.add(key);
         else active.remove(key);
@@ -219,6 +266,7 @@ public final class ManaField {
     public static void work(ServerLevel level) {
         Set<Long> active = ACTIVE.getOrDefault(level, Set.of());
         Map<Long, Double> delta = new HashMap<>();
+        double plain = LogosConfig.manaSpreadThreshold();
         for (long key : active) {
             LevelChunk here = loaded(level, key);
             if (here == null) continue;
@@ -227,7 +275,10 @@ public final class ManaField {
             for (long next : new long[] {ChunkPos.pack(x + 1, z), ChunkPos.pack(x - 1, z), ChunkPos.pack(x, z + 1), ChunkPos.pack(x, z - 1)}) {
                 LevelChunk there = loaded(level, next);
                 if (there == null) continue;
-                double excess = mine - mana(there) - threshold(here, there);
+                double gap = mine - mana(there);
+                // Insulation only raises the threshold, so a gap within the plain one needs no asking.
+                if (gap <= plain) continue;
+                double excess = gap - threshold(here, there);
                 if (excess <= 0) continue;
                 delta.merge(key, -excess * FLOW, Double::sum);
                 delta.merge(next, excess * FLOW, Double::sum);
