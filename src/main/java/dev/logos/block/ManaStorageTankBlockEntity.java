@@ -9,21 +9,15 @@ import dev.logos.runtime.ManaInfusion;
 import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -39,7 +33,7 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
  * condensing grows the seed in its seed slot into the next solid mana (amethyst shard → mana shard → mana
  * crystal → mana gemstone) at 90%. A redstone signal pauses supplying and condensing.
  */
-public class ManaStorageTankBlockEntity extends BlockEntity implements ManaVessel {
+public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     public static final double MAX_MANA = 5000;
     /** Most mana given to each neighbour a second when supplying. */
     public static final double SUPPLY = 50;
@@ -109,7 +103,6 @@ public class ManaStorageTankBlockEntity extends BlockEntity implements ManaVesse
             AlchemyTableBlockEntity.OneWay.in(input, 0, 1), AlchemyTableBlockEntity.OneWay.in(seed, 0, 1),
             AlchemyTableBlockEntity.OneWay.out(output, 0, 1));
 
-    private double mana;
     private Mode mode = Mode.STORE;
     /** Mana poured into the crystal growing on the seed so far. */
     private double grown;
@@ -117,7 +110,7 @@ public class ManaStorageTankBlockEntity extends BlockEntity implements ManaVesse
     private double lastSupplied;
 
     public ManaStorageTankBlockEntity(BlockPos pos, BlockState state) {
-        super(LogosMod.MANA_STORAGE_TANK_BE.get(), pos, state);
+        super(LogosMod.MANA_STORAGE_TANK_BE.get(), pos, state, MAX_MANA);
     }
 
     /** What a seed grows into in the tank, or null if it is no seed. */
@@ -245,26 +238,6 @@ public class ManaStorageTankBlockEntity extends BlockEntity implements ManaVesse
         return into == LogosMod.MANA_GEMSTONE.get() ? 2 : -1;
     }
 
-    @Override
-    public double mana() {
-        return mana;
-    }
-
-    @Override
-    public double maxMana() {
-        return MAX_MANA;
-    }
-
-    @Override
-    public double receiveMana(double amount) {
-        double taken = Math.clamp(amount, 0, MAX_MANA - mana);
-        if (taken > 0) {
-            mana += taken;
-            setChanged();
-        }
-        return taken;
-    }
-
     /** Sets the stored mana (tests and scenarios). */
     public void setMana(double mana) {
         this.mana = Math.clamp(mana, 0, MAX_MANA);
@@ -311,16 +284,6 @@ public class ManaStorageTankBlockEntity extends BlockEntity implements ManaVesse
     protected void applyImplicitComponents(DataComponentGetter components) {
         super.applyImplicitComponents(components);
         mana = Math.clamp(components.getOrDefault(LogosMod.STORED_MANA.get(), 0.0), 0, MAX_MANA);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveCustomOnly(registries);
-    }
-
-    @Override
-    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

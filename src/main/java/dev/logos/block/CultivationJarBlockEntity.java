@@ -9,16 +9,10 @@ import dev.logos.LogosMod;
 import dev.logos.alchemy.CultivationMedium;
 import dev.logos.alchemy.CultivationRecipe;
 import dev.logos.alchemy.JarPlant;
-import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -26,7 +20,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -43,7 +36,7 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
  * feed seeds and media in and take harvests out.
  * It holds mana, as collectors and the infusing rune give it, for the crops whose stages cost some.
  */
-public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel {
+public class CultivationJarBlockEntity extends SyncedManaVesselBlockEntity {
     public static final int OUTPUTS = 3;
     public static final double MAX_MANA = 500;
 
@@ -99,7 +92,6 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
     private ItemStack medium = ItemStack.EMPTY;
     private int mediumUses;
     private int age;
-    private double mana;
     /** The plant drawn in the jar, worked out on the server and sent to clients with the rest. */
     private @Nullable JarPlant plant;
     private @Nullable CultivationRecipe recipe;
@@ -109,7 +101,7 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
     private Component yieldLine = Component.empty();
 
     public CultivationJarBlockEntity(BlockPos pos, BlockState state) {
-        super(LogosMod.CULTIVATION_JAR_BE.get(), pos, state);
+        super(LogosMod.CULTIVATION_JAR_BE.get(), pos, state, MAX_MANA);
     }
 
     public ItemStacksResourceHandler seedSlot() {
@@ -415,26 +407,6 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
     }
 
     @Override
-    public double mana() {
-        return mana;
-    }
-
-    @Override
-    public double maxMana() {
-        return MAX_MANA;
-    }
-
-    @Override
-    public double receiveMana(double amount) {
-        double taken = Math.clamp(amount, 0, MAX_MANA - mana);
-        if (taken > 0) {
-            mana += taken;
-            setChanged();
-        }
-        return taken;
-    }
-
-    @Override
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide()) refresh();
@@ -470,16 +442,6 @@ public class CultivationJarBlockEntity extends BlockEntity implements ManaVessel
         if (level != null && level.isClientSide() && oldColor != mediumColor()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         }
-    }
-
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveCustomOnly(registries);
-    }
-
-    @Override
-    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

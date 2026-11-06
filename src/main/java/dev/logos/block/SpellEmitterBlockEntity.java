@@ -15,19 +15,13 @@ import dev.logos.lang.Spell;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Charging;
 import dev.logos.runtime.FreeManaEntity;
-import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.Vfx;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -36,7 +30,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.storage.ValueInput;
@@ -53,7 +46,7 @@ import net.neoforged.neoforge.common.util.FakePlayer;
  * {@link #AUTO_COST} more. It casts through a {@link Shadow} of whoever placed it, from its centre,
  * aiming where it faces.
  */
-public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
+public class SpellEmitterBlockEntity extends SyncedManaVesselBlockEntity {
     public static final double MAX_MANA = 1000;
     /** A third-grade wand's flow and surge (CONTRIBUTING, 法杖数值). */
     public static final double FLOW = 70, SURGE = 130;
@@ -62,7 +55,6 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
     public static final int DEFAULT_INTERVAL = 5, MAX_INTERVAL = 3600;
 
     private ItemStack page = ItemStack.EMPTY;
-    private double mana;
     private EmitterMode mode = EmitterMode.PULSE;
     /** Seconds between casts in {@link EmitterMode#TIMED}. */
     private int interval = DEFAULT_INTERVAL;
@@ -84,21 +76,11 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
     private static final int NOT_HELD = -1;
 
     public SpellEmitterBlockEntity(BlockPos pos, BlockState state) {
-        super(LogosMod.SPELL_EMITTER_BE.get(), pos, state);
+        super(LogosMod.SPELL_EMITTER_BE.get(), pos, state, MAX_MANA);
     }
 
     public ItemStack page() {
         return page;
-    }
-
-    @Override
-    public double mana() {
-        return mana;
-    }
-
-    @Override
-    public double maxMana() {
-        return MAX_MANA;
     }
 
     public double injected() {
@@ -115,16 +97,6 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
 
     public @Nullable UUID owner() {
         return owner;
-    }
-
-    @Override
-    public double receiveMana(double amount) {
-        double taken = Math.clamp(amount, 0, MAX_MANA - mana);
-        if (taken > 0) {
-            mana += taken;
-            setChanged();
-        }
-        return taken;
     }
 
     void setOwner(Player player) {
@@ -330,16 +302,6 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
         ownerName = input.getStringOr("owner_name", "");
         ownerStability = input.getIntOr("owner_stability", -1);
         pending = input.getBooleanOr("pending", false);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveCustomOnly(registries);
-    }
-
-    @Override
-    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     /** Broken: the page drops, and the mana it held goes out free. */
