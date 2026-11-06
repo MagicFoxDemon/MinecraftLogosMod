@@ -16,15 +16,12 @@ import dev.logos.item.PageTier;
 import dev.logos.item.WandItem;
 import net.minecraft.world.item.Rarity;
 import dev.logos.lang.LogosError;
-import dev.logos.lang.Node;
-import dev.logos.lang.Spell;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Effects;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellRuntime;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -897,6 +894,7 @@ public class LogosMod {
         registrar.playToServer(dev.logos.net.FormSkillPayload.TYPE, dev.logos.net.FormSkillPayload.CODEC, dev.logos.net.FormSkillPayload::handle);
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
         registrar.playToClient(dev.logos.net.ChargePayload.TYPE, dev.logos.net.ChargePayload.CODEC);
+        registrar.playToClient(dev.logos.net.ManaHudPayload.TYPE, dev.logos.net.ManaHudPayload.CODEC);
         registrar.playToClient(dev.logos.net.AreaWeatherPayload.TYPE, dev.logos.net.AreaWeatherPayload.CODEC);
         registrar.playToClient(dev.logos.net.ManaFieldPayload.TYPE, dev.logos.net.ManaFieldPayload.CODEC);
         registrar.playToClient(dev.logos.net.PillarBurstPayload.TYPE, dev.logos.net.PillarBurstPayload.CODEC);
@@ -1006,46 +1004,7 @@ public class LogosMod {
         PlayerMagic m = PlayerMagic.of(sp);
         m.mana = Math.min(m.maxMana, m.mana + dev.logos.runtime.SpellModifiers.regenerationPerTick(sp));
         dev.logos.runtime.StaffCharging.tick(sp);
-        long now = sp.level().getGameTime();
-        if (now % 10 != 0 || now < m.hudQuietUntil) return;
-        ItemStack wand = dev.logos.item.SpellBag.heldWand(sp);
-        if (wand == null) return;
-        int filled = (int) Math.round(10 * m.mana / Math.max(1, m.maxMana));
-        Component hud = Component.literal("☿ ").withStyle(ChatFormatting.AQUA)
-                .append(Component.literal("█".repeat(filled)).withStyle(ChatFormatting.BLUE))
-                .append(Component.literal("█".repeat(10 - filled)).withStyle(ChatFormatting.DARK_GRAY))
-                .append(Component.literal(" " + (int) m.mana + "/" + (int) m.maxMana).withStyle(ChatFormatting.AQUA));
-        // A staff casts from what it holds, not from the pool.
-        double source = m.mana;
-        if (wand.getItem() instanceof dev.logos.item.StaffItem staff) {
-            source = dev.logos.item.StaffItem.stored(wand);
-            hud = hud.copy().append(Component.literal("  杖内 " + (int) source + "/" + (int) staff.capacity()).withStyle(ChatFormatting.DARK_AQUA));
-        }
-        var selected = dev.logos.item.SpellBag.selected(sp, wand);
-        if (dev.logos.runtime.VoiceCasting.armed(wand)) {
-            // 言出法随: listening, then the spell that was named (where the selected spell would show).
-            selected = null;
-            if (m.listen != null) {
-                hud = hud.copy().append(Component.literal("  🗣 言出法随 · 聆听中…" + (m.listen.injected() > 0 ? " 已汇集 " + Node.fmt(m.listen.injected()) : ""))
-                        .withStyle(ChatFormatting.LIGHT_PURPLE));
-            } else if (m.charge != null && sp.isUsingItem()) {
-                hud = hud.copy().append(Component.literal("  🗣 即将释放《" + m.charge.spell().name() + "》 " + Node.fmt(m.charge.injected) + "/" + Node.fmt(m.charge.in.mana()))
-                        .withStyle(ChatFormatting.LIGHT_PURPLE));
-            } else {
-                int n = dev.logos.runtime.VoiceCasting.spoken(sp, wand).size();
-                hud = hud.copy().append(Component.literal("  🗣 言出法随 · " + (n == 0 ? "法杖上没有言出法随的术式" : "按住右键念出咒语（" + n + " 个可用）"))
-                        .withStyle(n == 0 ? ChatFormatting.RED : ChatFormatting.GRAY));
-            }
-        }
-        if (selected != null) {
-            Spell s = selected.spell();
-            var in = Casting.injection(s, selected.tier(), Casting.immolation(sp, wand));
-            ChatFormatting c = source >= in.mana() ? ChatFormatting.GRAY : ChatFormatting.RED;
-            String inject = in.mana() < s.mana() ? Node.fmt(in.mana()) + "/" + Node.fmt(s.mana()) : Node.fmt(in.mana());
-            hud = hud.copy().append(Component.literal("  《" + s.name() + "》注入 " + inject + (in.burns() ? " 🜂焚" : "")
-                    + " · 稳定 " + Node.fmt(s.stability()) + "/" + m.stability).withStyle(c));
-        }
-        sp.sendOverlayMessage(hud);
+        if (sp.level().getGameTime() % dev.logos.runtime.ManaHud.INTERVAL == 0) dev.logos.runtime.ManaHud.sync(sp);
     }
 
     @SubscribeEvent
