@@ -21,6 +21,7 @@ import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
 import net.minecraft.network.chat.Component;
+import net.neoforged.fml.util.thread.EffectiveSide;
 
 /**
  * The workbench's controls drawn on the same page as the runes: buttons are slips of paper
@@ -135,6 +136,11 @@ final class ManuscriptControls {
             }
             cache[open.getAsBoolean() ? 1 : 0].draw(context, Math.round(x), Math.round(y));
         }));
+        tab.addEventListener(UIEvents.MOUSE_DOWN, e -> {
+            if (e.button == 0) onClick.run();
+        });
+        // A server builds this screen too, to hold its data. It never draws it, and has no font to measure a word with.
+        if (EffectiveSide.get().isServer()) return tab;
         String text = Component.translatable(key).getString();
         if (text.chars().anyMatch(c -> c < 0x80 && Character.isLetter(c))) {
             // Latin words stacked a letter per line run off the page; they are turned to read down the ribbon instead.
@@ -154,9 +160,6 @@ final class ManuscriptControls {
                 tab.addChild(letter);
             }
         }
-        tab.addEventListener(UIEvents.MOUSE_DOWN, e -> {
-            if (e.button == 0) onClick.run();
-        });
         return tab;
     }
 
