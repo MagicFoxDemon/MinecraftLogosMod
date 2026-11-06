@@ -32,6 +32,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
+import dev.logos.LogosConfig;
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
 import dev.logos.net.FxPayload;
@@ -102,6 +103,7 @@ public final class LogosFx {
     /** Rays drawn by their element (not the legacy bead chain) that still have something showing. */
     private record LiveRay(RayVisual visual, long born) {}
     private static final List<LiveRay> RAYS = new ArrayList<>();
+    private static final FxBudget BUDGET = new FxBudget();
     /** No ray lingers longer than this, whatever its element asks for. */
     private static final int RAY_CAP = 200;
     /** The last ray or link that arrived (the client scenes check it). */
@@ -119,7 +121,21 @@ public final class LogosFx {
         RayVisual wake = BeamWake.create(b.element);
         if (wake.legacy()) return;
         wake.start(level, b.shownFrom, b.shownTo, Vfx.RayEnd.OPEN);
-        RAYS.add(new LiveRay(wake, level.getGameTime()));
+        addRay(new LiveRay(wake, level.getGameTime()));
+    }
+
+    /** At the cap a new ray replaces the oldest: they go by themselves soon enough, and the newest is what was just cast. */
+    private static void addRay(LiveRay ray) {
+        if (!RAYS.isEmpty() && RAYS.size() >= LogosConfig.FX_MAX_RAYS.get()) RAYS.removeFirst().visual().end();
+        RAYS.add(ray);
+    }
+
+    private static boolean effect() {
+        return BUDGET.effect(LogosConfig.FX_EFFECTS_PER_TICK.get());
+    }
+
+    private static int particles(int wanted) {
+        return BUDGET.particles(wanted, LogosConfig.FX_PARTICLES_PER_TICK.get());
     }
 
     /** How far each lasting beam has reached out by now, growing to its full length (the client scenes check it). */
@@ -273,9 +289,21 @@ public final class LogosFx {
 
     // ---- playback ----------------------------------------------------------------------------
 
+    /** One tick's effects from the server, in the order they happened. */
+    public static void handle(FxPayload.Batch batch) {
+        batch.effects().forEach(LogosFx::handle);
+    }
+
     public static void handle(FxPayload p) {
         Level level = Minecraft.getInstance().level;
         if (level == null) return;
+        // One-shots past this tick's budget are skipped; nothing keeps track of them. Lasting effects have caps instead.
+        switch (p.kindEnum()) {
+            case BURST, PROJECTILE_IMPACT, CAST, EXECUTE, MARK -> {
+                if (!effect()) return;
+            }
+            default -> {}
+        }
         Element el = Element.values()[Math.floorMod(p.element(), Element.values().length)];
         Vec3 pos = new Vec3(p.x(), p.y(), p.z());
         switch (p.kindEnum()) {
@@ -284,6 +312,8 @@ public final class LogosFx {
                 Trail t = TRAILS.get(p.id());
                 Vec3 real = pos;
                 if (t == null) {
+                    // Full up, it goes undrawn until there is room; its end finds nothing to end, which is safe.
+                    if (TRAILS.size() >= LogosConfig.FX_MAX_TRAILS.get()) return;
                     SetOut from = SET_OUT.remove(p.id());
                     Entity caster = from != null ? level.getEntity(from.caster()) : null;
                     // A body cast from the eye starts inside the camera: drawn from the cast point instead, or not until it is a little way out.
@@ -305,7 +335,7 @@ public final class LogosFx {
                 }
                 if (t.particle != null) {
                     // ✧ :trail — a stream of that particle along the path flown since the last report.
-                    int n = (int) Math.max(1, Math.min(12, Math.ceil(t.last.distanceTo(pos) * 3)));
+                    int n = particles((int) Math.max(1, Math.min(12, Math.ceil(t.last.distanceTo(pos) * 3))));
                     double jitter = p.size() * 0.5;
                     RandomSource r = level.getRandom();
                     for (int k = 1; k <= n; k++) {
@@ -340,8 +370,8 @@ public final class LogosFx {
                     // A custom trail ends in a puff of its own particle rather than the element's burst.
                     scatter(level, t.particle, pos, 10, 0.4);
                 } else if (!expiry.isEmpty()) {
-                    if (p.variant() == 0) play(level, fx("projectile_expiry", el, 0, () -> expiry), pos, 1);
-                } else {
+                    if (p.variant() == 0 && effect()) play(level, fx("projectile_expiry", el, 0, () -> expiry), pos, 1);
+                } else if (effect()) {
                     play(level, fx("burst", el, 0, () -> burst(el)), pos, 1);
                     accents(level, el, pos, 10, 0.25, 0.12);
                 }
@@ -366,6 +396,8 @@ public final class LogosFx {
                 Vec3 to = new Vec3(p.ax(), p.ay(), p.az());
                 Beam b = BEAMS.get(p.id());
                 if (b == null) {
+                    // Full up, it goes undrawn until there is room; its end finds nothing to end, which is safe.
+                    if (BEAMS.size() >= LogosConfig.FX_MAX_BEAMS.get()) return;
                     b = new Beam(el, p.look(), particle(p.particle()), pos, to, level.getGameTime());
                     BEAMS.put(p.id(), b);
                 } else {
@@ -383,8 +415,8 @@ public final class LogosFx {
                     Vec3 at = pos.lerp(to, Math.min(1, (1.5 + r.nextDouble() * Math.max(0, len - 1.5)) / Math.max(len, 1e-3)));
                     double s = p.size();
                     at = at.add((r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * s, (r.nextDouble() - 0.5) * s);
-                    if (b.particle != null) level.addParticle(b.particle, at.x, at.y, at.z, 0, 0, 0);
-                    else if (!b.dedicated()) accents(level, el, at, 1, 0.05, 0.02);
+                    if (b.particle != null && particles(1) > 0) level.addParticle(b.particle, at.x, at.y, at.z, 0, 0, 0);
+                    else if (b.particle == null && !b.dedicated()) accents(level, el, at, 1, 0.05, 0.02);
                 }
                 if (!b.dedicated() && r.nextInt(3) == 0) accents(level, el, to, 2, 0.15, 0.08);
             }
@@ -398,7 +430,7 @@ public final class LogosFx {
                 }
                 Element e = b != null ? b.element : el;
                 if (b != null && b.particle != null) scatter(level, b.particle, pos, 10, 0.4);
-                else play(level, fx("burst", e, 0, () -> burst(e)), pos, 0.8f);
+                else if (effect()) play(level, fx("burst", e, 0, () -> burst(e)), pos, 0.8f);
             }
             case BURST -> {
                 Vfx.Burst what = Vfx.Burst.values()[Math.floorMod(p.variant(), Vfx.Burst.values().length)];
@@ -454,7 +486,7 @@ public final class LogosFx {
                 RayVisual ray = RayVisual.create(el);
                 if (!ray.legacy()) {
                     ray.start(level, pos, end, how);
-                    RAYS.add(new LiveRay(ray, level.getGameTime()));
+                    addRay(new LiveRay(ray, level.getGameTime()));
                     break;
                 }
                 double len = pos.distanceTo(end);
@@ -495,6 +527,7 @@ public final class LogosFx {
 
     /** The old field look: a particle ring of radius {@code size} with a few accents round its rim. */
     private static void legacyRing(Level level, Element el, Vec3 pos, float size) {
+        if (!effect()) return;
         play(level, fx("ring", el, 0, () -> ring(el)), pos, 1, size);
         RandomSource r = level.getRandom();
         for (int k = 0; k < (int) (6 + size * 4); k++) {
@@ -505,12 +538,14 @@ public final class LogosFx {
 
     /** The old field pulse: a particle burst of radius {@code size}. */
     private static void legacyPulse(Level level, Element el, Vec3 pos, float size) {
+        if (!effect()) return;
         play(level, fx("pulse", el, 0, () -> pulse(el)), pos, 1, size);
         accents(level, el, pos, (int) (4 + size * 4), size * 0.6, 0.03);
     }
 
     /** Drops trails whose spell body stopped reporting (e.g. it left tracking range). */
     public static void tick() {
+        BUDGET.refill();
         Level level = Minecraft.getInstance().level;
         if (level != null) SET_OUT.values().removeIf(o -> level.getGameTime() - o.at() > 40);
         if (level == null) {
@@ -528,6 +563,11 @@ public final class LogosFx {
             return true;
         });
         BEAMS.values().removeIf(b -> {
+            // Told only every few ticks (far off), it rests where it was last told instead of sliding over that stretch again.
+            if (level.getGameTime() - b.lastSeen > 1) {
+                b.prevFrom = b.from;
+                b.prevTo = b.to;
+            }
             if (level.getGameTime() - b.lastSeen <= 10) return false;
             leaveWake(level, b);
             b.endVisual();
@@ -535,6 +575,7 @@ public final class LogosFx {
         });
         for (Iterator<Trail> it = TRAILS.values().iterator(); it.hasNext(); ) {
             Trail t = it.next();
+            if (t.look != null && level.getGameTime() - t.lastSeen > 1) t.look.prev = t.look.cur;
             if (level.getGameTime() - t.lastSeen > 20) {
                 t.destroy(false);
                 it.remove();
@@ -551,6 +592,7 @@ public final class LogosFx {
     /** {@code count} particles around {@code at}, within {@code spread} blocks; always visible, like any spell effect. */
     private static void scatter(Level level, ParticleOptions type, Vec3 at, int count, double spread) {
         RandomSource r = level.getRandom();
+        count = particles(count);
         for (int k = 0; k < count; k++) {
             double dx = spread > 0 ? r.nextGaussian() * spread / 2 : 0;
             double dy = spread > 0 ? r.nextGaussian() * spread / 2 : 0;
@@ -802,6 +844,7 @@ public final class LogosFx {
             case LIFE -> ParticleTypes.HAPPY_VILLAGER;
         };
         RandomSource r = level.getRandom();
+        count = particles(count);
         for (int k = 0; k < count; k++) {
             level.addParticle(type, at.x + r.nextGaussian() * spread, at.y + r.nextGaussian() * spread, at.z + r.nextGaussian() * spread,
                     r.nextGaussian() * speed, r.nextGaussian() * speed, r.nextGaussian() * speed);

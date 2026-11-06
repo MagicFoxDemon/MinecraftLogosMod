@@ -11,6 +11,7 @@ import dev.logos.LogosMod;
 import dev.logos.lang.Weather;
 import dev.logos.net.AreaWeatherPayload;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.attribute.WeatherAttributes;
@@ -80,9 +81,16 @@ public final class AreaWeather {
         for (ServerPlayer p : level.players()) send(p, payload);
     }
 
+    /** Tells the players there where {@code obj} has moved to, and nothing of the zones standing still. */
+    static void moved(AreaWeatherObj obj) {
+        Zone z = obj.zone();
+        var payload = new AreaWeatherPayload.Moved(obj.level().dimension().identifier().toString(), z.id(), z.x(), z.z());
+        for (ServerPlayer p : obj.level().players()) send(p, payload);
+    }
+
     /** Only to clients that speak it (a vanilla client or a test's mock player does not). */
-    private static void send(ServerPlayer p, AreaWeatherPayload payload) {
-        if (p.connection.hasChannel(AreaWeatherPayload.TYPE)) PacketDistributor.sendToPlayer(p, payload);
+    private static void send(ServerPlayer p, CustomPacketPayload payload) {
+        if (p.connection.hasChannel(payload)) PacketDistributor.sendToPlayer(p, payload);
     }
 
     private static AreaWeatherPayload payload(ServerLevel level) {
@@ -208,6 +216,15 @@ public final class AreaWeather {
         Map<String, List<Zone>> next = new HashMap<>(client);
         if (zones.isEmpty()) next.remove(p.dimension());
         else next.put(p.dimension(), List.copyOf(zones));
+        client = Map.copyOf(next);
+    }
+
+    /** One zone of a dimension moved; a zone not known yet comes with the next whole list. */
+    public static void receive(AreaWeatherPayload.Moved p) {
+        List<Zone> known = client.get(p.dimension());
+        if (known == null) return;
+        Map<String, List<Zone>> next = new HashMap<>(client);
+        next.put(p.dimension(), known.stream().map(z -> z.id() == p.id() ? new Zone(z.id(), z.kind(), p.x(), p.z(), z.radius()) : z).toList());
         client = Map.copyOf(next);
     }
 

@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
 import net.minecraft.client.Minecraft;
@@ -34,7 +35,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 public final class VeinVisuals {
     /** No head lingers longer than this after it stops (and after what it left behind has faded), whatever its element asks for. */
     public static final int LINGER_CAP = 100;
-    /** The server tells clients every tick; a head not heard of for this long has gone. */
+    /** The server tells clients every tick, or every few when they are far off; a head not heard of for this long has gone. */
     private static final int STALE_TICKS = 10;
 
     private static final Map<Long, LiveVein> LIVE = new HashMap<>();
@@ -53,6 +54,8 @@ public final class VeinVisuals {
         long now = ClientCharges.ticks();
         LiveVein v = LIVE.get(key(id, head));
         if (v == null) {
+            // Full up, it goes undrawn until there is room; its end finds nothing to end, which is safe.
+            if (LIVE.size() >= LogosConfig.FX_MAX_VEIN_HEADS.get()) return;
             VeinVisual visual = substitute != null ? substitute.apply(element, linger > 0) : VeinVisual.create(element, linger > 0);
             v = new LiveVein(id, head, element, visual, at, now);
             v.linger = linger;
@@ -75,8 +78,10 @@ public final class VeinVisuals {
         stop(v);
     }
 
+    /** It has stopped and plays out; at the cap the one playing out longest goes to make room. */
     private static void stop(LiveVein v) {
         v.ended = true;
+        if (!ENDED.isEmpty() && ENDED.size() >= LogosConfig.FX_MAX_VEIN_HEADS.get()) ENDED.removeFirst().visual.end();
         ENDED.add(v);
     }
 

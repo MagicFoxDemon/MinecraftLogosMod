@@ -299,6 +299,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                 case "mark" -> own = argNum(n, 2, 1) * count(n.arg(0));
                 case "unmark" -> own = 0.5 * count(n.arg(0));
                 case "glow" -> own = argNum(n, 1, 5) * 0.2 * count(n.arg(0));
+                case "phantasm" -> own = Runes.PHANTASM_PARTICLE * Math.clamp(Math.round(kwNum(n, "count", 1)), 1, 64);
                 case "execute" -> {
                     own = 4 * 10 + events(n, "on-kill", inGroup);
                     assumptions.add("处决的代价由证明决定，按 10 点生命、没有折减估算");

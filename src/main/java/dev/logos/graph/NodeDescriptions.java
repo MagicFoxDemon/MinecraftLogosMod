@@ -500,7 +500,7 @@ public final class NodeDescriptions {
             Map.entry("copy/param/count", "额外生成的复制品数量，范围 0～8；原弹射物仍然保留。"),
             Map.entry("copy/param/spread", "复制品逐级向左右偏转的角度，范围 0～90 度，默认 10 度。"),
             Map.entry("phantasm/intro", "在指定位置显现粒子，用于仪式装饰与施法提示。"),
-            Map.entry("phantasm/note", "不消耗魔力；粒子不自带伤害或实体效果。"),
+            Map.entry("phantasm/note", "每个粒子消耗 0.02 魔力（满 64 个 1.28）；粒子不自带伤害或实体效果。"),
             Map.entry("phantasm/param/particle", "要显示的粒子注册名。"),
             Map.entry("phantasm/param/at", "粒子显现的中心；未连接时取此处。"),
             Map.entry("phantasm/param/count", "本次产生的粒子数，范围 1～64，默认 1。"),

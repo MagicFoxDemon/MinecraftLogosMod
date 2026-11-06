@@ -433,6 +433,14 @@ class CompilerTest {
     }
 
     @Test
+    void phantasmIsPricedByTheParticle() {
+        assertEquals(1.3, SpellProfile.of(Compiler.compile("(phantasm %portal :count 64)").body(), List.of()).estimate());
+        assertEquals(1.3, SpellProfile.of(Compiler.compile("(phantasm %portal :count 1000)").body(), List.of()).estimate());
+        assertEquals(0.2, SpellProfile.of(Compiler.compile("(phantasm %portal :count 10)").body(), List.of()).estimate());
+        assertTrue(Runes.get("phantasm").doc.contains("0.02"), "its doc should give the price");
+    }
+
+    @Test
     void particlesAreCosmeticLiterals() {
         Node p = Compiler.compile("(projectile :trail %portal)").body().getFirst();
         assertEquals(Type.PARTICLE, p.kw.get("trail").type);

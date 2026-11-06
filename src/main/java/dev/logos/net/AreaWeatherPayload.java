@@ -9,7 +9,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
-/** Server → client: every area weather in one dimension, sent whole whenever one starts, moves or ends. */
+/** Server → client: every area weather in one dimension, sent whole whenever one starts or ends. */
 public record AreaWeatherPayload(String dimension, List<Zone> zones) implements CustomPacketPayload {
     /** {@code kind} is a {@link dev.logos.lang.Weather} ordinal. */
     public record Zone(int id, int kind, double x, double z, float radius) {
@@ -26,5 +26,17 @@ public record AreaWeatherPayload(String dimension, List<Zone> zones) implements 
     @Override
     public Type<AreaWeatherPayload> type() {
         return TYPE;
+    }
+
+    /** Server → client: one zone of a dimension has moved, sent as it goes (a {@code :follow} zone); the others stand as last sent. */
+    public record Moved(String dimension, int id, double x, double z) implements CustomPacketPayload {
+        public static final Type<Moved> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "area_weather_moved"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, Moved> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, Moved::dimension, ByteBufCodecs.VAR_INT, Moved::id, ByteBufCodecs.DOUBLE, Moved::x, ByteBufCodecs.DOUBLE, Moved::z, Moved::new);
+
+        @Override
+        public Type<Moved> type() {
+            return TYPE;
+        }
     }
 }

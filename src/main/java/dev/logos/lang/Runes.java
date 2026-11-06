@@ -91,6 +91,8 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
  */
 public final class Runes {
     private static final Map<String, Rune> RUNES = new LinkedHashMap<>();
+    /** What one particle of {@code phantasm} costs: a little decoration stays cheap, a stream of them does not. */
+    public static final double PHANTASM_PARTICLE = 0.02;
     private static final List<EquipmentSlot> EQUIPMENT_ORDER = List.of(EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND,
             EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET);
 
@@ -1258,11 +1260,12 @@ public final class Runes {
                 });
         def("phantasm", EFFECT, ACTION).p("particle", PARTICLE).opt("at", POS, "here").kw("count", NUM, "1").kw("spread", NUM, "0")
                 .doc("幻像显现：在某处放出一个注册过的粒子效果（%名字，如 %gust_emitter_large、%portal、%sonic_boom）。"
-                        + ":count 个数（≤64），:spread 散布半径（≤8）。只是幻象：不收魔力，不改变世界")
+                        + ":count 个数（≤64），:spread 散布半径（≤8）。只是幻象，不改变世界。每个粒子 0.02 魔力（满 64 个 1.28）")
                 .exec((n, c) -> {
                     Place at = place(n.arg(1), c);
-                    Vfx.phantasm(at.level(), at.pos(), Vfx.particleId(text(n.arg(0), c)),
-                            (int) clamp(Math.round(num(kw(n, "count"), c)), 1, 64), clamp(num(kw(n, "spread"), c), 0, 8));
+                    int count = (int) clamp(Math.round(num(kw(n, "count"), c)), 1, 64);
+                    if (!c.inst().spend(count * PHANTASM_PARTICLE, "phantasm")) return null;
+                    Vfx.phantasm(at.level(), at.pos(), Vfx.particleId(text(n.arg(0), c)), count, clamp(num(kw(n, "spread"), c), 0, 8));
                     return null;
                 });
         def("echo", EFFECT, ACTION).p("value", ANY).doc("把一个值显示给施法者（调试用）。免费")
