@@ -978,6 +978,13 @@ public class LogosMod {
         DEFERRED.add(r);
     }
 
+    /** Spells end before players leave and the world is saved and closed, while what their ends touch is still there. */
+    @SubscribeEvent
+    public void onServerStopping(net.neoforged.neoforge.event.server.ServerStoppingEvent event) {
+        SpellRuntime.clear();
+    }
+
+    /** Again, as a crash stops the server without the event above. */
     @SubscribeEvent
     public void onServerStopped(ServerStoppedEvent event) {
         SpellRuntime.clear();

@@ -32,6 +32,7 @@ import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.ResolvableProfile;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.ICancellableEvent;
@@ -93,6 +94,8 @@ public final class Possession {
         final ServerPlayer player;
         final Mob mob;
         final Mannequin body;
+        /** The chunk its ticket holds: where the body stood at the start, wherever it has been pushed since. */
+        final ChunkPos ticket;
         final long until;
         long nextAttack;
         long nextSkill;
@@ -104,6 +107,7 @@ public final class Possession {
             this.player = player;
             this.mob = mob;
             this.body = body;
+            this.ticket = body.chunkPosition();
             this.until = until;
         }
     }
@@ -185,7 +189,7 @@ public final class Possession {
         back.putDouble("y", body.getY());
         back.putDouble("z", body.getZ());
         p.getPersistentData().put(RETURN_TAG, back);
-        TICKETS.forceChunk(level, p.getUUID(), body.chunkPosition().x(), body.chunkPosition().z(), true, true);
+        TICKETS.forceChunk(level, p.getUUID(), s.ticket.x(), s.ticket.z(), true, true);
         // Whatever was after the player is after their body now.
         for (Mob m : level.getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(48), m -> m.getTarget() == p)) m.setTarget(body);
         p.sendOverlayMessage(Component.translatable("logos.possess.start", (int) Math.round(seconds)));
@@ -202,7 +206,7 @@ public final class Possession {
         ServerLevel level = (ServerLevel) s.body.level();
         p.teleportTo(level, s.body.getX(), s.body.getY(), s.body.getZ(), Set.of(), s.body.getYRot(), p.getXRot(), true);
         p.resetFallDistance();
-        TICKETS.forceChunk(level, p.getUUID(), s.body.chunkPosition().x(), s.body.chunkPosition().z(), false, true);
+        TICKETS.forceChunk(level, p.getUUID(), s.ticket.x(), s.ticket.z(), false, true);
         s.body.discard();
         p.getPersistentData().remove(RETURN_TAG);
         if (backlash) p.hurtServer(level, level.damageSources().source(BACKLASH_DAMAGE, s.mob), p.getMaxHealth() * BACKLASH);

@@ -21,6 +21,8 @@ final class ManaFieldClient {
     private static final int TRIES = 6, REACH = 12;
     /** Chance a try in a full chunk makes a mote. */
     private static final float FULL = 0.16f;
+    /** Ticks between forgetting the chunks out of view. */
+    private static final int FORGET_EVERY = 20;
 
     private ManaFieldClient() {}
 
@@ -28,6 +30,9 @@ final class ManaFieldClient {
     static void onTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.isPaused() || !ManaField.clientKnowsAny(mc.level)) return;
+        if (mc.player != null && mc.player.tickCount % FORGET_EVERY == 0) {
+            ManaField.clientForgetBeyond(mc.level, mc.player.chunkPosition(), mc.options.getEffectiveRenderDistance() + 1);
+        }
         RandomSource random = mc.level.getRandom();
         var eye = mc.gameRenderer.getMainCamera().position();
         for (int i = 0; i < TRIES; i++) {

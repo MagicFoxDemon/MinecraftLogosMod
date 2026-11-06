@@ -306,31 +306,45 @@ public final class ManaField {
     // ---- client copy ------------------------------------------------------------------------------
 
     private static final Map<Long, Integer> CLIENT = new HashMap<>();
+    /** The level {@link #CLIENT} is about, kept only while the client is in it. */
     private static @Nullable Level clientLevel;
 
-    /** A level change on the client forgets what it knew of the last one. */
-    private static Map<Long, Integer> clientFor(Level level) {
+    public static void receive(Level level, ManaFieldPayload payload) {
+        // A level change on the client forgets what it knew of the last one.
         if (clientLevel != level) {
             CLIENT.clear();
             clientLevel = level;
         }
-        return CLIENT;
+        if (payload.level() <= 0) CLIENT.remove(payload.chunk());
+        else CLIENT.put(payload.chunk(), payload.level());
     }
 
-    public static void receive(Level level, ManaFieldPayload payload) {
-        Map<Long, Integer> known = clientFor(level);
-        if (payload.level() <= 0) known.remove(payload.chunk());
-        else known.put(payload.chunk(), payload.level());
+    /** The client leaves a level, for another or by disconnecting. */
+    @SubscribeEvent
+    static void onClientLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel() != clientLevel) return;
+        CLIENT.clear();
+        clientLevel = null;
+    }
+
+    /**
+     * Forgets the chunks over {@code radius} from {@code center}: the server tells a client a chunk's level again as it
+     * comes back into view. Chunk unloads would not do: a client hears of none on a long teleport (its {@code drop}
+     * ignores chunks already out of range), and then a chunk with no mana left would keep its old level.
+     */
+    public static void clientForgetBeyond(Level level, ChunkPos center, int radius) {
+        if (clientLevel != level) return;
+        CLIENT.keySet().removeIf(k -> Math.abs(ChunkPos.getX(k) - center.x()) > radius || Math.abs(ChunkPos.getZ(k) - center.z()) > radius);
     }
 
     /** The level a client knows for the chunk {@code pos} is in (0 to {@link #LEVELS}). */
     public static int clientLevel(Level level, BlockPos pos) {
-        return clientFor(level).getOrDefault(ChunkPos.pack(pos), 0);
+        return clientLevel == level ? CLIENT.getOrDefault(ChunkPos.pack(pos), 0) : 0;
     }
 
     /** Whether a client knows any mana in the air around it. */
     public static boolean clientKnowsAny(Level level) {
-        return !clientFor(level).isEmpty();
+        return clientLevel == level && !CLIENT.isEmpty();
     }
 
 }

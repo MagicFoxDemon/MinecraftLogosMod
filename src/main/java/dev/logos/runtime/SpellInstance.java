@@ -24,7 +24,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class SpellInstance {
     public final Spell spell;
-    public final LivingEntity caster;
+    /** Who cast it; a player who respawns hands it on to their new body ({@link SpellCasters}). */
+    public LivingEntity caster;
     public final ServerLevel level;
     public final double injected;
     /** Share of entropic mana that returns as free mana (the page's grade). */
@@ -59,6 +60,7 @@ public final class SpellInstance {
         this.recovery = recovery;
         this.modifiers = SpellModifiers.of(caster);
         this.mana = injected;
+        SpellCasters.started(this);
         this.startTick = SpellRuntime.now();
         trace.add(mana);
     }
@@ -141,6 +143,13 @@ public final class SpellInstance {
         terminate(reason);
     }
 
+    /** The server is stopping and the world may already be closed: it ends here, setting no mana free and telling no one. */
+    void abandon() {
+        if (finished) return;
+        dead = finished = true;
+        endReason = "世界关闭";
+    }
+
     /** True if the spell ended on its own (or by its own stop); false if it was extinguished. */
     public boolean endedNaturally() {
         return !dead || stopped;
@@ -158,6 +167,7 @@ public final class SpellInstance {
     private void finish() {
         if (finished) return;
         finished = true;
+        SpellCasters.ended(this);
         if (endReason == null) endReason = "自然消散";
         // Runs wherever a spell ends, even while handling a crash: what it reaches (another mod's join-level listener) must not get out.
         try {

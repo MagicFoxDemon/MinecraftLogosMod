@@ -41,6 +41,7 @@ public final class LogosGameTests {
             "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "context_wire_meanings", "config_limits_apply",
             "world_toggle_state", "world_resize", "world_water_walk", "world_possess_body", "world_possess_backlash", "world_possess_limits", "world_possess_attacks", "world_possess_inventory", "world_possess_instinct", "world_possess_instinct_time", "world_possess_skill_shots", "world_possess_skill_moves", "world_incarnate_body", "world_incarnate_abilities", "world_incarnate_end_all", "world_incarnate_revert", "world_incarnate_skills", "world_incarnate_traits", "world_use_block", "world_use_block_item", "world_grow_and_decay", "world_players_flag", "world_nearest_player", "end_all_others", "end_all_own", "form_ops_projectile", "form_ops_beam", "form_ops_field", "form_ops_spells", "form_ops_vein", "vein_terrain", "vein_strikes", "vein_ring", "vein_snake", "vein_sweep", "vein_ring_sector", "vein_climb", "vein_linger", "value_random", "value_mix", "value_round_clamp", "value_wave", "value_choose", "value_spot_around", "value_spot_in", "world_switch", "world_form_refs", "world_blink_target", "world_items_magnet", "world_nether_step", "world_time_skip", "world_weather_global", "world_weather_area", "world_lightning",
             "world_wand_casts_selected_page", "world_wood_wands_craft", "world_crystal_page_needs_adhesive", "world_echo_page_upgrade_keeps_spell", "world_sage_page_upgrade_keeps_spell", "world_transmuted_page_upgrade_keeps_spell", "world_chalk_page_upgrade_keeps_spell", "world_firmament_page_upgrade_keeps_spell",
+            "lifecycle_possess_ticket", "lifecycle_logout_ends_spells", "lifecycle_removed_caster_ends_spells", "lifecycle_respawn_keeps_spells", "lifecycle_emitter_outlives_owner",
             "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "staff_fills_then_casts", "staff_fill_needs_main_hand", "chant_repeats_wand_charge", "chant_repeats_staff_cast", "voice_casts_at_once_and_refunds", "voice_charges_on_to_the_named_spell", "voice_let_go_frees_what_was_gathered", "voice_needs_voice_pages_and_the_charm", "voice_staff_casts_the_named_spell", "voice_chant_repeats_the_named_spell", "voice_written_page_keeps_its_name", "world_table_inscribes", "beam_follows_gaze", "cast_pose_beam_holds", "cast_pose_split_beams_hold", "cast_pose_later_beam_holds_nothing", "cast_pose_gesture_by_lead", "field_heals_caster", "infuse_gives_mana", "field_spares_caster_without_players", "field_shields_caster_on_enter", "world_filter_kinds",
             "construct_stops_movement", "construct_sigil", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall", "construct_ward_stops_spells",
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
@@ -266,6 +267,12 @@ public final class LogosGameTests {
         FUNCTIONS.register("world_chalk_page_upgrade_keeps_spell", () -> WorldGameTests::chalkPageUpgradeKeepsSpell);
         FUNCTIONS.register("world_firmament_page_upgrade_keeps_spell", () -> WorldGameTests::firmamentPageUpgradeKeepsSpell);
         FUNCTIONS.register("world_sage_page_upgrade_keeps_spell", () -> WorldGameTests::sagePageUpgradeKeepsSpell);
+        FUNCTIONS.register("lifecycle_clear_ends_wraps", () -> StateLifecycleGameTests::clearEndsWraps);
+        FUNCTIONS.register("lifecycle_possess_ticket", () -> StateLifecycleGameTests::possessTicket);
+        FUNCTIONS.register("lifecycle_logout_ends_spells", () -> StateLifecycleGameTests::logoutEndsSpells);
+        FUNCTIONS.register("lifecycle_removed_caster_ends_spells", () -> StateLifecycleGameTests::removedCasterEndsSpells);
+        FUNCTIONS.register("lifecycle_respawn_keeps_spells", () -> StateLifecycleGameTests::respawnKeepsSpells);
+        FUNCTIONS.register("lifecycle_emitter_outlives_owner", () -> StateLifecycleGameTests::emitterOutlivesOwner);
         FUNCTIONS.register("wand_charges_then_casts", () -> ChargingGameTests::chargesThenCasts);
         FUNCTIONS.register("wand_early_release_refunds", () -> ChargingGameTests::earlyReleaseRefunds);
         FUNCTIONS.register("wand_refuses_what_it_cannot_fill", () -> ChargingGameTests::refusesWhatItCannotFill);
@@ -439,6 +446,10 @@ public final class LogosGameTests {
                     // 400 ticks: polled tests finish as soon as they pass; the headroom is for a loaded machine.
                     new TestData<>(env, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
         }
+        // Batches run one after another, one per environment: clearing the runtime would end the other tests' spells.
+        Holder<TestEnvironmentDefinition<?>> alone = event.registerEnvironment(id("alone"), new TestEnvironmentDefinition.AllOf());
+        event.registerTest(id("lifecycle_clear_ends_wraps"), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id("lifecycle_clear_ends_wraps")),
+                new TestData<>(alone, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
     }
 
     private static Identifier id(String path) {
