@@ -11,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -154,8 +155,8 @@ public class SpellEmitterBlock extends DirectionalBlock implements EntityBlock {
         }
         if (level.isClientSide()) {
             if (emitter.owner() == null || emitter.owner().equals(player.getUUID())) dev.logos.client.ClientHooks.openEmitterEditor(pos, emitter);
-        } else {
-            emitter.mayChange(player);
+        } else if (emitter.mayChange(player) && player instanceof ServerPlayer sp) {
+            dev.logos.net.EditLimits.editorOpened(sp, emitter);
         }
         return InteractionResult.SUCCESS;
     }

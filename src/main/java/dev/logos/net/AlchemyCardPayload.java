@@ -66,7 +66,7 @@ public record AlchemyCardPayload(BlockPos table, Action action, int card, int x,
     }
 
     public static void handle(AlchemyCardPayload p, IPayloadContext ctx) {
-        if (!(ctx.player() instanceof ServerPlayer sp) || !sp.isWithinBlockInteractionRange(p.table, 1.0)) return;
+        if (!(ctx.player() instanceof ServerPlayer sp) || !EditLimits.admit(sp, p.table)) return;
         if (!(sp.level().getBlockEntity(p.table) instanceof AlchemyTableBlockEntity table) || !EditLimits.CARD_EDITS.allow(sp)) return;
         if (p.action == Action.ADD) {
             if (p.card >= 0 && p.card < Process.values().length) {

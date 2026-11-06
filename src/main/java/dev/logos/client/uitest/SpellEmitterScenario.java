@@ -11,7 +11,6 @@ import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 import dev.logos.LogosMod;
 import dev.logos.block.SpellEmitterBlock;
 import dev.logos.block.SpellEmitterBlockEntity;
-import dev.logos.client.ClientHooks;
 import dev.logos.graph.SpecialNodes;
 import dev.logos.graph.SpellGraph;
 import dev.logos.item.PageTier;
@@ -74,7 +73,8 @@ public class SpellEmitterScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() - 1.5, ORIGIN.getY() + 2.2, ORIGIN.getZ() + 1.5, 160, 35)
                 .ticks(10)
                 .screenshot("emitter_close")
-                .step("open the workbench on the emitter's page", ctx -> ClientHooks.openEmitterEditor(EDITED, (SpellEmitterBlockEntity) ctx.level().getBlockEntity(EDITED)))
+                .step("right-click the emitter to open the workbench on its page", ctx -> net.minecraft.client.Minecraft.getInstance().gameMode.useItemOn(ctx.player(), net.minecraft.world.InteractionHand.MAIN_HAND,
+                        new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(EDITED), Direction.UP, EDITED, false)))
                 .awaitModularUI()
                 .ticks(10)
                 .checkTextContains("#status", "成立")

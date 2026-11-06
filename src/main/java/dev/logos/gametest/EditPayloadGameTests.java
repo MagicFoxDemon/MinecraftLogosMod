@@ -57,13 +57,13 @@ final class EditPayloadGameTests {
     private EditPayloadGameTests() {}
 
     /** All a handler asks of its context is who sent the packet. */
-    private static IPayloadContext from(ServerPlayer player) {
+    static IPayloadContext from(ServerPlayer player) {
         return (IPayloadContext) Proxy.newProxyInstance(IPayloadContext.class.getClassLoader(), new Class<?>[] {IPayloadContext.class},
                 (self, method, args) -> method.getName().equals("player") ? player : null);
     }
 
     @SuppressWarnings("removal")
-    private static ServerPlayer playerAt(GameTestHelper h, double x, double z) {
+    static ServerPlayer playerAt(GameTestHelper h, double x, double z) {
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
         p.snapTo(pos.x, pos.y, pos.z, 0, 0);
@@ -71,18 +71,18 @@ final class EditPayloadGameTests {
         return p;
     }
 
-    private static InscriptionTableBlockEntity table(GameTestHelper h, BlockPos rel, ItemStack page) {
+    static InscriptionTableBlockEntity table(GameTestHelper h, BlockPos rel, ItemStack page) {
         h.setBlock(rel, LogosMod.INSCRIPTION_TABLE.get());
         InscriptionTableBlockEntity table = (InscriptionTableBlockEntity) h.getLevel().getBlockEntity(h.absolutePos(rel));
         if (!page.isEmpty()) table.setPage(page);
         return table;
     }
 
-    private static String spell(String name) {
+    static String spell(String name) {
         return "(spell :name \"" + name + "\" :mana 5 (heal caster 1))";
     }
 
-    private static CompoundTag drawing(String marker) {
+    static CompoundTag drawing(String marker) {
         CompoundTag graph = new CompoundTag();
         graph.putString("marker", marker);
         return graph;
@@ -118,7 +118,7 @@ final class EditPayloadGameTests {
      */
     static void inscribeChecksBeforeCompiling(GameTestHelper h) {
         InscriptionTableBlockEntity table = table(h, TABLE, new ItemStack(LogosMod.SPELL_PAGE.get()));
-        table(h, TABLE.east(4), ItemStack.EMPTY);
+        InscriptionTableBlockEntity emptied = table(h, TABLE.east(4), new ItemStack(LogosMod.SPELL_PAGE.get()));
         BlockPos pos = h.absolutePos(TABLE), bare = h.absolutePos(TABLE.east(4));
         String source = "(spell :name \"先查后编\" :mana 5 (potion caster speed 1))";
         int[] compiled = {0};
@@ -128,14 +128,19 @@ final class EditPayloadGameTests {
             return real.test(id);
         };
         try {
-            InscribePayload.handle(new InscribePayload(pos, source, drawing("远"), ""), from(playerAt(h, 1.5, 10.5)));
+            ServerPlayer far = playerAt(h, 1.5, 10.5);
+            EditAccessGameTests.rightClick(far, pos);
+            InscribePayload.handle(new InscribePayload(pos, source, drawing("远"), ""), from(far));
             h.assertTrue(compiled[0] == 0, "a packet from away from the table was compiled");
             h.assertTrue(!SpellPages.isInscribed(table.page()), "a packet from away from the table wrote the page");
 
             ServerPlayer near = playerAt(h, 3.5, 1.5);
+            EditAccessGameTests.rightClick(near, bare);
+            emptied.setPage(ItemStack.EMPTY);
             InscribePayload.handle(new InscribePayload(bare, source, drawing("空"), ""), from(near));
             h.assertTrue(compiled[0] == 0, "a packet for a table with no page was compiled");
 
+            EditAccessGameTests.rightClick(near, pos);
             InscribePayload.handle(new InscribePayload(pos, source, drawing("近"), ""), from(near));
             h.assertTrue(compiled[0] > 0, "the watch on the compiler saw nothing, so the checks above prove nothing");
             h.assertTrue(SpellPages.isInscribed(table.page()) && "先查后编".equals(SpellPages.spell(table.page()).name()), "a proper inscribe did not write the page");
@@ -156,6 +161,7 @@ final class EditPayloadGameTests {
         InscriptionTableBlockEntity table = table(h, TABLE, written);
         BlockPos pos = h.absolutePos(TABLE);
         ServerPlayer p = playerAt(h, 3.5, 1.5);
+        EditAccessGameTests.rightClick(p, pos);
 
         for (CompoundTag tooLarge : new CompoundTag[] {bytes(EditLimits.MAX_GRAPH_BYTES + 1), nodes(EditLimits.MAX_GRAPH_NODES + 1)}) {
             InscribePayload.handle(new InscribePayload(pos, spell("新"), tooLarge, ""), from(p));
@@ -170,6 +176,7 @@ final class EditPayloadGameTests {
         SpellEmitterBlockEntity emitter = (SpellEmitterBlockEntity) h.getBlockEntity(at, SpellEmitterBlockEntity.class);
         emitter.setPage(SpellPages.inscribed(PageTier.CRYSTAL, spell("旧"), drawing("旧")), null);
         ServerPlayer q = playerAt(h, 4.5, 1.5);
+        EditAccessGameTests.rightClick(q, h.absolutePos(at));
         EmitterEditPayload.handle(new EmitterEditPayload(h.absolutePos(at), spell("新"), bytes(EditLimits.MAX_GRAPH_BYTES + 1), SpecialNodes.EmitterMode.PULSE, 1, false), from(q));
         h.assertTrue("旧".equals(SpellPages.spell(emitter.page()).name()), "an oversized drawing rewrote the emitter's spell");
         EmitterEditPayload.handle(new EmitterEditPayload(h.absolutePos(at), spell("新"), drawing("新"), SpecialNodes.EmitterMode.PULSE, 1, false), from(q));
@@ -204,6 +211,7 @@ final class EditPayloadGameTests {
         ItemResource diamond = ItemResource.of(Items.DIAMOND);
         BlockPos pos = h.absolutePos(AlchemyGameTests.MAIN);
         ServerPlayer p = playerAt(h, 1.5, 2.5);
+        EditAccessGameTests.openMenu(p, pos);
 
         AlchemyCardPayload.handle(AlchemyCardPayload.route(pos, 0, diamond, ProcessCard.PRODUCTS), from(p));
         h.assertTrue(card.route(diamond) == ProcessCard.KEEP, "a kind this card does not make was wired");
@@ -249,19 +257,23 @@ final class EditPayloadGameTests {
         InscriptionTableBlockEntity table = table(h, TABLE, new ItemStack(LogosMod.SPELL_PAGE.get()));
         BlockPos pos = h.absolutePos(TABLE);
         ServerPlayer p = playerAt(h, 3.5, 1.5);
+        EditAccessGameTests.rightClick(p, pos);
         for (int i = 0; i < 5; i++) {
             InscribePayload.handle(new InscribePayload(pos, spell("第" + i), drawing("第" + i), ""), from(p));
             h.assertTrue(("第" + i).equals(SpellPages.spell(table.page()).name()), "save " + i + " of a short burst was dropped");
         }
         InscribePayload.handle(new InscribePayload(pos, spell("多"), drawing("多"), ""), from(p));
         h.assertTrue("第4".equals(SpellPages.spell(table.page()).name()), "a save past the burst was not dropped");
-        InscribePayload.handle(new InscribePayload(pos, spell("他"), drawing("他"), ""), from(playerAt(h, 3.5, 2.5)));
+        ServerPlayer other = playerAt(h, 3.5, 2.5);
+        EditAccessGameTests.rightClick(other, pos);
+        InscribePayload.handle(new InscribePayload(pos, spell("他"), drawing("他"), ""), from(other));
         h.assertTrue("他".equals(SpellPages.spell(table.page()).name()), "one player's pace held another back");
 
         AlchemyTableBlockEntity alchemy = AlchemyGameTests.placeTable(h);
         ProcessCard card = alchemy.addCard(Process.FERMENT);
         BlockPos at = h.absolutePos(AlchemyGameTests.MAIN);
         ServerPlayer q = playerAt(h, 1.5, 2.5);
+        EditAccessGameTests.openMenu(q, at);
         for (int i = 0; i < 30; i++) AlchemyCardPayload.handle(AlchemyCardPayload.move(at, 0, 10 + i, 10), from(q));
         h.assertTrue(card.x() == AlchemyTableUI.clampX(39), "a burst of 30 card edits was cut short at x=" + card.x());
         AlchemyCardPayload.handle(AlchemyCardPayload.move(at, 0, 0, 10), from(q));

@@ -3,23 +3,30 @@ package dev.logos.net;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
+import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
+import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * What the server holds client edits to. A spell's drawing is kept on the page and travels with it
- * (in wands, chests and chunk data), so it has to stay a sane size; and one player's edits may only
- * come so fast, since each is compiled and saved on the server thread.
+ * What the server holds client edits to. An edit must come from someone near the block, with its
+ * interface really open, in a place they may change. A spell's drawing is kept on the page and travels
+ * with it (in wands, chests and chunk data), so it has to stay a sane size; and one player's edits may
+ * only come so fast, since each is compiled and saved on the server thread.
  */
 public final class EditLimits {
     /**
@@ -37,7 +44,49 @@ public final class EditLimits {
     /** Laying and wiring alchemy cards: each is a single click or drop, faster than anyone works by hand. */
     static final Throttle CARD_EDITS = new Throttle(30, 2);
 
+    /** How far, squared, from a block's centre an open interface still counts, whatever the player's reach: room to drift while drawing. */
+    private static final double DRIFT_SQR = 8 * 8;
+
+    /** The block each player last opened a client-only editor on. The server hears when one opens, never when it closes. */
+    private static final Map<ServerPlayer, WeakReference<BlockEntity>> EDITORS = new WeakHashMap<>();
+
     private EditLimits() {}
+
+    /** Whether {@code player} may change this block (spawn protection, claims, adventure mode…). */
+    public static boolean mayEdit(ServerPlayer player, Level level, BlockPos pos) {
+        return level.mayInteract(player, pos) && !player.blockActionRestricted(level, pos, player.gameMode.getGameModeForPlayer());
+    }
+
+    /**
+     * Records that a right-click opened a client-only editor on {@code block}. Called from the block's
+     * use method on the server, which claim mods can stop, so an edit without it never asked them.
+     */
+    public static void editorOpened(ServerPlayer player, BlockEntity block) {
+        // A respawned player equals their old body, and put alone would leave that dying body as the weak key.
+        EDITORS.remove(player);
+        EDITORS.put(player, new WeakReference<>(block));
+    }
+
+    /** Whether an edit to the block at {@code pos} goes ahead; if not, {@code player} is told why. */
+    public static boolean admit(ServerPlayer player, BlockPos pos) {
+        // Reach first: everything after it reads the block, which would load a far chunk.
+        if (inReach(player, pos) && interfaceOpen(player, pos) && mayEdit(player, player.level(), pos)) return true;
+        player.sendOverlayMessage(Component.translatable("logos.editor.edit_refused").withStyle(ChatFormatting.YELLOW));
+        return false;
+    }
+
+    /** The larger of the drift allowance and the player's own reach, so no one can open what they cannot then save to. */
+    private static boolean inReach(ServerPlayer player, BlockPos pos) {
+        return player.distanceToSqr(pos.getCenter()) <= DRIFT_SQR || player.isWithinBlockInteractionRange(pos, 1.0);
+    }
+
+    /** A server-side menu on that block, or a client-only editor last opened on the very block now there. */
+    private static boolean interfaceOpen(ServerPlayer player, BlockPos pos) {
+        if (player.containerMenu instanceof ModularUIContainerMenu menu && menu.uiHolder instanceof BlockUIMenuType.BlockUIHolder holder && holder.pos.equals(pos)) return true;
+        WeakReference<BlockEntity> editor = EDITORS.get(player);
+        BlockEntity here = editor == null ? null : player.level().getBlockEntity(pos);
+        return here != null && editor.get() == here;
+    }
 
     /** Whether a drawing may be kept on a page. */
     public static boolean fits(CompoundTag graph) {

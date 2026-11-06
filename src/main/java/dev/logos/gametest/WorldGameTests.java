@@ -756,6 +756,7 @@ final class WorldGameTests {
         h.assertTrue(h.getBlockState(rel).getValue(InscriptionTableBlock.PAGE) == InscriptionTableBlock.Page.BLANK, "the board should show a blank sheet");
         CompoundTag graph = new CompoundTag();
         graph.putString("marker", "drawn");
+        EditAccessGameTests.rightClick(p, pos);
         boolean ok = InscriptionTableBlock.inscribe(p, pos, "(spell :name \"刻\" :mana 5 (heal caster 1))", graph) != null;
         h.assertTrue(ok, "inscribing should succeed");
         h.assertTrue(SpellPages.isInscribed(table.page()), "the page should now be inscribed");

@@ -143,12 +143,13 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
             return InteractionResult.SUCCESS;
         }
         if (level.isClientSide()) dev.logos.client.ClientHooks.openTableEditor(pos, table.page().copy());
+        else if (player instanceof ServerPlayer sp) dev.logos.net.EditLimits.editorOpened(sp, table);
         return InteractionResult.SUCCESS;
     }
 
-    /** Whether {@code player} is close enough to a table at {@code pos} that has a page lying on it. */
+    /** Whether {@code player} may edit a table at {@code pos} that has a page lying on it. */
     public static boolean canInscribe(ServerPlayer player, BlockPos pos) {
-        return player.distanceToSqr(pos.getCenter()) <= 64
+        return dev.logos.net.EditLimits.admit(player, pos)
                 && player.level().getBlockEntity(pos) instanceof InscriptionTableBlockEntity table && !table.page().isEmpty();
     }
 
