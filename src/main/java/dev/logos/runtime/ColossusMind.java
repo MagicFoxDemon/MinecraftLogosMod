@@ -1,10 +1,7 @@
 package dev.logos.runtime;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
@@ -27,7 +24,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.CrossbowAttackMob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.RangedAttackMob;
@@ -49,9 +45,7 @@ import net.neoforged.neoforge.common.Tags;
  * Everything it does with its whole body is a {@link Sequence} of animations timed on the server
  * ({@link Act}); while one runs it does nothing else. In a frenzy it turns on whatever is near.
  */
-public final class ColossusMind extends Goal {
-    static final int THINK_EVERY = 10;
-    private static final double HYSTERESIS = 0.1;
+public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     static final double WALK = 0.6, RUN = 1.0;
     /** Reach of its hands, measured from its edge to the target's. */
     static final double MELEE = 2.6;
@@ -69,10 +63,7 @@ public final class ColossusMind extends Goal {
             Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossus_heavy"));
 
     private final AlchemicalColossus c;
-    private final List<Behavior> behaviors = new ArrayList<>();
-    private @Nullable Behavior current;
     private @Nullable Sequence sequence;
-    private final Map<Behavior, Double> lastScores = new LinkedHashMap<>();
 
     private @Nullable Player master;
     private @Nullable LivingEntity foe;
@@ -91,6 +82,7 @@ public final class ColossusMind extends Goal {
     private @Nullable Vec3 lastFeet;
 
     ColossusMind(AlchemicalColossus c) {
+        super(c, 0);
         this.c = c;
         setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK, Flag.JUMP));
         behaviors.add(new Errand());
@@ -116,18 +108,12 @@ public final class ColossusMind extends Goal {
     }
 
     @Override
-    public boolean requiresUpdateEveryTick() {
-        return true;
-    }
-
-    @Override
     public void stop() {
         abortAll();
     }
 
     @Override
     public void tick() {
-        long now = c.level().getGameTime();
         if (sequence != null) {
             if (!sequence.tick()) sequence = null;
             return;
@@ -141,11 +127,7 @@ public final class ColossusMind extends Goal {
             }
             return;
         }
-        if (current == null || now % THINK_EVERY == 0) {
-            sense();
-            think();
-        }
-        if (current != null) current.tick(now);
+        thinkAndAct();
     }
 
     /** Drops whatever it is doing and lets go of anything in its hand (riders stay seated). */
@@ -177,22 +159,17 @@ public final class ColossusMind extends Goal {
         return c.isRunning() ? 4 : 2;
     }
 
+    @Override
     public String doingZh() {
         if (sequence != null) return sequence.zh;
         if (c.driver() != null) return "听从驾驶";
         return current == null ? "待命" : current.zh;
     }
 
-    public String describe() {
-        StringBuilder sb = new StringBuilder("正在" + doingZh() + "｜");
-        lastScores.entrySet().stream().sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                .forEach(e -> sb.append(e.getKey().zh).append(' ').append(String.format("%.2f", e.getValue())).append("  "));
-        return sb.toString().strip();
-    }
-
     // ---- sensing --------------------------------------------------------------------------------
 
-    private void sense() {
+    @Override
+    void sense() {
         UUID id = Familiars.masterOf(c);
         master = id == null ? null : c.level().getPlayerByUUID(id);
         if (c.isBerserk()) {
@@ -256,26 +233,6 @@ public final class ColossusMind extends Goal {
             }
         }
         return best;
-    }
-
-    private void think() {
-        Behavior best = null;
-        double bestScore = 0;
-        lastScores.clear();
-        for (Behavior b : behaviors) {
-            double s = b.score();
-            lastScores.put(b, s);
-            if (b == current && s > 0) s += HYSTERESIS;
-            if (s > bestScore) {
-                best = b;
-                bestScore = s;
-            }
-        }
-        if (best != current) {
-            if (current != null) current.stop();
-            current = best;
-            if (current != null) current.start();
-        }
     }
 
     // ---- moving -----------------------------------------------------------------------------------
@@ -518,22 +475,6 @@ public final class ColossusMind extends Goal {
     }
 
     // ---- behaviours -------------------------------------------------------------------------------
-
-    private abstract static class Behavior {
-        final String zh;
-
-        Behavior(String zh) {
-            this.zh = zh;
-        }
-
-        abstract double score();
-
-        void start() {}
-
-        abstract void tick(long now);
-
-        void stop() {}
-    }
 
     /** gather: off to where it was sent. */
     private final class Errand extends Behavior {
