@@ -4,7 +4,6 @@ import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Examples;
-import dev.logos.lang.LogosError;
 import dev.logos.lang.Spell;
 import dev.logos.runtime.Casting;
 import net.minecraft.core.component.DataComponents;
@@ -95,11 +94,6 @@ public final class SpellPages {
     }
 
     private static @Nullable Spell spell(@Nullable String src) {
-        if (src == null) return null;
-        try {
-            return Casting.compile(src);
-        } catch (LogosError e) {
-            return null;
-        }
+        return src == null ? null : Casting.compileOrNull(src);
     }
 }

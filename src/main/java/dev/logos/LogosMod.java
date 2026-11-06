@@ -872,6 +872,10 @@ public class LogosMod {
             var key = net.minecraft.resources.Identifier.tryParse(id);
             return key != null && net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.containsKey(key);
         };
+        // Spells are checked against the config's limits and those registries. The registries settle by the end of
+        // loading and stay settled (a server's snapshot only renumbers them); the limits can change whenever the file does.
+        modBus.addListener((net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent e) -> dev.logos.runtime.Casting.invalidate());
+        modBus.addListener((net.neoforged.fml.event.config.ModConfigEvent.Reloading e) -> dev.logos.runtime.Casting.invalidate());
         dev.logos.gametest.LogosGameTests.register(modBus);
         NeoForge.EVENT_BUS.register(this);
     }

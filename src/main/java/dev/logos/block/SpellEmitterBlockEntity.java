@@ -77,6 +77,11 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
     private boolean pending;
     private int timer;
     private @Nullable Shadow shadow;
+    /** The page's active spell (null if it has none, or it does not compile), kept because it is read every tick. */
+    private @Nullable Spell held;
+    /** The {@link Casting#generation} {@link #held} was read at; {@link #NOT_HELD} once the page has changed. */
+    private int heldAt = NOT_HELD;
+    private static final int NOT_HELD = -1;
 
     public SpellEmitterBlockEntity(BlockPos pos, BlockState state) {
         super(LogosMod.SPELL_EMITTER_BE.get(), pos, state);
@@ -138,6 +143,7 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
     /** Puts in or takes out the page; whatever was charged for the old page goes back into the store. */
     public void setPage(ItemStack stack, @Nullable Player by) {
         page = stack;
+        heldAt = NOT_HELD;
         refund();
         if (by != null) ownerStability = PlayerMagic.of(by).stability;
         changed();
@@ -179,8 +185,13 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
 
     /** The active spell on its page, or null. */
     public @Nullable Spell spell() {
-        Spell s = SpellPages.isInscribed(page) ? SpellPages.spell(page) : null;
-        return s == null || s.isPassive() ? null : s;
+        int generation = Casting.generation();
+        if (heldAt != generation) {
+            Spell s = SpellPages.isInscribed(page) ? SpellPages.spell(page) : null;
+            held = s == null || s.isPassive() ? null : s;
+            heldAt = generation;
+        }
+        return held;
     }
 
     private PageTier tier() {
@@ -309,6 +320,7 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         page = input.read("page", ItemStack.CODEC).orElse(ItemStack.EMPTY);
+        heldAt = NOT_HELD;
         mana = input.getDoubleOr("mana", 0);
         injected = input.getDoubleOr("injected", 0);
         done = input.getIntOr("done", 0);
@@ -336,6 +348,7 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
         if (level == null) return;
         if (!page.isEmpty()) Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, page);
         page = ItemStack.EMPTY;
+        heldAt = NOT_HELD;
         if (level instanceof ServerLevel server && mana + injected > 0) FreeManaEntity.release(server, pos.getCenter(), mana + injected);
         mana = 0;
         injected = 0;
