@@ -43,7 +43,7 @@ public final class ManaHud {
         double source = m.mana;
         int stored = 0, capacity = 0;
         if (wand.getItem() instanceof StaffItem staff) {
-            source = StaffItem.stored(wand);
+            source = StaffCharging.held(sp, wand);
             stored = (int) source;
             capacity = (int) staff.capacity();
         }

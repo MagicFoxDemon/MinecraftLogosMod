@@ -57,6 +57,7 @@ public final class LogosGameTests {
             "alchemy_table_halves", "alchemy_table_automation", "alchemy_table_tank", "alchemy_table_mana", "alchemy_table_bottles", "alchemy_table_free_mana",
             "edit_inscribe_checks_before_compiling", "edit_oversized_graph_refused", "edit_route_takes_only_made_products", "edit_packets_throttled", "edit_deep_spell_runs",
             "spell_modifier_element_power", "spell_modifier_resistance", "spell_modifier_fire_is_vanilla_fire", "spell_modifier_arcane_damage", "spell_modifier_creature_life_damage",
+            "staff_fill_no_item_sync", "staff_fill_switching_staffs", "staff_fill_spends_only_its_own", "staff_fill_thrown", "staff_fill_moved_as_copy", "staff_fill_death", "staff_fill_logout", "staff_fill_saved_midway",
             "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "spell_modifier_heal_power", "spell_modifier_vulnerability", "spell_modifier_void_out_of_world_option", "spell_modifier_void_true_damage", "spell_modifier_void_on_players", "spell_modifier_void_absorption_option", "spell_modifier_void_totem_option", "spell_modifier_void_creature_cuts", "spell_modifier_execute_is_void",
             "buff_potions_brew", "buff_potions_dissolve", "buff_potions_effects", "element_effects_every_element", "herbs_grow_in_jars",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
@@ -317,6 +318,14 @@ public final class LogosGameTests {
         FUNCTIONS.register("voice_chant_repeats_the_named_spell", () -> VoiceGameTests::chantRepeatsTheNamedSpell);
         FUNCTIONS.register("voice_written_page_keeps_its_name", () -> VoiceGameTests::writtenPageKeepsItsName);
         FUNCTIONS.register("world_table_inscribes", () -> WorldGameTests::tableInscribes);
+        FUNCTIONS.register("staff_fill_no_item_sync", () -> StaffSyncGameTests::fillSendsNoItemUpdates);
+        FUNCTIONS.register("staff_fill_switching_staffs", () -> StaffSyncGameTests::switchingStaffs);
+        FUNCTIONS.register("staff_fill_spends_only_its_own", () -> StaffSyncGameTests::spendsOnlyItsOwn);
+        FUNCTIONS.register("staff_fill_thrown", () -> StaffSyncGameTests::thrown);
+        FUNCTIONS.register("staff_fill_moved_as_copy", () -> StaffSyncGameTests::movedAsCopy);
+        FUNCTIONS.register("staff_fill_death", () -> StaffSyncGameTests::death);
+        FUNCTIONS.register("staff_fill_logout", () -> StaffSyncGameTests::logout);
+        FUNCTIONS.register("staff_fill_saved_midway", () -> StaffSyncGameTests::savedMidway);
         FUNCTIONS.register("passive_codex_without_wand", () -> RuneGameTests::codexPassiveWithoutWand);
         FUNCTIONS.register("rune_disarm_order", () -> RuneGameTests::disarmOrder);
         FUNCTIONS.register("rune_equip_order", () -> RuneGameTests::equipOrder);

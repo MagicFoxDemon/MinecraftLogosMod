@@ -17,6 +17,7 @@ import dev.logos.item.StaffItem;
 import dev.logos.lang.Element;
 import dev.logos.lang.Status;
 import dev.logos.runtime.PlayerMagic;
+import dev.logos.runtime.StaffCharging;
 import dev.logos.runtime.StatusData;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
@@ -70,10 +71,16 @@ public class StaffChargeScenario implements UIScenario {
                         throw new AssertionError("the charge effects should show a part-filled staff");
                     if (ring.element != Element.ARCANE || ring.tier != 0) throw new AssertionError("under 100 held is an ordinary charge in the spell's element");
                     tipNearHand(player, "first person");
+                    ItemStack held = player.getMainHandItem();
+                    double shown = StaffItem.stored(held);
+                    if (shown <= 0 || shown >= 100 || !held.isBarVisible() || held.getBarWidth() >= 13)
+                        throw new AssertionError("the bar under the staff should follow the fill, showing " + shown);
                 })
-                .server("part-way filled", sc -> {
-                    double stored = StaffItem.stored(sc.player().getMainHandItem());
+                .server("part-way filled, not yet on the item", sc -> {
+                    ItemStack held = sc.player().getMainHandItem();
+                    double stored = StaffCharging.held(sc.player(), held);
                     if (stored <= 0 || stored >= 100) throw new AssertionError("expected a part-filled staff, got " + stored);
+                    if (StaffItem.stored(held) != 0) throw new AssertionError("a fill under way should not write the item, it holds " + StaffItem.stored(held));
                 })
                 .screenshot("filling")
                 .ticks(50)
@@ -85,6 +92,8 @@ public class StaffChargeScenario implements UIScenario {
                 .step("full and graded by what it holds", ctx -> {
                     var ring = ClientCharges.of(Minecraft.getInstance().player);
                     if (ring == null || !ring.full || ring.tier != 1) throw new AssertionError("150 held is a full, elaborate charge");
+                    ItemStack held = Minecraft.getInstance().player.getMainHandItem();
+                    if (Math.abs(StaffItem.stored(held) - 150) > 1e-6 || held.getBarWidth() != 13) throw new AssertionError("the bar should show a full staff, showing " + StaffItem.stored(held));
                 })
                 .screenshot("filled")
                 .step("look from the front", ctx -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT))
