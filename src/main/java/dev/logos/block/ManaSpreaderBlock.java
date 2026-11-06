@@ -69,16 +69,21 @@ public class ManaSpreaderBlock extends HorizontalDirectionalBlock implements Ent
         if (state.getValue(ACTIVE) != on) level.setBlock(pos, state.setValue(ACTIVE, on), Block.UPDATE_CLIENTS);
     }
 
+    /** A mana device's ticker: its block entity's server tick, and nothing on clients. */
+    @SuppressWarnings("unchecked")
+    static <T extends BlockEntity, E extends BlockEntity> @Nullable BlockEntityTicker<T> serverTicker(Level level, BlockEntityType<T> type,
+            BlockEntityType<E> own, BlockEntityTicker<E> ticker) {
+        return level.isClientSide() || type != own ? null : (BlockEntityTicker<T>) ticker;
+    }
+
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ManaSpreaderBlockEntity(pos, state);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide() || type != LogosMod.MANA_SPREADER_BE.get()) return null;
-        return (BlockEntityTicker<T>) (BlockEntityTicker<ManaSpreaderBlockEntity>) ManaSpreaderBlockEntity::serverTick;
+        return serverTicker(level, type, LogosMod.MANA_SPREADER_BE.get(), ManaSpreaderBlockEntity::serverTick);
     }
 
     /** Mana fuel in hand goes into the drawer, as much as fits. */

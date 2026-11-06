@@ -48,10 +48,8 @@ public class ManaStorageTankBlock extends BaseEntityBlock implements BlockUIMenu
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide() || type != LogosMod.MANA_STORAGE_TANK_BE.get()) return null;
-        return (BlockEntityTicker<T>) (BlockEntityTicker<ManaStorageTankBlockEntity>) ManaStorageTankBlockEntity::serverTick;
+        return ManaSpreaderBlock.serverTicker(level, type, LogosMod.MANA_STORAGE_TANK_BE.get(), ManaStorageTankBlockEntity::serverTick);
     }
 
     /** A mana item in hand goes into the input, as much as fits. */

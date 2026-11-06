@@ -18,6 +18,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import dev.logos.client.AlchemyArt;
 import dev.logos.client.ManaScreens;
 import dev.logos.runtime.ManaField;
+import dev.logos.runtime.ManaVessel;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import dev.vfyjxf.taffy.style.AlignContent;
@@ -29,12 +30,14 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 
 /**
  * The screens of the mana spreader and the mana collector: a ledger page on the bench, as the alchemy
  * table keeps its storage. The spreader's shows its fuel drawer, its mana and a map of the 5×5 chunks
- * around it; the collector's its mana, its chunk's field, and a gauge of what it draws.
+ * around it; the collector's its mana, its chunk's field, and a gauge of what it draws. The cultivation
+ * jar's and the storage tank's screens are built from the same small pieces below.
  */
 public final class ManaDeviceUI {
     private static final int MANA_COLOUR = 0xFF9FD3EE;
@@ -47,13 +50,9 @@ public final class ManaDeviceUI {
         if (!(player.level().getBlockEntity(holder.pos) instanceof ManaSpreaderBlockEntity spreader)) return ModularUI.of(UI.of(new UIElement()), player);
         Level level = player.level();
         BlockPos pos = holder.pos;
-        ItemSlot fuel = new ItemSlot();
-        fuel.setId("fuel");
-        fuel.bind(new ResourceHandlerSlot(spreader.fuel(), spreader.fuel()::set, 0, 0, 0));
-        Label manaText = new Label();
-        manaText.bind(DataBindingBuilder.componentS2C(() -> Component.translatable("logos.mana_device.mana", (int) spreader.mana(),
-                (int) ManaSpreaderBlockEntity.MAX_MANA)).build());
-        ProgressBar gauge = gauge(() -> (float) spreader.mana(), (float) ManaSpreaderBlockEntity.MAX_MANA, 120);
+        ItemSlot fuel = slot(spreader.fuel(), 0, "fuel");
+        Label manaText = manaText(spreader);
+        ProgressBar gauge = gauge(spreader, 120);
         gauge.setId("mana_gauge");
 
         // The survey of the chunks around it, worked out at most once a second and only while the screen is open.
@@ -93,10 +92,8 @@ public final class ManaDeviceUI {
         if (!(player.level().getBlockEntity(holder.pos) instanceof ManaCollectorBlockEntity collector)) return ModularUI.of(UI.of(new UIElement()), player);
         Level level = player.level();
         BlockPos pos = holder.pos;
-        Label manaText = new Label();
-        manaText.bind(DataBindingBuilder.componentS2C(() -> Component.translatable("logos.mana_device.mana", (int) collector.mana(),
-                (int) ManaCollectorBlockEntity.MAX_MANA)).build());
-        ProgressBar gauge = gauge(() -> (float) collector.mana(), (float) ManaCollectorBlockEntity.MAX_MANA, 148);
+        Label manaText = manaText(collector);
+        ProgressBar gauge = gauge(collector, 148);
         gauge.setId("mana_gauge");
         Label field = new Label();
         field.setId("collector_field");
@@ -163,10 +160,44 @@ public final class ManaDeviceUI {
         return value;
     }
 
-    static ProgressBar gauge(Supplier<Float> value, float max, int width) {
+    /** A line of text the server keeps up to date. */
+    static Label line(String id, Supplier<Component> text) {
+        Label label = new Label();
+        label.setId(id);
+        label.bind(DataBindingBuilder.componentS2C(text).build());
+        return label;
+    }
+
+    /** A device's "mana: held / most" line. */
+    static Label manaText(ManaVessel vessel) {
+        Label label = new Label();
+        label.bind(DataBindingBuilder.componentS2C(() -> Component.translatable("logos.mana_device.mana", (int) vessel.mana(),
+                (int) vessel.maxMana())).build());
+        return label;
+    }
+
+    static ItemSlot slot(ItemStacksResourceHandler handler, int index, String id) {
+        ItemSlot slot = new ItemSlot();
+        slot.setId(id);
+        slot.bind(new ResourceHandlerSlot(handler, handler::set, index, 0, 0));
+        return slot;
+    }
+
+    static ProgressBar gauge(ManaVessel vessel, int width) {
+        return bar(() -> (float) vessel.mana(), (float) vessel.maxMana(), MANA_COLOUR, width);
+    }
+
+    /** How far something has grown, 0 to 1: a bar centred on the slots either side of it. */
+    static UIElement growthBar(String id, Supplier<Float> value, int colour, int width) {
+        ProgressBar growth = bar(value, 1, colour, width);
+        growth.setId(id);
+        return new UIElement().layout(l -> l.height(18).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER)).addChildren(growth);
+    }
+
+    private static ProgressBar bar(Supplier<Float> value, float max, int colour, int width) {
         ProgressBar bar = new ProgressBar().setRange(0, max);
         bar.label(l -> l.setText(Component.empty()));
-        bar.bar(b -> b.style(s -> s.background(new ColorRectTexture(MANA_COLOUR))));
+        bar.bar(b -> b.style(s -> s.background(new ColorRectTexture(colour))));
         bar.bind(DataBindingBuilder.floatValS2C(value).build());
         bar.layout(l -> l.width(width).height(12));
         return bar;
