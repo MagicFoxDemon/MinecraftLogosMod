@@ -1,8 +1,11 @@
 package dev.logos.runtime;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import dev.logos.LogosMod;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 
@@ -10,6 +13,9 @@ import net.minecraft.world.phys.Vec3;
 public final class SpellRuntime {
     /** Very deep recursion (a large maxRecursion) can exhaust the Java stack; the spell ends, the server does not. */
     static final String STACK_OVERFLOW = "法则失稳：递归过深，世界无法承载（Java 栈溢出）";
+    /** Ticks before the same failure may log its stack again; and how many failures are remembered for that. */
+    private static final long REPORT_EVERY = 1200;
+    private static final int REPORTS_KEPT = 256;
 
     private record Task(SpellInstance inst, long due, Runnable action) {}
 
@@ -17,12 +23,41 @@ public final class SpellRuntime {
     private static final List<SpellObject> SPAWNED = new ArrayList<>();
     private static final List<Task> TASKS = new ArrayList<>();
     private static final List<Task> SCHEDULED = new ArrayList<>();
+    /** When each failure last logged its stack; see {@link #report}. */
+    private static final Map<String, Long> REPORTED = new HashMap<>();
     private static long now;
 
     private SpellRuntime() {}
 
     public static long now() {
         return now;
+    }
+
+    /**
+     * Runs spell code that may be called from anywhere (an event, a deferred task, another spell): a crash in it
+     * extinguishes {@code inst} and is logged, instead of reaching the caller, which may be the server's tick.
+     */
+    public static void guard(SpellInstance inst, Runnable body) {
+        try {
+            body.run();
+        } catch (StackOverflowError | RuntimeException e) {
+            crashed(inst, e);
+        }
+    }
+
+    private static void crashed(SpellInstance inst, Throwable e) {
+        report("Spell " + inst.spell.name(), e);
+        inst.terminate(e instanceof StackOverflowError ? STACK_OVERFLOW : "运行错误: " + e);
+    }
+
+    /** Logs {@code e}'s stack, but only once in a while for {@code what}, so what keeps failing does not fill the log. */
+    public static void report(String what, Throwable e) {
+        String key = what + " " + e.getClass().getName();
+        Long last = REPORTED.get(key);
+        if (last != null && now - last < REPORT_EVERY) return;
+        if (REPORTED.size() >= REPORTS_KEPT) REPORTED.clear();
+        REPORTED.put(key, now);
+        LogosMod.LOGGER.error("{} crashed", what, e);
     }
 
     public static void spawn(SpellObject obj) {
@@ -58,10 +93,8 @@ public final class SpellRuntime {
             TASKS.remove(i--);
             try {
                 if (!t.inst.dead) t.action.run();
-            } catch (StackOverflowError e) {
-                t.inst.terminate(STACK_OVERFLOW);
-            } catch (RuntimeException e) {
-                t.inst.terminate("运行错误: " + e);
+            } catch (StackOverflowError | RuntimeException e) {
+                crashed(t.inst, e);
             }
             t.inst.release();
         }
@@ -73,11 +106,8 @@ public final class SpellRuntime {
                     o.inst.touch(o.level, o.pos);
                     o.tick();
                 }
-            } catch (StackOverflowError e) {
-                o.inst.terminate(STACK_OVERFLOW);
-                o.dissolve();
-            } catch (RuntimeException e) {
-                o.inst.terminate("运行错误: " + e);
+            } catch (StackOverflowError | RuntimeException e) {
+                crashed(o.inst, e);
                 o.dissolve();
             }
         }
@@ -103,5 +133,6 @@ public final class SpellRuntime {
         SPAWNED.clear();
         TASKS.clear();
         SCHEDULED.clear();
+        REPORTED.clear();
     }
 }

@@ -39,13 +39,16 @@ public abstract class SpellObject {
         return ctx.aim();
     }
 
-    /** Ends normally, emitting {@code on-expire} at the final position. */
+    /**
+     * Ends normally, emitting {@code on-expire} at the final position. Another spell can end this one (a new wrap
+     * replacing the old), so a crash here stays with this spell, and the books are settled whatever happens.
+     */
     protected void end() {
         if (ended) return;
         ended = true;
         inst.touch(level, pos);
-        onEnded();
-        Interp.fire(node, "on-expire", ctx.at(pos).aiming(heading()));
+        SpellRuntime.guard(inst, this::onEnded);
+        SpellRuntime.guard(inst, () -> Interp.fire(node, "on-expire", ctx.at(pos).aiming(heading())));
         inst.objects--;
         inst.release();
     }
@@ -54,7 +57,7 @@ public abstract class SpellObject {
     void dissolve() {
         if (ended) return;
         ended = true;
-        onEnded();
+        SpellRuntime.guard(inst, this::onEnded);
         inst.objects--;
         inst.release();
     }

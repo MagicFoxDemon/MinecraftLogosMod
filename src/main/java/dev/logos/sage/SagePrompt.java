@@ -92,8 +92,9 @@ public final class SagePrompt {
         String file = lang != null && lang.toLowerCase(Locale.ROOT).startsWith("zh") ? "persona_zh.txt" : "persona_en.txt";
         try (InputStream in = SagePrompt.class.getResourceAsStream("/logos/sage/" + file)) {
             if (in != null) return new String(in.readAllBytes(), StandardCharsets.UTF_8).strip();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
             // fall through to the plain role
+            dev.logos.LogosMod.LOGGER.debug("Could not read sage persona {}", file, e);
         }
         return "You are the Book Sprite, a friendly guide to the Logos spell language.";
     }

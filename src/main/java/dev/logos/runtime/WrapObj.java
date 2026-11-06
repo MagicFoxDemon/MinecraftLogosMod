@@ -72,14 +72,16 @@ public final class WrapObj extends SpellObject {
     void hit(LivingEntity t, Vec3 here, Vec3 aim) {
         if (isEnded()) return;
         inst.touch(level, here);
-        Interp.fire(node, "on-hit", ctx.on(t, here).aiming(aim));
-        if (t.isDeadOrDying() && !isEnded()) Interp.fire(node, "on-kill", ctx.on(t, Targeting.center(t)).aiming(aim));
+        SpellRuntime.guard(inst, () -> {
+            Interp.fire(node, "on-hit", ctx.on(t, here).aiming(aim));
+            if (t.isDeadOrDying() && !isEnded()) Interp.fire(node, "on-kill", ctx.on(t, Targeting.center(t)).aiming(aim));
+        });
     }
 
     /** The hand swings, from {@code here} towards {@code aim}. */
     void swing(Vec3 here, Vec3 aim) {
         if (isEnded()) return;
-        Interp.fire(node, "on-swing", ctx.at(here).aiming(aim));
+        SpellRuntime.guard(inst, () -> Interp.fire(node, "on-swing", ctx.at(here).aiming(aim)));
     }
 
     /**
