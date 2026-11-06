@@ -1,6 +1,5 @@
 package dev.logos.runtime;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
@@ -15,6 +14,7 @@ import dev.logos.lang.Compiler;
 import dev.logos.lang.LogosError;
 import dev.logos.lang.Node;
 import dev.logos.lang.Spell;
+import dev.logos.lang.SpellCache;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -25,23 +25,29 @@ import net.minecraft.world.phys.Vec3;
 
 /** Entry points: compile (cached), pay, and start a spell instance. */
 public final class Casting {
-    private static final Map<String, Spell> CACHE = new LinkedHashMap<>(64, 0.75f, true) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<String, Spell> e) {
-            return size() > 128;
-        }
-    };
+    private static final SpellCache CACHE = new SpellCache(Compiler::compile);
 
     private Casting() {}
 
     /** @throws LogosError on syntax/type errors */
     public static Spell compile(String src) {
-        Spell s = CACHE.get(src);
-        if (s == null) {
-            s = Compiler.compile(src);
-            CACHE.put(src, s);
-        }
-        return s;
+        return CACHE.compile(src);
+    }
+
+    /** For reading a page: null if it does not compile, logged when first found out rather than on every read. */
+    public static @Nullable Spell compileOrNull(String src) {
+        return CACHE.read(src, e -> LogosMod.LOGGER.warn("A spell page does not compile: {} | {}", e.describe(),
+                src.substring(0, Math.min(src.length(), 200)).replaceAll("\\s+", " ")));
+    }
+
+    /** Forgets every compiled spell, because the limits or the registries they were checked against have changed. */
+    public static void invalidate() {
+        CACHE.invalidate();
+    }
+
+    /** Changes with each {@link #invalidate}: whoever keeps a compiled spell compiles again when it does. */
+    public static int generation() {
+        return CACHE.generation();
     }
 
     /**
