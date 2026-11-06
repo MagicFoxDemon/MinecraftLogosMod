@@ -159,6 +159,15 @@ public final class SpellInstance {
         if (finished) return;
         finished = true;
         if (endReason == null) endReason = "自然消散";
+        // Runs wherever a spell ends, even while handling a crash: what it reaches (another mod's join-level listener) must not get out.
+        try {
+            settle();
+        } catch (RuntimeException e) {
+            SpellRuntime.report("Ending spell " + spell.name(), e);
+        }
+    }
+
+    private void settle() {
         double free = endedNaturally() ? mana : mana * recovery;
         // A vessel that cast it (a mana lifeform) takes its leftover back; anyone else's goes free.
         if (caster instanceof ManaVessel vessel) vessel.receiveMana(free);

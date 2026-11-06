@@ -164,14 +164,7 @@ public final class Casting {
             if (gesture != null) CastPose.play(caster, gesture);
         }
         inst.hold();
-        try {
-            Interp.run(spell.body(), ctx);
-        } catch (StackOverflowError e) {
-            inst.terminate(SpellRuntime.STACK_OVERFLOW);
-        } catch (RuntimeException e) {
-            LogosMod.LOGGER.error("Spell {} crashed", spell.name(), e);
-            inst.terminate("运行错误: " + e);
-        }
+        SpellRuntime.guard(inst, () -> Interp.run(spell.body(), ctx));
         inst.release();
         return inst;
     }

@@ -238,7 +238,8 @@ public final class ConstructObj extends SpellObject implements SpellWard {
         BlockHitResult hit = g.clip(from, to);
         if (hit == null && !g.intersects(p.getBoundingBox())) return;
         passed.add(p.getUUID());
-        Interp.fire(node, "on-pass", ctx.on(p, hit != null ? hit.getLocation() : p.position()).aiming(heading(p)));
+        // Called from the projectile's own tick, outside the scheduler.
+        SpellRuntime.guard(inst, () -> Interp.fire(node, "on-pass", ctx.on(p, hit != null ? hit.getLocation() : p.position()).aiming(heading(p))));
     }
 
     /**
@@ -270,7 +271,8 @@ public final class ConstructObj extends SpellObject implements SpellWard {
         Vfx.sound(level, at, SoundEvents.AMETHYST_BLOCK_HIT, 0.8f, 1.4f);
         if (!inst.spend(BLOCK_COST, "炼成体拦截", dev.logos.lang.Category.FORM)) return true;
         absorb(Constructs.damageOf(p));
-        Interp.fire(node, "on-block", ctx.on(p, at).aiming(n));
+        // Called from the projectile's own tick, outside the scheduler.
+        SpellRuntime.guard(inst, () -> Interp.fire(node, "on-block", ctx.on(p, at).aiming(n)));
         return true;
     }
 

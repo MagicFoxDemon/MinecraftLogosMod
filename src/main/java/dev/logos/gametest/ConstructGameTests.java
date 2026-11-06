@@ -30,7 +30,7 @@ final class ConstructGameTests {
 
     private ConstructGameTests() {}
 
-    private static ServerPlayer caster(GameTestHelper h) {
+    static ServerPlayer caster(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 16; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
@@ -47,7 +47,7 @@ final class ConstructGameTests {
      * The test structure is a single block, so only its own chunk is sure to tick entities. Forces the
      * lane's chunks, waits until creatures out there would tick, then runs {@code body}.
      */
-    private static void inTickingLane(GameTestHelper h, Runnable body) {
+    static void inTickingLane(GameTestHelper h, Runnable body) {
         for (int x = -1; x <= 11; x += 4) for (int z = -1; z <= 19; z += 4) {
             BlockPos b = h.absolutePos(new BlockPos(x, 0, z));
             h.getLevel().setChunkForced(b.getX() >> 4, b.getZ() >> 4, true);
@@ -75,7 +75,7 @@ final class ConstructGameTests {
         return e;
     }
 
-    private static Arrow arrow(GameTestHelper h, double x, double y, double z, double vz) {
+    static Arrow arrow(GameTestHelper h, double x, double y, double z, double vz) {
         Vec3 at = h.absoluteVec(new Vec3(x, y, z));
         Arrow a = new Arrow(h.getLevel(), at.x, at.y, at.z, new ItemStack(Items.ARROW), null);
         a.setNoGravity(true);

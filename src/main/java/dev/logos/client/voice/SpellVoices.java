@@ -72,7 +72,8 @@ public final class SpellVoices {
                 try (Stream<Path> wavs = Files.list(folder)) {
                     for (Path f : wavs.filter(p -> p.toString().endsWith(".wav")).sorted().toList())
                         own.add(new Sample(f, Utterance.of(model, readWav(f))));
-                } catch (IOException ignored) {
+                } catch (IOException e) {
+                    dev.logos.LogosMod.LOGGER.debug("Skipping unreadable voice recordings in {}", folder.getFileName(), e);
                     continue;
                 }
                 folders.put(name, folder);

@@ -215,8 +215,9 @@ public final class Familiars {
         if (!inst.spend(m.getMaxHealth() * 2, "召唤" + name, dev.logos.lang.Category.EFFECT)) return null; // the spell itself reports running dry
         try {
             m.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(at)), EntitySpawnReason.MOB_SUMMONED, null);
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException e) {
             // A modded mob that cannot finish spawning this way still works as a plain body.
+            LogosMod.LOGGER.debug("Familiar {} could not finish spawning", name, e);
         }
         if (nickname != null && !nickname.isBlank()) {
             // Named, it can be picked out later: (familiar "name").

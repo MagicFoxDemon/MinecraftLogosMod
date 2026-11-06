@@ -985,7 +985,14 @@ public class LogosMod {
     public void onServerTick(ServerTickEvent.Post event) {
         List<Runnable> run = new ArrayList<>(DEFERRED);
         DEFERRED.clear();
-        run.forEach(Runnable::run);
+        // One failing task costs neither the others nor the running spells their tick.
+        for (Runnable r : run) {
+            try {
+                r.run();
+            } catch (StackOverflowError | RuntimeException e) {
+                SpellRuntime.report("Deferred task", e);
+            }
+        }
         SpellRuntime.tick();
     }
 
