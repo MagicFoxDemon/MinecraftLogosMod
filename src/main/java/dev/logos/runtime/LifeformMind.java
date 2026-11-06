@@ -9,7 +9,6 @@ import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
 
-import dev.logos.lang.Compiler;
 import dev.logos.lang.Element;
 import dev.logos.lang.Intent;
 import net.minecraft.core.BlockPos;
@@ -282,7 +281,7 @@ public final class LifeformMind extends Goal {
         chargeIn = 0;
         chargeDone = 0;
         chargeTicks = Charging.ticks(target, lf.channelFlow(), lf.channelSurge());
-        chargeElement = Compiler.inferElement(lf.spellIn(slot).body());
+        chargeElement = lf.spellIn(slot).element();
         chargeTier = Charging.tier(target);
         lf.setCasting(true);
         Charging.show(lf, chargeElement, chargeTier, 0, false);

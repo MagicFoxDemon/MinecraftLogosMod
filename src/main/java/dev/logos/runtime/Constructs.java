@@ -8,7 +8,6 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
-import dev.logos.lang.Category;
 import dev.logos.lang.Element;
 import dev.logos.lang.Node;
 import dev.logos.mixin.AbstractArrowAccessor;
@@ -102,27 +101,9 @@ public final class Constructs {
         return 0;
     }
 
-    /**
-     * The damage a spell body's {@code on-hit} deals to one target: the written amounts of its
-     * damage, drain and damage-all, not counting forms it launches in turn. Computed amounts are
-     * not known before the hit and count as 0.
-     */
+    /** The damage a spell body's {@code on-hit} deals to one target, as worked out when it was compiled ({@link Node#hitDamage}). */
     public static double hitDamage(Node form) {
-        double sum = 0;
-        for (Node n : form.events.getOrDefault("on-hit", List.of())) sum += writtenDamage(n);
-        return sum;
-    }
-
-    private static double writtenDamage(Node n) {
-        if (n == null || n.kind != Node.Kind.CALL || n.rune == null || n.rune.category == Category.FORM) return 0;
-        double sum = switch (n.rune.name) {
-            case "damage", "drain", "damage-all" -> n.arg(1) != null && n.arg(1).value instanceof Number v ? Math.max(0, v.doubleValue()) : 0;
-            default -> 0;
-        };
-        for (Node a : n.args) sum += writtenDamage(a);
-        for (Node k : n.kw.values()) sum += writtenDamage(k);
-        for (Node b : n.body) sum += writtenDamage(b);
-        return sum;
+        return form.hitDamage;
     }
 
     /** Checks each vanilla projectile's next step before it moves, so even fast arrows cannot skip a thin wall. */

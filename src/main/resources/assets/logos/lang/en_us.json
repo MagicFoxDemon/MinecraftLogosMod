@@ -49,6 +49,8 @@
   "logos.configuration.maxRepeat.tooltip": "Most iterations a single repeat may run",
   "logos.configuration.maxOpsPerTick": "Max Steps Per Tick",
   "logos.configuration.maxOpsPerTick.tooltip": "Interpreter steps a spell may take per tick; raise it if big loops get cut off",
+  "logos.configuration.maxOpsPerTickGlobal": "Max Steps Per Tick (All Spells)",
+  "logos.configuration.maxOpsPerTickGlobal.tooltip": "Interpreter steps all spells together may take per tick; past this, forms and delayed tasks wait their turn for the next tick instead of going out. Spell code set off by events cannot wait but still counts; lower it if running spells lag the server",
   "logos.configuration.maxAnchors": "Max Anchors",
   "logos.configuration.maxFamiliars": "Max Familiars",
   "logos.configuration.maxFamiliars.tooltip": "How many summoned familiars one player may have at once",

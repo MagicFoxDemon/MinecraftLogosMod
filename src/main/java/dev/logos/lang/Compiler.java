@@ -140,7 +140,7 @@ public final class Compiler {
         Scope root = new Scope(!trigger.equals("cast"), Map.of(), List.of(), 0, false, false);
         List<Node> body = statements(bodyRaw, root);
         if (recursive) notes.add("含有递归 (recurse)：每层递归都会重新支付魔力，最多 " + LogosConfig.maxRecursion() + " 层（配置 maxRecursion）");
-        return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src, SpellProfile.of(body, declared));
+        return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src, SpellProfile.of(body, declared), inferElement(body));
     }
 
     private List<Node> statements(List<SExpr> raw, Scope s) {
@@ -553,7 +553,11 @@ public final class Compiler {
             case "block-is" -> blockFilter(n.arg(1), at);
             default -> {}
         }
-        if (n.rune.category == Category.FORM) n.element = inferElement(n);
+        if (n.rune.category == Category.FORM) {
+            n.element = inferElement(n);
+            n.helpsOnHit = helpsOnHit(n);
+            n.hitDamage = hitDamage(n);
+        }
     }
 
     /** Blocks are only told apart by id or #tag; entity kinds such as {@code enemies} cannot pick blocks. */
@@ -598,6 +602,43 @@ public final class Compiler {
         n.args.forEach(a -> walk(a, counts, false));
         n.body.forEach(a -> walk(a, counts, false));
         n.events.values().forEach(l -> l.forEach(a -> walk(a, counts, false)));
+    }
+
+    // ---- What a form's hits do ---------------------------------------------------------------
+
+    /**
+     * Whether {@code form}'s hit handlers (on-hit, on-enter) only heal or ward. Read from what they do,
+     * not the page's declared {@code :intent}, so a damaging page filed under HEAL still spares its own side.
+     */
+    private static boolean helpsOnHit(Node form) {
+        List<Node> handlers = new ArrayList<>();
+        for (String event : List.of("on-hit", "on-enter")) handlers.addAll(form.events.getOrDefault(event, List.of()));
+        if (handlers.isEmpty()) return false;
+        for (Intent i : SpellProfile.of(handlers, List.of()).intents()) if (i != Intent.HEAL && i != Intent.WARD) return false;
+        return true;
+    }
+
+    /**
+     * The damage a spell body's {@code on-hit} deals to one target: the written amounts of its
+     * damage, drain and damage-all, not counting forms it launches in turn. Computed amounts are
+     * not known before the hit and count as 0.
+     */
+    private static double hitDamage(Node form) {
+        double sum = 0;
+        for (Node n : form.events.getOrDefault("on-hit", List.of())) sum += writtenDamage(n);
+        return sum;
+    }
+
+    private static double writtenDamage(Node n) {
+        if (n == null || n.kind != Node.Kind.CALL || n.rune == null || n.rune.category == Category.FORM) return 0;
+        double sum = switch (n.rune.name) {
+            case "damage", "drain", "damage-all" -> n.arg(1) != null && n.arg(1).value instanceof Number v ? Math.max(0, v.doubleValue()) : 0;
+            default -> 0;
+        };
+        for (Node a : n.args) sum += writtenDamage(a);
+        for (Node k : n.kw.values()) sum += writtenDamage(k);
+        for (Node b : n.body) sum += writtenDamage(b);
+        return sum;
     }
 
     // ---- Helpers -----------------------------------------------------------------------------

@@ -6,7 +6,6 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
-import dev.logos.lang.Compiler;
 import dev.logos.lang.Element;
 import dev.logos.lang.Spell;
 import net.minecraft.world.InteractionHand;
@@ -30,7 +29,7 @@ public final class SpellBag {
 
         /** How a cast of it looks (a charge, a release): its spell's main element. */
         public Element element() {
-            return Compiler.inferElement(spell.body());
+            return spell.element();
         }
 
         /** Replaces the page where it lies with what Formula Immolation leaves of it. */

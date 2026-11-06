@@ -8,6 +8,8 @@ package dev.logos.runtime;
 public final class Limits {
     public static final int MAX_OBJECTS_PER_SPELL = 48;
     public static final int MAX_GLOBAL_OBJECTS = 600;
+    /** Delayed tasks waiting across all spells; still leaves room for the most one seventh-tier page can queue (about 12,800). */
+    public static final int MAX_GLOBAL_TASKS = 20000;
     public static final int MAX_SPLIT = 16;
 
     public static final double DEFAULT_MAX_MANA = 200;

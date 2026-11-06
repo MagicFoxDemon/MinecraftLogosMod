@@ -11,8 +11,9 @@ import java.util.List;
  * @param mana      mana injected per invocation; the whole spell lifecycle draws from this pool
  * @param stability static complexity cost, must fit the caster's stability capacity
  * @param profile   what it is for and roughly what it costs (see {@link SpellProfile})
+ * @param element   how a cast of it looks, worked out once when compiled (see {@link Compiler#inferElement(List)})
  */
-public record Spell(String name, String trigger, boolean affectsPlayers, boolean immolate, double mana, double stability, List<Node> body, List<String> notes, String source, SpellProfile profile) {
+public record Spell(String name, String trigger, boolean affectsPlayers, boolean immolate, double mana, double stability, List<Node> body, List<String> notes, String source, SpellProfile profile, Element element) {
     public static final List<String> TRIGGERS = List.of("cast", "hurt", "attack", "kill");
 
     public boolean isPassive() {

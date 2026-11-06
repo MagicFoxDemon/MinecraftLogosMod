@@ -40,6 +40,8 @@ public final class SpellInstance {
     /** Every entity this spell has affected; {@code :fresh} selectors skip them. */
     public final Set<UUID> affected = new LinkedHashSet<>();
     public final List<Double> trace = new ArrayList<>();
+    /** Whether anyone will read {@link #trace}: only a real player who wants the report when the spell ends. */
+    private final boolean tracing;
     public int objects;
     public boolean dead;
     private int pending;
@@ -60,7 +62,8 @@ public final class SpellInstance {
         this.modifiers = SpellModifiers.of(caster);
         this.mana = injected;
         this.startTick = SpellRuntime.now();
-        trace.add(mana);
+        this.tracing = caster instanceof ServerPlayer p && !(p instanceof net.neoforged.neoforge.common.util.FakePlayer) && PlayerMagic.of(p).trace;
+        if (tracing) trace.add(mana);
     }
 
     /** Records where the spell is acting now (a rune ran there, or a spell body is there). */
@@ -103,12 +106,13 @@ public final class SpellInstance {
             return false;
         }
         mana -= amount;
-        if (amount > 0) trace.add(mana);
+        if (amount > 0 && tracing) trace.add(mana);
         return true;
     }
 
     /** Counts interpreter steps per tick; runaway programs destabilize. */
     public boolean step() {
+        SpellRuntime.countStep();
         long now = SpellRuntime.now();
         if (now != opsTick) {
             opsTick = now;

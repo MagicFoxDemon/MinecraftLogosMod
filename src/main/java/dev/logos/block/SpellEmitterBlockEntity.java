@@ -10,7 +10,6 @@ import dev.logos.LogosMod;
 import dev.logos.graph.SpecialNodes.EmitterMode;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
-import dev.logos.lang.Compiler;
 import dev.logos.lang.Spell;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Charging;
@@ -249,7 +248,7 @@ public class SpellEmitterBlockEntity extends BlockEntity implements ManaVessel {
         injected = 0;
         done = 0;
         setChanged();
-        var element = Compiler.inferElement(spell.body());
+        var element = spell.element();
         Vfx.sound(level, centre, SoundEvents.EVOKER_CAST_SPELL, 0.6f, 1.4f);
         Vfx.burst(level, centre, element, 6);
         Casting.castAs(caster(level), spell, charge, tier().recovery(), null, centre, true);

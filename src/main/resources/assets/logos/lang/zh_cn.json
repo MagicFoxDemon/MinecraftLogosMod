@@ -49,6 +49,8 @@
   "logos.configuration.maxRepeat.tooltip": "单个 repeat 最多执行的次数",
   "logos.configuration.maxOpsPerTick": "单刻运算步数上限",
   "logos.configuration.maxOpsPerTick.tooltip": "一个法术每刻最多执行的解释步数；大循环/深递归被截断时调高它",
+  "logos.configuration.maxOpsPerTickGlobal": "全局单刻运算步数上限",
+  "logos.configuration.maxOpsPerTickGlobal.tooltip": "所有法术合计每刻最多执行的解释步数；超出后形体和延迟任务轮流顺延到下一刻，不会熄灭。事件触发的术式无法顺延，但同样计入；术式拖慢服务器时调低它",
   "logos.configuration.maxAnchors": "锚点数量上限",
   "logos.configuration.maxFamiliars": "使魔数量上限",
   "logos.configuration.maxFamiliars.tooltip": "每个玩家同时召唤的使魔数量上限",
