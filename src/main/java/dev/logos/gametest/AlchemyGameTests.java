@@ -96,10 +96,10 @@ final class AlchemyGameTests {
     // ---- the alchemy table ----------------------------------------------------------------------
 
     /** The main half, relative to the test; the table faces south, so its side half is to the east. */
-    private static final BlockPos MAIN = new BlockPos(2, 2, 2), SIDE = MAIN.east();
+    static final BlockPos MAIN = new BlockPos(2, 2, 2), SIDE = MAIN.east();
 
     /** A table placed as a player would: the main half, then its side half beside it. */
-    private static AlchemyTableBlockEntity placeTable(GameTestHelper h) {
+    static AlchemyTableBlockEntity placeTable(GameTestHelper h) {
         for (int x = 0; x < 6; x++) for (int z = 0; z < 6; z++) h.setBlock(x, 1, z, Blocks.STONE);
         BlockState state = LogosMod.ALCHEMY_TABLE.get().defaultBlockState().setValue(AlchemyTableBlock.FACING, Direction.SOUTH);
         h.setBlock(MAIN, state);
@@ -252,7 +252,7 @@ final class AlchemyGameTests {
         return n;
     }
 
-    private static void put(ResourceHandler<ItemResource> handler, ItemStack stack) {
+    static void put(ResourceHandler<ItemResource> handler, ItemStack stack) {
         try (Transaction tx = Transaction.openRoot()) {
             handler.insert(ItemResource.of(stack), stack.getCount(), tx);
             tx.commit();

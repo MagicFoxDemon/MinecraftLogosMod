@@ -452,6 +452,8 @@
   "logos.editor.note": "笔记",
   "logos.editor.undo": "撤销",
   "logos.editor.redo": "重做",
+  "logos.editor.graph_too_large": "✗ 术式图太大，没有写入：节点 %s / %s，体积 %s / %s KB",
+  "logos.editor.saving_too_fast": "写入太频繁，这次没有保存，稍等再试",
   "logos.editor.overview": "总览",
   "logos.editor.library": "符文库",
   "logos.editor.library.context": "上下文",
