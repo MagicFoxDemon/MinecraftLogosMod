@@ -64,6 +64,8 @@
   "logos.configuration.voidIgnoresAbsorption.tooltip": "开启时虚空伤害直接扣生命，不消耗伤害吸收（法术护盾、金苹果等）",
   "logos.configuration.voidIgnoresTotem": "虚空伤害无视不死图腾",
   "logos.configuration.voidIgnoresTotem.tooltip": "开启时不死图腾救不了死于虚空伤害的持有者",
+  "logos.configuration.spellsLoadChunks": "术式加载区块",
+  "logos.configuration.spellsLoadChunks.tooltip": "关闭时术式不会加载未加载的区块：魔弹、光柱、游脉快进入未加载区块时结束，选择器和方块符文在那里找不到东西，也不收魔力。开启时魔弹可以飞满寿命（最远 1600 格），术式能够到任何地方，经过的区块都会在主线程加载或生成，人多的服务器上会卡。闪现无论开关都会加载落点",
   "logos.configuration.voidIsOutOfWorld": "真·虚空伤害",
   "logos.configuration.voidIsOutOfWorld.tooltip": "开启时虚空伤害换成原版掉出世界的伤害（没有攻击者），处决等同 /kill 指令（巨像也会死）。创造模式玩家、无敌实体、不死图腾都挡不住，击杀也不算经验和归属",
   "logos.configuration.travelUnvisitedDimensions": "允许前往未到过的维度",

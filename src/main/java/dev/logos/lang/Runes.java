@@ -35,6 +35,7 @@ import dev.logos.runtime.Resized;
 import dev.logos.runtime.SpellInstance;
 import dev.logos.runtime.SpellObject;
 import dev.logos.runtime.SpellRuntime;
+import dev.logos.runtime.SpellWorld;
 import dev.logos.runtime.Spots;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
@@ -198,8 +199,8 @@ public final class Runes {
                 .kw("motion", Type.MOTION, "forward").kw("pierce", NUM, "0").kw("size", NUM, "0.3")
                 .kw("look", LOOK, null).kw("spin", NUM, "0").kw("trail", PARTICLE, null)
                 .on("on-hit", true, "命中实体时").on("on-impact", false, "撞上方块时（here 是那个方块）")
-                .on("on-tick", false, "每一刻").on("on-expire", false, "消散时（撞墙/寿命结束/穿透耗尽）")
-                .stab(4).doc("弹丸：在世界中飞行的魔法实体。基础 4 魔力 + 运动符文的代价（蛇行、环扩、弧扫是游脉贴地的运动，接上会报错）。"
+                .on("on-tick", false, "每一刻").on("on-expire", false, "消散时（撞墙/寿命结束/穿透耗尽/飞到未加载的区块前）")
+                .stab(4).doc("弹丸：在世界中飞行的魔法实体。飞到未加载的区块前会消散，配置 spellsLoadChunks 打开后才会一直飞下去。基础 4 魔力 + 运动符文的代价（蛇行、环扩、弧扫是游脉贴地的运动，接上会报错）。"
                         + ":look &物品 让它显现为那件物品的模型（如 &mace、&fire_charge；方块物品显示为方块），写生物名则显现为那种生物的模型（如 :look zombie），:spin 是每秒翻转的圈数；"
                         + ":trail %粒子 用那种粒子代替元素尾迹（如 %portal、%end_rod）。外观与拖尾不收魔力，也不改变任何行为")
                 .exec((n, c) -> {
@@ -334,7 +335,7 @@ public final class Runes {
                 .kw("speed", NUM, "0.6").kw("range", NUM, "16").kw("width", NUM, "1").kw("height", NUM, "1").kw("pierce", NUM, "0").kw("linger", NUM, "0").flag("ccw").flag("climb")
                 .on("on-hit", true, "碰到实体时（留下形体时，碰到留下的路径也算）").on("on-step", false, "每走上一块新的方块，起步那块也算；爬墙时墙面、天花板上的方块也算（here 是那块方块）")
                 .on("on-impact", false, "撞上翻不过去的墙时（here 是那个方块）；爬墙时不会撞墙")
-                .on("on-expire", false, "消散时（走完射程、寿命结束、撞墙、穿透耗尽或地面断开；留下形体时，等留下的路径全部散去）")
+                .on("on-expire", false, "消散时（走完射程、寿命结束、撞墙、穿透耗尽、地面断开或到了未加载的区块前；留下形体时，等留下的路径全部散去）")
                 .stab(4).doc("游脉：贴着地面往前爬的一道脉络——藤蔓生长、地火蔓延、剑气贴地、冰刺破土。"
                         + "从 :from 往下最多 6 格找到地面起步（找不到则不成形，也不花魔力），沿 :dir 的水平方向前进，能迈上 1 格高的台阶、顺着地面往下最多 4 格，"
                         + "在液体表面也能走；撞上更高的墙时 on-impact，地面断开超过 4 格时消散。"
@@ -419,6 +420,8 @@ public final class Runes {
         } else {
             dir = vec(kw(n, "dir"), c).normalize();
             end = from.add(dir.scale(clamp(num(kw(n, "range"), c), 1, 64)));
+            // A chunk nothing has loaded cuts it short, without an impact.
+            end = SpellWorld.reach(level, from, end);
             BlockHitResult bh = level.clip(new ClipContext(from, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, inst.caster));
             if (bh.getType() != HitResult.Type.MISS) {
                 end = bh.getLocation();
@@ -641,7 +644,7 @@ public final class Runes {
                         Place at = place(kw(n, "at"), c);
                         p = at.moved(Spots.around(rand, at.pos(), clamp(num(kw(n, "radius"), c), 0, 64), choice(n, "shape"), surface));
                     }
-                    return n.flags.contains("ground") ? p.moved(safeSpot(p.level(), p.pos())) : p;
+                    return n.flags.contains("ground") && SpellWorld.loaded(p.level(), p.pos()) ? p.moved(safeSpot(p.level(), p.pos())) : p;
                 });
         def("look-point", BINDING, POS).opt("range", NUM, "32").stab(1).doc("施法者视线落点（方块表面前方的空气）。1 魔力")
                 .exec((n, c) -> {
@@ -692,7 +695,7 @@ public final class Runes {
     private static BlockHitResult sight(LivingEntity caster, double range) {
         Vec3 eye = caster.getEyePosition();
         Vec3 end = eye.add(caster.getLookAngle().scale(clamp(range, 1, 64)));
-        return caster.level().clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, caster));
+        return SpellWorld.clip(lv(caster), eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, caster);
     }
 
     private static ServerLevel dimension(Ctx c, String id) {
@@ -1035,6 +1038,7 @@ public final class Runes {
                         double cost = 2 + (cross ? 20 : 0.5 * p.pos().distanceTo(t.position()));
                         if (!c.inst().spend(cost, "blink")) return null;
                         Vfx.burst(lv(t), t.position().add(0, t.getBbHeight() / 2, 0), Element.VOID, 20);
+                        // The one rune that still loads a chunk, whatever spellsLoadChunks says: whoever lands there needs it, and a far blink pays by the block.
                         Vec3 to = cross || !standable(p.level(), BlockPos.containing(p.pos())) ? safeSpot(p.level(), p.pos()) : p.pos();
                         Entity moved = t.teleport(new TeleportTransition(p.level(), to, Vec3.ZERO, t.getYRot(), t.getXRot(), TeleportTransition.DO_NOTHING));
                         if (moved != null) moved.resetFallDistance();
@@ -1329,7 +1333,7 @@ public final class Runes {
         BlockPos o = center.block();
         List<BlockPos> out = new ArrayList<>();
         for (BlockPos p : BlockPos.betweenClosed(o.offset(-r, -r, -r), o.offset(r, r, r))) {
-            if (Vec3.atCenterOf(p).distanceTo(center.pos()) <= radius + 0.5) out.add(p.immutable());
+            if (Vec3.atCenterOf(p).distanceTo(center.pos()) <= radius + 0.5 && SpellWorld.loaded(center.level(), p)) out.add(p.immutable());
         }
         return out;
     }
@@ -1889,12 +1893,12 @@ public final class Runes {
         def("block-is", VALUE, BOOL).p("pos", POS).p("filter", FILTER).doc("该位置的方块是否符合筛选：方块 id（minecraft:wheat）或 #标签（#minecraft:logs）")
                 .exec((n, c) -> {
                     Place p = place(n.arg(0), c);
-                    return filter(n.arg(1), c).testBlock(p.level().getBlockState(p.block()));
+                    return SpellWorld.loaded(p.level(), p.pos()) && filter(n.arg(1), c).testBlock(p.level().getBlockState(p.block()));
                 });
         def("is-air", VALUE, BOOL).p("pos", POS).doc("该位置是否为空气")
                 .exec((n, c) -> {
                     Place p = place(n.arg(0), c);
-                    return p.level().getBlockState(p.block()).isAir();
+                    return SpellWorld.loaded(p.level(), p.pos()) && p.level().getBlockState(p.block()).isAir();
                 });
         def("block-count", VALUE, NUM).p("blocks", BLOCKS).doc("方块数量").exec((n, c) -> (double) places(n.arg(0), c).size());
         def("alive", VALUE, BOOL).p("entity", ENTITY).doc("实体存在且存活")

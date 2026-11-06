@@ -64,6 +64,8 @@
   "logos.configuration.voidIgnoresAbsorption.tooltip": "When on, void damage goes straight to health and leaves absorption (spell shields, golden apples) intact",
   "logos.configuration.voidIgnoresTotem": "Void damage ignores totems",
   "logos.configuration.voidIgnoresTotem.tooltip": "When on, a totem of undying does not save its holder from void damage",
+  "logos.configuration.spellsLoadChunks": "Spells load chunks",
+  "logos.configuration.spellsLoadChunks.tooltip": "When off, spells never load a chunk: a projectile, beam or vein ends just before it would enter an unloaded chunk, and selectors and block runes find nothing there and charge nothing for it. When on, a projectile may fly its whole life (up to 1600 blocks) and spells may reach anywhere, loading or generating what they pass on the server thread, which can lag a busy server. Blink always loads where it lands, either way",
   "logos.configuration.voidIsOutOfWorld": "True void damage",
   "logos.configuration.voidIsOutOfWorld.tooltip": "When on, void damage becomes vanilla's out-of-world damage with no attacker, and execute does what /kill does (a colossus dies too). Creative players, invulnerable entities and totems do not stop it, and kills earn no experience or credit",
   "logos.configuration.travelUnvisitedDimensions": "Travel to unvisited dimensions",

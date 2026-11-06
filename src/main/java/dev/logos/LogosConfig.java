@@ -70,6 +70,13 @@ public final class LogosConfig {
             .translation("logos.configuration.travelUnvisitedDimensions")
             .define("travelUnvisitedDimensions", false);
 
+    public static final ModConfigSpec.BooleanValue SPELLS_LOAD_CHUNKS = BUILDER
+            .comment("Whether spells may load chunks that nothing has loaded yet. Loading happens on the server thread, and a chunk nobody has visited is generated there, so on a busy server this is lag.",
+                    "When false, a projectile, beam or vein ends just before it would enter an unloaded chunk, and selectors and block runes find nothing there and charge nothing for it.",
+                    "When true, a projectile may fly its whole life (up to 1600 blocks) and spells may reach anywhere, loading what they pass. Blink always loads where it lands, either way.")
+            .translation("logos.configuration.spellsLoadChunks")
+            .define("spellsLoadChunks", false);
+
     static {
         BUILDER.pop();
         BUILDER.comment("Mana balance").push("balance");
@@ -274,6 +281,14 @@ public final class LogosConfig {
     public static boolean voidIgnoresTotem() {
         try {
             return VOID_IGNORES_TOTEM.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return false;
+        }
+    }
+
+    public static boolean spellsLoadChunks() {
+        try {
+            return SPELLS_LOAD_CHUNKS.getAsBoolean();
         } catch (IllegalStateException e) {
             return false;
         }

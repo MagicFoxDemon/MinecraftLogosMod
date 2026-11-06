@@ -55,6 +55,7 @@ public final class LogosGameTests {
             "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "spell_modifier_heal_power", "spell_modifier_vulnerability", "spell_modifier_void_out_of_world_option", "spell_modifier_void_true_damage", "spell_modifier_void_on_players", "spell_modifier_void_absorption_option", "spell_modifier_void_totem_option", "spell_modifier_void_creature_cuts", "spell_modifier_execute_is_void",
             "buff_potions_brew", "buff_potions_dissolve", "buff_potions_effects", "element_effects_every_element", "herbs_grow_in_jars",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts",
+            "spell_chunks_block_runes", "spell_chunks_projectile", "spell_chunks_option_keeps_flying", "spell_chunks_beam_ray_look", "spell_chunks_vein", "spell_chunks_blink_lands",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
             "lifeform_hovers", "lifeform_combo", "lifeform_charges_its_cast", "lifeform_charge_returns_when_target_gone", "lifeform_heals_master", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_unaimed_beam_heals_master", "lifeform_unaimed_beam_strikes_foe", "lifeform_declared_heal_spares_master", "lifeform_forages", "lifeform_role",
@@ -173,6 +174,12 @@ public final class LogosGameTests {
         FUNCTIONS.register("familiar_sic", () -> FamiliarGameTests::sicOrdersAttack);
         FUNCTIONS.register("familiar_stance_hunts", () -> FamiliarGameTests::stanceHunts);
         FUNCTIONS.register("lifeform_summon_rules", () -> LifeformGameTests::summonRules);
+        FUNCTIONS.register("spell_chunks_block_runes", () -> SpellChunkGameTests::blockRunes);
+        FUNCTIONS.register("spell_chunks_projectile", () -> SpellChunkGameTests::projectile);
+        FUNCTIONS.register("spell_chunks_option_keeps_flying", () -> SpellChunkGameTests::optionKeepsFlying);
+        FUNCTIONS.register("spell_chunks_beam_ray_look", () -> SpellChunkGameTests::beamRayLook);
+        FUNCTIONS.register("spell_chunks_vein", () -> SpellChunkGameTests::vein);
+        FUNCTIONS.register("spell_chunks_blink_lands", () -> SpellChunkGameTests::blinkLands);
         FUNCTIONS.register("lifeform_spawn_egg_levels", () -> LifeformSpawnEggGameTests::levels);
         FUNCTIONS.register("lifeform_spawn_egg_dispenser", () -> LifeformSpawnEggGameTests::dispenser);
         FUNCTIONS.register("lifeform_spawn_egg_disabled", () -> LifeformSpawnEggGameTests::disabled);

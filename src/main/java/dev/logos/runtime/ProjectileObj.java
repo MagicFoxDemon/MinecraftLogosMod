@@ -124,7 +124,12 @@ public final class ProjectileObj extends SpellObject {
         Vec3 blockHit = null;
         Vec3 outward = heading().scale(-1);
         net.minecraft.core.BlockPos impactBlock = null;
+        boolean edge = false;
         if (motion != Motion.ORBIT) {
+            // About to enter a chunk nothing has loaded, it flies up to the border and goes out there.
+            Vec3 reach = SpellWorld.reach(level, prev, next);
+            edge = reach != next;
+            next = reach;
             BlockHitResult bh = level.clip(new ClipContext(prev, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, inst.caster));
             if (bh.getType() != HitResult.Type.MISS) {
                 blockHit = bh.getLocation();
@@ -170,6 +175,8 @@ public final class ProjectileObj extends SpellObject {
         } else if (wall != null) {
             impactEnd = true;
             Vfx.projectileImpact(level, id, pos, outward, node.element, size);
+            end();
+        } else if (edge) {
             end();
         }
     }

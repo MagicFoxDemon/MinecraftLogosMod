@@ -76,15 +76,16 @@ public final class Interp {
         };
     }
 
-    /** A ▦ block set: a single position counts as a set of one. */
+    /** A ▦ block set: a single position counts as a set of one. What lies where a spell may not look ({@link SpellWorld}) is left out. */
     @SuppressWarnings("unchecked")
     public static List<Place> places(Node n, Ctx c) {
-        return switch (eval(n, c)) {
+        List<Place> all = switch (eval(n, c)) {
             case Place p -> List.of(p);
             case Vec3 v -> List.of(new Place(c.level(), v));
             case List<?> l -> (List<Place>) l;
             case null, default -> List.of();
         };
+        return all.stream().filter(p -> SpellWorld.loaded(p.level(), p.pos())).toList();
     }
 
     public static String text(Node n, Ctx c) {
