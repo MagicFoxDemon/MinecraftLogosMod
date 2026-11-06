@@ -35,6 +35,7 @@ public final class LogosGameTests {
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS = DeferredRegister.create(Registries.TEST_FUNCTION, LogosMod.MODID);
 
     private static final List<String> TESTS = List.of(
+            "player_refusals",
             "projectile_impact_expiry", "projectile_impact_wall", "projectile_impact_piercing",
             "example_npc_heal", "example_npc_group_heal", "rune_species_filter", "example_prismatic_volley_budget",
             "fireball_hits_and_bursts", "chain_lightning_bounces", "execute_with_proof_is_cheap", "execute_without_proof_starves",
@@ -181,6 +182,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("spell_chunks_beam_ray_look", () -> SpellChunkGameTests::beamRayLook);
         FUNCTIONS.register("spell_chunks_vein", () -> SpellChunkGameTests::vein);
         FUNCTIONS.register("spell_chunks_blink_lands", () -> SpellChunkGameTests::blinkLands);
+        FUNCTIONS.register("player_refusals", () -> PlayerRefusalGameTests::refused);
         FUNCTIONS.register("lifeform_spawn_egg_levels", () -> LifeformSpawnEggGameTests::levels);
         FUNCTIONS.register("lifeform_spawn_egg_dispenser", () -> LifeformSpawnEggGameTests::dispenser);
         FUNCTIONS.register("lifeform_spawn_egg_disabled", () -> LifeformSpawnEggGameTests::disabled);
