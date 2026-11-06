@@ -44,6 +44,7 @@ public final class LogosGameTests {
             "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "staff_fills_then_casts", "staff_fill_needs_main_hand", "chant_repeats_wand_charge", "chant_repeats_staff_cast", "voice_casts_at_once_and_refunds", "voice_charges_on_to_the_named_spell", "voice_let_go_frees_what_was_gathered", "voice_needs_voice_pages_and_the_charm", "voice_staff_casts_the_named_spell", "voice_chant_repeats_the_named_spell", "voice_written_page_keeps_its_name", "world_table_inscribes", "beam_follows_gaze", "cast_pose_beam_holds", "cast_pose_split_beams_hold", "cast_pose_later_beam_holds_nothing", "cast_pose_gesture_by_lead", "field_heals_caster", "infuse_gives_mana", "field_spares_caster_without_players", "field_shields_caster_on_enter", "world_filter_kinds",
             "construct_stops_movement", "construct_sigil", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall", "construct_ward_stops_spells",
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
+            "edit_access_closed_interface_refused", "edit_access_protected_place_refused", "edit_access_open_then_edit", "edit_access_stopped_right_click_refused", "edit_access_editor_follows_the_block",
             "familiar_unlock_summon", "familiar_loyal_targeting", "familiar_friendly_fire_credit", "familiar_drops", "familiar_creeper_no_grief",
             "familiar_dragon_circles", "familiar_dragon_breath_spares_itself", "familiar_dragon_throne", "familiar_dragon_ridden_altitude", "familiar_dragon_ridden_altitude_forward", "familiar_dragon_ridden_hovers_then_flies", "familiar_dragon_rider_fireball", "familiar_dragon_rider_breath",
             "passive_codex_without_wand", "rune_disarm_order", "rune_equip_order", "rune_equip_materials", "rune_equip_groups_players", "rune_potion_effects", "rune_shield_marks_ward", "potion_burst_polarity", "rune_group_radius_cost", "rune_time_stop_mob", "rune_time_stop_player", "rune_imbue_mob_blows", "rune_imbue_player_blow", "rune_imbue_runs_out", "rune_imbue_life_api", "rune_imbue_arrows", "rune_imbue_swing_kill", "rune_imbue_upkeep", "rune_imbue_wrap_modifiers", "rune_damage_dealing_element",
@@ -152,6 +153,11 @@ public final class LogosGameTests {
         FUNCTIONS.register("world_filter_kinds", () -> WorldGameTests::filterKinds);
         FUNCTIONS.register("world_anchors", () -> WorldGameTests::anchors);
         FUNCTIONS.register("world_blink_target", () -> WorldGameTests::blinkTarget);
+        FUNCTIONS.register("edit_access_closed_interface_refused", () -> EditAccessGameTests::closedInterfaceRefused);
+        FUNCTIONS.register("edit_access_protected_place_refused", () -> EditAccessGameTests::protectedPlaceRefused);
+        FUNCTIONS.register("edit_access_open_then_edit", () -> EditAccessGameTests::openThenEdit);
+        FUNCTIONS.register("edit_access_stopped_right_click_refused", () -> EditAccessGameTests::stoppedRightClickRefused);
+        FUNCTIONS.register("edit_access_editor_follows_the_block", () -> EditAccessGameTests::editorFollowsTheBlock);
         FUNCTIONS.register("familiar_unlock_summon", () -> FamiliarGameTests::unlockAndSummon);
         FUNCTIONS.register("familiar_loyal_targeting", () -> FamiliarGameTests::loyalTargeting);
         FUNCTIONS.register("familiar_friendly_fire_credit", () -> FamiliarGameTests::friendlyFireAndCredit);

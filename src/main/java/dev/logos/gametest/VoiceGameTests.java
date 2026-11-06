@@ -207,6 +207,7 @@ final class VoiceGameTests {
         p.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 1.5, 0, 0);
         var table = (InscriptionTableBlockEntity) h.getLevel().getBlockEntity(pos);
         table.setPage(new ItemStack(LogosMod.SPELL_PAGE.get()));
+        EditAccessGameTests.rightClick(p, pos);
         h.assertTrue(InscriptionTableBlock.inscribe(p, pos, SMALL, new CompoundTag(), "小") != null, "inscribing should succeed");
         ItemStack page = table.page();
         h.assertTrue("小".equals(page.get(LogosMod.VOICE.get())), "the page should keep the name it is called by");

@@ -131,8 +131,8 @@ public class SpellEditorScenario implements UIScenario {
                 .ticks(20)
                 .screenshot("table_in_world")
                 .ticks(5)
-                .step("open the workbench on the table's page", ctx -> ClientHooks.openTableEditor(table,
-                        ctx.level().getBlockEntity(table) instanceof InscriptionTableBlockEntity t ? t.page().copy() : ItemStack.EMPTY))
+                .step("right-click the table to open the workbench on its page", ctx -> Minecraft.getInstance().gameMode.useItemOn(ctx.player(), InteractionHand.MAIN_HAND,
+                        new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(table), net.minecraft.core.Direction.UP, table, false)))
                 .awaitModularUI()
                 .ticks(10)
                 .checkTextContains("#status", "成立")

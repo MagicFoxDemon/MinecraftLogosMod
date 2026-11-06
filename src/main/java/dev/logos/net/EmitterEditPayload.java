@@ -49,7 +49,7 @@ public record EmitterEditPayload(BlockPos pos, String source, CompoundTag graph,
     }
 
     public static void handle(EmitterEditPayload p, IPayloadContext ctx) {
-        if (!(ctx.player() instanceof ServerPlayer sp) || sp.distanceToSqr(p.pos.getCenter()) > 64) return;
+        if (!(ctx.player() instanceof ServerPlayer sp) || !EditLimits.admit(sp, p.pos)) return;
         if (!(sp.level().getBlockEntity(p.pos) instanceof SpellEmitterBlockEntity emitter) || emitter.page().isEmpty() || !emitter.mayChange(sp)) return;
         if (!EditLimits.admit(sp, p.graph)) return;
         Spell spell;
