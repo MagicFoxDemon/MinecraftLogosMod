@@ -2,11 +2,12 @@ package dev.logos.runtime;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 
+import dev.logos.LogosMod;
 import dev.logos.lang.ConstructShape;
 import dev.logos.lang.Element;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -47,8 +48,11 @@ public final class ConstructEntity extends Entity {
 
     private static final int SNAP = 1, ONE_WAY = 2, SOLID_CASTER = 4, SOLID_OTHERS = 8, FOLLOWS = 16, SIGIL = 32;
 
-    /** Every construct currently in a level, on either side; collision queries walk this short list. */
-    private static final List<ConstructEntity> LIVE = new CopyOnWriteArrayList<>();
+    /** How many constructs are in a level right now, on either side: while there are none, collisions need not ask. */
+    private static final AtomicInteger LIVE = new AtomicInteger();
+
+    /** Where its level's index has it, while it is in the level. */
+    private ConstructIndex.@Nullable Entry filed;
 
     /** Server only: the spell body that owns this construct and judges what it stops. */
     @Nullable ConstructObj owner;
@@ -207,26 +211,50 @@ public final class ConstructEntity extends Entity {
         return (flags & SOLID_OTHERS) != 0;
     }
 
-    /** Constructs in {@code level} whose bounds touch {@code area}. */
+    /** Constructs in {@code level} whose bounds touch {@code area}, oldest first. */
     public static List<ConstructEntity> near(Level level, AABB area) {
-        if (LIVE.isEmpty()) return List.of();
-        return LIVE.stream().filter(c -> c.level() == level && !c.isRemoved() && c.geometry().bounds.intersects(area)).toList();
+        ConstructIndex index = level.getExistingDataOrNull(LogosMod.CONSTRUCT_INDEX);
+        return index == null ? List.of() : index.near(area);
     }
 
     public static boolean any() {
-        return !LIVE.isEmpty();
+        return LIVE.get() > 0;
     }
 
     @Override
     public void onAddedToLevel() {
         super.onAddedToLevel();
-        LIVE.add(this);
+        unfile();
+        filed = level().getData(LogosMod.CONSTRUCT_INDEX).add(this, geometry().bounds);
+        LIVE.incrementAndGet();
     }
 
     @Override
     public void onRemovedFromLevel() {
         super.onRemovedFromLevel();
-        LIVE.remove(this);
+        unfile();
+    }
+
+    /** A construct whose chunk was not ready was never tracked, so it leaves without {@link #onRemovedFromLevel}. */
+    @Override
+    public void onRemoval(RemovalReason reason) {
+        super.onRemoval(reason);
+        unfile();
+    }
+
+    private void unfile() {
+        if (filed != null) {
+            filed.remove();
+            filed = null;
+            LIVE.decrementAndGet();
+        }
+    }
+
+    /** Every way of moving an entity ends here, including teleports. */
+    @Override
+    public void setPos(double x, double y, double z) {
+        super.setPos(x, y, z);
+        if (filed != null) filed.move(geometry().bounds);
     }
 
     @Override
@@ -235,6 +263,7 @@ public final class ConstructEntity extends Entity {
         if (key == SHAPE || key == SIZE || key == RADIUS || key == FACING || key == ORIGIN || key == FLAGS || key == FOLLOW) {
             base = geometry = null;
             if (entityData != null && level() != null) setBoundingBox(geometry().bounds);
+            if (filed != null) filed.move(geometry().bounds);
         }
     }
 

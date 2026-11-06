@@ -746,6 +746,9 @@ public class LogosMod {
                     .sync(dev.logos.runtime.Familiars.Bond.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<dev.logos.runtime.Anchors>> ANCHORS = ATTACHMENTS.register("anchors",
             () -> AttachmentType.builder(() -> new dev.logos.runtime.Anchors()).serialize(dev.logos.runtime.Anchors.CODEC).copyOnDeath().build());
+    /** On a level, on either side: its constructs by where they stand (dev.logos.runtime.ConstructIndex); never saved, as they are not. */
+    public static final Supplier<AttachmentType<dev.logos.runtime.ConstructIndex>> CONSTRUCT_INDEX = ATTACHMENTS.register("construct_index",
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.ConstructIndex()).build());
     public static final Supplier<AttachmentType<dev.logos.runtime.Attunement>> ATTUNEMENT = ATTACHMENTS.register("attunement",
             () -> AttachmentType.builder(() -> new dev.logos.runtime.Attunement()).serialize(dev.logos.runtime.Attunement.CODEC).copyOnDeath().build());
     /** On a chunk: the spread mana in its air (dev.logos.runtime.ManaField); saved only while there is some. */

@@ -59,6 +59,7 @@ public final class LogosGameTests {
             "spell_chunks_block_runes", "spell_chunks_projectile", "spell_chunks_option_keeps_flying", "spell_chunks_beam_ray_look", "spell_chunks_vein", "spell_chunks_blink_lands",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
+            "construct_index_skips_far_entities", "construct_collision_skips_projectiles", "construct_shapes_cached", "construct_index_follows_moved", "construct_index_follows_caster", "construct_index_forgets_removed",
             "lifeform_hovers", "lifeform_combo", "lifeform_charges_its_cast", "lifeform_charge_returns_when_target_gone", "lifeform_heals_master", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_unaimed_beam_heals_master", "lifeform_unaimed_beam_strikes_foe", "lifeform_declared_heal_spares_master", "lifeform_forages", "lifeform_role",
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
             "colossus_armour", "colossus_void_ignores_armour", "colossus_execute_as_kill", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
@@ -240,6 +241,12 @@ public final class LogosGameTests {
         FUNCTIONS.register("colossus_flower_cooldown", () -> ColossusGameTests::flowerCooldown);
         FUNCTIONS.register("colossus_rider_sheltered", () -> ColossusGameTests::riderSheltered);
         FUNCTIONS.register("colossus_jumps_off", () -> ColossusGameTests::jumpsOff);
+        FUNCTIONS.register("construct_index_skips_far_entities", () -> ConstructIndexGameTests::skipsFarEntities);
+        FUNCTIONS.register("construct_collision_skips_projectiles", () -> ConstructIndexGameTests::collisionSkipsProjectiles);
+        FUNCTIONS.register("construct_shapes_cached", () -> ConstructIndexGameTests::shapesCached);
+        FUNCTIONS.register("construct_index_follows_moved", () -> ConstructIndexGameTests::followsMoved);
+        FUNCTIONS.register("construct_index_follows_caster", () -> ConstructIndexGameTests::followsCaster);
+        FUNCTIONS.register("construct_index_forgets_removed", () -> ConstructIndexGameTests::forgetsRemoved);
         FUNCTIONS.register("construct_stops_movement", () -> ConstructGameTests::wallStopsMovement);
         FUNCTIONS.register("construct_sigil", () -> ConstructGameTests::sigilOnlyOnShields);
         FUNCTIONS.register("construct_one_way_arrows", () -> ConstructGameTests::oneWayStopsArrows);

@@ -7,6 +7,8 @@ import java.util.Set;
 
 import org.jspecify.annotations.Nullable;
 
+import com.google.common.collect.ImmutableList;
+
 import dev.logos.lang.ConstructShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -14,6 +16,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Where a {@code construct} is solid. The shape is sampled in its own frame and voxelised into
@@ -35,6 +39,8 @@ public final class ConstructGeometry {
     public final double cell;
     public final List<AABB> cells;
     public final AABB bounds;
+    /** Each cell's collision shape once something has touched it. A construct that moves, turns or is resized gets a new geometry, and with it new shapes. */
+    private VoxelShape @Nullable [] shapes;
 
     private ConstructGeometry(ConstructShape shape, Vec3 center, Vec3 right, Vec3 up, Vec3 forward,
             double width, double height, double depth, double radius, double cell) {
@@ -167,6 +173,17 @@ public final class ConstructGeometry {
         if (!bounds.intersects(box)) return false;
         for (AABB c : cells) if (c.intersects(box)) return true;
         return false;
+    }
+
+    /** Adds the collision shape of each cell touching {@code area}. */
+    public void addShapes(AABB area, ImmutableList.Builder<VoxelShape> out) {
+        if (shapes == null) shapes = new VoxelShape[cells.size()];
+        for (int i = 0; i < shapes.length; i++) {
+            AABB c = cells.get(i);
+            if (!c.intersects(area)) continue;
+            if (shapes[i] == null) shapes[i] = Shapes.create(c);
+            out.add(shapes[i]);
+        }
     }
 
     /** The first cell face the segment crosses, or null. */
