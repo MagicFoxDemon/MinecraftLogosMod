@@ -146,6 +146,12 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
         return InteractionResult.SUCCESS;
     }
 
+    /** Whether {@code player} is close enough to a table at {@code pos} that has a page lying on it. */
+    public static boolean canInscribe(ServerPlayer player, BlockPos pos) {
+        return player.distanceToSqr(pos.getCenter()) <= 64
+                && player.level().getBlockEntity(pos) instanceof InscriptionTableBlockEntity table && !table.page().isEmpty();
+    }
+
     /**
      * Server side: write a spell onto the page lying on the table at {@code pos}, keeping its grade.
      * Returns that grade, or null if nothing was written.
@@ -156,8 +162,7 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
 
     /** {@code voice}: the name the spell is called by aloud (言出法随), or null to write it without. */
     public static @Nullable PageTier inscribe(ServerPlayer player, BlockPos pos, String source, net.minecraft.nbt.CompoundTag graph, @Nullable String voice) {
-        if (player.distanceToSqr(pos.getCenter()) > 64) return null;
-        if (!(player.level().getBlockEntity(pos) instanceof InscriptionTableBlockEntity table) || table.page().isEmpty()) return null;
+        if (!canInscribe(player, pos) || !(player.level().getBlockEntity(pos) instanceof InscriptionTableBlockEntity table)) return null;
         PageTier tier = SpellPages.tier(table.page());
         ItemStack written = SpellPages.write(table.page(), source, graph);
         if (voice != null) written.set(dev.logos.LogosMod.VOICE.get(), voice);

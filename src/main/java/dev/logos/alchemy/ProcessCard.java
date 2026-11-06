@@ -58,6 +58,8 @@ public final class ProcessCard {
     public static final int KEEP = -2, PRODUCTS = -1;
     /** Containers given back (empty bottles, buckets) are not routed: they return to the raw-material area. */
     private static final int GIVE_BACK = -3;
+    /** The most kinds of product players may wire on one card, as they are all saved with the table. */
+    public static final int MAX_ROUTES = 256;
 
     public final Process process;
     /** What each input slot is set aside for, exactly (item and data, so one potion is not another); empty for nothing. */
@@ -147,6 +149,16 @@ public final class ProcessCard {
     public void setRoute(ItemResource product, int target) {
         routes.put(product, target);
         changed.run();
+    }
+
+    /**
+     * Wires a product as a player asks from the table's screen: only one the card has made, which is
+     * all its panel offers, and no more kinds than {@link #MAX_ROUTES}. Returns whether it was wired.
+     */
+    public boolean wire(ItemResource product, int target) {
+        if (!made.contains(product) || routes.size() >= MAX_ROUTES && !routes.containsKey(product)) return false;
+        setRoute(product, target);
+        return true;
     }
 
     public int defaultRoute() {

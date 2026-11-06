@@ -649,6 +649,11 @@ public final class SpellEditor {
             player.sendOverlayMessage(Component.literal("✗ 术式无法成立：" + r.error()));
             return;
         }
+        // The server would refuse it, or past the packet quota drop the connection over it.
+        if (!dev.logos.net.EditLimits.fits(graphTag)) {
+            player.sendOverlayMessage(dev.logos.net.EditLimits.tooLarge(graphTag));
+            return;
+        }
         // Writing a previewed spell down is adopting it.
         beforePreview = null;
         if (emitter != null) {

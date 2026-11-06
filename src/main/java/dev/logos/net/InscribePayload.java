@@ -40,7 +40,8 @@ public record InscribePayload(BlockPos pos, String source, CompoundTag graph, St
     }
 
     public static void handle(InscribePayload p, IPayloadContext ctx) {
-        if (!(ctx.player() instanceof ServerPlayer sp)) return;
+        // Everything cheap first: compiling is work a client must not be able to ask for from anywhere.
+        if (!(ctx.player() instanceof ServerPlayer sp) || !InscriptionTableBlock.canInscribe(sp, p.pos) || !EditLimits.admit(sp, p.graph)) return;
         Spell spell;
         try {
             spell = Casting.compile(p.source);

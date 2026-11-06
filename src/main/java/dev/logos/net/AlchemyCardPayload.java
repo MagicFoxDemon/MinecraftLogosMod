@@ -67,7 +67,7 @@ public record AlchemyCardPayload(BlockPos table, Action action, int card, int x,
 
     public static void handle(AlchemyCardPayload p, IPayloadContext ctx) {
         if (!(ctx.player() instanceof ServerPlayer sp) || !sp.isWithinBlockInteractionRange(p.table, 1.0)) return;
-        if (!(sp.level().getBlockEntity(p.table) instanceof AlchemyTableBlockEntity table)) return;
+        if (!(sp.level().getBlockEntity(p.table) instanceof AlchemyTableBlockEntity table) || !EditLimits.CARD_EDITS.allow(sp)) return;
         if (p.action == Action.ADD) {
             if (p.card >= 0 && p.card < Process.values().length) {
                 table.addCard(Process.values()[p.card], AlchemyTableUI.clampX(p.x), AlchemyTableUI.clampY(p.y));
@@ -90,7 +90,7 @@ public record AlchemyCardPayload(BlockPos table, Action action, int card, int x,
             }
             case ROUTE -> {
                 boolean valid = p.x == ProcessCard.KEEP || p.x == ProcessCard.PRODUCTS || p.x >= 0 && p.x < table.cards().size() && p.x != p.card;
-                if (!p.what.isEmpty() && valid) card.setRoute(p.what, p.x);
+                if (!p.what.isEmpty() && valid) card.wire(p.what, p.x);
             }
             default -> {}
         }

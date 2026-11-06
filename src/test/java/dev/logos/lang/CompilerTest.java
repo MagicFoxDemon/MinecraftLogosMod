@@ -647,6 +647,60 @@ class CompilerTest {
         assertFalse(rec.notes().isEmpty());
     }
 
+    /** {@code levels} nested sums: a value expression that deep. */
+    private static String sums(int levels) {
+        return "(+ 1 ".repeat(levels) + "1" + ")".repeat(levels);
+    }
+
+    /** {@code levels} nested branches around a heal, itself the deepest list: a flow that deep. */
+    private static String branches(int levels) {
+        return "(if true ".repeat(levels) + "(heal caster 1)" + ")".repeat(levels);
+    }
+
+    /** {@code levels} forms each firing the next from its hit event, two brackets a level. */
+    private static String rays(int levels) {
+        return "(ray :to (nearest) (on-hit ".repeat(levels) + "(heal caster 1)" + "))".repeat(levels);
+    }
+
+    @Test
+    void nestingPastTheLimitIsAnOrdinarySyntaxError() {
+        // As long as a page may be and all brackets: it stops at the limit, well before any thread's stack does.
+        assertThrowsDepth("(".repeat(32_000));
+        assertThrowsDepth("[".repeat(32_000));
+        assertThrowsDepth("(spell :mana 5 (heal caster " + sums(Reader.MAX_DEPTH - 1) + "))");
+        assertThrowsDepth("(spell :mana 5 " + branches(Reader.MAX_DEPTH - 1) + ")");
+        // Depth is how far in, not how many: siblings do not add up.
+        Compiler.compile("(spell :mana 5" + " (heal caster 1)".repeat(Reader.MAX_DEPTH * 2) + ")");
+    }
+
+    private static void assertThrowsDepth(String src) {
+        LogosError e = assertThrows(LogosError.class, () -> Compiler.compile(src));
+        assertTrue(e.getMessage().contains("嵌套太深"), e.getMessage());
+    }
+
+    /** On half a server thread's stack, and interpreted rather than compiled: real use has more room than this. */
+    @Test
+    void nestingAtTheLimitCompilesOnAThreadStack() throws InterruptedException {
+        List<String> sources = List.of(
+                "(spell :mana 5 (heal caster " + sums(Reader.MAX_DEPTH - 2) + "))",
+                "(spell :mana 5 " + branches(Reader.MAX_DEPTH - 2) + ")",
+                "(spell :mana 5 " + rays((Reader.MAX_DEPTH - 2) / 2) + ")");
+        Throwable[] failed = new Throwable[1];
+        Thread t = new Thread(null, () -> {
+            try {
+                for (String src : sources) {
+                    Spell spell = Compiler.compile(src);
+                    assertTrue(spell.profile() != null);
+                }
+            } catch (Throwable e) {
+                failed[0] = e;
+            }
+        }, "deep-spell", 512 * 1024);
+        t.start();
+        t.join();
+        if (failed[0] != null) throw new AssertionError("a spell at the nesting limit did not compile", failed[0]);
+    }
+
     private static void assertError(String src, String fragment) {
         LogosError e = assertThrows(LogosError.class, () -> Compiler.compile(src), src);
         System.out.println(src + "  →  " + e.describe());

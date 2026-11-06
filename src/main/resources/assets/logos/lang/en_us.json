@@ -454,6 +454,8 @@
   "logos.editor.note": "Note",
   "logos.editor.undo": "Undo",
   "logos.editor.redo": "Redo",
+  "logos.editor.graph_too_large": "✗ This drawing is too large to write: %s / %s nodes, %s / %s KB",
+  "logos.editor.saving_too_fast": "Saving too quickly: this one was not saved, try again in a moment",
   "logos.editor.overview": "Overview",
   "logos.editor.library": "Runes",
   "logos.editor.library.context": "Context",

@@ -5,10 +5,14 @@ import java.util.List;
 
 /** Tokenizes and parses Logos source text into S-expressions. ';' starts a line comment. */
 public final class Reader {
+    /** Deepest bracket nesting: far past any real spell, and shallow enough for everything that walks the tree to stay within a thread's stack. */
+    public static final int MAX_DEPTH = 256;
+
     private final String src;
     private int pos;
     private int line = 1;
     private int col = 1;
+    private int depth;
 
     private Reader(String src) {
         this.src = src;
@@ -53,6 +57,7 @@ public final class Reader {
         char ch = src.charAt(pos);
         if (ch == '(' || ch == '[') {
             char close = ch == '(' ? ')' : ']';
+            if (++depth > MAX_DEPTH) throw new LogosError("括号嵌套太深：最多 " + MAX_DEPTH + " 层", l, c);
             advance();
             List<SExpr> items = new ArrayList<>();
             while (true) {
@@ -61,6 +66,7 @@ public final class Reader {
                 char n = src.charAt(pos);
                 if (n == close) {
                     advance();
+                    depth--;
                     return new SExpr.ListExpr(items, l, c);
                 }
                 if (n == ')' || n == ']') throw new LogosError("括号不匹配：多余的 '" + n + "'", line, col);
