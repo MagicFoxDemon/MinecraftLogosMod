@@ -66,7 +66,7 @@ public final class AreaWeatherObj extends SpellObject {
         }
         if (pos.distanceToSqr(synced) > 0.25 && age % 2 == 0) {
             synced = pos;
-            AreaWeather.sync(level);
+            AreaWeather.moved(this);
         }
         if (kind == Weather.CLEAR) return;
         double area = Math.PI * radius * radius;

@@ -206,6 +206,52 @@ public final class LogosConfig {
 
     static {
         BUILDER.pop();
+        BUILDER.comment("Spell effects: how often the server updates them, and how many a client plays").push("fx");
+    }
+
+    public static final ModConfigSpec.IntValue FX_NEAR_DISTANCE = BUILDER
+            .comment("Server: a player within this many blocks of a lasting effect (projectile, beam, field, vein) gets every update;",
+                    "out to twice this distance half of them, further off a quarter. What starts or ends an effect always arrives. 96 sends every update as far as effects reach.")
+            .translation("logos.configuration.fxNearDistance")
+            .defineInRange("fxNearDistance", 32, 0, 96);
+
+    public static final ModConfigSpec.IntValue FX_EFFECTS_PER_TICK = BUILDER
+            .comment("Client: most burst-like effects started in one tick; the rest are skipped.")
+            .translation("logos.configuration.fxEffectsPerTick")
+            .defineInRange("fxEffectsPerTick", 64, 0, 4096);
+
+    public static final ModConfigSpec.IntValue FX_PARTICLES_PER_TICK = BUILDER
+            .comment("Client: most particles spell effects add in one tick; the rest are skipped.")
+            .translation("logos.configuration.fxParticlesPerTick")
+            .defineInRange("fxParticlesPerTick", 512, 0, 16384);
+
+    public static final ModConfigSpec.IntValue FX_MAX_TRAILS = BUILDER
+            .comment("Client: most projectiles drawn at once; a new one waits for room.")
+            .translation("logos.configuration.fxMaxTrails")
+            .defineInRange("fxMaxTrails", 256, 0, 4096);
+
+    public static final ModConfigSpec.IntValue FX_MAX_BEAMS = BUILDER
+            .comment("Client: most lasting beams drawn at once; a new one waits for room.")
+            .translation("logos.configuration.fxMaxBeams")
+            .defineInRange("fxMaxBeams", 64, 0, 4096);
+
+    public static final ModConfigSpec.IntValue FX_MAX_RAYS = BUILDER
+            .comment("Client: most rays and beam wakes showing at once; a new one replaces the oldest.")
+            .translation("logos.configuration.fxMaxRays")
+            .defineInRange("fxMaxRays", 128, 0, 4096);
+
+    public static final ModConfigSpec.IntValue FX_MAX_FIELDS = BUILDER
+            .comment("Client: most fields drawn at once; a new one waits for room.")
+            .translation("logos.configuration.fxMaxFields")
+            .defineInRange("fxMaxFields", 64, 0, 4096);
+
+    public static final ModConfigSpec.IntValue FX_MAX_VEIN_HEADS = BUILDER
+            .comment("Client: most vein heads drawn at once (a ring has up to 32); a new one waits for room.")
+            .translation("logos.configuration.fxMaxVeinHeads")
+            .defineInRange("fxMaxVeinHeads", 512, 0, 16384);
+
+    static {
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();

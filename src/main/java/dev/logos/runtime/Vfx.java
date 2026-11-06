@@ -17,7 +17,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Visuals derived from the program instead of authored per skill: element → palette, form →
@@ -89,8 +88,8 @@ public final class Vfx {
                 (float) aux.x, (float) aux.y, (float) aux.z, size, id, g.look(), (float) g.spin(), g.trail());
         for (ServerPlayer player : level.players()) {
             // Only connections that negotiated the channel (fake players and modless clients have not).
-            if (player.distanceToSqr(p) <= RANGE * RANGE && player.connection.hasChannel(FxPayload.TYPE)) {
-                PacketDistributor.sendToPlayer(player, payload);
+            if (player.distanceToSqr(p) <= RANGE * RANGE && player.connection.hasChannel(FxPayload.Batch.TYPE)) {
+                FxOutbox.queue(player, payload);
             }
         }
     }

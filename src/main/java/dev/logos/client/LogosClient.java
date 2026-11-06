@@ -27,10 +27,11 @@ public final class LogosClient {
 
     @SubscribeEvent
     static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
-        event.register(FxPayload.TYPE, (payload, ctx) -> LogosFx.handle(payload));
+        event.register(FxPayload.Batch.TYPE, (payload, ctx) -> LogosFx.handle(payload));
         event.register(dev.logos.net.AnchorsPayload.TYPE, (payload, ctx) -> ClientAnchors.receive(payload));
         event.register(dev.logos.net.ChargePayload.TYPE, (payload, ctx) -> ClientCharges.receive(payload));
         event.register(dev.logos.net.AreaWeatherPayload.TYPE, (payload, ctx) -> dev.logos.runtime.AreaWeather.receive(payload));
+        event.register(dev.logos.net.AreaWeatherPayload.Moved.TYPE, (payload, ctx) -> dev.logos.runtime.AreaWeather.receive(payload));
         event.register(dev.logos.net.ManaFieldPayload.TYPE, (payload, ctx) -> dev.logos.runtime.ManaField.receive(ctx.player().level(), payload));
         event.register(dev.logos.net.LifeformCorePayload.TYPE, (payload, ctx) -> dev.logos.runtime.Lifeforms.opening(ctx.player(), payload.entityId()));
         event.register(dev.logos.net.PillarBurstPayload.TYPE, (payload, ctx) -> PillarBursts.receive(payload));

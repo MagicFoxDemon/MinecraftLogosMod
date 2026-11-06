@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
 import net.minecraft.client.Minecraft;
@@ -36,7 +37,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 public final class FieldVisuals {
     /** No field lingers longer than this after it ends, whatever its element asks for. */
     public static final int LINGER_CAP = 100;
-    /** The server reminds clients every 4 ticks; one not heard of for this long has gone. */
+    /** The server reminds clients every 4 ticks, or every 8 when they are far off; one not heard of for this long has gone. */
     private static final int STALE_TICKS = 20;
 
     private static final Map<Integer, LiveField> LIVE = new HashMap<>();
@@ -70,6 +71,8 @@ public final class FieldVisuals {
             f = null;
         }
         if (f == null) {
+            // Full up, it goes undrawn until there is room; its pulses and its end find nothing, which is safe.
+            if (LIVE.size() >= LogosConfig.FX_MAX_FIELDS.get()) return;
             f = new LiveField(id, element, create(element), centre);
             LIVE.put(id, f);
         }
@@ -92,7 +95,13 @@ public final class FieldVisuals {
         last = "end " + id;
         LiveField f = LIVE.remove(id);
         if (f == null) return;
+        playOut(f);
+    }
+
+    /** It has ended and plays out; at the cap the one playing out longest goes to make room. */
+    private static void playOut(LiveField f) {
         f.end();
+        if (!ENDED.isEmpty() && ENDED.size() >= LogosConfig.FX_MAX_FIELDS.get()) ENDED.removeFirst().visual.end();
         ENDED.add(f);
     }
 
@@ -110,8 +119,7 @@ public final class FieldVisuals {
             LiveField f = it.next();
             if (now - f.heard > STALE_TICKS) {
                 it.remove();
-                f.end();
-                ENDED.add(f);
+                playOut(f);
                 continue;
             }
             step(level, f);

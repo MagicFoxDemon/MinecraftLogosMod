@@ -884,7 +884,7 @@ public class LogosMod {
         var registrar = event.registrar("1");
         registrar.playToServer(dev.logos.net.InscribePayload.TYPE, dev.logos.net.InscribePayload.CODEC, dev.logos.net.InscribePayload::handle);
         registrar.playToServer(dev.logos.net.EmitterEditPayload.TYPE, dev.logos.net.EmitterEditPayload.CODEC, dev.logos.net.EmitterEditPayload::handle);
-        registrar.playToClient(dev.logos.net.FxPayload.TYPE, dev.logos.net.FxPayload.CODEC);
+        registrar.playToClient(dev.logos.net.FxPayload.Batch.TYPE, dev.logos.net.FxPayload.Batch.CODEC);
         registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
         registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);
         registrar.playToServer(dev.logos.net.StaffFillPayload.TYPE, dev.logos.net.StaffFillPayload.CODEC, dev.logos.net.StaffFillPayload::handle);
@@ -898,6 +898,7 @@ public class LogosMod {
         registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
         registrar.playToClient(dev.logos.net.ChargePayload.TYPE, dev.logos.net.ChargePayload.CODEC);
         registrar.playToClient(dev.logos.net.AreaWeatherPayload.TYPE, dev.logos.net.AreaWeatherPayload.CODEC);
+        registrar.playToClient(dev.logos.net.AreaWeatherPayload.Moved.TYPE, dev.logos.net.AreaWeatherPayload.Moved.CODEC);
         registrar.playToClient(dev.logos.net.ManaFieldPayload.TYPE, dev.logos.net.ManaFieldPayload.CODEC);
         registrar.playToClient(dev.logos.net.PillarBurstPayload.TYPE, dev.logos.net.PillarBurstPayload.CODEC);
         registrar.playToClient(dev.logos.net.ManaTornadoPayload.TYPE, dev.logos.net.ManaTornadoPayload.CODEC);
