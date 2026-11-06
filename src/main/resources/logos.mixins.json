@@ -16,26 +16,14 @@
     "PlayerMixin",
     "AvatarMixin",
     "LevelMixin",
-    "EnvironmentAttributeSystemMixin",
     "ServerLevelMixin",
     "LivingEntityMixin",
     "WardenMixin",
     "ProjectileMixin"
   ],
   "client": [
-    "ItemInHandLayerMixin",
-    "EntityRenderDispatcherMixin",
-    "LevelRendererMixin",
-    "ItemInHandRendererMixin",
     "ItemStackRenderStateAccessor",
-    "LayerRenderStateAccessor",
-    "ItemStackRenderStateMixin",
-    "ItemModelResolverMixin",
-    "CloudRendererMixin",
-    "WeatherEffectRendererMixin",
-    "SkyWeatherMixin",
-    "FogWeatherMixin",
-    "IrisRenderingPipelineMixin"
+    "LayerRenderStateAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

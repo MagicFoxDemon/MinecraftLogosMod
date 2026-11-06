@@ -94,10 +94,12 @@ public final class SurfaceAuras {
      * wrap, and who holds it. Inventory icons draw none.
      */
     public static void resolved(ItemStackRenderState out, ItemStack stack, ItemDisplayContext context, @Nullable ItemOwner owner) {
+        // Not one if that mixin failed to apply (it is allowed to, see logos.cosmetic.mixins.json): then items wear nothing.
+        if (!(out instanceof Carrier carrier)) return;
         boolean shown = !stack.isEmpty() && context != ItemDisplayContext.GUI;
         SurfaceAura aura = shown ? SurfaceAura.of(stack) : null;
         Element wrap = shown ? wrap(owner, context) : null;
-        ((Carrier) out).logos$aura(aura, wrap, aura == null && wrap == null ? -1 : ownerId(owner));
+        carrier.logos$aura(aura, wrap, aura == null && wrap == null ? -1 : ownerId(owner));
     }
 
     private static int ownerId(@Nullable ItemOwner owner) {
