@@ -2,13 +2,11 @@ package dev.logos.block;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.ManaField;
-import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -20,7 +18,7 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
  * {@link ManaField#CAP}; from there it spreads to the chunks around ({@link ManaField}). A collector
  * facing it can feed it too, to carry mana on from another field.
  */
-public class ManaSpreaderBlockEntity extends BlockEntity implements ManaVessel {
+public class ManaSpreaderBlockEntity extends ManaVesselBlockEntity {
     /** Mana it holds before pouring: room for the richest fuel. */
     public static final double MAX_MANA = 1000;
     /** Most mana it pours into the air each second. */
@@ -37,10 +35,9 @@ public class ManaSpreaderBlockEntity extends BlockEntity implements ManaVessel {
             setChanged();
         }
     };
-    private double mana;
 
     public ManaSpreaderBlockEntity(BlockPos pos, BlockState state) {
-        super(LogosMod.MANA_SPREADER_BE.get(), pos, state);
+        super(LogosMod.MANA_SPREADER_BE.get(), pos, state, MAX_MANA);
     }
 
     /** What it poured into the air last second, for its screen. */
@@ -53,26 +50,6 @@ public class ManaSpreaderBlockEntity extends BlockEntity implements ManaVessel {
     /** The drawer: hoppers and pipes put fuel in here. */
     public ItemStacksResourceHandler fuel() {
         return fuel;
-    }
-
-    @Override
-    public double mana() {
-        return mana;
-    }
-
-    @Override
-    public double maxMana() {
-        return MAX_MANA;
-    }
-
-    @Override
-    public double receiveMana(double amount) {
-        double taken = Math.clamp(amount, 0, MAX_MANA - mana);
-        if (taken > 0) {
-            mana += taken;
-            setChanged();
-        }
-        return taken;
     }
 
     /** Once a second: burn a fuel that fits, then pour what it holds into its chunk's air. */

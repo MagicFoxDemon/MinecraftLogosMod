@@ -7,7 +7,6 @@ import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -18,22 +17,16 @@ import net.minecraft.world.level.storage.ValueOutput;
  * (anything that holds mana: an alchemy table, a spreader, another collector…). When that block is
  * full it stops drawing, and the mana stays in the air; it glows while it draws.
  */
-public class ManaCollectorBlockEntity extends BlockEntity implements ManaVessel {
+public class ManaCollectorBlockEntity extends ManaVesselBlockEntity {
     public static final double MAX_MANA = 200;
     /** Most mana it passes on each second. */
     public static final double PASS = 20;
 
-    private double mana;
     /** What it drew last second from ambient and from spread mana, for its screen's gauge. */
     private double lastAmbient, lastSpread;
 
     public ManaCollectorBlockEntity(BlockPos pos, BlockState state) {
-        super(LogosMod.MANA_COLLECTOR_BE.get(), pos, state);
-    }
-
-    @Override
-    public double mana() {
-        return mana;
+        super(LogosMod.MANA_COLLECTOR_BE.get(), pos, state, MAX_MANA);
     }
 
     public double lastAmbient() {
@@ -42,21 +35,6 @@ public class ManaCollectorBlockEntity extends BlockEntity implements ManaVessel 
 
     public double lastSpread() {
         return lastSpread;
-    }
-
-    @Override
-    public double maxMana() {
-        return MAX_MANA;
-    }
-
-    @Override
-    public double receiveMana(double amount) {
-        double taken = Math.clamp(amount, 0, MAX_MANA - mana);
-        if (taken > 0) {
-            mana += taken;
-            setChanged();
-        }
-        return taken;
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, ManaCollectorBlockEntity collector) {
