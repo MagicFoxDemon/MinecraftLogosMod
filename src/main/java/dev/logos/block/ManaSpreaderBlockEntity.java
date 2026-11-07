@@ -77,7 +77,7 @@ public class ManaSpreaderBlockEntity extends BlockEntity implements ManaVessel {
 
     /** Once a second: burn a fuel that fits, then pour what it holds into its chunk's air. */
     public static void serverTick(Level level, BlockPos pos, BlockState state, ManaSpreaderBlockEntity spreader) {
-        if (!(level instanceof ServerLevel server) || !ManaField.working(level)) return;
+        if (!(level instanceof ServerLevel server) || !ManaField.working(level, pos)) return;
         ItemStack f = spreader.fuel.getResource(0).toStack(spreader.fuel.getAmountAsInt(0));
         int value = AlchemyTableBlockEntity.fuelValue(f);
         if (value > 0 && spreader.mana + value <= MAX_MANA) {

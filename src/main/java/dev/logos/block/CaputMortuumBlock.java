@@ -5,7 +5,9 @@ import org.jspecify.annotations.Nullable;
 import com.mojang.serialization.MapCodec;
 
 import dev.logos.LogosMod;
+import dev.logos.runtime.ManaField;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FallingBlock;
@@ -40,10 +42,35 @@ public class CaputMortuumBlock extends FallingBlock implements EntityBlock {
         return new Marker(pos, state);
     }
 
-    /** Holds nothing: it is there to be counted among its chunk's block entities. */
+    /**
+     * Holds nothing: it counts its block in its chunk ({@link ManaField#insulation}). A chunk calls these two for
+     * every block entity it gains or loses, however the block came or went and when the chunk loads or unloads.
+     */
     public static class Marker extends BlockEntity {
+        /** Whether the count includes it: it can be told it was removed more than once. */
+        private boolean counted;
+
         public Marker(BlockPos pos, BlockState state) {
             super(LogosMod.CAPUT_MORTUUM_BLOCK_BE.get(), pos, state);
+        }
+
+        @Override
+        public void clearRemoved() {
+            super.clearRemoved();
+            count(true);
+        }
+
+        @Override
+        public void setRemoved() {
+            super.setRemoved();
+            count(false);
+        }
+
+        private void count(boolean in) {
+            if (counted != in && level instanceof ServerLevel server) {
+                counted = in;
+                ManaField.countMarker(server, worldPosition, in ? 1 : -1);
+            }
         }
     }
 }

@@ -746,8 +746,11 @@ public class LogosMod {
     public static final Supplier<AttachmentType<dev.logos.runtime.Attunement>> ATTUNEMENT = ATTACHMENTS.register("attunement",
             () -> AttachmentType.builder(() -> new dev.logos.runtime.Attunement()).serialize(dev.logos.runtime.Attunement.CODEC).copyOnDeath().build());
     /** On a chunk: the spread mana in its air (dev.logos.runtime.ManaField); saved only while there is some. */
-    public static final Supplier<AttachmentType<Double>> MANA_FIELD = ATTACHMENTS.register("mana_field",
-            () -> AttachmentType.builder(() -> 0.0).serialize(com.mojang.serialization.Codec.DOUBLE.fieldOf("mana"), v -> v > 0).build());
+    public static final Supplier<AttachmentType<dev.logos.runtime.ManaField.Air>> MANA_FIELD = ATTACHMENTS.register("mana_field",
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.ManaField.Air(0)).serialize(dev.logos.runtime.ManaField.Air.CODEC, a -> a.mana() > 0).build());
+    /** On a level: the blocks of caput mortuum in each of its loaded chunks that has any (dev.logos.runtime.ManaField#insulation); never saved, their markers count themselves in as chunks load. */
+    public static final Supplier<AttachmentType<Map<Long, Integer>>> CAPUT_MORTUUM_COUNTS = ATTACHMENTS.register("caput_mortuum_counts",
+            () -> AttachmentType.<Map<Long, Integer>>builder(() -> new java.util.HashMap<>()).build());
     /** On a living entity: the mana wrap about its hand (dev.logos.runtime.ManaWrap), synced to everyone who sees it; only a plain wrap is saved, a spell's ends with its spell. */
     public static final Supplier<AttachmentType<dev.logos.runtime.ManaWrap>> MANA_WRAP = ATTACHMENTS.register("mana_wrap",
             () -> AttachmentType.builder(() -> dev.logos.runtime.ManaWrap.NONE).serialize(dev.logos.runtime.ManaWrap.CODEC, w -> w.until() > 0 && w.amount() > 0)
