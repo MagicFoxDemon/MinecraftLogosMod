@@ -35,7 +35,7 @@ public class StaffItem extends WandItem {
         return capacity;
     }
 
-    /** The mana {@code staff} holds. */
+    /** The mana written on {@code staff}. While it fills, {@link StaffCharging#held} also counts what is on its way to it. */
     public static double stored(ItemStack staff) {
         return staff.getOrDefault(LogosMod.STORED_MANA.get(), 0.0);
     }
@@ -68,6 +68,13 @@ public class StaffItem extends WandItem {
     @Override
     public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
         if (entity instanceof ServerPlayer sp) VoiceCasting.cancel(sp);
+    }
+
+    /** Thrown mid-fill: what has gone in is written first, so it leaves with the staff (throwing splits off a copy of it). */
+    @Override
+    public boolean onDroppedByPlayer(ItemStack item, Player player) {
+        if (player instanceof ServerPlayer sp) StaffCharging.stop(sp);
+        return super.onDroppedByPlayer(item, player);
     }
 
     @Override

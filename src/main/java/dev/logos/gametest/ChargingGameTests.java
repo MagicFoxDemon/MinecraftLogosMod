@@ -189,7 +189,7 @@ final class ChargingGameTests {
         h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.FAIL, "an empty staff cast");
         StaffCharging.start(p);
         fill(p, 20);
-        near(h, StaffItem.stored(staff), 42, "a second of filling");
+        near(h, StaffCharging.held(p, staff), 42, "a second of filling");
         near(h, PlayerMagic.of(p).mana, 958, "the pool pays what went in");
         fill(p, 200);
         near(h, StaffItem.stored(staff), 150, "a full staff");
@@ -213,7 +213,7 @@ final class ChargingGameTests {
         ItemStack staff = wand(p);
         StaffCharging.start(p);
         fill(p, 5);
-        double stored = StaffItem.stored(staff);
+        double stored = StaffCharging.held(p, staff);
         h.assertTrue(stored > 0, "five ticks should fill some");
         p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         p.setItemInHand(InteractionHand.OFF_HAND, staff);

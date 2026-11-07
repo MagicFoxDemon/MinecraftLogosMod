@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -21,18 +22,58 @@ import net.minecraft.world.item.ItemStack;
  * {@link Charging}), until the staff is full; letting go keeps what went in. Right-click then casts the
  * selected spell at once, paid out of the staff. Filling looks like charging the selected spell, its
  * grade by how much the staff holds.
+ * <p>A staff carries all its pages, and every write to it sends the whole of it to its holder and to everyone
+ * tracking them. So what a fill pays waits in the {@link Fill} and reaches the item once, when the fill ends
+ * (or the staff fills up, or is cast from); ask {@link #held} for what a staff holds meanwhile.
  */
 public final class StaffCharging {
     private StaffCharging() {}
 
-    /** A fill under way: how fast it flows, and how many ticks it has paid for. */
+    /** A fill under way: the very stack it fills, how fast it flows, how many ticks it has paid for, and what those paid that the stack does not show yet. */
     public static final class Fill {
+        final ItemStack staff;
         final Charging.Rate rate;
         int done;
+        double pending;
 
-        Fill(Charging.Rate rate) {
+        Fill(ItemStack staff, Charging.Rate rate) {
+            this.staff = staff;
             this.rate = rate;
         }
+    }
+
+    /** The mana {@code staff} holds, counting what {@code player} has paid into it and is not written to it yet. */
+    public static double held(ServerPlayer player, ItemStack staff) {
+        return StaffItem.stored(staff) + pending(player, staff);
+    }
+
+    private static double pending(ServerPlayer player, ItemStack staff) {
+        Fill f = PlayerMagic.of(player).fill;
+        return f != null && f.staff == staff ? f.pending : 0;
+    }
+
+    /**
+     * Writes what the fill has paid to its stack if the player still has that very stack; if not (moved as a
+     * copy, replaced) it goes back to the pool, so it can neither vanish nor land on any other staff.
+     */
+    private static void settle(ServerPlayer player, Fill f) {
+        if (f.pending <= 0) return;
+        if (carries(player, f.staff)) {
+            StaffItem.store(f.staff, StaffItem.stored(f.staff) + f.pending);
+        } else {
+            PlayerMagic m = PlayerMagic.of(player);
+            m.mana = Math.min(m.maxMana, m.mana + f.pending);
+        }
+        f.pending = 0;
+    }
+
+    /** By identity: moving a stack in a menu usually leaves an empty husk of the old one behind and a copy elsewhere. */
+    private static boolean carries(ServerPlayer player, ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        if (player.containerMenu.getCarried() == stack) return true;
+        Inventory inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) if (inventory.getItem(i) == stack) return true;
+        return false;
     }
 
     /** Left-click went down with a staff in the main hand: starts filling it. */
@@ -42,7 +83,7 @@ public final class StaffCharging {
         if (m.fill != null || !(staff.getItem() instanceof StaffItem)) return;
         Charging.Rate rate = Charging.rate(player, staff);
         if (rate == null) return;
-        m.fill = new Fill(rate);
+        m.fill = new Fill(staff, rate);
         sync(player, staff);
         Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
     }
@@ -51,30 +92,36 @@ public final class StaffCharging {
     public static void stop(ServerPlayer player) {
         PlayerMagic m = PlayerMagic.of(player);
         if (m.fill == null) return;
+        settle(player, m.fill);
         m.fill = null;
         Charging.hide(player);
     }
 
-    /** Each player tick: pays the next share into the main-hand staff, or stops if it is no longer there. */
+    /**
+     * Each player tick: pays the next share towards the main-hand staff, or stops if it is no longer there.
+     * Another staff taken up with the button still down starts a fill of its own.
+     */
     public static void tick(ServerPlayer player) {
         PlayerMagic m = PlayerMagic.of(player);
         Fill f = m.fill;
         if (f == null) return;
         ItemStack staff = player.getMainHandItem();
-        if (!player.isAlive() || !(staff.getItem() instanceof StaffItem item)) {
+        if (!player.isAlive() || staff != f.staff || !(staff.getItem() instanceof StaffItem item)) {
             stop(player);
+            if (player.isAlive()) start(player);
             return;
         }
         ServerLevel level = player.level();
-        double stored = StaffItem.stored(staff);
+        double stored = held(player, staff);
         if (stored < item.capacity()) {
             double share = Math.min(item.capacity() - stored, f.rate.tick(f.done));
             if (m.mana + 1e-9 >= share) {
                 m.mana = Math.max(0, m.mana - share);
                 stored += share;
-                StaffItem.store(staff, stored);
+                f.pending += share;
                 f.done++;
                 boolean full = stored >= item.capacity();
+                if (full) settle(player, f);
                 if (full) sync(player, staff);
                 Charging.chime(level, Charging.tip(player), f.done, (float) (stored / item.capacity()), full);
             }
@@ -92,6 +139,8 @@ public final class StaffCharging {
     public static boolean cast(ServerPlayer player, ItemStack staff, SpellBag.Entry entry) {
         if (!Casting.stable(player, entry.spell())) return false;
         Casting.Injection in = Casting.injection(entry.spell(), entry.tier(), Casting.immolation(player, staff));
+        Fill f = PlayerMagic.of(player).fill;
+        if (f != null && f.staff == staff) settle(player, f);
         double stored = StaffItem.stored(staff);
         if (stored + 1e-9 < in.mana()) {
             PlayerMagic.alert(player, Component.literal("法杖储能不足：《" + entry.spell().name() + "》需要注入 " + Node.fmt(in.mana())
@@ -125,6 +174,7 @@ public final class StaffCharging {
         SpellBag.Entry entry = SpellBag.selected(player, staff);
         Element element = entry == null ? Element.ARCANE : entry.element();
         double stored = StaffItem.stored(staff), capacity = ((StaffItem) staff.getItem()).capacity();
+        stored += pending(player, staff);
         Charging.show(player, element, Charging.tier(stored), (float) Math.min(1, stored / capacity), stored >= capacity);
     }
 }

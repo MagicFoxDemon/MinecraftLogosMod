@@ -69,7 +69,7 @@ public class LogosMod {
 
     /**
      * The mana a mana storage tank held when it was broken; placed again, it holds it still. Also the mana a
-     * staff holds, which changes every tick it fills: the staff in hand is not lowered and raised again for it.
+     * staff holds, which keeps changing as it fills: the staff in hand is not lowered and raised again for it.
      */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> STORED_MANA = COMPONENTS.registerComponentType("stored_mana",
             b -> b.persistent(Codec.DOUBLE).ignoreSwapAnimation().networkSynchronized(ByteBufCodecs.DOUBLE));
@@ -936,7 +936,10 @@ public class LogosMod {
 
     @SubscribeEvent
     public void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) dev.logos.runtime.Charging.interrupt(sp);
+        if (event.getEntity() instanceof ServerPlayer sp) {
+            dev.logos.runtime.Charging.interrupt(sp);
+            dev.logos.runtime.StaffCharging.stop(sp);
+        }
     }
 
     @SubscribeEvent
@@ -1031,7 +1034,10 @@ public class LogosMod {
     @SubscribeEvent
     public void onDeath(LivingDeathEvent event) {
         LivingEntity dead = event.getEntity();
-        if (dead instanceof ServerPlayer sp) dev.logos.runtime.Charging.interrupt(sp);
+        if (dead instanceof ServerPlayer sp) {
+            dev.logos.runtime.Charging.interrupt(sp);
+            dev.logos.runtime.StaffCharging.stop(sp);
+        }
         if (Effects.inSpell() || dead.level().isClientSide()) return;
         if (event.getSource().getEntity() instanceof ServerPlayer p && p != dead) {
             var at = Targeting.center(dead);

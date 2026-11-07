@@ -17,7 +17,7 @@ import net.minecraft.world.entity.player.Player;
 /** Persistent per-player magic state: mana pool and stability capacity. Passive spells live on wand pages. */
 public final class PlayerMagic {
     public static final MapCodec<PlayerMagic> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
-            Codec.DOUBLE.fieldOf("mana").forGetter(m -> m.mana),
+            Codec.DOUBLE.fieldOf("mana").forGetter(PlayerMagic::savedMana),
             Codec.DOUBLE.fieldOf("max_mana").forGetter(m -> m.maxMana),
             Codec.INT.fieldOf("stability").forGetter(m -> m.stability),
             Codec.BOOL.fieldOf("trace").forGetter(m -> m.trace)
@@ -49,6 +49,11 @@ public final class PlayerMagic {
         this.maxMana = maxMana;
         this.stability = stability;
         this.trace = trace;
+    }
+
+    /** The pool as saved: mana on its way into a staff is not on the item yet, so a crash before it gets there must find it here. */
+    private double savedMana() {
+        return fill == null ? mana : mana + fill.pending;
     }
 
     public static PlayerMagic of(Player p) {
