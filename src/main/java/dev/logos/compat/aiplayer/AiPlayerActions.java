@@ -295,8 +295,26 @@ public final class AiPlayerActions {
         return out;
     }
 
-    /** Sneak + right-click takes the page lying on the table; it only works holding a page or with both hands empty. */
+    /**
+     * Sneak + right-click takes the page lying on the table; it only works holding a page or with both hands empty. The
+     * other hand counts as well: with a shield in it the game keeps the click from the table, whatever the main hand holds.
+     * It goes away first, since it may land on the very hotbar slot chosen to be empty, and comes back afterwards.
+     */
     private static void takeBack(BiFunction<String, JsonObject, JsonObject> game, BlockPos table) {
+        ItemStack other = client(() -> Minecraft.getInstance().player.getOffhandItem().copy());
+        if (!other.isEmpty()) {
+            call(game, "unequip", obj("dest", "off-hand"));
+        }
+        try {
+            takePageOff(game, table);
+        } finally {
+            if (!other.isEmpty()) {
+                quietly(game, "equip", obj("item", itemId(other), "dest", "off-hand"));
+            }
+        }
+    }
+
+    private static void takePageOff(BiFunction<String, JsonObject, JsonObject> game, BlockPos table) {
         ItemStack anyPage = client(() -> carried(SpellPages::isPage));
         if (anyPage != null) {
             call(game, "equip", obj("item", itemId(anyPage)));
@@ -306,9 +324,6 @@ public final class AiPlayerActions {
                 throw new Failure("hands_full", "taking the page back needs a page in hand or an empty hotbar slot", "drop or store something first");
             }
             call(game, "setQuickBarSlot", obj("slot", empty));
-            if (client(() -> !Minecraft.getInstance().player.getOffhandItem().isEmpty())) {
-                call(game, "unequip", obj("dest", "off-hand"));
-            }
         }
         holdSneak(game);
         try {
