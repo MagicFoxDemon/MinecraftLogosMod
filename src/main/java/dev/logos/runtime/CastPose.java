@@ -12,15 +12,14 @@ import dev.logos.lang.Category;
 import dev.logos.lang.Node;
 import dev.logos.lang.Spell;
 import dev.logos.net.CastPosePayload;
+import dev.logos.net.Net;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Poses a caster keeps while something of theirs lasts, such as a beam: {@link #hold} starts one and
@@ -142,9 +141,6 @@ public final class CastPose {
     }
 
     private static void send(LivingEntity caster, CastPosePayload payload) {
-        if (!(caster.level() instanceof ServerLevel level)) return;
-        for (ServerPlayer p : level.players()) {
-            if (p.distanceToSqr(caster) <= 128 * 128 && p.connection.hasChannel(CastPosePayload.TYPE)) PacketDistributor.sendToPlayer(p, payload);
-        }
+        if (caster.level() instanceof ServerLevel level) Net.sendNear(level, caster.position(), 128, payload);
     }
 }

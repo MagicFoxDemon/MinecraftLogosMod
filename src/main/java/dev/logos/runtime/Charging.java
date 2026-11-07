@@ -9,6 +9,7 @@ import dev.logos.item.WandCharmItem;
 import dev.logos.lang.Element;
 import dev.logos.lang.Node;
 import dev.logos.net.ChargePayload;
+import dev.logos.net.Net;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -22,7 +23,6 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * 蓄力: a wand cast is charged before it goes off. While right-click is held, mana flows from the
@@ -353,9 +353,6 @@ public final class Charging {
 
     /** To players near enough to see it whose connection knows the channel (fake players and modless clients do not). */
     private static void send(LivingEntity caster, ChargePayload payload) {
-        if (!(caster.level() instanceof ServerLevel level)) return;
-        for (ServerPlayer p : level.players()) {
-            if (p.distanceToSqr(caster) <= 128 * 128 && p.connection.hasChannel(ChargePayload.TYPE)) PacketDistributor.sendToPlayer(p, payload);
-        }
+        if (caster.level() instanceof ServerLevel level) Net.sendNear(level, caster.position(), 128, payload);
     }
 }

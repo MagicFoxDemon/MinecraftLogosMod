@@ -1,11 +1,10 @@
 package dev.logos.runtime;
 
 import dev.logos.net.ManaTornadoPayload;
+import dev.logos.net.Net;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Mana spiralling up round a caster into a twisting tornado, with a turning swirl underfoot, motes splashing up,
@@ -38,11 +37,6 @@ public final class ManaTornado {
     }
 
     private static void send(ServerLevel level, Vec3 at, ManaTornadoPayload payload) {
-        for (ServerPlayer player : level.players()) {
-            // Only connections that negotiated the channel (fake players have not).
-            if (player.distanceToSqr(at) <= RANGE * RANGE && player.connection.hasChannel(ManaTornadoPayload.TYPE)) {
-                PacketDistributor.sendToPlayer(player, payload);
-            }
-        }
+        Net.sendNear(level, at, RANGE, payload);
     }
 }
