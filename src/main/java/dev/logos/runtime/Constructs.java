@@ -21,7 +21,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -35,14 +34,14 @@ public final class Constructs {
 
     /** Adds the cells of every construct solid for {@code source} to the game's entity collisions in {@code area}. */
     public static List<VoxelShape> withCollisions(List<VoxelShape> shapes, Level level, @Nullable Entity source, AABB area) {
-        if (source == null || !ConstructEntity.any()) return shapes;
+        // No construct is ever solid for a projectile: onEntityTick has dealt with it this tick, so it need not ask twice.
+        if (source == null || source instanceof Projectile || !ConstructEntity.any()) return shapes;
         List<ConstructEntity> near = ConstructEntity.near(level, area);
         if (near.isEmpty()) return shapes;
         com.google.common.collect.ImmutableList.Builder<VoxelShape> out = com.google.common.collect.ImmutableList.builder();
         out.addAll(shapes);
         for (ConstructEntity c : near) {
-            if (!c.solidFor(source)) continue;
-            for (AABB cell : c.geometry().cells) if (cell.intersects(area)) out.add(Shapes.create(cell));
+            if (c.solidFor(source)) c.geometry().addShapes(area, out);
         }
         return out.build();
     }
