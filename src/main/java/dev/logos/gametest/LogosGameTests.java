@@ -24,13 +24,16 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * In-world tests of the spell runtime: a mock player casts real spells at real mobs.
  * Run with {@code ./gradlew runGameTestServer}, or {@code /test runall} in a dev client.
+ * Its own mod entry point: development runs find it by themselves, and the released jar leaves it out.
  */
+@Mod(LogosMod.MODID)
 public final class LogosGameTests {
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS = DeferredRegister.create(Registries.TEST_FUNCTION, LogosMod.MODID);
 
@@ -78,7 +81,7 @@ public final class LogosGameTests {
 
     private LogosGameTests() {}
 
-    public static void register(IEventBus modBus) {
+    public LogosGameTests(IEventBus modBus) {
         FUNCTIONS.register("example_npc_heal", () -> HealingExampleGameTests::single);
         FUNCTIONS.register("example_npc_group_heal", () -> HealingExampleGameTests::group);
         FUNCTIONS.register("rune_species_filter", () -> HealingExampleGameTests::species);

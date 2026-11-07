@@ -879,7 +879,6 @@ public class LogosMod {
         // loading and stay settled (a server's snapshot only renumbers them); the limits can change whenever the file does.
         modBus.addListener((net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent e) -> dev.logos.runtime.Casting.invalidate());
         modBus.addListener((net.neoforged.fml.event.config.ModConfigEvent.Reloading e) -> dev.logos.runtime.Casting.invalidate());
-        dev.logos.gametest.LogosGameTests.register(modBus);
         NeoForge.EVENT_BUS.register(this);
     }
 
