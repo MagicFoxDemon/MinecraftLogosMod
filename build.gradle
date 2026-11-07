@@ -226,4 +226,10 @@ dependencies {
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     if (project.hasProperty("jei")) localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    // -PcompatMods adds the mods players most often run with to the dev runs, for a smoke test (see CONTRIBUTING); never required or bundled.
+    if (project.hasProperty("compatMods")) {
+        localRuntime("maven.modrinth:sodium:${sodium_version}") { transitive = false }
+        localRuntime("maven.modrinth:iris:${iris_version}") { transitive = false }
+        localRuntime("maven.modrinth:lithium:${lithium_version}") { transitive = false }
+    }
 }

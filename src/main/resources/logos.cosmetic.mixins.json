@@ -1,0 +1,25 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "dev.logos.mixin",
+  "plugin": "dev.logos.compat.CosmeticMixinPlugin",
+  "mixins": [
+    "EnvironmentAttributeSystemMixin"
+  ],
+  "client": [
+    "ItemInHandLayerMixin",
+    "EntityRenderDispatcherMixin",
+    "LevelRendererMixin",
+    "ItemInHandRendererMixin",
+    "ItemStackRenderStateMixin",
+    "ItemModelResolverMixin",
+    "CloudRendererMixin",
+    "WeatherEffectRendererMixin",
+    "SkyWeatherMixin",
+    "FogWeatherMixin",
+    "IrisRenderingPipelineMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}
