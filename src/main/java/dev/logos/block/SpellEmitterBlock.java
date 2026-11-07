@@ -90,10 +90,8 @@ public class SpellEmitterBlock extends DirectionalBlock implements EntityBlock {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide() || type != LogosMod.SPELL_EMITTER_BE.get()) return null;
-        return (BlockEntityTicker<T>) (BlockEntityTicker<SpellEmitterBlockEntity>) SpellEmitterBlockEntity::serverTick;
+        return ManaSpreaderBlock.serverTicker(level, type, LogosMod.SPELL_EMITTER_BE.get(), SpellEmitterBlockEntity::serverTick);
     }
 
     @Override

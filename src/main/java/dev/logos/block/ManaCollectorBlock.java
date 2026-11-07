@@ -67,10 +67,8 @@ public class ManaCollectorBlock extends DirectionalBlock implements EntityBlock,
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide() || type != LogosMod.MANA_COLLECTOR_BE.get()) return null;
-        return (BlockEntityTicker<T>) (BlockEntityTicker<ManaCollectorBlockEntity>) ManaCollectorBlockEntity::serverTick;
+        return ManaSpreaderBlock.serverTicker(level, type, LogosMod.MANA_COLLECTOR_BE.get(), ManaCollectorBlockEntity::serverTick);
     }
 
     @Override
