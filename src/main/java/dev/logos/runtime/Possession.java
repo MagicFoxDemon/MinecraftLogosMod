@@ -35,7 +35,6 @@ import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.ICancellableEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.Tags;
@@ -44,9 +43,7 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -429,34 +426,9 @@ public final class Possession {
         ACTIVE.clear();
     }
 
-    // Inside a creature, the player's own hands do nothing: its blows go through strike and shoot.
-    @SubscribeEvent
-    static void onAttack(AttackEntityEvent event) {
-        refuse(event.getEntity(), event);
-    }
-
-    @SubscribeEvent
-    static void onUseItem(PlayerInteractEvent.RightClickItem event) {
-        refuse(event.getEntity(), event);
-    }
-
-    @SubscribeEvent
-    static void onUseBlock(PlayerInteractEvent.RightClickBlock event) {
-        refuse(event.getEntity(), event);
-    }
-
-    @SubscribeEvent
-    static void onHitBlock(PlayerInteractEvent.LeftClickBlock event) {
-        refuse(event.getEntity(), event);
-    }
-
-    @SubscribeEvent
-    static void onUseEntity(PlayerInteractEvent.EntityInteract event) {
-        refuse(event.getEntity(), event);
-    }
-
-    private static void refuse(Player p, ICancellableEvent event) {
-        if (!ACTIVE.isEmpty() && possessing(p)) event.setCanceled(true);
+    /** Inside a creature, the player's own hands do nothing: its blows go through strike and shoot ({@link PlayerRefusals}). */
+    static boolean handsBound(Player p) {
+        return !ACTIVE.isEmpty() && possessing(p);
     }
 
     private static @Nullable Session sessionOfBody(Entity e) {

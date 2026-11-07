@@ -19,12 +19,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.ICancellableEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /**
@@ -134,34 +131,5 @@ public final class TimeStop {
         if (s == null) return;
         s.hits.add(new Hit(event.getSource(), event.getAmount()));
         event.setCanceled(true);
-    }
-
-    @SubscribeEvent
-    static void onAttack(AttackEntityEvent event) {
-        refuse(event.getEntity(), event);
-    }
-
-    @SubscribeEvent
-    static void onUseItem(PlayerInteractEvent.RightClickItem event) {
-        refuse(event.getEntity(), event);
-    }
-
-    @SubscribeEvent
-    static void onUseBlock(PlayerInteractEvent.RightClickBlock event) {
-        refuse(event.getEntity(), event);
-    }
-
-    @SubscribeEvent
-    static void onHitBlock(PlayerInteractEvent.LeftClickBlock event) {
-        refuse(event.getEntity(), event);
-    }
-
-    @SubscribeEvent
-    static void onUseEntity(PlayerInteractEvent.EntityInteract event) {
-        refuse(event.getEntity(), event);
-    }
-
-    private static void refuse(Player p, ICancellableEvent event) {
-        if (stopped(p)) event.setCanceled(true);
     }
 }
