@@ -60,7 +60,7 @@ public final class SageClient {
     }
 
     /** Asks the sage; {@code listener} hears its progress and {@code done} its answer, both on the client thread. */
-    static Handle ask(List<SageAgent.Turn> history, String message, String current, int capacity, boolean emitter, SageAgent.Listener listener, Consumer<SageAgent.Outcome> done) {
+    public static Handle ask(List<SageAgent.Turn> history, String message, String current, int capacity, boolean emitter, SageAgent.Listener listener, Consumer<SageAgent.Outcome> done) {
         Minecraft mc = Minecraft.getInstance();
         String lang = mc.getLanguageManager().getSelected();
         int id = nextId++;

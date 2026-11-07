@@ -1,0 +1,24 @@
+---
+id: logos:spell_page
+targets: item:logos:spell_page, item:logos:inscribed_page, item:logos:crystal_spell_page, item:logos:crystal_inscribed_page, item:logos:echo_spell_page, item:logos:echo_inscribed_page, item:logos:transmuted_spell_page, item:logos:transmuted_inscribed_page, item:logos:chalk_spell_page, item:logos:chalk_inscribed_page, item:logos:firmament_spell_page, item:logos:firmament_inscribed_page, item:logos:sage_spell_page, item:logos:sage_inscribed_page, item:logos:formless_principle, item:logos:supreme_principle, item:logos:wand, item:logos:adept_wand, item:logos:master_wand, item:logos:oak_wand, item:logos:spruce_wand, item:logos:birch_wand, item:logos:jungle_wand, item:logos:acacia_wand, item:logos:dark_oak_wand, item:logos:cherry_wand, item:logos:spell_codex
+summary: a Logos spell page (术式载页) and the wand (法杖) that casts it: hang a written page on a wand, then cast it at a target
+handler: dev.logos.compat.aiplayer.AiPlayerActions
+---
+A spell page carries one Logos spell. A blank page (paper + gold nugget) is written at the inscription table (block logos:inscription_table; its manual has the actions that do it). A written page shows its spell's name in its own name, such as Basic Spell Page《Fireball》. Refer to a spell by that name, by its :name in the source, or by its example id. `read_pages` tells for every page carried whether it is blank, or the spell's name, trigger, mana, intents and source, and for every wand what it carries and which spell it has selected.
+
+Grades and the mana one cast may inject: basic 基础 50, crystal 晶辉 150, echo 回响 400, transmuted 炼成 800, chalk 白垩 1600, firmament 天穹 3200, sage 贤者 6400, principle 无相 12800. Writing keeps the grade. A spell that needs more than its page holds casts weaker.
+
+A wand holds pages: the seven wood wands (logos:oak_wand and so on) hold 3 and are crafted; 学徒法杖 logos:wand 3, 术士法杖 logos:adept_wand 6 and 大师法杖 logos:master_wand 9 are also found. `hang_on_wand` puts a carried page on a wand. `cast` does the rest: it takes up the wand, hangs the page first if it is only carried, turns the wand to the spell, aims, charges and lets go. Give `entity`, an id from the entities function, or x, y, z to aim; with neither, the spell goes where you look. Walk within the spell's `range` first. A spell with the trigger hurt, attack or kill is passive: it needs no casting, and fires by itself while the wand is in hand.
+
+Mana comes from your own pool, which refills with time. A charge starts only if you could pay all of it now: when it cannot, `cast` fails with cast_refused and the game's own words about what is missing. read_pages shows the pool as mana_hud while a wand is in hand, such as 180/200 and the selected spell. A spell codex (法式典籍) in the off hand adds its pages to the wand's.
+
+Done looks like, and how to write it in done_when: a written page moves off the inventory when it goes on a wand, so has_item on the page does not prove it. Use this mod's own check, as a condition: `usage logos:spell_page has_spell {"spell":"fireball"}` holds while the spell is on a carried page or a wand, and `usage logos:spell_page has_spell {"spell":"fireball","on_wand":true}` once it is on a wand. Nothing in the game records that a spell went off, so for a cast check its effect: what it was meant to do to the target or the world.
+
+The book sprite names its own spells, so when write_spell is planned the name is not known yet: never guess it. Leave spell out of has_spell, hang_on_wand and cast and they mean the page written last. So one run list [write_spell, hang_on_wand with no spell] with done_when `usage logos:spell_page has_spell {"on_wand":true}` does the whole job.
+
+```actions
+{"read_pages": {"summary": "the spell pages and wands you carry: for a page its grade, blank or its spell's name, trigger, mana, intents and source; for a wand its spells and the selected one", "params": [], "read": true},
+ "has_spell": {"summary": "a check for done_when: met is true when the spell is on a carried page or wand", "params": {"spell": "optional: the spell's name or example id, else the page written last", "on_wand": "optional: true to count only a wand"}, "read": true},
+ "hang_on_wand": {"summary": "put a carried written page into a free slot of a carried wand", "params": {"spell": "optional: the spell's name or example id, else the page written last", "wand": "optional: item id of the wand, else the first carried", "replace": "optional: a spell to take off when the wand is full"}},
+ "cast": {"summary": "take up the wand, select the spell, aim, charge until full and let go", "params": {"spell": "optional: the spell's name or example id, else the wand's selected one", "entity": "optional: id of the entity to aim at, followed while charging", "x": "optional: a point to aim at", "y": "", "z": ""}}}
+```

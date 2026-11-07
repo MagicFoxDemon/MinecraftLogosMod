@@ -54,7 +54,7 @@ public final class SpellPages {
     public static ItemStack inscribed(PageTier tier, String source, @Nullable CompoundTag graph) {
         ItemStack page = new ItemStack(tier.inscribed());
         page.set(LogosMod.SPELL_SOURCE.get(), source);
-        if (graph != null) page.set(LogosMod.SPELL_GRAPH.get(), graph);
+        if (graph != null && !graph.isEmpty()) page.set(LogosMod.SPELL_GRAPH.get(), graph);
         return page;
     }
 

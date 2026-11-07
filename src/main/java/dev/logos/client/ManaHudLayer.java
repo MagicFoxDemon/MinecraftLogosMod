@@ -49,6 +49,11 @@ public final class ManaHudLayer {
         event.registerAbove(VanillaGuiLayers.OVERLAY_MESSAGE, ID, ManaHudLayer::render);
     }
 
+    /** The line as it reads now, or null while no wand is held: for whoever reads the HUD out rather than looks at it. */
+    public static @Nullable String line() {
+        return shown && text != null ? text.getString() : null;
+    }
+
     private static void receive(ManaHudPayload p) {
         shown = p.shown();
         lingering = LINGER_TICKS;
