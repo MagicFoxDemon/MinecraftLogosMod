@@ -118,6 +118,7 @@ gh pr create --fill                # 或在网页上开 PR
 - `KeptFamiliar` 接口：魔力生命体和巨像这类「造出来的使魔」，随世界保存、有自己的心智，使魔系统只负责传达命令。
   - 魔力生命体：`runtime/ManaLifeform`（实体、心核槽位、连携、动画控制器）、`runtime/LifeformMind`（效用 AI，每个行为一个内部类，加新行为只需加一个类并放进构造器的列表；`/logos mind` 显示各行为分数）、`runtime/Lifeforms`（召唤规则、存档登记、心核界面）、`client/ManaLifeformRenderer`。
   - 炼金术巨像：`runtime/AlchemicalColossus`（实体、魔力、暴走与平息、座位、动作同步）、`runtime/ColossusMind`（效用 AI 与按动画计时的动作序列、乘客位置 `holdPoint`）、`runtime/ColossusCannon`（掌心炮）、`runtime/Colossi`（召唤、驾驶、进度、道具面板）、`client/ColossusRenderer`、`client/ColossusInput`。
+  - `runtime/UtilityMind<T>`：两者共用的效用 AI 基类（感知、打分、选最高分、`/logos mind` 的输出），以后的同类生物继承它。
   - `runtime/LifeformAugment`：炼金道具接口（道具还没做），两者共用。
   - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`。
 
