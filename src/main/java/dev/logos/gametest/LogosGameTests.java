@@ -40,7 +40,7 @@ public final class LogosGameTests {
     private static final List<String> TESTS = List.of(
             "player_refusals",
             "projectile_impact_expiry", "projectile_impact_wall", "projectile_impact_piercing",
-            "example_npc_heal", "example_npc_group_heal", "rune_species_filter", "example_prismatic_volley_budget",
+            "example_npc_heal", "root_mana_cap", "example_npc_group_heal", "rune_species_filter", "example_prismatic_volley_budget",
             "fireball_hits_and_bursts", "chain_lightning_bounces", "execute_with_proof_is_cheap", "execute_without_proof_starves",
             "spell_tasks_many_due_at_once", "spell_tasks_in_order", "spell_tasks_cap", "spell_budget_defers_forms", "spell_budget_defers_tasks", "spell_budget_forms_and_tasks_take_turns", "spell_budget_events_count", "spell_budget_ordinary_spells", "spell_forms_keep_compiled_results", "spell_stats_command", "spell_near_asks_distance_first", "spell_trace_only_for_readers",
             "paradox_backfires", "recursion_is_bounded", "runaway_spawning_is_bounded", "attack_passive_fires", "marks_link_spells", "graph_roundtrip", "graph_rejects_bad_wires", "graph_errors_point_at_nodes", "context_wire_meanings", "config_limits_apply",
@@ -84,6 +84,7 @@ public final class LogosGameTests {
     private LogosGameTests() {}
 
     public LogosGameTests(IEventBus modBus) {
+        FUNCTIONS.register("root_mana_cap", () -> RootManaGameTests::cap);
         FUNCTIONS.register("example_npc_heal", () -> HealingExampleGameTests::single);
         FUNCTIONS.register("example_npc_group_heal", () -> HealingExampleGameTests::group);
         FUNCTIONS.register("rune_species_filter", () -> HealingExampleGameTests::species);
