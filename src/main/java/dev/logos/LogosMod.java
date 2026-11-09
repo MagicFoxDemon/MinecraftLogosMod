@@ -168,6 +168,14 @@ public class LogosMod {
     /** 两脚规: measures one block from another as forward, up and right, for the offset rune. */
     public static final DeferredItem<dev.logos.item.DividersItem> DIVIDERS_ITEM = ITEMS.registerItem("dividers",
             dev.logos.item.DividersItem::new, p -> p.stacksTo(1));
+    /** 根源权限: creative only. Use to raise your mana cap by 64000 for good. */
+    public static final DeferredItem<dev.logos.item.RootMaxManaItem> ROOT_AUTHORITY = ITEMS.registerItem("root_authority",
+            p -> new dev.logos.item.RootMaxManaItem(p, dev.logos.item.RootMaxManaItem.AMOUNT),
+            p -> p.stacksTo(64).rarity(net.minecraft.world.item.Rarity.EPIC));
+    /** 根源剥离: creative only. Use to lower your mana cap by 64000 for good (never below zero). */
+    public static final DeferredItem<dev.logos.item.RootMaxManaItem> ROOT_STRIP = ITEMS.registerItem("root_strip",
+            p -> new dev.logos.item.RootMaxManaItem(p, -dev.logos.item.RootMaxManaItem.AMOUNT),
+            p -> p.stacksTo(64).rarity(net.minecraft.world.item.Rarity.EPIC));
 
     // Alchemical colossus materials. Placeholders for now: their alchemy (recipes, planting) comes later.
     /** 巨像之心: the flower a colossus offers its master. An alchemical material. */
@@ -632,6 +640,8 @@ public class LogosMod {
                 out.accept(MANA_COLLECTOR_ITEM.get());
                 out.accept(MANA_STORAGE_TANK_ITEM.get());
                 out.accept(MANA_SPREADER_ITEM.get());
+                out.accept(ROOT_AUTHORITY.get());
+                out.accept(ROOT_STRIP.get());
             }).build());
     /** 术式范本: every example spell, written on the page grade that fits it. */
     public static final DeferredHolder<net.minecraft.world.item.CreativeModeTab, net.minecraft.world.item.CreativeModeTab> EXAMPLES_TAB = TABS.register("logos_examples",
