@@ -67,7 +67,7 @@ public record EmitterEditPayload(BlockPos pos, String source, CompoundTag graph,
         emitter.edit(SpellPages.write(emitter.page(), p.source, p.graph), p.mode, p.interval, sp);
         sp.level().playSound(null, p.pos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1, 1.2f);
         Report.summary(spell, PlayerMagic.of(sp).stability, sp::sendSystemMessage);
-        dev.logos.item.SpellPageItem.warnCapacity(sp, spell, tier == null ? PageTier.BASIC : tier);
+        dev.logos.item.SpellPageItem.warnCapacity(sp, spell, tier == null ? PageTier.BASIC : tier, emitter.page());
         if (p.fire) emitter.testFire();
     }
 }
