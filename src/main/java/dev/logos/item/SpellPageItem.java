@@ -46,6 +46,14 @@ public class SpellPageItem extends Item {
         return inscribed;
     }
 
+    /**
+     * The item this page becomes once a spell is written on it (a written page stays itself). Look-alike
+     * pages from other mods override this so writing keeps their look; grade, capacity and use stay the same.
+     */
+    public Item writtenForm() {
+        return inscribed ? this : tier.inscribed();
+    }
+
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack other = player.getItemInHand(hand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
@@ -65,14 +73,19 @@ public class SpellPageItem extends Item {
         if (page.isEmpty()) player.setItemInHand(hand, written);
         else if (!player.getInventory().add(written)) player.drop(written, false);
         Report.summary(spell, PlayerMagic.of(sp).stability, sp::sendSystemMessage);
-        warnCapacity(sp, spell, tier);
+        warnCapacity(sp, spell, tier, written);
         return InteractionResult.SUCCESS;
     }
 
     /** Writing more injection than the page holds is allowed; say what a cast will actually inject. */
     public static void warnCapacity(ServerPlayer player, Spell spell, PageTier tier) {
+        warnCapacity(player, spell, tier, new ItemStack(tier.blank()));
+    }
+
+    /** As above, naming {@code page}'s own item, so a look-alike page is called by its name. */
+    public static void warnCapacity(ServerPlayer player, Spell spell, PageTier tier, ItemStack page) {
         if (spell.mana() <= tier.capacity()) return;
-        player.sendSystemMessage(Component.literal("⚠ 这张" + Component.translatable(tier.blank().getDescriptionId()).getString()
+        player.sendSystemMessage(Component.literal("⚠ 这张" + Component.translatable(page.getItem().getDescriptionId()).getString()
                 + "只能承载 " + tier.capacity() + " 魔力，术式要求注入 " + Node.fmt(spell.mana()) + "：施放时只会注入 " + tier.capacity()
                 + (spell.immolate() ? "（持焚式法杖施放可放大上限，但载页会焚毁）" : "（术式关闭了焚式）")).withStyle(ChatFormatting.GOLD));
     }

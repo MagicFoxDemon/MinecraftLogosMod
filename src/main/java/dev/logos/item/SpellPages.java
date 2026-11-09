@@ -9,6 +9,7 @@ import dev.logos.runtime.Casting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -52,16 +53,22 @@ public final class SpellPages {
     }
 
     public static ItemStack inscribed(PageTier tier, String source, @Nullable CompoundTag graph) {
-        ItemStack page = new ItemStack(tier.inscribed());
+        return inscribed(tier.inscribed(), source, graph);
+    }
+
+    private static ItemStack inscribed(Item item, String source, @Nullable CompoundTag graph) {
+        ItemStack page = new ItemStack(item);
         page.set(LogosMod.SPELL_SOURCE.get(), source);
         if (graph != null && !graph.isEmpty()) page.set(LogosMod.SPELL_GRAPH.get(), graph);
         return page;
     }
 
-    /** {@code page} (empty or written, any grade) rewritten with a spell; the grade and any custom name stay. */
+    /**
+     * {@code page} (empty or written, any grade) rewritten with a spell; the grade, the page's own look
+     * ({@link SpellPageItem#writtenForm}) and any custom name stay.
+     */
     public static ItemStack write(ItemStack page, String source, @Nullable CompoundTag graph) {
-        PageTier tier = tier(page);
-        ItemStack out = inscribed(tier == null ? PageTier.BASIC : tier, source, graph);
+        ItemStack out = inscribed(page.getItem() instanceof SpellPageItem p ? p.writtenForm() : PageTier.BASIC.inscribed(), source, graph);
         Component custom = page.get(DataComponents.CUSTOM_NAME);
         if (custom != null) out.set(DataComponents.CUSTOM_NAME, custom);
         return out;

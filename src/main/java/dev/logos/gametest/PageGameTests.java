@@ -197,6 +197,21 @@ final class PageGameTests {
         h.succeed();
     }
 
+    /** Writing turns each page into its own written form: an empty page into its grade's written page, a written page stays itself. */
+    static void writeKeepsLook(GameTestHelper h) {
+        String src = "(spell :name \"抄\" :mana 10 (mark caster #c))";
+        for (PageTier tier : PageTier.values()) {
+            ItemStack blank = new ItemStack(tier.blank());
+            blank.set(DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("留名"));
+            ItemStack written = SpellPages.write(blank, src, null);
+            h.assertTrue(written.is(tier.inscribed()), "an empty " + tier.id + " page should become its written page, got " + written);
+            h.assertTrue(written.has(DataComponents.CUSTOM_NAME), "writing lost the custom name");
+            ItemStack again = SpellPages.write(written, "(spell :name \"再\" :mana 10 (mark caster #c))", null);
+            h.assertTrue(again.is(tier.inscribed()), "rewriting a " + tier.id + " page should keep it, got " + again);
+        }
+        h.succeed();
+    }
+
     /** {@code /logos source} reads the page in either hand and saves its text for {@code /logos load}. */
     static void sourceCommandReadsPage(GameTestHelper h) {
         ServerPlayer p = caster(h);

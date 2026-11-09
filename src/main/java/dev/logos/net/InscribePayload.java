@@ -53,7 +53,7 @@ public record InscribePayload(BlockPos pos, String source, CompoundTag graph, St
         var tier = InscriptionTableBlock.inscribe(sp, p.pos, p.source, p.graph, p.voice.equals(spell.name()) ? p.voice : null);
         if (tier != null) {
             Report.summary(spell, PlayerMagic.of(sp).stability, sp::sendSystemMessage);
-            dev.logos.item.SpellPageItem.warnCapacity(sp, spell, tier);
+            if (sp.level().getBlockEntity(p.pos) instanceof dev.logos.block.InscriptionTableBlockEntity table) dev.logos.item.SpellPageItem.warnCapacity(sp, spell, tier, table.page());
         }
     }
 }
