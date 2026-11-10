@@ -39,10 +39,10 @@ final class FamiliarEvents {
 
     private FamiliarEvents() {}
 
-    /** A familiar never takes a target of its own: only what its master is fighting. */
+    /** A familiar never takes a target of its own: only what its master is fighting. A lasting companion chooses for itself. */
     @SubscribeEvent
     static void onChangeTarget(LivingChangeTargetEvent event) {
-        if (!(event.getEntity() instanceof Mob m) || !Familiars.isFamiliar(m)) return;
+        if (!(event.getEntity() instanceof Mob m) || !Familiars.isFamiliar(m) || m instanceof LastingCompanion) return;
         if (m instanceof AlchemicalColossus c && c.isBerserk()) return; // a frenzied colossus answers to no one
         LivingEntity wanted = event.getNewAboutToBeSetTarget();
         LivingEntity ordered = Familiars.orderedTarget(m);
@@ -82,6 +82,11 @@ final class FamiliarEvents {
     @SubscribeEvent
     static void onJoin(EntityJoinLevelEvent event) {
         if (event.loadedFromDisk() && Familiars.isFamiliar(event.getEntity())) {
+            // A companion is kept by its own mod: it answers again, unless its master has another one out by now.
+            if (event.getEntity() instanceof Mob c && c instanceof LastingCompanion && !event.getLevel().isClientSide()) {
+                if (!Familiars.rebindCompanion(c)) event.setCanceled(true);
+                return;
+            }
             // A made familiar is kept with the world: it answers again, unless it was unmade meanwhile.
             if (event.getEntity() instanceof Mob lf && lf instanceof KeptFamiliar && !event.getLevel().isClientSide()) {
                 boolean kept = Lifeforms.registered(lf);

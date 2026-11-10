@@ -250,6 +250,37 @@ public final class Familiars {
         LIVE.add(m);
     }
 
+    /**
+     * Binds a {@link LastingCompanion} to {@code owner} for good: no time limit, and one per player, so the master's
+     * previous companion, if any, is sent home first. The companion's mod adds it to the world.
+     */
+    public static void bindCompanion(Mob m, ServerPlayer owner) {
+        if (!(m instanceof LastingCompanion)) throw new IllegalArgumentException(m + " is not a LastingCompanion");
+        Mob old = companionOf(owner.getUUID(), m);
+        if (old != null) ((LastingCompanion) old).sendHome();
+        bind(m, owner, Long.MAX_VALUE);
+    }
+
+    /** {@code owner}'s lasting companion in the world (in any dimension), or null. */
+    public static @Nullable Mob companionOf(Player owner) {
+        return companionOf(owner.getUUID(), null);
+    }
+
+    private static @Nullable Mob companionOf(UUID owner, @Nullable Mob except) {
+        for (Mob m : LIVE) {
+            if (m != except && m instanceof LastingCompanion && m.isAlive() && owner.equals(masterOf(m))) return m;
+        }
+        return null;
+    }
+
+    /** A companion loaded again with its chunk answers to its master again, unless they already have another one out. */
+    static boolean rebindCompanion(Mob m) {
+        Bond b = bondOf(m);
+        if (b == null || companionOf(b.owner(), m) != null) return false;
+        rebind(m);
+        return true;
+    }
+
     /** Kept with the world rather than unmade: mana lifeforms and alchemical colossi. */
     static boolean kept(Mob m) {
         return m instanceof KeptFamiliar;
@@ -265,8 +296,12 @@ public final class Familiars {
         bind(m, owner, m.level().getGameTime() + LIFETIME);
     }
 
-    /** Sends a familiar away: it drops what it picked up and vanishes. */
+    /** Sends a familiar away: it drops what it picked up and vanishes. A lasting companion is sent home by its own mod instead. */
     public static void dismiss(Mob m) {
+        if (m instanceof LastingCompanion c) {
+            c.sendHome();
+            return;
+        }
         if (m.level() instanceof ServerLevel level) {
             for (ItemStack s : pickedUp(m)) level.addFreshEntity(new ItemEntity(level, m.getX(), m.getY() + 0.5, m.getZ(), s));
             Vfx.burst(level, m.position().add(0, m.getBbHeight() / 2, 0), dev.logos.lang.Element.ARCANE, 20);
@@ -393,6 +428,8 @@ public final class Familiars {
     }
 
     static void aim(Mob m, @Nullable LivingEntity target) {
+        // A companion picks its own targets; its master's fight reaches it through orderedTarget.
+        if (m instanceof LastingCompanion) return;
         m.setTarget(target);
         // A warden attacks only what it is furious at, and otherwise listens and sniffs its way there slowly:
         // its master's fight makes it furious at once.
@@ -468,6 +505,8 @@ public final class Familiars {
             s.errand = null;
             s.post = null;
         }
+        // A companion keeps up with its master (or stays put) by its own mind: never fetched.
+        if (m instanceof LastingCompanion) return;
         if (d > lost) {
             if (teleportNear(m, owner)) s.failedRescues = 0;
             else if (++s.failedRescues >= RESCUE_TRIES && !kept(m)) fade(m);
