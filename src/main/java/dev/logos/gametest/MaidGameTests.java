@@ -14,6 +14,7 @@ import dev.logos.item.PageContainer;
 import dev.logos.item.SpellPages;
 import dev.logos.lang.Status;
 import dev.logos.runtime.CreatureMana;
+import dev.logos.runtime.Familiars;
 import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.ManaVessels;
 import dev.logos.runtime.PlayerMagic;
@@ -32,7 +33,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * The Touhou Little Maid compat: a tamed maid's mana, the 施法 work mode. Registered (by name, from
+ * The Touhou Little Maid compat: a tamed maid's mana, the 施法 work mode, and summoned maids. Registered (by name, from
  * {@link LogosGameTests}) and loaded only when the maid mod is installed: run with {@code -Ptlm}.
  */
 final class MaidGameTests {
@@ -45,7 +46,8 @@ final class MaidGameTests {
         functions.register("maid_casts_attack_page", () -> MaidGameTests::castsAttackPage);
         functions.register("maid_heals_owner", () -> MaidGameTests::healsOwner);
         functions.register("maid_takes_mana_fuel", () -> MaidGameTests::takesManaFuel);
-        return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_takes_mana_fuel");
+        functions.register("maid_summoned_not_tamed", () -> MaidGameTests::summonedNotTamed);
+        return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_takes_mana_fuel", "maid_summoned_not_tamed");
     }
 
     private static EntityMaid maid(GameTestHelper h, Vec3 at) {
@@ -115,6 +117,21 @@ final class MaidGameTests {
         p.interactOn(m, InteractionHand.MAIN_HAND, m.position());
         h.assertTrue(Math.abs(pool.mana() - 50) < 1e-6, "lapis should give her 50 mana: " + pool.mana());
         h.assertTrue(p.getMainHandItem().getCount() == 2, "one lapis should be used");
+        h.succeed();
+    }
+
+    /** A maid summoned as a familiar refuses the cake that tames a wild maid; one that is not a familiar takes it. */
+    static void summonedNotTamed(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        EntityMaid summoned = maid(h, new Vec3(3.5, 2, 3.5));
+        Familiars.bindForTest(summoned, p);
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CAKE, 2));
+        p.interactOn(summoned, InteractionHand.MAIN_HAND, summoned.position());
+        h.assertFalse(summoned.isTame(), "a summoned maid should not be tamed");
+        h.assertTrue(p.getMainHandItem().getCount() == 2, "the cake should not be eaten");
+        EntityMaid wild = maid(h, new Vec3(6.5, 2, 6.5));
+        p.interactOn(wild, InteractionHand.MAIN_HAND, wild.position());
+        h.assertTrue(wild.isTame() && wild.isOwnedBy(p), "a wild maid that is not a familiar should still be tamed by cake");
         h.succeed();
     }
 }
