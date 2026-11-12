@@ -19,6 +19,7 @@ public final class LogosMaidExtension implements ILittleMaid {
     public LogosMaidExtension() {
         ManaVessels.register(MaidMana::vesselOf);
         NeoForge.EVENT_BUS.register(MaidEvents.class);
+        NeoForge.EVENT_BUS.register(SummonedMaids.class);
     }
 
     @Override
