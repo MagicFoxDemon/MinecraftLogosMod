@@ -107,6 +107,8 @@
   "logos.configuration.caputMortuumInsulation.tooltip": "How much each block of caput mortuum adds to the spread threshold between its chunk and each neighbour; blocks on both sides count, up to 3 a chunk. With the default 70, two blocks shut a full chunk off",
   "logos.configuration.chargeManaScale": "Max Mana Surge Scale",
   "logos.configuration.chargeManaScale.tooltip": "Channel surge is multiplied by 1 + max mana / this: a deeper pool gathers faster (default 1000)",
+  "logos.configuration.maidManaPerFavorLevel": "Maid Mana per Favorability Level",
+  "logos.configuration.maidManaPerFavorLevel.tooltip": "With Touhou Little Maid: a maid's mana cap is her owner's × (1 + this × favorability level 0–3) (default 0.1)",
   "item.logos.adept_wand": "Adept Wand",
   "item.logos.master_wand": "Master Wand",
   "item.logos.oak_wand": "Oak Wand",
@@ -1150,5 +1152,9 @@
   "logos.sage.settings.offered": "Offer the server's Book Sprite to players",
   "logos.sage.settings.cooldown": "Seconds between one player's questions",
   "logos.sage.settings.daily": "Questions per player per day (0 = unlimited)",
-  "logos.sage.settings.concurrent": "Most questions running at once"
+  "logos.sage.settings.concurrent": "Most questions running at once",
+  "task.logos.spellcasting": "Spellcasting",
+  "task.logos.spellcasting.desc": "With a wand in her main hand (and a spell codex in her off hand if you like), the maid casts its spells from her own mana: by each spell's intent she strikes foes, heals and wards her owner. Her mana cap follows her owner's and her favorability; right-click her with mana fuel to refill it",
+  "task.logos.spellcasting.condition.has_wand": "A wand in her main hand",
+  "task.logos.spellcasting.condition.has_spells": "Castable spells on the wand or the off-hand codex"
 }

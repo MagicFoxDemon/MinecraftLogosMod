@@ -28,6 +28,14 @@ sourceSets.main.resources {
     exclude("src/generated/**/.cache") // datagen cache files
 }
 
+// The Touhou Little Maid jar the maid compat compiles against (see the dependencies below). Without one the compat and
+// its tests are left out of the build, and the game runs as it would without the maid mod.
+def tlmJar = file(project.findProperty("tlm_jar") ?: "libs/touhoulittlemaid.jar")
+if (!tlmJar.exists()) {
+    logger.lifecycle("Touhou Little Maid compat left out: no jar at ${tlmJar} (pass -Ptlm_jar=<path>)")
+    sourceSets.main.java { exclude 'dev/logos/compat/tlm/**', 'dev/logos/gametest/MaidGameTests.java' }
+}
+
 repositories {
     // LDLib2 (UI + node graph toolkit), Photon (VFX), KilaGraph (Photon dependency)
     maven { url = "https://maven.firstdark.dev/snapshots" }
@@ -232,6 +240,12 @@ dependencies {
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     if (project.hasProperty("jei")) localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    // Touhou Little Maid is optional too (the maid work mode in compat/tlm), but has no 26.1 build on any Maven yet:
+    // it compiles against a local jar, -Ptlm_jar=<path> or libs/touhoulittlemaid.jar, and -Ptlm adds that jar to the dev runs.
+    if (tlmJar.exists()) {
+        compileOnly files(tlmJar)
+        if (project.hasProperty("tlm")) localRuntime files(tlmJar)
+    }
     // -PcompatMods adds the mods players most often run with to the dev runs, for a smoke test (see CONTRIBUTING); never required or bundled.
     if (project.hasProperty("compatMods")) {
         localRuntime("maven.modrinth:sodium:${sodium_version}") { transitive = false }

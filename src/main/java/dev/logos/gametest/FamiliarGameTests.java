@@ -36,6 +36,8 @@ final class FamiliarGameTests {
         p.setGameMode(GameType.SURVIVAL);
         // A mock connection never reports a loaded client, and such players take no damage at all.
         p.connection.markClientLoaded();
+        // Mods run alongside may hand a new player starter items (Touhou Little Maid: a soul slab, its guide): start empty-handed.
+        p.getInventory().clearContent();
         PlayerMagic m = PlayerMagic.of(p);
         m.maxMana = m.mana = 1e9;
         m.trace = false;
