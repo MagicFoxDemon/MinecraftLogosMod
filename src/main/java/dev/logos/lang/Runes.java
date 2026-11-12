@@ -506,14 +506,15 @@ public final class Runes {
                     return l.isEmpty() ? null : l.getFirst();
                 });
         def("master", BINDING, ENTITY)
-                .doc("施法者的主人：魔力生命体心核里的术式用它指向召唤它的玩家，例如 (heal (master) 4)。玩家自己施法时就是施法者本人。免费")
+                .doc("施法者的主人：魔力生命体心核里的术式用它指向召唤它的玩家，例如 (heal (master) 4)；被驯服的施法生物（如拿着法杖的女仆）指向它的主人。玩家自己施法时就是施法者本人。免费")
                 .exec((n, c) -> {
-                    java.util.UUID m = dev.logos.runtime.Familiars.masterOf(c.inst().caster);
+                    java.util.UUID m = dev.logos.runtime.Familiars.sideOf(c.inst().caster);
                     return m == null ? c.inst().caster : c.inst().caster.level().getPlayerByUUID(m);
                 });
         def("foe", BINDING, ENTITY)
-                .doc("施法者正在战斗的对象：魔力生命体普攻时就是它对准的那个，例如普攻页写 (damage (foe) 6)。没有时为空（玩家施法时总是空）。免费")
-                .exec((n, c) -> c.inst().caster instanceof net.minecraft.world.entity.Mob m ? dev.logos.runtime.Familiars.orderedTarget(m) : null);
+                .doc("施法者正在战斗的对象：魔力生命体普攻时就是它对准的那个，例如普攻页写 (damage (foe) 6)；不是使魔的施法生物（如女仆）是它自己的攻击目标。没有时为空（玩家施法时总是空）。免费")
+                .exec((n, c) -> c.inst().caster instanceof net.minecraft.world.entity.Mob m
+                        ? dev.logos.runtime.Familiars.isFamiliar(m) ? dev.logos.runtime.Familiars.orderedTarget(m) : m.getTarget() : null);
         def("familiar", BINDING, ENTITY).opt("name", TEXT, "\"\"")
                 .doc("你的一只使魔：叫这个名字的（召唤时用 :name 起名），不写名字就是最后召唤的那只；没有则为空。免费")
                 .exec((n, c) -> c.inst().caster instanceof net.minecraft.world.entity.player.Player p

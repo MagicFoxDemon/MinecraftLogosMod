@@ -27,7 +27,8 @@ public final class ManaInfusion {
             PlayerMagic m = PlayerMagic.of(p);
             return Math.max(0, m.maxMana - m.mana);
         }
-        return e instanceof ManaVessel v ? Math.max(0, v.maxMana() - v.mana()) : 0;
+        ManaVessel v = ManaVessels.of(e);
+        return v != null ? Math.max(0, v.maxMana() - v.mana()) : 0;
     }
 
     /** Gives {@code e} up to {@code amount}; returns what it took. */
@@ -35,7 +36,7 @@ public final class ManaInfusion {
         double given = Math.min(amount, room(e));
         if (given <= 0) return 0;
         if (e instanceof Player p) PlayerMagic.of(p).mana += given;
-        else if (e instanceof ManaVessel v) return v.receiveMana(given);
+        else if (ManaVessels.of(e) instanceof ManaVessel v) return v.receiveMana(given);
         return given;
     }
 

@@ -45,8 +45,8 @@ public final class Targeting {
         if (e instanceof OwnableEntity o && o.getOwner() == inst.caster) return false;
         // Nor the caster's own familiars.
         if (inst.caster.getUUID().equals(Familiars.masterOf(e))) return false;
-        // A familiar casting (a mana lifeform) spares its master's whole side: them, their familiars, their pets.
-        UUID master = Familiars.masterOf(inst.caster);
+        // A familiar casting (a mana lifeform), or a tamed creature (a maid), spares its master's whole side: them, their familiars, their pets.
+        UUID master = Familiars.sideOf(inst.caster);
         if (master != null && (Familiars.friendly(master, e)
                 || e instanceof OwnableEntity o && o.getOwner() != null && master.equals(o.getOwner().getUUID()))) return false;
         return !inst.caster.isAlliedTo(e);
@@ -54,8 +54,8 @@ public final class Targeting {
 
     /** Whether a spell effect may touch {@code e} at all: the caster always, other players only if allowed. */
     public static boolean mayAffect(SpellInstance inst, Entity e) {
-        // A lifeform's spells may always touch its master, as a player's may touch themselves: that is how it heals and wards them.
-        return e == inst.caster || !(e instanceof Player) || inst.spell.affectsPlayers() || e.getUUID().equals(Familiars.masterOf(inst.caster));
+        // A lifeform's (or a maid's) spells may always touch its master, as a player's may touch themselves: that is how it heals and wards them.
+        return e == inst.caster || !(e instanceof Player) || inst.spell.affectsPlayers() || e.getUUID().equals(Familiars.sideOf(inst.caster));
     }
 
     /**
