@@ -81,6 +81,9 @@ public final class LogosGameTests {
             "guard_wrap_on_hit", "guard_wrap_overflow", "guard_wrap_on_expire", "guard_wrap_replaced", "guard_construct_on_block", "guard_construct_on_pass", "guard_deferred_tasks", "guard_scheduled_task", "guard_cleanup_crash", "guard_log_throttled",
             "example_prismatic_barrage_budget");
 
+    /** Tests of the optional compats whose mods are installed (see {@link #compatTests}). */
+    private static final List<String> COMPAT_TESTS = new java.util.ArrayList<>();
+
     private LogosGameTests() {}
 
     public LogosGameTests(IEventBus modBus) {
@@ -505,13 +508,30 @@ public final class LogosGameTests {
         FUNCTIONS.register("jar_crop_tagged_substrates", () -> JarCropGameTests::taggedSubstrates);
         FUNCTIONS.register("magic_crop_seed_loot", () -> JarCropGameTests::seedLoot);
         FUNCTIONS.register("magic_crop_ground_growth", () -> JarCropGameTests::groundGrowth);
+        if (net.neoforged.fml.ModList.get().isLoaded("touhou_little_maid")) {
+            COMPAT_TESTS.addAll(compatTests("dev.logos.gametest.MaidGameTests"));
+            MockClientChannels.knowChannelsOf("touhou_little_maid");
+        }
         FUNCTIONS.register(modBus);
         modBus.addListener(LogosGameTests::onRegisterTests);
     }
 
+    /**
+     * Registers the tests of an optional mod's compat ({@code register(DeferredRegister)} on {@code className}) and returns
+     * their names. Looked up by name: the class, and the compat it tests, are only built and loaded with that mod.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> compatTests(String className) {
+        try {
+            return (List<String>) Class.forName(className).getDeclaredMethod("register", DeferredRegister.class).invoke(null, FUNCTIONS);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Could not register " + className, e);
+        }
+    }
+
     private static void onRegisterTests(RegisterGameTestsEvent event) {
         Holder<TestEnvironmentDefinition<?>> env = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf());
-        for (String name : TESTS) {
+        for (String name : java.util.stream.Stream.concat(TESTS.stream(), COMPAT_TESTS.stream()).toList()) {
             // Tests of one environment run side by side, batch by batch: one of its own has the server to itself.
             Holder<TestEnvironmentDefinition<?>> batch = SpellBudgetGameTests.ALONE.contains(name) ? event.registerEnvironment(id(name), new TestEnvironmentDefinition.AllOf()) : env;
             event.registerTest(id(name), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id(name)),

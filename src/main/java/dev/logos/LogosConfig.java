@@ -115,6 +115,11 @@ public final class LogosConfig {
             .translation("logos.configuration.chargeManaScale")
             .defineInRange("chargeManaScale", 1000.0, 1.0, 1e9);
 
+    public static final ModConfigSpec.DoubleValue MAID_MANA_PER_FAVOR_LEVEL = BUILDER
+            .comment("With Touhou Little Maid: a maid's mana cap is her owner's, plus this share of it for each favorability level (0 to 3).")
+            .translation("logos.configuration.maidManaPerFavorLevel")
+            .defineInRange("maidManaPerFavorLevel", 0.1, 0.0, 10.0);
+
     public static final ModConfigSpec.DoubleValue TIME_SKIP_MAX_RATE = BUILDER
             .comment("The fastest time-skip pushes a clock: this many ticks of day per game tick (720 passes an in-game day in under 2 seconds).")
             .translation("logos.configuration.timeSkipMaxRate")
@@ -425,6 +430,14 @@ public final class LogosConfig {
             return CHARGE_MANA_SCALE.getAsDouble();
         } catch (IllegalStateException e) {
             return 1000.0;
+        }
+    }
+
+    public static double maidManaPerFavorLevel() {
+        try {
+            return MAID_MANA_PER_FAVOR_LEVEL.getAsDouble();
+        } catch (IllegalStateException e) {
+            return 0.1;
         }
     }
 

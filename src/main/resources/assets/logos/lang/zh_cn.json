@@ -107,6 +107,8 @@
   "logos.configuration.caputMortuumInsulation.tooltip": "每块死灰块让它所在区块与相邻区块之间的扩散阈值增加多少；两侧区块的都计入，一个区块超过 3 块不再增加。默认 70 时两块即可隔绝一个满的区块",
   "logos.configuration.chargeManaScale": "魔力上限对汇集的加成",
   "logos.configuration.chargeManaScale.tooltip": "汇集加速乘以 1 + 魔力上限 / 此值：魔力越深厚，汇集越快（默认 1000）",
+  "logos.configuration.maidManaPerFavorLevel": "女仆每级好感度的魔力加成",
+  "logos.configuration.maidManaPerFavorLevel.tooltip": "装有车万女仆时，女仆的魔力上限 = 主人的魔力上限 × (1 + 此值 × 好感度等级 0–3)（默认 0.1）",
   "item.logos.adept_wand": "术士法杖",
   "item.logos.master_wand": "大师法杖",
   "item.logos.oak_wand": "橡木法杖",
@@ -1150,5 +1152,9 @@
   "logos.sage.settings.offered": "向玩家提供服务器的书灵",
   "logos.sage.settings.cooldown": "每位玩家两次请教的间隔（秒）",
   "logos.sage.settings.daily": "每位玩家每天的请教次数（0 为不限）",
-  "logos.sage.settings.concurrent": "同时进行的请教数上限"
+  "logos.sage.settings.concurrent": "同时进行的请教数上限",
+  "task.logos.spellcasting": "施法",
+  "task.logos.spellcasting.desc": "主手拿法杖（副手可拿法式典籍）时，女仆用自己的魔力施放上面的术式：按术式意图攻击敌人、治疗和守护主人。魔力上限随主人和好感度，用补魔物品右键可以补魔",
+  "task.logos.spellcasting.condition.has_wand": "主手持有法杖",
+  "task.logos.spellcasting.condition.has_spells": "法杖或副手典籍上有能施放的术式"
 }
