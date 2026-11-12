@@ -183,8 +183,9 @@ public final class SpellInstance {
 
     private void settle() {
         double free = endedNaturally() ? mana : mana * recovery;
-        // A vessel that cast it (a mana lifeform) takes its leftover back; anyone else's goes free.
-        if (caster instanceof ManaVessel vessel) vessel.receiveMana(free);
+        // A vessel that cast it (a mana lifeform, a maid) takes its leftover back; anyone else's goes free.
+        ManaVessel vessel = ManaVessels.of(caster);
+        if (vessel != null) vessel.receiveMana(free);
         else FreeManaEntity.release(this, lastLevel, lastPos, free);
         if (!(caster instanceof ServerPlayer player) || !PlayerMagic.of(player).trace) return;
         double secs = (SpellRuntime.now() - startTick) / 20.0;

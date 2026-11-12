@@ -115,6 +115,17 @@ public final class Familiars {
         return b == null ? null : b.owner();
     }
 
+    /**
+     * Whose side {@code caster} casts for: a familiar's master, or the owner of a tamed creature that casts (a maid
+     * from another mod holding a wand). Null for a player, who is their own side, and for anything wild.
+     */
+    public static @Nullable UUID sideOf(@Nullable Entity caster) {
+        UUID master = masterOf(caster);
+        if (master != null) return master;
+        var owner = caster instanceof net.minecraft.world.entity.OwnableEntity o ? o.getOwnerReference() : null;
+        return owner == null ? null : owner.getUUID();
+    }
+
     public static List<Mob> of(Player owner) {
         List<Mob> out = new ArrayList<>();
         for (Mob m : LIVE) {

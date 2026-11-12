@@ -66,7 +66,7 @@ public final class Attunement {
 
     private static @Nullable Player attuned(LivingEntity caster) {
         if (caster instanceof Player p) return p;
-        UUID master = Familiars.masterOf(caster);
+        UUID master = Familiars.sideOf(caster);
         return master == null ? null : caster.level().getServer().getPlayerList().getPlayer(master);
     }
 }

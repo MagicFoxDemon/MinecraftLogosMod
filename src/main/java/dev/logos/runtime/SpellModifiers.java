@@ -158,7 +158,8 @@ public final class SpellModifiers {
             m.mana += took;
             return took;
         }
-        return entity instanceof ManaVessel v ? v.receiveMana(amount) : 0;
+        ManaVessel v = ManaVessels.of(entity);
+        return v != null ? v.receiveMana(amount) : 0;
     }
 
     /** The attribute raising (or lowering) the damage of {@code element}. */
