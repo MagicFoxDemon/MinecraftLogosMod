@@ -8,8 +8,7 @@
     "grip": "minecraft:block/stripped_dark_oak_log",
     "metal": "minecraft:block/gold_block",
     "gem": "minecraft:block/bone_block_side",
-    "ivory": "minecraft:block/bone_block_side",
-    "orbit": "logos:block/staff/chalk_orbit"
+    "ivory": "minecraft:block/bone_block_side"
   },
   "elements": [
     {
@@ -7767,41 +7766,6 @@
         "angle": 45,
         "rescale": false
       }
-    },
-    {
-      "name": "chalk_script",
-      "from": [
-        5.0,
-        17.75,
-        9.2
-      ],
-      "to": [
-        11.0,
-        23.75,
-        9.2
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        }
-      },
-      "shade": false,
-      "light_emission": 12
     }
   ],
   "display": {
@@ -8108,8 +8072,7 @@
         144,
         145,
         146,
-        147,
-        148
+        147
       ]
     },
     {

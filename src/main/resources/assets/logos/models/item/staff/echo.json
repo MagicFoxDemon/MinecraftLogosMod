@@ -8,8 +8,7 @@
     "grip": "minecraft:block/black_terracotta",
     "metal": "minecraft:block/iron_block",
     "gem": "minecraft:block/dark_prismarine",
-    "ivory": "minecraft:block/bone_block_side",
-    "orbit": "logos:block/staff/echo_orbit"
+    "ivory": "minecraft:block/bone_block_side"
   },
   "elements": [
     {
@@ -7575,41 +7574,6 @@
           "texture": "#gem"
         }
       }
-    },
-    {
-      "name": "echo_resonance",
-      "from": [
-        5.65,
-        18.4,
-        9.05
-      ],
-      "to": [
-        10.35,
-        23.1,
-        9.05
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        }
-      },
-      "shade": false,
-      "light_emission": 12
     }
   ],
   "display": {
@@ -7912,8 +7876,7 @@
         140,
         141,
         142,
-        143,
-        144
+        143
       ]
     },
     {
