@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "logos:item/master_wand"
+    "model": "logos:item/wand/firmament"
   }
 }
