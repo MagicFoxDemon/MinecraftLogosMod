@@ -43,9 +43,8 @@ public final class WandPose {
     @SubscribeEvent
     static void onRegisterExtensions(RegisterClientExtensionsEvent event) {
         var wands = new java.util.ArrayList<net.minecraft.world.item.Item>();
-        wands.add(LogosMod.WAND.get());
-        wands.add(LogosMod.ADEPT_WAND.get());
-        wands.add(LogosMod.MASTER_WAND.get());
+        LogosMod.TIER_WANDS.forEach(w -> wands.add(w.get()));
+        LogosMod.TIER_STAFFS.forEach(s -> wands.add(s.get()));
         LogosMod.WOOD_WANDS.forEach(w -> wands.add(w.get()));
         LogosMod.WOOD_STAFFS.forEach(s -> wands.add(s.get()));
         event.registerItem(new IClientItemExtensions() {
