@@ -8,8 +8,7 @@
     "grip": "minecraft:block/black_terracotta",
     "metal": "minecraft:block/gold_block",
     "gem": "minecraft:block/quartz_block_side",
-    "ivory": "minecraft:block/quartz_block_side",
-    "orbit": "logos:block/staff/principle_orbit"
+    "ivory": "minecraft:block/quartz_block_side"
   },
   "elements": [
     {
@@ -6222,86 +6221,6 @@
         "angle": 45,
         "rescale": false
       }
-    },
-    {
-      "name": "outer_principle_orbit",
-      "from": [
-        4.5,
-        17.25,
-        9.4
-      ],
-      "to": [
-        11.5,
-        24.25,
-        9.4
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        }
-      },
-      "shade": false,
-      "light_emission": 12
-    },
-    {
-      "name": "inner_principle_orbit",
-      "from": [
-        5.3,
-        18.05,
-        8.96
-      ],
-      "to": [
-        10.7,
-        23.45,
-        8.96
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        }
-      },
-      "shade": false,
-      "light_emission": 12,
-      "rotation": {
-        "axis": "y",
-        "angle": -45,
-        "origin": [
-          8,
-          20.75,
-          8
-        ],
-        "rescale": false
-      }
     }
   ],
   "display": {
@@ -6577,9 +6496,7 @@
         113,
         114,
         115,
-        116,
-        117,
-        118
+        116
       ]
     },
     {

@@ -151,12 +151,27 @@ public final class WandTips {
         return top != null ? top : new Vector3f(12, 14, 8);
     }
 
-    /** The model a client item definition ({@code items/<id>.json}) draws, if it is a plain model. */
+    /** The base model drawn by an item definition; composite staffs keep their solid body first. */
     private static @Nullable Identifier modelOf(Identifier item) {
         JsonObject def = read(Identifier.fromNamespaceAndPath(item.getNamespace(), "items/" + item.getPath() + ".json"));
         if (def == null || !def.has("model")) return null;
-        JsonElement m = def.get("model");
-        return m.isJsonObject() && m.getAsJsonObject().has("model") ? Identifier.tryParse(m.getAsJsonObject().get("model").getAsString()) : null;
+        return firstModel(def.get("model"), 0);
+    }
+
+    private static @Nullable Identifier firstModel(@Nullable JsonElement element, int depth) {
+        if (element == null || !element.isJsonObject() || depth >= 16) return null;
+        JsonObject model = element.getAsJsonObject();
+        if (model.has("model") && model.get("model").isJsonPrimitive()) {
+            return Identifier.tryParse(model.get("model").getAsString());
+        }
+        if (model.has("type") && "minecraft:composite".equals(model.get("type").getAsString())
+                && model.has("models") && model.get("models").isJsonArray()) {
+            for (JsonElement child : model.getAsJsonArray("models")) {
+                Identifier found = firstModel(child, depth + 1);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     private static @Nullable Vector3f findGroup(@Nullable JsonElement groups) {

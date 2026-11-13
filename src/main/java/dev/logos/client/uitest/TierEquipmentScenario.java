@@ -72,7 +72,8 @@ abstract class TierEquipmentScenario implements UIScenario {
                         var item = equipment.get(i);
                         var id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);
                         var model = mc.getModelManager().getItemModel(id);
-                        ctx.check(id + " model baked", model.getClass().getSimpleName().equals("CuboidItemModelWrapper"));
+                        String expectedModel = staff && i > 0 ? "CompositeModel" : "CuboidItemModelWrapper";
+                        ctx.check(id + " model baked", model.getClass().getSimpleName().equals(expectedModel));
                         var tip = WandTips.tip(item);
                         double expectedY = staff ? 20.75 : i == 6 ? 15.64 : 15.5;
                         ctx.check(id + " central tip", Math.abs(tip.x - 8) < .001 && Math.abs(tip.y - expectedY) < .001 && Math.abs(tip.z - 8) < .001);

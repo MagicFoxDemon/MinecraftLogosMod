@@ -1,6 +1,15 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "logos:item/staff/echo"
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/staff/echo"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/staff/echo_orbit"
+      }
+    ]
   }
 }

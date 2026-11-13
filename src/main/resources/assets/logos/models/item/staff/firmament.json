@@ -8,8 +8,7 @@
     "grip": "minecraft:block/black_terracotta",
     "metal": "minecraft:block/gold_block",
     "gem": "minecraft:block/prismarine_bricks",
-    "ivory": "minecraft:block/iron_block",
-    "orbit": "logos:block/staff/firmament_orbit"
+    "ivory": "minecraft:block/iron_block"
   },
   "elements": [
     {
@@ -9027,86 +9026,6 @@
       }
     },
     {
-      "name": "star_orbit",
-      "from": [
-        4.825,
-        17.575,
-        9.65
-      ],
-      "to": [
-        11.175,
-        23.925,
-        9.65
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        }
-      },
-      "shade": false,
-      "light_emission": 12
-    },
-    {
-      "name": "inclined_star_orbit",
-      "from": [
-        5.425,
-        18.175,
-        8.94
-      ],
-      "to": [
-        10.575,
-        23.325,
-        8.94
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        }
-      },
-      "shade": false,
-      "light_emission": 12,
-      "rotation": {
-        "axis": "y",
-        "angle": 45,
-        "origin": [
-          8,
-          20.75,
-          8
-        ],
-        "rescale": false
-      }
-    },
-    {
       "name": "long_pale_conductor",
       "from": [
         7.91,
@@ -9499,9 +9418,7 @@
         163,
         164,
         165,
-        166,
-        167,
-        168
+        166
       ]
     },
     {

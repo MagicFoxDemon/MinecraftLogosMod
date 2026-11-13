@@ -8,8 +8,7 @@
     "grip": "minecraft:block/black_terracotta",
     "metal": "minecraft:block/gold_block",
     "gem": "minecraft:block/redstone_block",
-    "ivory": "minecraft:block/bone_block_side",
-    "orbit": "logos:block/staff/sage_orbit"
+    "ivory": "minecraft:block/bone_block_side"
   },
   "elements": [
     {
@@ -7838,41 +7837,6 @@
       }
     },
     {
-      "name": "sage_seal",
-      "from": [
-        4.75,
-        17.5,
-        9.8
-      ],
-      "to": [
-        11.25,
-        24.0,
-        9.8
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#orbit"
-        }
-      },
-      "shade": false,
-      "light_emission": 12
-    },
-    {
       "name": "tail_red_seal_x",
       "from": [
         7.44,
@@ -8494,8 +8458,7 @@
         151,
         152,
         153,
-        154,
-        155
+        154
       ]
     },
     {
