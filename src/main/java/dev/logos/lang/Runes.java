@@ -1203,7 +1203,7 @@ public final class Runes {
                         double cost = 2 + s.mana;
                         if (cost > c.inst().mana + 1e-9) continue; // too strong to stop now: a weaker one may still be
                         c.inst().spend(cost, "end-all");
-                        s.terminate("被万咒皆终终止");
+                        s.terminate("被万咒皆终终止", false);
                         if (s.caster instanceof ServerPlayer owner && owner != c.inst().caster) {
                             owner.sendSystemMessage(Component.literal("✗ 你的术式《" + s.spell.name() + "》被万咒皆终终止").withStyle(ChatFormatting.RED));
                         }

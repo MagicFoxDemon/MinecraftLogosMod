@@ -47,7 +47,7 @@ final class SpellCasters {
     }
 
     private static void extinguish(Predicate<SpellInstance> left) {
-        for (SpellInstance inst : RUNNING.stream().filter(left).toList()) inst.terminate(LEFT);
+        for (SpellInstance inst : RUNNING.stream().filter(left).toList()) inst.terminate(LEFT, false);
     }
 
     @SubscribeEvent

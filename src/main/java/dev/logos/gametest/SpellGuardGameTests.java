@@ -40,7 +40,9 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
  */
 final class SpellGuardGameTests {
     private static final String CRASH = "guard test crash";
-    private static final String OVERFLOW = "栈溢出";
+    /** Why a spell that crashed goes out, as its caster reads it; what crashed is in the log. */
+    private static final String ENDED = SpellRuntime.CRASHED;
+    private static final String OVERFLOW = SpellRuntime.STACK_OVERFLOW;
     /** The creatures a spell's damage crashes on; whether as a stack overflow. */
     private static final Map<Entity, Boolean> TRAPPED = new WeakHashMap<>();
     /** What the mod logged at ERROR with a stack since {@link #arm}. */
@@ -103,7 +105,7 @@ final class SpellGuardGameTests {
 
     /** A wrap's on-hit crashes in the deferred queue: the spell goes out, the hand is cleared, the next task still runs. */
     static void wrapOnHit(GameTestHelper h) {
-        wrapCrash(h, "guard-wrap-hit", false, CRASH);
+        wrapCrash(h, "guard-wrap-hit", false, ENDED);
     }
 
     /** The same for a stack overflow, which is not a RuntimeException. */
@@ -136,7 +138,7 @@ final class SpellGuardGameTests {
         trap(holder, false);
         SpellInstance inst = cast(h, p, name, "(imbue (nearest :radius 2.5) :life 0.5 (on-expire (damage self 1 arcane)))");
         h.succeedWhen(() -> {
-            assertCrashed(h, inst, name, CRASH);
+            assertCrashed(h, inst, name, ENDED);
             h.assertTrue(WrapObj.on(holder) == null && ManaWrap.of(holder) == null, "the hand should be cleared");
         });
     }
@@ -149,7 +151,7 @@ final class SpellGuardGameTests {
         trap(holder, false);
         SpellInstance old = cast(h, p, name, "(imbue (nearest :radius 2.5) :life 30 (on-expire (damage self 1 arcane)))");
         SpellInstance next = cast(h, p, "guard-wrap-next", "(imbue (nearest :radius 2.5) :life 30)");
-        assertCrashed(h, old, name, CRASH);
+        assertCrashed(h, old, name, ENDED);
         WrapObj worn = WrapObj.on(holder);
         h.assertTrue(!next.dead && worn != null, "the new wrap should stand, got " + next.endReason());
         worn.disperse();
@@ -175,7 +177,7 @@ final class SpellGuardGameTests {
                     null, Vec3.atCenterOf(h.absolutePos(new BlockPos(4, 3, 6))));
             h.assertTrue(inst != null && !inst.dead, name + " should start");
             ConstructGameTests.arrow(h, 3.5, 3.5, 12.5, -1.2);
-            h.succeedWhen(() -> assertCrashed(h, inst, name, CRASH));
+            h.succeedWhen(() -> assertCrashed(h, inst, name, ENDED));
         });
     }
 
@@ -209,7 +211,7 @@ final class SpellGuardGameTests {
         });
         SpellRuntime.schedule(instance(h, p, "guard-scheduled-neighbour"), 0, () -> next[0] = true);
         h.succeedWhen(() -> {
-            assertCrashed(h, bad, name, CRASH);
+            assertCrashed(h, bad, name, ENDED);
             h.assertTrue(next[0], "the other spell's continuation should still run");
         });
     }
@@ -230,10 +232,10 @@ final class SpellGuardGameTests {
         Body ended = body(h, byHand, true);
         SpellRuntime.spawn(ended);
         ended.disperse();
-        assertCrashed(h, byHand, direct, CRASH);
+        assertCrashed(h, byHand, direct, ENDED);
 
         h.succeedWhen(() -> {
-            assertCrashed(h, bad, name, CRASH);
+            assertCrashed(h, bad, name, ENDED);
             h.assertTrue(crashing.cleanups == 1, "cleanup should have run once, ran " + crashing.cleanups);
             h.assertTrue(neighbour.ticks > 0 && !good.dead, "the body after it should still tick");
             neighbour.disperse();
@@ -248,7 +250,7 @@ final class SpellGuardGameTests {
         Spell spell = Casting.compile("(spell :name \"" + name + "\" :mana 5 (damage (nearest :radius 3) 1 arcane))");
         for (int k = 0; k < 3; k++) {
             SpellInstance inst = Casting.cast(p, spell, null, null);
-            h.assertTrue(inst != null && inst.dead && inst.endReason().contains(CRASH), "every cast should go out over the crash");
+            h.assertTrue(inst != null && inst.dead && inst.endReason().contains(ENDED), "every cast should go out over the crash");
         }
         h.assertTrue(logged(name) == 1, "three crashes should log one stack, logged " + logged(name));
         h.succeed();
