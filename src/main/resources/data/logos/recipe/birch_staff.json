@@ -1,0 +1,14 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "wood_staff",
+  "ingredients": [
+    "logos:birch_wand",
+    "#minecraft:birch_logs",
+    "minecraft:gold_nugget",
+    "minecraft:gold_nugget"
+  ],
+  "result": {
+    "id": "logos:birch_staff"
+  }
+}

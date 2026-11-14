@@ -1,4 +1,9 @@
 {
+  "item.logos.sage_upgrade_smithing_template": "Sage Upgrade Template",
+  "item.logos.sage_upgrade_smithing_template.applies_to": "Firmament wands and staffs",
+  "item.logos.sage_upgrade_smithing_template.ingredients": "Netherite ingot",
+  "item.logos.sage_upgrade_smithing_template.base_slot_description": "Add a firmament wand or staff",
+  "item.logos.sage_upgrade_smithing_template.additions_slot_description": "Add a netherite ingot",
   "item.logos.wand": "Amethyst Wand",
   "dev.logos.lang.Element.PHYSICAL": "🜃 Physical",
   "dev.logos.lang.Element.FIRE": "🜂 Fire",

@@ -1,0 +1,12 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "ingredients": [
+    "#logos:wood_staffs",
+    "minecraft:amethyst_shard",
+    "minecraft:gold_ingot"
+  ],
+  "result": {
+    "id": "logos:crystal_staff"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "ingredients": [
+    "logos:transmuted_staff",
+    "logos:chalk",
+    "minecraft:quartz",
+    "minecraft:quartz",
+    "minecraft:quartz",
+    "minecraft:quartz"
+  ],
+  "result": {
+    "id": "logos:chalk_staff"
+  }
+}

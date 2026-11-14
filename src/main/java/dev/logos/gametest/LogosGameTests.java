@@ -80,7 +80,8 @@ public final class LogosGameTests {
             "leech_hunts_richest", "leech_clings_and_drains", "leech_knocked_off", "leech_drains_familiar_health", "leech_splits", "leech_offspring_do_not_split", "leech_bane_and_death", "leech_familiar_obeys",
             "jar_crop_empty_substrates", "jar_crop_tagged_substrates", "magic_crop_seed_loot", "magic_crop_ground_growth",
             "guard_wrap_on_hit", "guard_wrap_overflow", "guard_wrap_on_expire", "guard_wrap_replaced", "guard_construct_on_block", "guard_construct_on_pass", "guard_deferred_tasks", "guard_scheduled_task", "guard_cleanup_crash", "guard_log_throttled",
-            "example_prismatic_barrage_budget");
+            "example_prismatic_barrage_budget",
+            "wand_recipes_wood_staffs", "wand_recipes_chains", "wand_recipes_template", "wand_recipes_smithing", "wand_recipes_no_shortcuts");
 
     /** Tests of the optional compats whose mods are installed (see {@link #compatTests}). */
     private static final List<String> COMPAT_TESTS = new java.util.ArrayList<>();
@@ -512,6 +513,11 @@ public final class LogosGameTests {
         FUNCTIONS.register("jar_crop_tagged_substrates", () -> JarCropGameTests::taggedSubstrates);
         FUNCTIONS.register("magic_crop_seed_loot", () -> JarCropGameTests::seedLoot);
         FUNCTIONS.register("magic_crop_ground_growth", () -> JarCropGameTests::groundGrowth);
+        FUNCTIONS.register("wand_recipes_wood_staffs", () -> WandRecipeGameTests::woodStaffs);
+        FUNCTIONS.register("wand_recipes_chains", () -> WandRecipeGameTests::chains);
+        FUNCTIONS.register("wand_recipes_template", () -> WandRecipeGameTests::template);
+        FUNCTIONS.register("wand_recipes_smithing", () -> WandRecipeGameTests::smithing);
+        FUNCTIONS.register("wand_recipes_no_shortcuts", () -> WandRecipeGameTests::noShortcuts);
         if (net.neoforged.fml.ModList.get().isLoaded("touhou_little_maid")) {
             COMPAT_TESTS.addAll(compatTests("dev.logos.gametest.MaidGameTests"));
             MockClientChannels.knowChannelsOf("touhou_little_maid");

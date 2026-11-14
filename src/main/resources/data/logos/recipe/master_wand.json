@@ -1,8 +1,11 @@
 {
-  "type": "minecraft:crafting_transmute",
+  "type": "logos:wand_upgrade",
   "category": "equipment",
-  "input": "logos:adept_wand",
-  "material": "minecraft:nether_star",
+  "ingredients": [
+    "logos:chalk_wand",
+    "logos:firmament_stone",
+    "minecraft:diamond"
+  ],
   "result": {
     "id": "logos:master_wand"
   }

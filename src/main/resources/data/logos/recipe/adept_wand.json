@@ -1,8 +1,11 @@
 {
-  "type": "minecraft:crafting_transmute",
+  "type": "logos:wand_upgrade",
   "category": "equipment",
-  "input": "logos:wand",
-  "material": "minecraft:gold_block",
+  "ingredients": [
+    "logos:echo_wand",
+    "logos:raven_head",
+    "minecraft:gold_ingot"
+  ],
   "result": {
     "id": "logos:adept_wand"
   }
