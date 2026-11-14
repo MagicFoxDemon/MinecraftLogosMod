@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:vital_mash" },
+    { "ingredient": "logos:mana_gemstone" },
+    { "ingredient": "logos:firmament_stone" }
+  ],
+  "results": [
+    { "id": "logos:firmament_mana_elixir" }
+  ],
+  "mana": 320
+}

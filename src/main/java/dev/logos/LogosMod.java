@@ -203,6 +203,21 @@ public class LogosMod {
     public static final DeferredItem<dev.logos.item.RootMaxManaItem> ROOT_STRIP = ITEMS.registerItem("root_strip",
             p -> new dev.logos.item.RootMaxManaItem(p, -dev.logos.item.RootMaxManaItem.AMOUNT),
             p -> p.stacksTo(64).rarity(net.minecraft.world.item.Rarity.EPIC));
+    /** 魔力药剂: brewed at the alchemy table, one per survival grade; each raises the mana cap for good, three bottles at most. */
+    public static final Map<dev.logos.item.ManaElixirItem.Grade, DeferredItem<dev.logos.item.ManaElixirItem>> MANA_ELIXIRS =
+            new EnumMap<>(dev.logos.item.ManaElixirItem.Grade.class);
+    /** 古代魔力药剂: found only in chests, counted apart from the brewed ones. */
+    public static final Map<dev.logos.item.ManaElixirItem.Grade, DeferredItem<dev.logos.item.ManaElixirItem>> ANCIENT_MANA_ELIXIRS =
+            new EnumMap<>(dev.logos.item.ManaElixirItem.Grade.class);
+
+    static {
+        for (var g : dev.logos.item.ManaElixirItem.Grade.values()) {
+            MANA_ELIXIRS.put(g, ITEMS.registerItem(g.id(false), p -> new dev.logos.item.ManaElixirItem(p, g, false),
+                    p -> dev.logos.item.ManaElixirItem.properties(p, g, false)));
+            ANCIENT_MANA_ELIXIRS.put(g, ITEMS.registerItem(g.id(true), p -> new dev.logos.item.ManaElixirItem(p, g, true),
+                    p -> dev.logos.item.ManaElixirItem.properties(p, g, true)));
+        }
+    }
 
     // Alchemical colossus materials. Placeholders for now: their alchemy (recipes, planting) comes later.
     /** 巨像之心: the flower a colossus offers its master. An alchemical material. */
@@ -671,6 +686,8 @@ public class LogosMod {
                 out.accept(MANA_COLLECTOR_ITEM.get());
                 out.accept(MANA_STORAGE_TANK_ITEM.get());
                 out.accept(MANA_SPREADER_ITEM.get());
+                MANA_ELIXIRS.values().forEach(e -> out.accept(e.get()));
+                ANCIENT_MANA_ELIXIRS.values().forEach(e -> out.accept(e.get()));
                 out.accept(ROOT_AUTHORITY.get());
                 out.accept(ROOT_STRIP.get());
             }).build());

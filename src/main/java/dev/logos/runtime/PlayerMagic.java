@@ -28,12 +28,13 @@ public final class PlayerMagic {
             Codec.BOOL.fieldOf("trace").forGetter(m -> m.trace),
             Codec.DOUBLE.optionalFieldOf("lifetime_xp", 0.0).forGetter(m -> m.lifetimeXp),
             Codec.DOUBLE.optionalFieldOf("xp_seen", -1.0).forGetter(m -> m.xpSeen),
-            Codec.DOUBLE.optionalFieldOf("mana_spent", 0.0).forGetter(m -> m.manaSpent)
+            Codec.DOUBLE.optionalFieldOf("mana_spent", 0.0).forGetter(m -> m.manaSpent),
+            Codec.unboundedMap(Codec.STRING, Codec.INT).optionalFieldOf("elixirs", Map.of()).forGetter(m -> m.elixirs)
     ).apply(i, PlayerMagic::new));
 
     public double mana;
     /**
-     * The permanent part of the cap (200 to start; 根源权限 and later potions raise it for good), saved with
+     * The permanent part of the cap (200 to start; 根源权限 and 魔力药剂 raise it for good), saved with
      * the player. It is the base of the {@code logos:max_mana} attribute; read the whole cap with {@link #maxMana}.
      */
     public double baseMaxMana;
@@ -45,6 +46,8 @@ public final class PlayerMagic {
     public double xpSeen;
     /** Mana ever drawn out of the pool, for practice (see {@link ManaGrowth}). */
     public double manaSpent;
+    /** Bottles drunk of each 魔力药剂, by item id (see {@link dev.logos.item.ManaElixirItem}). */
+    public final Map<String, Integer> elixirs = new HashMap<>();
     /** Not persisted: the pool as last tick left it, to tell what was drawn since; NaN until then. */
     public double manaSeen = Double.NaN;
     /** Not persisted: passive spell name → game tick when it may fire again. */
@@ -61,10 +64,12 @@ public final class PlayerMagic {
     public net.minecraft.world.item.@org.jspecify.annotations.Nullable ItemStack chanting;
 
     public PlayerMagic() {
-        this(Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_STABILITY, true, 0, -1, 0);
+        this(Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_STABILITY, true, 0, -1, 0, Map.of());
     }
 
-    private PlayerMagic(double mana, double maxMana, int stability, boolean trace, double lifetimeXp, double xpSeen, double manaSpent) {
+    private PlayerMagic(double mana, double maxMana, int stability, boolean trace, double lifetimeXp, double xpSeen, double manaSpent,
+            Map<String, Integer> elixirs) {
+        this.elixirs.putAll(elixirs);
         this.mana = mana;
         this.baseMaxMana = maxMana;
         this.stability = stability;

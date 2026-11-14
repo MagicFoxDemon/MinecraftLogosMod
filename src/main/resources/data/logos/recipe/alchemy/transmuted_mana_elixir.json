@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:vital_mash" },
+    { "ingredient": "logos:mana_crystal" },
+    { "ingredient": "logos:raven_head" }
+  ],
+  "results": [
+    { "id": "logos:transmuted_mana_elixir" }
+  ],
+  "mana": 80
+}

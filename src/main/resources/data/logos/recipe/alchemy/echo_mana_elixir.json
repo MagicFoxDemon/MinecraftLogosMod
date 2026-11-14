@@ -1,0 +1,14 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:raw_mash" },
+    { "ingredient": "logos:mana_crystal" },
+    { "ingredient": "logos:echo_tincture" }
+  ],
+  "results": [
+    { "id": "logos:echo_mana_elixir" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 40
+}

@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:raw_mash" },
+    { "ingredient": "logos:mana_shard" },
+    { "ingredient": "minecraft:amethyst_shard" }
+  ],
+  "results": [
+    { "id": "logos:crystal_mana_elixir" }
+  ],
+  "mana": 20
+}
