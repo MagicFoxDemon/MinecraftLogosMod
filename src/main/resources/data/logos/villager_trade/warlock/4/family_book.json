@@ -1,0 +1,9 @@
+{
+  "wants": { "id": "minecraft:emerald", "count": 24 },
+  "gives": { "id": "logos:change_book" },
+  "given_item_modifiers": [ { "function": "logos:random_family_book" } ],
+  "max_uses": 2,
+  "xp": 15,
+  "reputation_discount": 0.2,
+  "merchant_predicate": { "condition": "minecraft:random_chance", "chance": 0.55 }
+}

@@ -1,0 +1,8 @@
+{
+  "wants": { "id": "logos:thunder_thistle_down", "count": 6 },
+  "gives": { "id": "minecraft:emerald" },
+  "max_uses": 16,
+  "xp": 10,
+  "reputation_discount": 0.05,
+  "merchant_predicate": { "condition": "minecraft:random_chance", "chance": 0.35 }
+}

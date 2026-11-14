@@ -258,6 +258,11 @@ public class LogosMod {
     /** Loot condition: the chest stands in an end city's ship, where the 虚空之书 is far likelier than in the city. */
     public static final DeferredHolder<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.predicates.LootItemCondition>,
             com.mojang.serialization.MapCodec<dev.logos.item.InEndShip>> IN_END_SHIP = LOOT_CONDITIONS.register("in_end_ship", () -> dev.logos.item.InEndShip.CODEC);
+    public static final DeferredRegister<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.functions.LootItemFunction>> LOOT_FUNCTIONS =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.LOOT_FUNCTION_TYPE, MODID);
+    /** Loot function: a random family book (not 形之书 nor an element's), as the warlock sells them. */
+    public static final DeferredHolder<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.functions.LootItemFunction>,
+            com.mojang.serialization.MapCodec<dev.logos.item.RandomFamilyBook>> RANDOM_FAMILY_BOOK = LOOT_FUNCTIONS.register("random_family_book", () -> dev.logos.item.RandomFamilyBook.CODEC);
 
     // Alchemical colossus materials. Placeholders for now: their alchemy (recipes, planting) comes later.
     /** 巨像之心: the flower a colossus offers its master. An alchemical material. */
@@ -532,6 +537,32 @@ public class LogosMod {
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.WOOD).strength(2.5f).noOcclusion()
                     .sound(net.minecraft.world.level.block.SoundType.WOOD));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> COPY_TABLE_ITEM = ITEMS.registerSimpleBlockItem("copy_table", COPY_TABLE);
+
+    public static final DeferredRegister<net.minecraft.world.entity.ai.village.poi.PoiType> POI_TYPES =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.POINT_OF_INTEREST_TYPE, MODID);
+    /** The warlock's workstation: the copy table, which a villager without a job takes up (it is in #acquirable_job_site). */
+    public static final DeferredHolder<net.minecraft.world.entity.ai.village.poi.PoiType, net.minecraft.world.entity.ai.village.poi.PoiType> WARLOCK_POI =
+            POI_TYPES.register("warlock", () -> new net.minecraft.world.entity.ai.village.poi.PoiType(
+                    com.google.common.collect.ImmutableSet.copyOf(COPY_TABLE.get().getStateDefinition().getPossibleStates()), 1, 1));
+    public static final DeferredRegister<net.minecraft.world.entity.npc.villager.VillagerProfession> PROFESSIONS =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.VILLAGER_PROFESSION, MODID);
+    /**
+     * 术士: a villager at a copy table. Sells wands, staffs, pages and potions a tier higher each level, and from
+     * journeyman on may offer a family book; buys alchemy herbs and materials. The trades are data
+     * ({@code data/logos/villager_trade/warlock}, one trade set a level); the robe is {@code textures/entity/villager/profession/warlock.png}.
+     */
+    public static final DeferredHolder<net.minecraft.world.entity.npc.villager.VillagerProfession, net.minecraft.world.entity.npc.villager.VillagerProfession> WARLOCK =
+            PROFESSIONS.register("warlock", () -> {
+                var levels = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<net.minecraft.resources.ResourceKey<net.minecraft.world.item.trading.TradeSet>>();
+                for (int level = 1; level <= 5; level++) {
+                    levels.put(level, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.TRADE_SET,
+                            net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "warlock/level_" + level)));
+                }
+                return new net.minecraft.world.entity.npc.villager.VillagerProfession(Component.translatable("entity.logos.villager.warlock"),
+                        poi -> poi.is(WARLOCK_POI.getKey()), poi -> poi.is(WARLOCK_POI.getKey()),
+                        com.google.common.collect.ImmutableSet.of(), com.google.common.collect.ImmutableSet.of(),
+                        net.minecraft.sounds.SoundEvents.VILLAGER_WORK_LIBRARIAN, levels);
+            });
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.CopyTableBlockEntity>> COPY_TABLE_BE =
             BLOCK_ENTITIES.register("copy_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
                     dev.logos.block.CopyTableBlockEntity::new, COPY_TABLE.get()));
@@ -896,6 +927,9 @@ public class LogosMod {
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, LogosConfig.SPEC);
         ITEMS.register(modBus);
         LOOT_CONDITIONS.register(modBus);
+        LOOT_FUNCTIONS.register(modBus);
+        POI_TYPES.register(modBus);
+        PROFESSIONS.register(modBus);
         BLOCKS.register(modBus);
         BLOCK_ENTITIES.register(modBus);
         RECIPE_TYPES.register(modBus);

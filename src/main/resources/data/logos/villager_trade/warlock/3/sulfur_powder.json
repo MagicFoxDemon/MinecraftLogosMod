@@ -1,0 +1,8 @@
+{
+  "wants": { "id": "logos:sulfur_powder", "count": 4 },
+  "gives": { "id": "minecraft:emerald" },
+  "max_uses": 16,
+  "xp": 20,
+  "reputation_discount": 0.05,
+  "merchant_predicate": { "condition": "minecraft:random_chance", "chance": 0.5 }
+}

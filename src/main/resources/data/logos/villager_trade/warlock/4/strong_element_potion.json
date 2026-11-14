@@ -1,0 +1,8 @@
+{
+  "wants": { "id": "minecraft:emerald", "count": 8 },
+  "gives": { "id": "minecraft:potion", "components": { "minecraft:potion_contents": { "potion": "logos:strong_fire_power" } } },
+  "given_item_modifiers": [ { "function": "minecraft:set_random_potion", "options": [ "logos:strong_physical_power", "logos:strong_fire_power", "logos:strong_frost_power", "logos:strong_lightning_power", "logos:strong_void_power", "logos:strong_arcane_power", "logos:strong_life_power" ] } ],
+  "max_uses": 8,
+  "xp": 15,
+  "reputation_discount": 0.05
+}

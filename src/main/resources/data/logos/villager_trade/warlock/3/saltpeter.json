@@ -1,0 +1,7 @@
+{
+  "wants": { "id": "logos:saltpeter", "count": 4 },
+  "gives": { "id": "minecraft:emerald" },
+  "max_uses": 16,
+  "xp": 20,
+  "reputation_discount": 0.05
+}
