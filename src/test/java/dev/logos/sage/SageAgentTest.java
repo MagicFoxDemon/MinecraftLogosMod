@@ -20,8 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonObject;
 
-import dev.logos.lang.Rune;
-import dev.logos.lang.Runes;
+import dev.logos.lang.Unlocks;
 
 class SageAgentTest {
     private static final String FIREBALL = "(spell :name \"火球\" :mana 30 (projectile (on-hit (damage target standard fire))))";
@@ -45,9 +44,8 @@ class SageAgentTest {
     }
 
     private static Set<String> all() {
-        Set<String> s = new LinkedHashSet<>();
-        for (Rune r : Runes.all()) s.add(r.name);
-        return s;
+        // Everything a player can learn, as SageRunes gives it to one who knows it all.
+        return new LinkedHashSet<>(Unlocks.all());
     }
 
     private static SageModel.ToolCall call(String id, String name, String key, String value) {
@@ -70,7 +68,7 @@ class SageAgentTest {
     @Test
     void promptListsOnlyTheRunesThePlayerHas() {
         Set<String> some = all();
-        some.remove("projectile");
+        some.remove(Unlocks.rune("projectile"));
         String prompt = SagePrompt.system("zh_cn", some);
         assertFalse(prompt.contains("(projectile "), "a locked rune is listed");
         assertTrue(prompt.contains("(damage "));
@@ -97,7 +95,7 @@ class SageAgentTest {
     @Test
     void aLockedRuneIsSentBackLikeACompileError() throws Exception {
         Set<String> some = all();
-        some.remove("projectile");
+        some.remove(Unlocks.rune("projectile"));
         String ray = "(spell :mana 30 (ray (on-hit (damage target standard fire))))";
         Scripted model = new Scripted().then("", submit("a", FIREBALL)).then("", submit("b", ray));
         SageAgent.Outcome out = SageAgent.run(model, request(some), (k, a) -> {});

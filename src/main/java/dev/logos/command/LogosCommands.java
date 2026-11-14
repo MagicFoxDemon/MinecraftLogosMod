@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -35,14 +36,17 @@ import dev.logos.lang.Report;
 import dev.logos.lang.Rune;
 import dev.logos.lang.Runes;
 import dev.logos.lang.Spell;
+import dev.logos.lang.Unlocks;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Limits;
 import dev.logos.runtime.PlayerMagic;
+import dev.logos.runtime.RuneKnowledge;
 import dev.logos.runtime.SpellRuntime;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -125,7 +129,72 @@ public final class LogosCommands {
                     c.getSource().sendSuccess(() -> Component.literal("法术轨迹报告: " + BoolArgumentType.getBool(c, "on")), false);
                     return 1;
                 })))
-                .then(Commands.literal("passives").executes(LogosCommands::passives)));
+                .then(Commands.literal("passives").executes(LogosCommands::passives))
+                // 符文解锁: anyone sees what they have learned; teaching and taking away is for game masters.
+                .then(Commands.literal("unlocks").executes(c -> unlocks(c, c.getSource().getPlayerOrException()))
+                        .then(Commands.argument("player", EntityArgument.player()).requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .executes(c -> unlocks(c, EntityArgument.getPlayer(c, "player")))))
+                .then(Commands.literal("unlock").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("targets", EntityArgument.players()).then(unlockKey(true))))
+                .then(Commands.literal("lock").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("targets", EntityArgument.players()).then(unlockKey(false)))));
+    }
+
+    /** A key of {@link Unlocks} (rune:freeze, element:fire, motion:arc) or {@code all}, to teach the targets or take from them. */
+    private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, String> unlockKey(boolean learn) {
+        return Commands.argument("key", StringArgumentType.greedyString())
+                .suggests((c, b) -> {
+                    List<String> keys = new ArrayList<>(Unlocks.all());
+                    keys.addFirst("all");
+                    return SharedSuggestionProvider.suggest(keys, b);
+                })
+                .executes(c -> unlock(c, EntityArgument.getPlayers(c, "targets"), StringArgumentType.getString(c, "key").strip(), learn));
+    }
+
+    private static int unlock(CommandContext<CommandSourceStack> c, Collection<ServerPlayer> players, String key, boolean learn) {
+        boolean all = key.equals("all");
+        if (!all && !Unlocks.lockable(key)) {
+            c.getSource().sendFailure(Component.literal("没有可解锁的 " + key + "：写成 rune:freeze、element:fire、motion:arc，或 all"));
+            return 0;
+        }
+        int changed = 0;
+        for (ServerPlayer p : players) {
+            for (String k : all ? Unlocks.all() : List.of(key)) {
+                if (learn ? RuneKnowledge.learn(p, k) : RuneKnowledge.forget(p, k)) changed++;
+            }
+        }
+        int n = changed;
+        c.getSource().sendSuccess(() -> Component.literal((learn ? "领悟了 " : "遗忘了 ") + n + " 项（" + players.size() + " 名玩家）"), true);
+        return n;
+    }
+
+    /** What {@code p} has learned, family by family; creative play and a server with runeUnlocks off write everything anyway. */
+    private static int unlocks(CommandContext<CommandSourceStack> c, ServerPlayer p) {
+        CommandSourceStack s = c.getSource();
+        String note = !dev.logos.LogosConfig.runeUnlocks() ? "（本服务器已关闭符文解锁，人人都能写全部符文）"
+                : p.hasInfiniteMaterials() ? "（创造模式下全部可写）" : "";
+        s.sendSuccess(() -> Component.literal("✦ " + p.getName().getString() + " 已领悟" + note).withStyle(ChatFormatting.GOLD), false);
+        for (Category cat : Category.values()) {
+            List<String> words = new ArrayList<>();
+            int total = 0;
+            for (Rune r : Runes.all()) {
+                if (r.category != cat) continue;
+                total++;
+                if (RuneKnowledge.learned(p, Unlocks.rune(r.name))) words.add(r.name);
+            }
+            if (total > 0) listed(s, "[" + cat.zh + "] ", cat.color, words, total);
+        }
+        List<String> elements = new ArrayList<>(), motions = new ArrayList<>();
+        for (dev.logos.lang.Element e : dev.logos.lang.Element.values()) if (RuneKnowledge.learned(p, Unlocks.element(e))) elements.add(e.name().toLowerCase(java.util.Locale.ROOT));
+        for (Motion m : Motion.values()) if (RuneKnowledge.learned(p, Unlocks.motion(m))) motions.add(m.name().toLowerCase(java.util.Locale.ROOT));
+        listed(s, "[元素] ", ChatFormatting.GOLD, elements, dev.logos.lang.Element.values().length);
+        listed(s, "[运动] ", ChatFormatting.AQUA, motions, Motion.values().length);
+        return 1;
+    }
+
+    private static void listed(CommandSourceStack s, String head, ChatFormatting color, List<String> words, int total) {
+        s.sendSuccess(() -> Component.literal(head + words.size() + "/" + total + "  ").withStyle(color)
+                .append(Component.literal(String.join("  ", words)).withStyle(ChatFormatting.WHITE)), false);
     }
 
     private static int cast(CommandContext<CommandSourceStack> c, String src) throws CommandSyntaxException {

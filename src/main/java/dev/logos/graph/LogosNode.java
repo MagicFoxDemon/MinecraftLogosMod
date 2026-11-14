@@ -52,7 +52,8 @@ public abstract class LogosNode extends Node {
     @Override
     public @Nullable UIElement createDescriptionUI() {
         Label label = new Label();
-        label.setText(Component.literal(category().label() + "\n" + Component.translatableWithFallback(nameKey(), word()).getString() + "\n\n" + doc()));
+        Component text = Component.literal(category().label() + "\n" + Component.translatableWithFallback(nameKey(), word()).getString() + "\n\n" + doc());
+        label.setText(Sealed.node(this) ? Sealed.garble(text) : text);
         label.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true));
         label.layout(l -> l.widthPercent(100));
         return label;

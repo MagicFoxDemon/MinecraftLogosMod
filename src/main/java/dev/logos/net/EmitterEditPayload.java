@@ -63,6 +63,7 @@ public record EmitterEditPayload(BlockPos pos, String source, CompoundTag graph,
             sp.sendOverlayMessage(Component.literal("术式发射器只施放主动术式").withStyle(ChatFormatting.YELLOW));
             return;
         }
+        if (!dev.logos.runtime.RuneKnowledge.mayWrite(sp, spell, emitter.page().get(dev.logos.LogosMod.SPELL_SOURCE.get()))) return;
         PageTier tier = SpellPages.tier(emitter.page());
         emitter.edit(SpellPages.write(emitter.page(), p.source, p.graph), p.mode, p.interval, sp);
         sp.level().playSound(null, p.pos, SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.BLOCKS, 1, 1.2f);

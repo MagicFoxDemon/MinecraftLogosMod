@@ -21,6 +21,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.ICustomNodeModel;
 
 import dev.logos.graph.EnumValues;
 import dev.logos.graph.EnumValues.Kind;
+import dev.logos.graph.Sealed;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.network.chat.Component;
@@ -101,12 +102,16 @@ final class EnumLibrary extends UIElement {
         UIElement picture = new UIElement().layout(l -> l.width(25).height(25).flexShrink(0));
         picture.style(s -> s.backgroundTexture(icon));
         UIElement text = new UIElement().layout(l -> l.flex(1).minWidth(0).gapAll(2));
-        Label name = label(Component.literal(entry.name()), false);
-        Label id = label(Component.literal(entry.id()), true);
+        // An element or motion its viewer has not learned is listed garbled (符文解锁).
+        boolean sealed = entry.sealed();
+        Component shownName = sealed ? Sealed.garble(Component.literal(entry.name())) : Component.literal(entry.name());
+        Component shownId = sealed ? Sealed.garble(Component.literal(entry.id())) : Component.literal(entry.id());
+        Label name = label(shownName, false);
+        Label id = label(shownId, true);
         if (!entry.usable()) name.textStyle(s -> s.textColor(Manuscript.INK_FADED));
         text.addChildren(name, id); row.addChildren(picture, text);
-        row.style(s -> s.tooltips(Component.literal(entry.name()), Component.literal(entry.id()),
-                Component.translatable(entry.usable() ? "logos.enum.drag_help" : unavailable(entry.kind()))));
+        row.style(s -> s.tooltips(shownName, shownId,
+                Component.translatable(sealed ? "logos.unlock.sealed" : entry.usable() ? "logos.enum.drag_help" : unavailable(entry.kind()))));
         row.addEventListener(UIEvents.MOUSE_ENTER, event -> {
             row.style(s -> s.backgroundTexture((GuiTexture) (context, x, y, w, h) ->
                     DrawerHelperClient.drawSolidRect(context, x, y, w, h, 0x70C2CFE3)));

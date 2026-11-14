@@ -127,7 +127,7 @@ gh pr create --fill                # 或在网页上开 PR
 
 ### 常见改动要碰的地方
 
-- **新符文**：`Runes` 里 `def(...)`（写清 `doc`，含魔力价格）→ `RuneNodes` 加节点类并在 `BY_RUNE` 登记 → 语言文件加 `logos.rune.<名字>` → 会花魔力的符文在 `SpellProfile.Reader.cost` 补上价格和意图（否则总览按 0 估算）→ 单元测试 + 世界内测试。
+- **新符文**：`Runes` 里 `def(...)`（写清 `doc`，含魔力价格）→ `RuneNodes` 加节点类并在 `BY_RUNE` 登记 → 语言文件加 `logos.rune.<名字>` → 会花魔力的符文在 `SpellProfile.Reader.cost` 补上价格和意图（否则总览按 0 估算）→ 单元测试 + 世界内测试。新符文默认要领悟才能写（见下文「符文解锁」）。
 - **新的字面量类型**（如 ⚗ 药水效果）：`Type` → `Compiler`（解析与注册表检查，检查函数在 `LogosMod` 构造器里接上真实注册表）→ `Node` 打印 → `graph/` 下 `RuneNode`、`GraphCompiler`、`GraphBuilder`、`LTypes` 四处。
 - **新物品 / 方块**：在 `LogosMod` 注册，`assets/logos/{items,models,textures}` 放资源，语言文件加名字，需要时加 `data/logos/{recipe,loot_table}`。
 - **新法杖**：同新物品，另外按下文「法杖数值」定好档位、槽数、注入流量和汇集加速；模型要带 `wand_tip` 特效挂点（见 6.3）。
@@ -184,6 +184,18 @@ gh pr create --fill                # 或在网页上开 PR
 |---|---|---|---|---|
 | 蓄灵坠 `reservoir_charm_N` | 魔力上限 | +100 | +300 | +800 |
 | 涌泉坠 `wellspring_charm_N` | 魔力回复（每秒） | +1 | +3 | +8 |
+
+### 符文解锁
+
+玩家只能写入自己领悟了的符文、元素和运动方式。`lang/Unlocks` 定义哪些东西要领悟、一个术式写了哪些；`runtime/RuneKnowledge` 存每个玩家领悟了什么（随死亡保留，只同步给本人）。
+
+- 键的写法：`rune:<符文名>`、`element:<元素>`、`motion:<运动>`。启式、上下文和其他枚举（形状、天气、生物、药效……）目前不上锁；以后要锁，在 `Unlocks` 里加一种键。
+- 一开始就会：魔弹 `projectile`、伤害 `damage`、物理元素、直行（`Unlocks.STARTING`）。新符文默认要领悟才能写。生命元素不进任何随机来源（`Unlocks.NOT_RANDOM`），本体里只能用命令给。
+- 只限制「写」，不限制施放和拓印。服务端在三处检查（`RuneKnowledge.mayWrite`）：法式编纂台、术式发射器、用书写载页。改写一张载页时，它原来写着的符文可以保留，但不能多写。编译器自己补上的部分不算玩家写的：省略的参数默认值、分支外面包的 `do`、编辑器为「此形」生成的 `let`。
+- 有创造模式物品栏（`hasInfiniteMaterials`）的玩家不受限制；配置 `runeUnlocks` 关闭时人人都能写全部。
+- 编辑器（`graph/Sealed`）：没领悟的节点、它的端口和说明、节点库条目、元素和运动下拉项都用原版的混淆文字（§k）显示，节点库搜不到它们。书灵只会用玩家领悟了的（`SageRunes.available`）。
+- 命令：`/logos unlocks [玩家]` 查看；`/logos unlock <玩家> <键|all>`、`/logos lock <玩家> <键|all>` 需要管理员权限。
+- 世界内测试的模拟玩家默认是创造模式，不受限制；要测限制，先 `setGameMode(GameType.SURVIVAL)`。
 
 ---
 

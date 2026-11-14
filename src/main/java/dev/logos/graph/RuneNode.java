@@ -276,15 +276,29 @@ public abstract class RuneNode extends LogosNode {
             group.addConfigurator(new SelectorConfigurator<>("", () -> kind.isInstance(value.getValue()) ? kind.cast(value.getValue()) : initial, s -> {
                 value.setValue(s);
                 model().defineNode();
-            }, initial, value.forceUpdate(), choices, s -> Component.translatable(names + s.name()).getString()));
+            }, initial, value.forceUpdate(), choices, s -> {
+                String name = Component.translatable(names + s.name()).getString();
+                return s instanceof Motion m && Sealed.motion(m) ? Sealed.garble(name) : name;
+            }));
         });
     }
+
+    /** The element dropdown: every element, those its viewer has not learned garbled (符文解锁). */
+    private static final ITypeConfigurable ELEMENT_PICKER = (value, type) -> IConfigurable.create(group -> {
+        Element initial = value.getValue() instanceof Element e ? e : Element.PHYSICAL;
+        group.addConfigurator(new SelectorConfigurator<>("", () -> value.getValue() instanceof Element e ? e : initial, value::setValue,
+                initial, value.forceUpdate(), List.of(Element.values()), e -> {
+                    String name = Component.translatable("dev.logos.lang.Element." + e.name()).getString();
+                    return Sealed.element(e) ? Sealed.garble(name) : name;
+                }));
+    });
 
     private static PortModel input(IPortDefinitionContext context, String id, Component label, Type t, boolean broadcast, String defaultSrc, String paramName) {
         var builder = context.addInputPort(id, LTypes.of(t, broadcast))
                 .withDisplayName(label);
         if (EnumValues.stringPort(t)) builder.withCodec(com.mojang.serialization.Codec.STRING)
                 .withConfigurable(EnumValues.STRING_EDITOR);
+        if (t == Type.ELEMENT) builder.withConfigurable(ELEMENT_PICKER);
         Object def = defaultValue(t, defaultSrc, paramName);
         if (def != null) builder.withDefaultValue(def);
         else builder.withoutConfigurator();

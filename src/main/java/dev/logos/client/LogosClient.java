@@ -71,6 +71,11 @@ public final class LogosClient {
             if (conn == null) return fallback.get();
             return conn.levels().stream().map(k -> k.identifier().toString()).sorted().toList();
         };
+        // The editor draws what this player has not learned garbled (符文解锁); their knowledge is synced to them.
+        dev.logos.graph.Sealed.known = key -> {
+            var player = Minecraft.getInstance().player;
+            return player == null || dev.logos.runtime.RuneKnowledge.knows(player, key);
+        };
     }
 
     @SubscribeEvent

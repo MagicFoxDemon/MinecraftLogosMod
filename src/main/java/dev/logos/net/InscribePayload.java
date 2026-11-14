@@ -49,6 +49,9 @@ public record InscribePayload(BlockPos pos, String source, CompoundTag graph, St
             Casting.message(sp, e);
             return;
         }
+        // Only words the writer has learned go onto the page; whatever the page said already may stay (符文解锁).
+        String before = sp.level().getBlockEntity(p.pos) instanceof dev.logos.block.InscriptionTableBlockEntity t ? t.page().get(LogosMod.SPELL_SOURCE.get()) : null;
+        if (!dev.logos.runtime.RuneKnowledge.mayWrite(sp, spell, before)) return;
         // 言出法随 is kept only under the name the spell really has, the name its recordings were made for.
         var tier = InscriptionTableBlock.inscribe(sp, p.pos, p.source, p.graph, p.voice.equals(spell.name()) ? p.voice : null);
         if (tier != null) {

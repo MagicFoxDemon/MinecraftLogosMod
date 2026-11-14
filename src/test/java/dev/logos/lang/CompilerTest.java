@@ -150,10 +150,11 @@ class CompilerTest {
     }
 
     @Test
-    void arcaneDamageIsWritableButLifeIsNot() {
+    void arcaneAndLifeDamageCompile() {
         Spell s = Compiler.compile("(projectile (on-hit (damage target 2 arcane)))");
         assertEquals(Element.ARCANE, s.body().getFirst().element);
-        assertThrows(LogosError.class, () -> Compiler.compile("(projectile (on-hit (damage target 2 life)))"));
+        // Whether a player may write life is the unlocks' business (UnlocksTest), no longer the compiler's.
+        assertEquals(Element.LIFE, Compiler.compile("(projectile (on-hit (damage target 2 life)))").body().getFirst().element);
     }
 
     @Test

@@ -353,6 +353,7 @@ public final class Compiler {
                 arg = expr(pos.get(i), s);
             } else if (p.defaultSrc() != null) {
                 arg = expr(Reader.read(p.defaultSrc()).getFirst(), s);
+                n.defaultedArgs.add(n.args.size());
             } else {
                 throw err(at, r.name + " 缺少插槽 " + p.type().label() + " " + p.name() + "。写法: " + r.signature());
             }

@@ -6,8 +6,10 @@ import org.jspecify.annotations.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.Style;
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElementRendererRegistry;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.GraphViewLod;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.TextElement;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
 import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
@@ -26,6 +28,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.PortNodeModel;
 
 import dev.logos.graph.LogosNode;
 import dev.logos.graph.LTypes;
+import dev.logos.graph.Sealed;
 import dev.logos.lang.Category;
 import dev.logos.lang.Element;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
@@ -203,7 +206,7 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
      * The toolkit's side ports, minus the rows of ports that have just been hidden: the toolkit only drops a row whose
      * port is gone or was never hidden, so a keyword a newly picked shape or motion does not use would stay on show.
      */
-    private static final class Ports extends InOutPortContainerElement {
+    private final class Ports extends InOutPortContainerElement {
         Ports(PortNodeModel model) { super(model, PortContainerElement.HORIZONTAL_PORT_FILTER); }
 
         @Override public void updateUIFromModel(ModelUpdateVisitor visitor) {
@@ -215,6 +218,17 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
                     return true;
                 });
             }
+            if (Sealed.node(rune)) garble(this);
+        }
+    }
+
+    /** Garbles every label under {@code part}, as for a word its viewer has not learned (符文解锁). */
+    private static void garble(UIElement part) {
+        for (UIElement child : part.getChildren()) {
+            if (child instanceof TextElement text && text.getText() != null && !text.getText().getStyle().isObfuscated()) {
+                text.setText(Sealed.garble(text.getText()));
+            }
+            garble(child);
         }
     }
 
@@ -255,6 +269,7 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
                         && dev.logos.graph.RuneNode.flag(k.name()).equals(option.getId()) && rn.hidesFlag(k.name()));
                 Style.importantPipeline(getChildren().get(row++).getLayout(), l -> l.display(connected || unused ? TaffyDisplay.NONE : TaffyDisplay.FLEX));
             }
+            if (Sealed.node(rune)) garble(this);
         }
     }
 
@@ -270,7 +285,8 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
             if (visitor.hasHint(ChangeHint.STYLE) || visitor.hasHint(ChangeHint.DATA)) {
                 String title = rune instanceof dev.logos.graph.EnumValues.Value value ? value.title() : nodeModel.getTitle().getString();
                 String glyph = category.glyph + " ";
-                nodeTittle.setText(Component.literal(title.startsWith(glyph) ? title.substring(glyph.length()) : title));
+                Component text = Component.literal(title.startsWith(glyph) ? title.substring(glyph.length()) : title);
+                nodeTittle.setText(Sealed.node(rune) ? Sealed.garble(text) : text);
             }
             if (visitor.hasHint(ChangeHint.STYLE) || visitor.hasHint(ChangeHint.DATA)) {
                 GuiTexture drawn = emblem(rune);

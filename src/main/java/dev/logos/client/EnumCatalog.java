@@ -9,6 +9,7 @@ import java.util.Map;
 
 import dev.logos.graph.Dimensions;
 import dev.logos.graph.EnumValues.Kind;
+import dev.logos.graph.Sealed;
 import dev.logos.lang.ConstructShape;
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
@@ -24,8 +25,16 @@ import net.minecraft.world.item.Items;
 /** A small index for one open editor; entries come from the running game, including installed mods. */
 final class EnumCatalog {
     record Entry(Kind kind, String id, String name, boolean usable) {
-        boolean matches(String query) { return (name + " " + id).toLowerCase(Locale.ROOT).contains(query); }
-        @Override public boolean usable() { return usable && (kind != Kind.CREATURE || EnumPreviews.summonable(id)); }
+        /** A sealed card is found by no search, so its name stays its own. */
+        boolean matches(String query) { return sealed() ? query.isEmpty() : (name + " " + id).toLowerCase(Locale.ROOT).contains(query); }
+        @Override public boolean usable() { return usable && !sealed() && (kind != Kind.CREATURE || EnumPreviews.summonable(id)); }
+
+        /** An element or motion its viewer has not learned (符文解锁): listed garbled, and not handed out. */
+        boolean sealed() {
+            if (kind == Kind.ELEMENT) { Element e = Element.parse(id); return e != null && Sealed.element(e); }
+            if (kind == Kind.MOTION) { Motion m = Motion.parse(id); return m != null && Sealed.motion(m); }
+            return false;
+        }
     }
 
     private final Map<Kind, List<Entry>> entries = new EnumMap<>(Kind.class);
@@ -55,7 +64,7 @@ final class EnumCatalog {
             case PARTICLE -> BuiltInRegistries.PARTICLE_TYPE.keySet().forEach(id -> ids.add(id.toString()));
             case EFFECT -> BuiltInRegistries.MOB_EFFECT.keySet().forEach(id -> ids.add(id.toString()));
             case DIMENSION -> ids.addAll(Dimensions.known.get());
-            case ELEMENT -> { for (Element e : Element.values()) if (e.writable) ids.add(e.name().toLowerCase(Locale.ROOT)); }
+            case ELEMENT -> { for (Element e : Element.values()) ids.add(e.name().toLowerCase(Locale.ROOT)); }
             case MOTION -> { for (Motion m : Motion.values()) ids.add(m.name().toLowerCase(Locale.ROOT)); }
             case SHAPE -> { for (ConstructShape s : ConstructShape.values()) ids.add(s.word()); }
             case WEATHER -> { for (Weather w : Weather.values()) ids.add(w.word()); }

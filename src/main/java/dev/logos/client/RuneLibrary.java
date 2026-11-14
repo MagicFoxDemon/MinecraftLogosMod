@@ -23,6 +23,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.itemlibrary.NodeModelLibrar
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.ICustomNodeModel;
 
 import dev.logos.graph.LogosNode;
+import dev.logos.graph.Sealed;
 import dev.logos.graph.SpecialNodes;
 import dev.logos.lang.Category;
 import dev.vfyjxf.taffy.style.AlignItems;
@@ -39,8 +40,11 @@ final class RuneLibrary extends UIElement {
     /** What is carried while a rune is dragged out of the library. */
     record Dragged(NodeModelLibraryItem item) {}
 
-    /** One family on the page: its heading, its runes, and whether it is folded away. */
-    private record Family(String label, Category ink, UIElement body, List<Entry> entries, boolean[] folded, UIElement[] heading) {}
+    /**
+     * One family on the page: its heading, its runes, whether it is folded away, and how many of its runes the viewer
+     * has learned; the rest are listed garbled (符文解锁).
+     */
+    private record Family(String label, Category ink, UIElement body, List<Entry> entries, boolean[] folded, UIElement[] heading, int[] known) {}
 
     private record Entry(UIElement row, String searchable) {}
 
@@ -86,9 +90,12 @@ final class RuneLibrary extends UIElement {
             Family family = byFamily.get(rune instanceof SpecialNodes.ContextValue ? "CONTEXT" : rune.category().name());
             if (family == null) continue;
             String name = Component.translatableWithFallback(rune.nameKey(), rune.word()).getString();
-            UIElement row = entry(entry, rune, name);
+            boolean sealed = Sealed.node(rune);
+            UIElement row = entry(entry, rune, name, sealed);
             family.body.addChild(row);
-            family.entries.add(new Entry(row, (name + " " + rune.word()).toLowerCase(Locale.ROOT)));
+            // A rune not learned is found by no search, so its name stays its own.
+            family.entries.add(new Entry(row, sealed ? "" : (name + " " + rune.word()).toLowerCase(Locale.ROOT)));
+            if (!sealed) family.known[0]++;
         }
         for (Family family : byFamily.values()) {
             if (family.entries.isEmpty()) continue;
@@ -101,7 +108,7 @@ final class RuneLibrary extends UIElement {
 
     private static void family(Map<String, Family> into, String key, String label, Category ink) {
         UIElement body = new UIElement().layout(l -> l.widthPercent(100).gapAll(1).paddingLeft(2));
-        into.put(key, new Family(label, ink, body, new ArrayList<>(), new boolean[1], new UIElement[1]));
+        into.put(key, new Family(label, ink, body, new ArrayList<>(), new boolean[1], new UIElement[1], new int[1]));
     }
 
     /** A family's heading in its wash; clicking folds the family away or opens it again. */
@@ -114,20 +121,26 @@ final class RuneLibrary extends UIElement {
             DrawerHelperClient.drawSolidRect(context, x, y + h - 1, w, 1, 0x993B2614);
         }));
         Label label = new Label();
-        label.setText(Component.literal((family.folded[0] ? "▸ " : "▾ ") + family.label + "  " + family.entries.size()));
+        label.setText(Component.literal((family.folded[0] ? "▸ " : "▾ ") + family.label + "  " + tally(family)));
         label.layout(l -> l.flex(1));
         heading.addChild(label);
         heading.addEventListener(UIEvents.MOUSE_DOWN, e -> {
             if (e.button != 0) return;
             family.folded[0] = !family.folded[0];
-            label.setText(Component.literal((family.folded[0] ? "▸ " : "▾ ") + family.label + "  " + family.entries.size()));
+            label.setText(Component.literal((family.folded[0] ? "▸ " : "▾ ") + family.label + "  " + tally(family)));
             filter(search.getValue());
         });
         return heading;
     }
 
-    /** A rune on the library page: its drawing and name, to be dragged onto the canvas. */
-    private UIElement entry(NodeModelLibraryItem item, LogosNode rune, String name) {
+    /** How many runes the family has, or how many of them are learned out of all when some are not. */
+    private static String tally(Family family) {
+        int all = family.entries.size();
+        return family.known[0] == all ? String.valueOf(all) : family.known[0] + "/" + all;
+    }
+
+    /** A rune on the library page: its drawing and name, to be dragged onto the canvas unless its viewer has not learned it. */
+    private UIElement entry(NodeModelLibraryItem item, LogosNode rune, String name, boolean sealed) {
         UIElement row = new UIElement().layout(l -> l.widthPercent(100).height(12).flexDirection(FlexDirection.ROW)
                 .alignItems(AlignItems.CENTER).gapAll(3).paddingLeft(2));
         row.addClass("spell-library-entry");
@@ -135,7 +148,7 @@ final class RuneLibrary extends UIElement {
         UIElement icon = new UIElement().layout(l -> l.width(9).height(9));
         icon.style(s -> s.backgroundTexture(emblem));
         Label label = new Label();
-        label.setText(Component.literal(name));
+        label.setText(sealed ? Sealed.garble(Component.literal(name)) : Component.literal(name));
         label.layout(l -> l.flex(1).minWidth(0));
         label.textStyle(s -> s.textWrap(TextWrap.HOVER_ROLL));
         row.addChildren(icon, label);
@@ -146,6 +159,11 @@ final class RuneLibrary extends UIElement {
         };
         row.addEventListener(UIEvents.MOUSE_ENTER, e -> row.style(s -> s.backgroundTexture(hover)));
         row.addEventListener(UIEvents.MOUSE_LEAVE, e -> row.style(s -> s.backgroundTexture(IGuiTexture.EMPTY)));
+        if (sealed) {
+            row.addClass("spell-library-sealed");
+            row.style(s -> s.tooltips(Sealed.garble(Component.literal(name + "  " + rune.word())), Component.translatable("logos.unlock.sealed")));
+            return row;
+        }
         row.addEventListener(UIEvents.MOUSE_DOWN, e -> {
             if (e.button == 0) row.startDrag(new Dragged(item), emblem);
         });
