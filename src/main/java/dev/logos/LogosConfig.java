@@ -326,7 +326,65 @@ public final class LogosConfig {
 
     public static final ModConfigSpec SPEC = BUILDER.build();
 
+    /** A corner of the screen. */
+    public enum Corner {
+        TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT;
+
+        public boolean right() {
+            return this == TOP_RIGHT || this == BOTTOM_RIGHT;
+        }
+
+        public boolean bottom() {
+            return this == BOTTOM_LEFT || this == BOTTOM_RIGHT;
+        }
+    }
+
+    /** Each player's own settings (logos-client.toml): how their screen looks, nothing the server cares about. */
+    private static final ModConfigSpec.Builder CLIENT = new ModConfigSpec.Builder();
+
+    static {
+        CLIENT.comment("The mana HUD: the bar that slides in from the screen's edge while your mana matters").push("hud");
+    }
+
+    public static final ModConfigSpec.EnumValue<Corner> MANA_HUD_CORNER = CLIENT
+            .comment("The corner of the screen the mana HUD sits in.")
+            .translation("logos.configuration.manaHudCorner")
+            .defineEnum("manaHudCorner", Corner.BOTTOM_LEFT);
+
+    public static final ModConfigSpec.IntValue MANA_HUD_OFFSET_X = CLIENT
+            .comment("How far the mana HUD sits in from its corner's side edge, in GUI pixels (for example, past another mod's HUD).")
+            .translation("logos.configuration.manaHudOffsetX")
+            .defineInRange("manaHudOffsetX", 0, 0, 2000);
+
+    public static final ModConfigSpec.IntValue MANA_HUD_OFFSET_Y = CLIENT
+            .comment("How far the mana HUD sits in from its corner's top or bottom edge, in GUI pixels.")
+            .translation("logos.configuration.manaHudOffsetY")
+            .defineInRange("manaHudOffsetY", 0, 0, 2000);
+
+    static {
+        CLIENT.pop();
+    }
+
+    public static final ModConfigSpec CLIENT_SPEC = CLIENT.build();
+
     private LogosConfig() {}
+
+    /** Where the mana HUD sits: its corner, and how far in from it (x from the side, y from the top or bottom). */
+    public static Corner manaHudCorner() {
+        try {
+            return MANA_HUD_CORNER.get();
+        } catch (IllegalStateException e) {
+            return Corner.BOTTOM_LEFT;
+        }
+    }
+
+    public static int manaHudOffsetX() {
+        return read(MANA_HUD_OFFSET_X::getAsInt, 0);
+    }
+
+    public static int manaHudOffsetY() {
+        return read(MANA_HUD_OFFSET_Y::getAsInt, 0);
+    }
 
     public static int maxInjectedMana() {
         return read(MAX_INJECTED_MANA::getAsInt, Integer.MAX_VALUE);

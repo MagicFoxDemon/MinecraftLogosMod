@@ -24,7 +24,7 @@ public final class ManaHud {
     /**
      * Tells {@code sp}'s client what its HUD shows, if that differs from what it last heard. Only displayed values
      * count: mana moving within a whole unit sends nothing, and neither does a full pool. A player's new
-     * {@link PlayerMagic} (login, respawn) has told it nothing yet, so even a hidden HUD goes out once.
+     * {@link PlayerMagic} (login, respawn) has told it nothing yet, so its first state goes out at once. The pool goes out with no wand in hand too, so the HUD can show it filling.
      */
     public static void sync(ServerPlayer sp) {
         if (!sp.connection.hasChannel(ManaHudPayload.TYPE)) return;
@@ -38,9 +38,8 @@ public final class ManaHud {
 
     private static ManaHudPayload state(ServerPlayer sp, PlayerMagic m) {
         ItemStack wand = SpellBag.heldWand(sp);
-        if (wand == null) return ManaHudPayload.HIDDEN;
         double cap = PlayerMagic.maxMana(sp);
-        int filled = (int) Math.min(10, Math.round(10 * m.mana / Math.max(1, cap)));
+        if (wand == null) return ManaHudPayload.pool((int) m.mana, (int) cap);
         // A staff casts from what it holds, not from the pool.
         double source = m.mana;
         int stored = 0, capacity = 0;
@@ -49,7 +48,22 @@ public final class ManaHud {
             stored = (int) source;
             capacity = (int) staff.capacity();
         }
-        return new ManaHudPayload(true, (int) m.mana, (int) cap, filled, stored, capacity, Optional.of(spellText(sp, m, wand, source)));
+        return new ManaHudPayload(true, (int) m.mana, (int) cap, (int) Math.ceil(cost(sp, m, wand)), drawing(m), stored, capacity,
+                Optional.of(spellText(sp, m, wand, source)));
+    }
+
+    /** What the spell about to go out injects: the one being charged, or else the selected one; 0 for none (言出法随 waits for a name). */
+    private static double cost(ServerPlayer sp, PlayerMagic m, ItemStack wand) {
+        if (m.charge != null && sp.isUsingItem()) return m.charge.in.mana();
+        if (VoiceCasting.armed(wand)) return 0;
+        var selected = SpellBag.selected(sp, wand);
+        return selected == null ? 0 : Casting.injection(selected.spell(), selected.tier(), Casting.immolation(sp, wand)).mana();
+    }
+
+    /** What the charge under way, or 言出法随 listening, has drawn out of the pool so far. */
+    private static int drawing(PlayerMagic m) {
+        if (m.charge != null) return (int) m.charge.injected;
+        return m.listen != null ? (int) m.listen.injected() : 0;
     }
 
     private static Component spellText(ServerPlayer sp, PlayerMagic m, ItemStack wand, double source) {

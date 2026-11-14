@@ -193,6 +193,14 @@ public final class Manuscript {
             for (Mark m : marks) DrawerHelperClient.drawSolidRect(context, x + m.x, y + m.y, m.w, m.h, m.color);
         }
 
+        /** Replays the drawing on the game's own HUD, for a layer drawn outside any screen. */
+        void draw(net.minecraft.client.gui.GuiGraphicsExtractor g, int x, int y) {
+            for (Mark m : marks) {
+                int x0 = x + Math.round(m.x), y0 = y + Math.round(m.y);
+                g.fill(x0, y0, x0 + Math.round(m.w), y0 + Math.round(m.h), m.color);
+            }
+        }
+
         /** Replays the drawing in one colour, for strokes whose ink depends on state (hover, selection). */
         void draw(GUIContext context, float x, float y, int color) {
             count(context, marks.size());

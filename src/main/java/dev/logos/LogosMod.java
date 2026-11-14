@@ -925,6 +925,7 @@ public class LogosMod {
 
     public LogosMod(IEventBus modBus, ModContainer container) {
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, LogosConfig.SPEC);
+        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, LogosConfig.CLIENT_SPEC);
         ITEMS.register(modBus);
         LOOT_CONDITIONS.register(modBus);
         LOOT_FUNCTIONS.register(modBus);
