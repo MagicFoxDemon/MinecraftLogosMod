@@ -42,6 +42,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
  * like power, the rune still pays for the amount written.
  * <li>{@code channel_speed}: how much faster a charge fills (base 1; 2 takes half as long).
  * <li>{@code mana_regeneration}: mana per second a player's pool refills by.
+ * <li>{@code mana_regeneration_percent}: on top of that, this percent of the pool's cap a second (base 0.5).
+ * <li>{@code max_mana}: a player's mana cap. Its base is {@link PlayerMagic#baseMaxMana}, kept in step by
+ * {@link PlayerMagic#maxMana}; growth ({@link ManaGrowth}), wands and charms add to it as modifiers.
  * </ul>
  *
  * A spell takes its caster's power and cost when it is cast ({@link #of}), so a buff that wears off
@@ -64,6 +67,10 @@ public final class SpellModifiers {
     public static final DeferredHolder<Attribute, Attribute> CHANNEL_SPEED = attribute("channel_speed", 1, 0.1, 16);
     public static final DeferredHolder<Attribute, Attribute> MANA_REGENERATION =
             attribute("mana_regeneration", Limits.MANA_REGEN_PER_TICK * 20, 0, 1e6);
+    public static final DeferredHolder<Attribute, Attribute> MANA_REGENERATION_PERCENT =
+            attribute("mana_regeneration_percent", Limits.MANA_REGEN_PERCENT, 0, 100);
+    public static final DeferredHolder<Attribute, Attribute> MAX_MANA =
+            attribute("max_mana", Limits.DEFAULT_MAX_MANA, 0, 1e15);
 
     static {
         for (Element e : Element.values()) {
@@ -141,9 +148,9 @@ public final class SpellModifiers {
         return value(caster, CHANNEL_SPEED);
     }
 
-    /** Mana per tick a player's pool refills by. */
+    /** Mana per tick a player's pool refills by: the flat rate plus a percent of the cap. */
     public static double regenerationPerTick(ServerPlayer player) {
-        return value(player, MANA_REGENERATION) / 20;
+        return (value(player, MANA_REGENERATION) + value(player, MANA_REGENERATION_PERCENT) / 100 * PlayerMagic.maxMana(player)) / 20;
     }
 
     /**
@@ -152,12 +159,7 @@ public final class SpellModifiers {
      */
     public static double restoreMana(LivingEntity entity, double amount) {
         if (amount <= 0) return 0;
-        if (entity instanceof ServerPlayer p) {
-            PlayerMagic m = PlayerMagic.of(p);
-            double took = Math.max(0, Math.min(amount, m.maxMana - m.mana));
-            m.mana += took;
-            return took;
-        }
+        if (entity instanceof ServerPlayer p) return PlayerMagic.refill(p, amount);
         ManaVessel v = ManaVessels.of(entity);
         return v != null ? v.receiveMana(amount) : 0;
     }

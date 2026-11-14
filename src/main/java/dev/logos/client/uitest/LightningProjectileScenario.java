@@ -125,7 +125,7 @@ public class LightningProjectileScenario implements UIScenario {
         s.server("cast a real lightning projectile", sc -> {
             var player = sc.player();
             PlayerMagic magic = PlayerMagic.of(player);
-            magic.maxMana = magic.mana = 10000;
+            magic.baseMaxMana = magic.mana = 10000;
             Casting.cast(player, Casting.compile("(projectile :speed 0.4 :life 3 (on-hit (damage target 6 lightning)))"), null, null);
         }).ticks(12).screenshot("lightning_projectile_cast").ticks(45);
     }

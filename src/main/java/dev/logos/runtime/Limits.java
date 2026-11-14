@@ -14,6 +14,8 @@ public final class Limits {
 
     public static final double DEFAULT_MAX_MANA = 200;
     public static final double MANA_REGEN_PER_TICK = 0.3;
+    /** Percent of the cap a second a player's pool refills by besides the flat rate ({@code mana_regeneration_percent}). */
+    public static final double MANA_REGEN_PERCENT = 0.5;
     public static final int DEFAULT_STABILITY = 80;
     public static final int MAX_PASSIVES = 3;
     public static final int PASSIVE_COOLDOWN_TICKS = 20;

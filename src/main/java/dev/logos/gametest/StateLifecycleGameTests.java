@@ -53,7 +53,7 @@ final class StateLifecycleGameTests {
         Vec3 pos = h.absoluteVec(STANDS);
         p.snapTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1e9;
+        m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
         return p;
     }

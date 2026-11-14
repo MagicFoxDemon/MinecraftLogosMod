@@ -122,7 +122,7 @@ public class VoidProjectileScenario implements UIScenario {
         s.server("cast a real void projectile", sc -> {
             var player = sc.player();
             PlayerMagic magic = PlayerMagic.of(player);
-            magic.maxMana = magic.mana = 10000;
+            magic.baseMaxMana = magic.mana = 10000;
             Casting.cast(player, Casting.compile("(projectile :speed 0.4 :life 3 (on-hit (damage target 6 void)))"), null, null);
         }).ticks(12).screenshot("void_projectile_cast").ticks(45);
     }

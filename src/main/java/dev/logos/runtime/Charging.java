@@ -215,7 +215,7 @@ public final class Charging {
         // Channel speed k fills the same charge in 1/k the time: flow scales by k, surge by k².
         double speed = channel(player, SpellModifiers.CHANNEL_SPEED, wand);
         double flow = channel(player, LogosMod.CHANNEL_FLOW, wand) * speed;
-        double surge = channel(player, LogosMod.CHANNEL_SURGE, wand) * (1 + m.maxMana / LogosConfig.chargeManaScale()) * speed * speed;
+        double surge = channel(player, LogosMod.CHANNEL_SURGE, wand) * (1 + PlayerMagic.maxMana(player) / LogosConfig.chargeManaScale()) * speed * speed;
         if (flow <= 0 && surge <= 0) {
             PlayerMagic.alert(player, Component.literal("这根法杖无法汇集魔力").withStyle(ChatFormatting.YELLOW));
             return null;

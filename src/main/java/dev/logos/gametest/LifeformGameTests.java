@@ -318,7 +318,7 @@ final class LifeformGameTests {
         Casting.cast(p, Casting.compile("(spell :mana 41 (mark caster #a))"), null, null);
         // Its master full, so the free mana is not drawn to them instead.
         dev.logos.runtime.PlayerMagic m = dev.logos.runtime.PlayerMagic.of(p);
-        m.mana = m.maxMana;
+        m.mana = m.baseMaxMana;
         h.succeedWhen(() -> h.assertTrue(lf.mana() > before + 20, "it should have drunk the free mana: " + lf.mana() + " from " + before));
     }
 

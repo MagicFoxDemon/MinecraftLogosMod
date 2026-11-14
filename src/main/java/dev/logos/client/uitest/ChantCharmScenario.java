@@ -62,7 +62,7 @@ public class ChantCharmScenario implements UIScenario {
                 .teleportPlayer(0.5, 101, 0.5, 0, 10)
                 .server("hand over a charmed oak wand", sc -> {
                     PlayerMagic m = PlayerMagic.of(sc.player());
-                    m.maxMana = m.mana = 1000;
+                    m.baseMaxMana = m.mana = 1000;
                     m.trace = false;
                     sc.player().setItemInHand(InteractionHand.MAIN_HAND, charmed(LogosMod.WOOD_WANDS.getFirst().get()));
                 })

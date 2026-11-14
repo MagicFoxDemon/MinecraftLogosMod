@@ -1062,7 +1062,7 @@ public class LogosMod {
     public void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer sp)) return;
         PlayerMagic m = PlayerMagic.of(sp);
-        m.mana = Math.min(m.maxMana, m.mana + dev.logos.runtime.SpellModifiers.regenerationPerTick(sp));
+        dev.logos.runtime.ManaGrowth.tick(sp);
         dev.logos.runtime.StaffCharging.tick(sp);
         if (sp.level().getGameTime() % dev.logos.runtime.ManaHud.INTERVAL == 0) dev.logos.runtime.ManaHud.sync(sp);
     }

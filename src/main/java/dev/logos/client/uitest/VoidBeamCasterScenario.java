@@ -57,7 +57,7 @@ public class VoidBeamCasterScenario implements UIScenario {
                 .fill(new BlockPos(-12, 100, -10), new BlockPos(12, 100, 15), Blocks.SMOOTH_STONE.defaultBlockState())
                 .teleportPlayer(.5, 101, -3, 0, 10)
                 .server("summon the beam's lifeform anchor", sc -> {
-                    var m = PlayerMagic.of(sc.player()); m.maxMana = m.mana = 10000;
+                    var m = PlayerMagic.of(sc.player()); m.baseMaxMana = m.mana = 10000;
                     Casting.cast(sc.player(), Casting.compile("(spell :mana 6000 (summon mana_lifeform :level 3 :at (pos-of caster)))"), null, null);
                     var lf = (ManaLifeform)Familiars.latest(sc.player(), null);
                     if (lf == null) throw new AssertionError("no lifeform");

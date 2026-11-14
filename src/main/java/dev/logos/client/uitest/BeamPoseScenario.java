@@ -79,7 +79,7 @@ public class BeamPoseScenario implements UIScenario {
                 .teleportPlayer(0.5, 101, 0.5, 0, 0)
                 .server("hand over an oak wand with a beam", sc -> {
                     PlayerMagic m = PlayerMagic.of(sc.player());
-                    m.maxMana = m.mana = 1000;
+                    m.baseMaxMana = m.mana = 1000;
                     m.trace = false;
                     sc.player().setItemInHand(InteractionHand.MAIN_HAND, holding(new ItemStack(LogosMod.WOOD_WANDS.getFirst().get())));
                 })

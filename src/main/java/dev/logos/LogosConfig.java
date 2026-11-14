@@ -155,6 +155,43 @@ public final class LogosConfig {
 
     static {
         BUILDER.pop();
+        BUILDER.comment("Mana growth: what a player's mana cap gains besides its permanent base. Each term is weight × a curve:",
+                "experience and practice grow by log2(1 + amount / scale); health above 20, armor and toughness by value / scale",
+                "up to 1 and 1 + ln(value / scale) past it, so a modpack's large numbers still help without running away.").push("growth");
+    }
+
+    public static final ModConfigSpec.DoubleValue GROWTH_XP_WEIGHT = growthValue("growthXpWeight", 150,
+            "Cap from experience ever gained (spending and dying never lower it): weight × log2(1 + points / growthXpScale).");
+    public static final ModConfigSpec.DoubleValue GROWTH_XP_SCALE = growthValue("growthXpScale", 1395,
+            "Experience points for the first full weight (1395 is what level 30 takes).");
+    public static final ModConfigSpec.DoubleValue GROWTH_HEALTH_WEIGHT = growthValue("growthHealthWeight", 100,
+            "Cap from max health above 20.");
+    public static final ModConfigSpec.DoubleValue GROWTH_HEALTH_SCALE = growthValue("growthHealthScale", 20,
+            "Max health above 20 for the full weight; past it the gain slows to a logarithm.");
+    public static final ModConfigSpec.DoubleValue GROWTH_ARMOR_WEIGHT = growthValue("growthArmorWeight", 80,
+            "Cap from armor: stronger armor lets mana flow more freely.");
+    public static final ModConfigSpec.DoubleValue GROWTH_ARMOR_SCALE = growthValue("growthArmorScale", 20,
+            "Armor for the full weight (20 is a full set of diamond); past it the gain slows to a logarithm.");
+    public static final ModConfigSpec.DoubleValue GROWTH_TOUGHNESS_WEIGHT = growthValue("growthToughnessWeight", 40,
+            "Cap from armor toughness.");
+    public static final ModConfigSpec.DoubleValue GROWTH_TOUGHNESS_SCALE = growthValue("growthToughnessScale", 12,
+            "Armor toughness for the full weight (12 is a full set of netherite); past it the gain slows to a logarithm.");
+    public static final ModConfigSpec.DoubleValue GROWTH_PRACTICE_WEIGHT = growthValue("growthPracticeWeight", 100,
+            "Cap from practice, the mana ever drawn from the pool: weight × log2(1 + mana / growthPracticeScale).");
+    public static final ModConfigSpec.DoubleValue GROWTH_PRACTICE_SCALE = growthValue("growthPracticeScale", 20000,
+            "Mana drawn for the first full weight of practice.");
+    public static final ModConfigSpec.DoubleValue OVERFLOW_DRAIN = BUILDER
+            .comment("When the cap falls below the pool (armor taken off, a wand put away), this share of the surplus drains",
+                    "a second, at least 1 mana a second, instead of the surplus vanishing at once.")
+            .translation("logos.configuration.overflowDrain")
+            .defineInRange("overflowDrain", 0.05, 0.0, 1.0);
+
+    private static ModConfigSpec.DoubleValue growthValue(String name, double def, String comment) {
+        return BUILDER.comment(comment).translation("logos.configuration." + name).defineInRange(name, def, 0.0, 1e9);
+    }
+
+    static {
+        BUILDER.pop();
         BUILDER.comment("Spell pages: the most mana a cast may inject from each grade, and the share of entropic mana",
                 "(left when a spell is extinguished rather than ending on its own) that returns as free mana.").push("pages");
     }
@@ -454,6 +491,15 @@ public final class LogosConfig {
             return TIME_SKIP_MAX_RANDOM_TICKS.getAsDouble();
         } catch (IllegalStateException e) {
             return 300.0;
+        }
+    }
+
+    /** A growth value ({@link #GROWTH_XP_WEIGHT} and the rest), or its default before the config file is loaded. */
+    public static double growth(ModConfigSpec.DoubleValue value) {
+        try {
+            return value.getAsDouble();
+        } catch (IllegalStateException e) {
+            return value.getDefault();
         }
     }
 

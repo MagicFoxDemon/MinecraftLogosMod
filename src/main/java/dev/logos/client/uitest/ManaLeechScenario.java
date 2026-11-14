@@ -49,7 +49,7 @@ public class ManaLeechScenario implements UIScenario {
                     empty.discard();
                     full.discard();
                     PlayerMagic m = PlayerMagic.of(sc.player());
-                    m.maxMana = m.mana = 100;
+                    m.baseMaxMana = m.mana = 100;
                     ManaLeech hunter = LogosMod.MANA_LEECH.get().create(sc.level(), EntitySpawnReason.COMMAND);
                     hunter.snapTo(0.5, 101, 3.5, 180, 0);
                     sc.level().addFreshEntity(hunter);

@@ -61,8 +61,7 @@ public final class StaffCharging {
         if (carries(player, f.staff)) {
             StaffItem.store(f.staff, StaffItem.stored(f.staff) + f.pending);
         } else {
-            PlayerMagic m = PlayerMagic.of(player);
-            m.mana = Math.min(m.maxMana, m.mana + f.pending);
+            PlayerMagic.refill(player, f.pending);
         }
         f.pending = 0;
     }

@@ -44,7 +44,7 @@ public class SpellVfxScenario implements UIScenario {
     private static void cast(ServerContext sc, String example) {
         var p = sc.player();
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 10000;
+        m.baseMaxMana = m.mana = 10000;
         m.trace = false;
         Casting.cast(p, Casting.compile(Examples.ALL.get(example)), null, null);
     }
@@ -52,7 +52,7 @@ public class SpellVfxScenario implements UIScenario {
     private static void castSrc(ServerContext sc, String src) {
         var p = sc.player();
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 10000;
+        m.baseMaxMana = m.mana = 10000;
         m.trace = false;
         Casting.cast(p, Casting.compile(src), null, null);
     }

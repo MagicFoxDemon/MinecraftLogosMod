@@ -46,7 +46,7 @@ final class PageGameTests {
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
         p.snapTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1000;
+        m.baseMaxMana = m.mana = 1000;
         m.trace = false;
         return p;
     }
@@ -146,7 +146,7 @@ final class PageGameTests {
         FamiliarGameTests.forceAround(h, 1); // the orb has to tick
         Casting.cast(p, Casting.compile("(spell :mana 41 (mark caster #a))"), null, null);
         // Full for now, so the free mana neither follows nor is gathered before the checks below.
-        m.mana = m.maxMana;
+        m.mana = m.baseMaxMana;
         // Polled, not timed: the orb must have ticked past its pickup delay, and a test chunk may start ticking late.
         h.succeedWhen(() -> {
             var orbs = h.getLevel().getEntitiesOfClass(FreeManaEntity.class, new AABB(p.position(), p.position()).inflate(14));

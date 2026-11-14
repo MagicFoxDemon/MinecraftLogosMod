@@ -67,7 +67,7 @@ public class VoiceCastScenario implements UIScenario {
                 })
                 .server("hand over a wand with a 言出法随 page and a 言灵坠", sc -> {
                     PlayerMagic m = PlayerMagic.of(sc.player());
-                    m.maxMana = m.mana = 1000;
+                    m.baseMaxMana = m.mana = 1000;
                     m.trace = false;
                     ItemStack page = SpellPages.inscribed(PageTier.CRYSTAL, VoiceScenario.SPELL, null);
                     page.set(LogosMod.VOICE.get(), "火球");

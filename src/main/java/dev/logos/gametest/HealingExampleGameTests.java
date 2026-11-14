@@ -21,7 +21,7 @@ final class HealingExampleGameTests {
         p.snapTo(at.x, at.y, at.z, 0, 0);
         p.setYHeadRot(0);
         p.setHealth(4);
-        PlayerMagic.of(p).maxMana = PlayerMagic.of(p).mana = 10000;
+        PlayerMagic.of(p).baseMaxMana = PlayerMagic.of(p).mana = 10000;
         PlayerMagic.of(p).trace = false;
         return p;
     }

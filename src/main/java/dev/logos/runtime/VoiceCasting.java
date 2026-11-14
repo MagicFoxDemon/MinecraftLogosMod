@@ -199,9 +199,7 @@ public final class VoiceCasting {
     /** Mana gathered beyond what the named spell injects goes back into the pool; past a full pool it spills free. */
     private static void refund(ServerPlayer player, double extra) {
         if (extra <= 1e-9) return;
-        PlayerMagic m = PlayerMagic.of(player);
-        double back = Math.min(extra, Math.max(0, m.maxMana - m.mana));
-        m.mana += back;
+        double back = PlayerMagic.refill(player, extra);
         spill(player, extra - back);
     }
 }

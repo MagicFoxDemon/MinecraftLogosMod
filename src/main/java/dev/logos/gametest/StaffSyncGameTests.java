@@ -77,7 +77,7 @@ final class StaffSyncGameTests {
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
         player.snapTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(player);
-        m.maxMana = m.mana = 1000;
+        m.baseMaxMana = m.mana = 1000;
         m.trace = false;
         return new Watched(player, channel);
     }

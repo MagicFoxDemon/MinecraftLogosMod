@@ -52,7 +52,7 @@ final class ManaHudGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1000;
+        m.baseMaxMana = m.mana = 1000;
         m.trace = false;
         p.setItemInHand(InteractionHand.MAIN_HAND, held);
         // What a real client announces on joining; a mock player has no client to do it.
@@ -178,12 +178,13 @@ final class ManaHudGameTests {
                     List<ManaHudPayload> huds = huds(drain(p));
                     h.assertTrue(huds.size() >= 4 && huds.size() <= ticks / ManaHud.INTERVAL + 1, "expected about one update per " + ManaHud.INTERVAL + " ticks, got " + huds.size() + " in " + ticks);
                     draining[0] = false;
-                    m.mana = m.maxMana;
+                    // The whole cap: the drain above counts as practice and has raised it a little.
+                    m.mana = PlayerMagic.maxMana(p);
                 })
                 .thenIdle(ManaHud.INTERVAL + 1)
                 .thenExecute(() -> {
                     List<ManaHudPayload> huds = huds(drain(p));
-                    h.assertTrue(!huds.isEmpty() && huds.getLast().mana() == 1000, "the numbers stuck: " + huds);
+                    h.assertTrue(!huds.isEmpty() && huds.getLast().mana() == (int) m.mana, "the numbers stuck: " + huds);
                 })
                 .thenSucceed();
     }

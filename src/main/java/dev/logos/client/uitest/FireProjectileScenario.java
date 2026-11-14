@@ -87,7 +87,7 @@ public class FireProjectileScenario implements UIScenario {
                 .server("cast a real fire projectile", sc -> {
                     var player = sc.player();
                     PlayerMagic magic = PlayerMagic.of(player);
-                    magic.maxMana = magic.mana = 10000;
+                    magic.baseMaxMana = magic.mana = 10000;
                     Casting.cast(player, Casting.compile("(projectile :speed 0.4 :life 3 (on-hit (damage target 6 fire)))"), null, null);
                 })
                 .ticks(12)

@@ -382,8 +382,7 @@ public class ManaLeech extends Monster implements GeoEntity {
         UUID masterId = Familiars.masterOf(this);
         Player master = masterId == null ? null : level.getPlayerByUUID(masterId);
         if (master != null) {
-            PlayerMagic m = PlayerMagic.of(master);
-            m.mana = Math.min(m.maxMana, m.mana + took);
+            PlayerMagic.refill(master, took);
         } else if (masterId == null) {
             setMana(mana() + took);
         }

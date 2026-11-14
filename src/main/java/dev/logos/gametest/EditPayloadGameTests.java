@@ -292,7 +292,7 @@ final class EditPayloadGameTests {
     static void deepSpellRuns(GameTestHelper h) {
         ServerPlayer p = playerAt(h, 1.5, 1.5);
         PlayerMagic magic = PlayerMagic.of(p);
-        magic.maxMana = magic.mana = 1000;
+        magic.baseMaxMana = magic.mana = 1000;
         String sums = "(+ 1 ".repeat(Reader.MAX_DEPTH - 2) + "1" + ")".repeat(Reader.MAX_DEPTH - 2);
         Spell spell = Compiler.compile("(spell :name \"深\" :mana 5 (heal caster " + sums + "))");
         h.assertTrue(Casting.cast(p, spell, null, null) != null, "the deep spell was refused");

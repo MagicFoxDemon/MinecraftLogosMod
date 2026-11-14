@@ -89,7 +89,7 @@ public class FxBudgetScenario implements UIScenario {
 
     private static void cast(ServerPlayer player, String source, Vec3 here) {
         PlayerMagic magic = PlayerMagic.of(player);
-        magic.maxMana = magic.mana = 100000;
+        magic.baseMaxMana = magic.mana = 100000;
         var inst = Casting.cast(player, Casting.compile(source), null, here);
         if (inst == null || inst.dead) throw new IllegalStateException("real test spell failed: " + (inst == null ? "refused" : inst.endReason()));
     }

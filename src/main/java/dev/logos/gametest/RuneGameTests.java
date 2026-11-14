@@ -47,7 +47,7 @@ final class RuneGameTests {
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
         p.snapTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1000;
+        m.baseMaxMana = m.mana = 1000;
         m.trace = false;
         return p;
     }
@@ -193,7 +193,7 @@ final class RuneGameTests {
      */
     static void groupRadiusCost(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        PlayerMagic.of(p).maxMana = PlayerMagic.of(p).mana = 1e6;
+        PlayerMagic.of(p).baseMaxMana = PlayerMagic.of(p).mana = 1e6;
         mob(h, EntityType.HUSK);
         // enemies 2, then 1 physical point (0.8) × 3 × max(1, (r/5)^1.5).
         java.util.function.DoubleUnaryOperator expected = r -> 2 + 0.8 * 3 * Math.max(1, Math.pow(r / 5, 1.5));

@@ -45,7 +45,7 @@ public class LightningRayScenario implements UIScenario {
 
     private static void cast(ServerPlayer player) {
         PlayerMagic magic = PlayerMagic.of(player);
-        magic.maxMana = magic.mana = 10000;
+        magic.baseMaxMana = magic.mana = 10000;
         if (Casting.cast(player, Casting.compile(SPELL), null, null) == null)
             throw new IllegalStateException("real test spell was refused");
     }
