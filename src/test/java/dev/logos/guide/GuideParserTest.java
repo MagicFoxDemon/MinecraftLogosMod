@@ -129,7 +129,54 @@ class GuideParserTest {
         assertTrue(book.search("  ").isEmpty());
     }
 
-    /** Every page shipped in Chinese: its links lead to pages that exist and its tags are ones the book draws. */
+    private static GuideBook.Entry made(String id, String title, int order, String group, String lock, String text) {
+        return new GuideBook.Entry(id, id.substring(0, id.indexOf('/')), title, "", order, group, lock,
+                new GuideDoc(Map.of(), List.of(new GuideDoc.Paragraph(List.of(GuideDoc.Span.plain(text))))));
+    }
+
+    @Test
+    void madePagesJoinTheirChapterAndAWrittenFileAddsToThem() {
+        Map<String, String> files = new LinkedHashMap<>();
+        files.put("logos:runes/_chapter", "---\ntitle: 符文图鉴\norder: 2\n---\n");
+        files.put("logos:runes/fire", "补充：火焰对恶魂无效。");
+        files.put("logos:basics/_chapter", "---\ntitle: 入门\norder: 1\n---\n");
+        files.put("logos:basics/one", "---\ntitle: 欢迎\n---\n");
+        GuideBook book = GuideBook.build(files).withGenerated(List.of(
+                made("logos:runes/fire", "火焰", 2, "元素", "element:fire", "每点伤害消耗 0.7 魔力。"),
+                made("logos:runes/damage", "伤害", 1, "硫·变", null, "造成伤害。")));
+        GuideBook.Chapter runes = book.chapter("logos:runes");
+        assertEquals("符文图鉴", runes.title());
+        assertEquals(List.of("logos:runes/damage", "logos:runes/fire"), runes.entries().stream().map(GuideBook.Entry::id).toList());
+        GuideBook.Entry fire = book.entry("logos:runes/fire");
+        assertEquals("火焰", fire.title());
+        assertEquals("element:fire", fire.lock());
+        assertEquals("每点伤害消耗 0.7 魔力。\n补充：火焰对恶魂无效。", fire.doc().plainText().strip());
+        assertEquals(List.of("logos:basics", "logos:runes"), book.chapters().stream().map(GuideBook.Chapter::id).toList());
+    }
+
+    @Test
+    void aPageWhoseWordIsNotLearnedIsFoundByNoSearch() {
+        GuideBook book = GuideBook.build(Map.of()).withGenerated(List.of(
+                made("logos:runes/fire", "火焰", 1, "元素", "element:fire", "火焰伤害。"),
+                made("logos:runes/frost", "寒霜", 2, "元素", "element:frost", "寒霜伤害。")));
+        assertEquals(2, book.search("伤害").size());
+        assertEquals(List.of("logos:runes/frost"), book.search("伤害", "element:frost"::equals).stream().map(GuideBook.Entry::id).toList());
+        assertFalse(book.entry("logos:runes/fire").shownTo(key -> false));
+        assertTrue(made("logos:runes/spell", "术式", 1, "", null, "").shownTo(key -> false));
+    }
+
+    @Test
+    void codexPagesAreNamedAfterTheirWord() {
+        assertEquals("logos:runes/damage", RuneCodex.page("rune:damage"));
+        assertEquals("logos:runes/element_fire", RuneCodex.page("element:fire"));
+        assertEquals("logos:runes/motion_arc", RuneCodex.page("motion:arc"));
+        assertEquals("logos:runes/ctx_caster", RuneCodex.unlockedPage("caster", true));
+    }
+
+    /**
+     * Every page shipped in Chinese: its links lead to pages that exist and its tags are ones the book draws. The
+     * codex's own pages are made in game, so every word to learn stands in for them here.
+     */
     @Test
     void theShippedPagesHold() throws IOException {
         Path root = shipped();
@@ -142,7 +189,9 @@ class GuideParserTest {
             String rel = root.relativize(p).toString().replace('\\', '/');
             files.put("logos:" + rel.substring(0, rel.length() - 3), Files.readString(p, StandardCharsets.UTF_8));
         }
-        GuideBook book = GuideBook.build(files);
+        List<GuideBook.Entry> codex = new ArrayList<>();
+        for (String key : dev.logos.lang.Unlocks.all()) codex.add(made(RuneCodex.page(key), key, 1, "", key, ""));
+        GuideBook book = GuideBook.build(files).withGenerated(codex);
         assertFalse(book.isEmpty(), "no pages under " + root);
         assertEquals(List.of(), book.brokenLinks());
         List<String> unknown = new ArrayList<>();

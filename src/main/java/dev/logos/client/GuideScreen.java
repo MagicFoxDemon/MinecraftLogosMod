@@ -22,6 +22,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
 
+import dev.logos.graph.Sealed;
 import dev.logos.guide.GuideBook;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
@@ -62,10 +63,11 @@ public final class GuideScreen {
 
     /** Opens the book at the entry {@code entry}, or where it was last read when null. */
     public static void open(@Nullable String entry) {
-        GuideBook book = GuideLoader.book();
+        GuideBook book = GuideLoader.book().withGenerated(GuideRunes.entries());
         GuideScreen screen = new GuideScreen(book);
         ModularUI ui = screen.createUI();
-        String start = entry != null ? entry : last != null && book.entry(last) != null ? last : book.first() == null ? null : book.first().id();
+        GuideBook.Entry lastEntry = last == null ? null : book.entry(last);
+        String start = entry != null ? entry : lastEntry != null && lastEntry.shownTo(Sealed.known) ? last : book.first() == null ? null : book.first().id();
         screen.go(start, true);
         Minecraft.getInstance().setScreen(new ModularUIScreen(ui, Component.translatable("logos.guide.title")));
     }
@@ -129,7 +131,7 @@ public final class GuideScreen {
         ribbons.setId("guide_ribbons");
         for (GuideBook.Chapter chapter : book.chapters()) {
             UIElement ribbon = ManuscriptControls.ribbon(chapter.ribbon(), () -> current != null && current.startsWith(chapter.id() + "/"),
-                    () -> go(chapter.entries().getFirst().id(), true));
+                    () -> chapter.entries().stream().filter(e -> e.shownTo(Sealed.known)).findFirst().ifPresent(e -> go(e.id(), true)));
             ribbon.setId("ribbon_" + safe(chapter.id()));
             ribbons.addChild(ribbon);
         }
@@ -156,9 +158,10 @@ public final class GuideScreen {
             at = history.size() - 1;
         }
         current = id;
-        if (id != null && book.entry(id) != null) {
+        GuideBook.Entry entry = id == null ? null : book.entry(id);
+        if (entry != null && entry.shownTo(Sealed.known)) {
             last = id;
-            FOLDED.remove(book.entry(id).chapter());
+            FOLDED.remove(entry.chapter());
         }
         page.clearAllChildren();
         GuidePage.render(book, id, this::follow, page);
@@ -190,7 +193,8 @@ public final class GuideScreen {
         }
         String query = search.getValue();
         if (query != null && !query.isBlank()) {
-            List<GuideBook.Entry> found = book.search(query);
+            // Pages of words not learned are found by no search, as the workbench's library finds no such rune.
+            List<GuideBook.Entry> found = book.search(query, Sealed.known);
             toc.addChild(heading(Component.translatable("logos.guide.results", found.size()), null));
             if (found.isEmpty()) toc.addChild(faded(Component.translatable("logos.guide.no_results")));
             for (GuideBook.Entry e : found) toc.addChild(row(e, true));
@@ -199,8 +203,29 @@ public final class GuideScreen {
         for (GuideBook.Chapter chapter : book.chapters()) {
             boolean folded = FOLDED.contains(chapter.id());
             toc.addChild(heading(Component.literal((folded ? "▸ " : "▾ ") + chapter.title()), chapter.id()));
-            if (!folded) for (GuideBook.Entry e : chapter.entries()) toc.addChild(row(e, false));
+            if (folded) continue;
+            String group = "";
+            for (GuideBook.Entry e : chapter.entries()) {
+                // A page whose word is not learned is not in the book.
+                if (!e.shownTo(Sealed.known)) continue;
+                if (!e.group().isEmpty() && !e.group().equals(group)) toc.addChild(group(e.group()));
+                group = e.group();
+                toc.addChild(row(e, false));
+            }
         }
+    }
+
+    /** A run of pages within a chapter (a family of runes): its name in faded ink over a short rule. */
+    private static UIElement group(String name) {
+        UIElement group = new UIElement().layout(l -> l.widthPercent(100).paddingLeft(4).marginTop(3));
+        group.addClass("guide-toc-group");
+        group.style(s -> s.backgroundTexture((GuiTexture) (context, x, y, w, h) ->
+                DrawerHelperClient.drawSolidRect(context, x + 4, y + h - 1, Math.min(60, w - 4), 1, 0x667A5A3A)));
+        Label label = new Label();
+        label.setText(Component.literal(name));
+        label.textStyle(s -> s.textColor(Manuscript.INK_FADED).textShadow(false).fontSize(8));
+        group.addChild(label);
+        return group;
     }
 
     /** A chapter's heading in a pale wash; clicking folds the chapter away or opens it again. */

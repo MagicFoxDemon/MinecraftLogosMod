@@ -218,7 +218,7 @@ gh pr create --fill                # 或在网页上开 PR
 - **界面**：右键在客户端打开 `client/GuideScreen`，和术式工坊同一张羊皮纸。页面由 `client/GuidePage` 画。解析和目录在 `guide/`，不依赖 Minecraft，可以写单元测试。
 - **文件**：正文是 Markdown，放在 `assets/<命名空间>/guide/<语言>/<章节>/<条目>.md`。
   - 每章一个 `_chapter.md`，写 `title`、`ribbon`（书签上的字）、`icon`、`order`。
-  - 每个条目开头写 `title`、`icon`、`order`。
+  - 每个条目开头写 `title`、`icon`、`order`，可选 `group`（目录里同一组的页面上方显示组名）和 `lock`（一个符文解锁的键，没领悟时这一页不在书里）。
   - 附属 mod 用自己的命名空间加章节，资源包可以覆盖页面。
 - **语言**：每页按玩家的语言取，没有就取英文，再没有就取中文。目前只写了 `zh_cn`。
 - **写法**（`guide/GuideParser`）：
@@ -230,11 +230,18 @@ gh pr create --fill                # 或在网页上开 PR
   - `{{items 物品…}}`：一排物品。
   - `{{recipe 物品}}`：这件物品的全部合成和锻造配方。配方由服务端的 `item/GuideRecipeSync` 同步到客户端。
   - `{{image 贴图 宽 高}}`：图片。
+  - `{{runes 词…}}`：一排符文方格，写符文名（`damage`）或 `element:fire`、`motion:arc`。领悟了的显示图样、点了翻到它那页，没领悟的是黑色方格。
+  - `{{rune_overview}}`：符文总览，每个家族一行方格和「已领悟 / 总数」。
   - 新标签要同时加进 `GuideBook.TAGS` 和 `GuidePage.tag`。
+- **符文图鉴**（章节 `runes`，`client/GuideRunes` 生成）：
+  - 编辑器里的每个节点、每种元素、每种运动方式各一页，按编辑器节点库的家族分组。
+  - 页面内容由代码生成：家族和写法、编辑器自己的节点说明（`NodeDescriptions.help`）、能教会它的符文之书、用到它的示例。符文的说明改了，这里跟着变，不用改两处。
+  - 页面 id 见 `guide/RuneCodex`：`runes/<符文名>`、`runes/element_<元素>`、`runes/motion_<运动>`，上下文节点是 `runes/ctx_<词>`。在 `guide/<语言>/runes/` 下放同名文件，内容接在生成的那页后面（元素和运动的「特点」就是这样写的）。
+  - 没领悟的词：不进目录、搜不到，总览里是黑色方格；从链接点进去只看到一页空白和「？？？」。创造模式和关闭了 `runeUnlocks` 时全部可见。
 - **测试**：
   - 单元测试 `GuideParserTest` 会读仓库里所有 `zh_cn` 页面，检查每个链接都指向存在的页面、每个标签都认识。
   - 世界内测试 `guide_*`。
-  - 客户端场景 `logos_guide`。
+  - 客户端场景 `logos_guide`；符文图鉴是 `logos_rune_codex`（生存模式下的黑格、隐藏页、搜索，以及创造模式）。
 - **数值**：正文里尽量少写，以代码为准。写了的数字，改代码时要同步改页面。
 
 ---

@@ -36,8 +36,9 @@ public class GuideScenario implements UIScenario {
         return "";
     }
 
+    /** The starter chapter's pages in the contents. */
     private static long entries(TestContext ctx) {
-        return ctx.ui().select(".guide-toc-entry").count();
+        return ctx.ui().select(".guide-toc-entry").filter(e -> e.getId().startsWith("toc_logos_basics_")).count();
     }
 
     /** Where on screen the link being followed is drawn, found in one step and clicked in the next two. */

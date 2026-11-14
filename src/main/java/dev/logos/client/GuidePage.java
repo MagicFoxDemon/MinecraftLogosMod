@@ -19,6 +19,7 @@ import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
 import com.lowdragmc.lowdraglib2.utils.TextUtilities;
 
 import dev.logos.LogosMod;
+import dev.logos.graph.Sealed;
 import dev.logos.guide.GuideBook;
 import dev.logos.guide.GuideDoc;
 import dev.vfyjxf.taffy.style.AlignItems;
@@ -66,6 +67,12 @@ public final class GuidePage {
                     .withColor(Manuscript.INK_FADED), follow));
             return;
         }
+        if (!entry.shownTo(Sealed.known)) {
+            // A word not learned yet: a link may still lead here, but its page is blank, its name unwritten.
+            into.addChild(lockedTitle());
+            into.addChild(text(Component.translatable("logos.guide.runes.locked_page").withColor(Manuscript.INK_FADED), follow));
+            return;
+        }
         into.addChild(title(entry));
         for (GuideDoc.Block block : entry.doc().blocks()) {
             UIElement element = switch (block) {
@@ -81,17 +88,16 @@ public final class GuidePage {
 
     // ---- text ----------------------------------------------------------------------------
 
-    /** The page's title: its icon and its name over a gilt rule. */
+    /** The page's title: its icon (a rune's own drawing on a rune's page) and its name over a gilt rule. */
     private static UIElement title(GuideBook.Entry entry) {
-        UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).alignItems(AlignItems.CENTER)
-                .widthPercent(100).gapAll(4).paddingBottom(3).marginBottom(2));
-        row.setId("guide_title");
-        row.style(s -> s.backgroundTexture((GuiTexture) (context, x, y, w, h) -> {
-            DrawerHelperClient.drawSolidRect(context, x, y + h - 2, w, 1, GOLD);
-            DrawerHelperClient.drawSolidRect(context, x, y + h - 1, w, 1, 0x553B2614);
-        }));
+        UIElement row = titleRow();
+        GuideRunes.Word word = GuideRunes.word(entry.id());
         ItemStack icon = stack(entry.icon());
-        if (!icon.isEmpty()) {
+        if (word != null) {
+            UIElement shown = runeSquare(word, true, s -> {});
+            shown.setId("guide_title_icon");
+            row.addChild(shown);
+        } else if (!icon.isEmpty()) {
             UIElement shown = item(List.of(icon), false);
             shown.setId("guide_title_icon");
             row.addChild(shown);
@@ -100,6 +106,28 @@ public final class GuidePage {
         name.setText(Component.literal(entry.title()).withStyle(ChatFormatting.BOLD));
         name.textStyle(s -> s.textColor(Manuscript.INK).textShadow(false).textWrap(TextWrap.WRAP).adaptiveHeight(true));
         name.layout(l -> l.flex(1));
+        row.addChild(name);
+        return row;
+    }
+
+    private static UIElement titleRow() {
+        UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).alignItems(AlignItems.CENTER)
+                .widthPercent(100).gapAll(4).paddingBottom(3).marginBottom(2));
+        row.setId("guide_title");
+        row.style(s -> s.backgroundTexture((GuiTexture) (context, x, y, w, h) -> {
+            DrawerHelperClient.drawSolidRect(context, x, y + h - 2, w, 1, GOLD);
+            DrawerHelperClient.drawSolidRect(context, x, y + h - 1, w, 1, 0x553B2614);
+        }));
+        return row;
+    }
+
+    /** The title of a page whose word is not learned: a black square and no name. */
+    private static UIElement lockedTitle() {
+        UIElement row = titleRow();
+        row.addChild(lockedSquare());
+        Label name = new Label();
+        name.setText(Component.literal("？？？").withStyle(ChatFormatting.BOLD));
+        name.textStyle(s -> s.textColor(Manuscript.INK_FADED).textShadow(false));
         row.addChild(name);
         return row;
     }
@@ -200,6 +228,8 @@ public final class GuidePage {
             case "items" -> items(t.args());
             case "image" -> image(t.args());
             case "recipe" -> recipes(t.args());
+            case "runes" -> runes(t.args(), follow);
+            case "rune_overview" -> overview(follow);
             default -> text(Component.translatable("logos.guide.unknown_tag", t.name()).withColor(Manuscript.SANGUINE), follow);
         };
     }
@@ -213,6 +243,80 @@ public final class GuidePage {
             if (!stack.isEmpty()) row.addChild(item(List.of(stack), true));
         }
         return row;
+    }
+
+    // ---- 符文图鉴 ------------------------------------------------------------------------
+
+    /** Ink for a square whose word is not learned: nearly black, so the gap in the collection shows. */
+    private static final int UNLEARNED = 0xFF1E160F, UNLEARNED_EDGE = 0xFF3B2A1C;
+
+    /** {@code {{runes <word> …}}}: a row of words, each a square that opens its page, or a black one not yet learned. */
+    private static UIElement runes(List<String> names, Consumer<String> follow) {
+        UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flexWrap(FlexWrap.WRAP).widthPercent(100).gapAll(2).marginVertical(2));
+        row.addClass("guide-runes");
+        for (String name : names) {
+            GuideRunes.Word word = GuideRunes.named(name);
+            if (word != null) row.addChild(GuideRunes.known(word) ? runeSquare(word, false, follow) : lockedSquare());
+        }
+        return row;
+    }
+
+    /** {@code {{rune_overview}}}: every family with how much of it is learned, and a square for each of its words. */
+    private static UIElement overview(Consumer<String> follow) {
+        UIElement column = new UIElement().layout(l -> l.widthPercent(100).gapAll(3).marginVertical(2));
+        column.setId("rune_overview");
+        for (GuideRunes.Family family : GuideRunes.families()) {
+            long known = family.words().stream().filter(GuideRunes::known).count();
+            UIElement head = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).alignItems(AlignItems.CENTER).widthPercent(100).gapAll(6).marginTop(4));
+            Label name = new Label();
+            name.setText(Component.literal(family.label()).withStyle(ChatFormatting.BOLD));
+            name.textStyle(s -> s.textColor(Manuscript.INK).textShadow(false).adaptiveWidth(true));
+            Label count = new Label();
+            count.setText(Component.translatable("logos.guide.runes.count", known, family.words().size()));
+            count.textStyle(s -> s.textColor(known == family.words().size() ? GOLD : Manuscript.INK_FADED).textShadow(false).adaptiveWidth(true));
+            head.addChildren(name, count);
+            UIElement grid = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flexWrap(FlexWrap.WRAP).widthPercent(100).gapAll(2));
+            for (GuideRunes.Word word : family.words()) grid.addChild(GuideRunes.known(word) ? runeSquare(word, false, follow) : lockedSquare());
+            column.addChildren(head, grid);
+        }
+        return column;
+    }
+
+    /** A learned word: its drawing on its family's wash; it names itself when pointed at and opens its page when clicked. */
+    private static UIElement runeSquare(GuideRunes.Word word, boolean title, Consumer<String> follow) {
+        UIElement square = new UIElement().layout(l -> l.width(20).height(20).flexShrink(0));
+        square.addClass("guide-rune");
+        if (!title) square.setId("rune_" + GuideScreen.safe(word.page()));
+        int wash = ManuscriptNode.wash(word.ink());
+        GuiTexture icon = word.icon();
+        square.style(s -> s.backgroundTexture((GuiTexture) (c, x, y, w, h) -> {
+            DrawerHelperClient.drawSolidRect(c, x, y, w, h, 0xFFF3E3BD);
+            DrawerHelperClient.drawSolidRect(c, x, y, w, h, wash);
+            if (!title && square.isHover()) DrawerHelperClient.drawSolidRect(c, x, y, w, h, 0x40FFFFFF);
+            DrawerHelperClient.drawSolidRect(c, x, y, w, 1, 0x887A5A3A);
+            DrawerHelperClient.drawSolidRect(c, x, y + h - 1, w, 1, 0x887A5A3A);
+            DrawerHelperClient.drawSolidRect(c, x, y, 1, h, 0x887A5A3A);
+            DrawerHelperClient.drawSolidRect(c, x + w - 1, y, 1, h, 0x887A5A3A);
+            icon.draw(c, x, y, w, h);
+        }).tooltips(Component.literal(word.name())));
+        if (!title) {
+            // On a whole click, so the page it opens does not take the release meant for the square.
+            square.addEventListener(UIEvents.CLICK, e -> {
+                if (e.button == 0) follow.accept(word.page());
+            });
+        }
+        return square;
+    }
+
+    /** A word not learned yet: a black square, with nothing to say what it is. */
+    private static UIElement lockedSquare() {
+        UIElement square = new UIElement().layout(l -> l.width(20).height(20).flexShrink(0));
+        square.addClass("guide-rune-locked");
+        square.style(s -> s.backgroundTexture((GuiTexture) (c, x, y, w, h) -> {
+            DrawerHelperClient.drawSolidRect(c, x, y, w, h, UNLEARNED_EDGE);
+            DrawerHelperClient.drawSolidRect(c, x + 1, y + 1, w - 2, h - 2, UNLEARNED);
+        }).tooltips(Component.translatable("logos.guide.runes.locked")));
+        return square;
     }
 
     /** {@code {{image <texture> <width> <height>}}}: a picture from a texture, at its size in GUI pixels. */
