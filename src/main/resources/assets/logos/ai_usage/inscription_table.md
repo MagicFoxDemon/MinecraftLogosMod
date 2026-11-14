@@ -4,7 +4,7 @@ targets: block:logos:inscription_table, item:logos:inscription_table
 summary: writes a Logos spell onto a blank spell page (术式载页); the book sprite (书灵) can write the spell from a plain request
 handler: dev.logos.compat.aiplayer.AiPlayerActions
 ---
-Logos has no ready-made spells. A spell is a short program in the Logos language, written onto a spell page at the inscription table (法式编纂台) and cast from a wand (法杖) that carries the page. You never need to draw nodes in the table's editor: the actions here do the whole table visit, so one step with one action is the whole job. Walking to the table, laying the page down and taking it back are part of the action; plan no steps for them. The editor opens for a moment on the way, because the server takes a spell only from someone who opened it, and closes again by itself. In a place you may not change, such as under a claim or spawn protection, the action fails with the game's own words about why.
+Logos has no ready-made spells. A spell is a short program in the Logos language, written onto a spell page at the inscription table (术式编纂台) and cast from a wand (法杖) that carries the page. You never need to draw nodes in the table's editor: the actions here do the whole table visit, so one step with one action is the whole job. Walking to the table, laying the page down and taking it back are part of the action; plan no steps for them. The editor opens for a moment on the way, because the server takes a spell only from someone who opened it, and closes again by itself. In a place you may not change, such as under a claim or spawn protection, the action fails with the game's own words about why.
 
 Three ways to get a spell written, best first:
 

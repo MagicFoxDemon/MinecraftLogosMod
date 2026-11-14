@@ -36,7 +36,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * 法式编纂台. Right-click with a spell page to lay it on the table; sneak + right-click to take it
+ * 术式编纂台. Right-click with a spell page to lay it on the table; sneak + right-click to take it
  * back; right-click otherwise opens the spell workbench, and saving writes into the page.
  */
 public class InscriptionTableBlock extends HorizontalDirectionalBlock implements EntityBlock {
@@ -129,7 +129,7 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
         if (!(level.getBlockEntity(pos) instanceof InscriptionTableBlockEntity table)) return InteractionResult.PASS;
         if (table.page().isEmpty()) {
             if (!level.isClientSide()) {
-                player.sendOverlayMessage(Component.literal("先用术式载页右键，把它放到法式编纂台上").withStyle(ChatFormatting.YELLOW));
+                player.sendOverlayMessage(Component.literal("先用术式载页右键，把它放到术式编纂台上").withStyle(ChatFormatting.YELLOW));
             }
             return InteractionResult.SUCCESS;
         }

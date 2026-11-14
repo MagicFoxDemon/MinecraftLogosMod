@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "L": "minecraft:lectern",
+    "P": "logos:spell_page"
+  },
+  "pattern": [
+    "PP",
+    "L "
+  ],
+  "result": {
+    "id": "logos:copy_table"
+  }
+}

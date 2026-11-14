@@ -110,7 +110,7 @@ public class SpellPageItem extends Item {
                 .withStyle(ChatFormatting.AQUA);
         if (!inscribed) {
             builder.accept(grade);
-            builder.accept(Component.literal("在法式编纂台上铭刻，或另一只手拿写好的书右键").withStyle(ChatFormatting.GRAY));
+            builder.accept(Component.literal("在术式编纂台上铭刻，或另一只手拿写好的书右键").withStyle(ChatFormatting.GRAY));
             return;
         }
         Spell s = SpellPages.spell(stack);

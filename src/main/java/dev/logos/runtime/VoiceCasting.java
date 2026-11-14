@@ -85,7 +85,7 @@ public final class VoiceCasting {
         }
         List<SpellBag.Entry> spells = spoken(player, wand);
         if (spells.isEmpty()) {
-            PlayerMagic.alert(player, Component.literal("法杖上没有言出法随的术式：在法式编纂台的「言出法随」页录制咒语，再写入载页").withStyle(ChatFormatting.YELLOW));
+            PlayerMagic.alert(player, Component.literal("法杖上没有言出法随的术式：在术式编纂台的「言出法随」页录制咒语，再写入载页").withStyle(ChatFormatting.YELLOW));
             return false;
         }
         PlayerMagic m = PlayerMagic.of(player);

@@ -181,7 +181,7 @@ public final class VoiceClient {
         withVoices(v -> v.recognize(audio, names)).thenAcceptAsync(r -> {
             if (!casting || heard) return;
             if (r == null) {
-                player.sendOverlayMessage(Component.literal("🗣 还没有录制这些咒语：到法式编纂台的「言出法随」页录制").withStyle(ChatFormatting.YELLOW));
+                player.sendOverlayMessage(Component.literal("🗣 还没有录制这些咒语：到术式编纂台的「言出法随」页录制").withStyle(ChatFormatting.YELLOW));
                 return;
             }
             if (!r.accepted()) {
