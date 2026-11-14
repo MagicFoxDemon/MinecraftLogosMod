@@ -1,0 +1,13 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "ingredients": [
+    "logos:adept_wand",
+    "logos:chalk",
+    "minecraft:quartz",
+    "minecraft:quartz"
+  ],
+  "result": {
+    "id": "logos:chalk_wand"
+  }
+}

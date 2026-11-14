@@ -1,0 +1,14 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "wood_staff",
+  "ingredients": [
+    "logos:dark_oak_wand",
+    "#minecraft:dark_oak_logs",
+    "minecraft:gold_nugget",
+    "minecraft:gold_nugget"
+  ],
+  "result": {
+    "id": "logos:dark_oak_staff"
+  }
+}

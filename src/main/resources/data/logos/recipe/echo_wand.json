@@ -1,0 +1,12 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "ingredients": [
+    "logos:wand",
+    "logos:echo_tincture",
+    "minecraft:iron_ingot"
+  ],
+  "result": {
+    "id": "logos:echo_wand"
+  }
+}

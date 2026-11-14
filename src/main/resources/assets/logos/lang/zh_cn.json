@@ -1,4 +1,9 @@
 {
+  "item.logos.sage_upgrade_smithing_template": "贤者升级模板",
+  "item.logos.sage_upgrade_smithing_template.applies_to": "天穹魔杖与天穹长杖",
+  "item.logos.sage_upgrade_smithing_template.ingredients": "下界合金锭",
+  "item.logos.sage_upgrade_smithing_template.base_slot_description": "放入天穹魔杖或天穹长杖",
+  "item.logos.sage_upgrade_smithing_template.additions_slot_description": "放入下界合金锭",
   "item.logos.wand": "紫晶魔杖",
   "dev.logos.lang.Element.PHYSICAL": "🜃 物理",
   "dev.logos.lang.Element.FIRE": "🜂 火焰",

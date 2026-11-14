@@ -1,14 +1,11 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "logos:wand_upgrade",
   "category": "equipment",
-  "key": {
-    "A": "minecraft:amethyst_shard",
-    "S": "minecraft:stick"
-  },
-  "pattern": [
-    "  A",
-    " S ",
-    "S  "
+  "ingredients": [
+    "#logos:wood_wands",
+    "minecraft:amethyst_shard",
+    "minecraft:gold_nugget",
+    "minecraft:gold_nugget"
   ],
   "result": {
     "id": "logos:wand"

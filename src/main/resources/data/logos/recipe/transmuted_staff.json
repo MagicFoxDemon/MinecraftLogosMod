@@ -1,0 +1,13 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "ingredients": [
+    "logos:echo_staff",
+    "logos:raven_head",
+    "minecraft:gold_ingot",
+    "minecraft:gold_ingot"
+  ],
+  "result": {
+    "id": "logos:transmuted_staff"
+  }
+}

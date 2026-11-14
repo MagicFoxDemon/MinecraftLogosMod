@@ -187,6 +187,8 @@ public class LogosMod {
     public static final DeferredItem<dev.logos.item.WandCharmItem> VOICE_CHARM = ITEMS.registerItem("voice_charm",
             p -> new dev.logos.item.WandCharmItem(p, "挂在法杖上：术式轮盘里多出「言出法随」。选中后按住右键，喊出任意一张言出法随载页的咒语名即可施放"),
             p -> p.stacksTo(1));
+    public static final DeferredItem<dev.logos.item.SageUpgradeTemplateItem> SAGE_UPGRADE_TEMPLATE = ITEMS.registerItem("sage_upgrade_smithing_template",
+            dev.logos.item.SageUpgradeTemplateItem::new, p -> p.rarity(Rarity.RARE));
     /** 锚钉: spent to set an anchor, by hand or by the anchor rune. Crafted later through alchemy. */
     public static final DeferredItem<dev.logos.item.AnchorNailItem> ANCHOR_NAIL = ITEMS.registerItem("anchor_nail",
             dev.logos.item.AnchorNailItem::new, p -> p.stacksTo(64));
@@ -553,6 +555,8 @@ public class LogosMod {
     /** Crafting a page into a higher grade, spell kept (type logos:page_upgrade). */
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.PageUpgradeRecipe>> PAGE_UPGRADE_SERIALIZER =
             RECIPE_SERIALIZERS.register("page_upgrade", () -> dev.logos.item.PageUpgradeRecipe.SERIALIZER);
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.WandUpgradeRecipe>> WAND_UPGRADE_SERIALIZER =
+            RECIPE_SERIALIZERS.register("wand_upgrade", () -> dev.logos.item.WandUpgradeRecipe.SERIALIZER);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeBookCategory, net.minecraft.world.item.crafting.RecipeBookCategory> ALCHEMY_BOOK_CATEGORY =
             RECIPE_BOOK_CATEGORIES.register("alchemy", net.minecraft.world.item.crafting.RecipeBookCategory::new);
 
@@ -660,6 +664,7 @@ public class LogosMod {
                 out.accept(SPELL_CODEX.get());
                 out.accept(CHANT_CHARM.get());
                 out.accept(VOICE_CHARM.get());
+                out.accept(SAGE_UPGRADE_TEMPLATE.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
                 out.accept(SPELL_EMITTER_ITEM.get());
