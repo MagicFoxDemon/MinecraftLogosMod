@@ -68,6 +68,8 @@ public class SpellPageItem extends Item {
             return InteractionResult.FAIL;
         }
         ItemStack page = player.getItemInHand(hand);
+        // Copying a spell out of a book is writing it: only learned words, besides what this page said already.
+        if (!dev.logos.runtime.RuneKnowledge.mayWrite(sp, spell, page.get(LogosMod.SPELL_SOURCE.get()))) return InteractionResult.FAIL;
         ItemStack written = SpellPages.write(page, src, null);
         page.shrink(1);
         if (page.isEmpty()) player.setItemInHand(hand, written);

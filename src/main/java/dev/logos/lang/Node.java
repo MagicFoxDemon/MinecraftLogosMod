@@ -21,6 +21,8 @@ public final class Node {
     public final Set<String> flags = new HashSet<>();
     /** Keyword slots filled from defaults rather than written by the player. */
     public final Set<String> defaulted = new HashSet<>();
+    /** Positional slots (by index into {@link #args}) filled from defaults, such as an if's empty else. */
+    public final Set<Integer> defaultedArgs = new HashSet<>();
     public final List<Node> body = new ArrayList<>();
     public final Map<String, List<Node>> events = new LinkedHashMap<>();
     public final int line;

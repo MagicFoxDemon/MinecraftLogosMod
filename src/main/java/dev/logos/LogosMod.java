@@ -820,6 +820,10 @@ public class LogosMod {
             () -> AttachmentType.builder(StatusData::new).build());
     public static final Supplier<AttachmentType<PlayerMagic>> PLAYER_MAGIC = ATTACHMENTS.register("magic",
             () -> AttachmentType.builder(() -> new PlayerMagic()).serialize(PlayerMagic.CODEC).copyOnDeath().build());
+    /** On a player: the runes, elements and motions they have learned (符文解锁). Kept through death; sent to that player only, for the editor. */
+    public static final Supplier<AttachmentType<dev.logos.runtime.RuneKnowledge>> RUNE_KNOWLEDGE = ATTACHMENTS.register("rune_knowledge",
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.RuneKnowledge()).serialize(dev.logos.runtime.RuneKnowledge.CODEC).copyOnDeath()
+                    .sync((holder, to) -> holder == to, dev.logos.runtime.RuneKnowledge.STREAM_CODEC).build());
     /** On a summoned creature: whose familiar it is and until when. Saved only so a reloaded one is recognised and removed. */
     public static final Supplier<AttachmentType<dev.logos.runtime.Familiars.Bond>> FAMILIAR = ATTACHMENTS.register("familiar",
             () -> AttachmentType.builder(() -> dev.logos.runtime.Familiars.Bond.NONE).serialize(dev.logos.runtime.Familiars.Bond.CODEC.fieldOf("bond"))
@@ -966,6 +970,8 @@ public class LogosMod {
         // loading and stay settled (a server's snapshot only renumbers them); the limits can change whenever the file does.
         modBus.addListener((net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent e) -> dev.logos.runtime.Casting.invalidate());
         modBus.addListener((net.neoforged.fml.event.config.ModConfigEvent.Reloading e) -> dev.logos.runtime.Casting.invalidate());
+        // Clients draw what is not learned garbled only while the server's runeUnlocks binds them.
+        modBus.addListener((net.neoforged.fml.event.config.ModConfigEvent.Reloading e) -> dev.logos.runtime.RuneKnowledge.resyncAll());
         NeoForge.EVENT_BUS.register(this);
     }
 
@@ -1009,12 +1015,16 @@ public class LogosMod {
         if (event.getEntity() instanceof ServerPlayer sp) {
             dev.logos.runtime.Anchors.sync(sp);
             dev.logos.runtime.Attunement.record(sp);
+            dev.logos.runtime.RuneKnowledge.sync(sp);
         }
     }
 
     @SubscribeEvent
     public void onRespawn(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) dev.logos.runtime.Anchors.sync(sp);
+        if (event.getEntity() instanceof ServerPlayer sp) {
+            dev.logos.runtime.Anchors.sync(sp);
+            dev.logos.runtime.RuneKnowledge.sync(sp);
+        }
     }
 
     @SubscribeEvent

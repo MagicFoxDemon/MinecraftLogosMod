@@ -18,6 +18,7 @@ import dev.logos.lang.Node;
 import dev.logos.lang.Rune;
 import dev.logos.lang.Runes;
 import dev.logos.lang.Spell;
+import dev.logos.lang.Unlocks;
 
 /**
  * The sage's tool loop: the model reads rune docs and examples, tries its spell on the compiler,
@@ -203,27 +204,19 @@ public final class SageAgent {
             return new Check(null, "编译器无法读懂：" + e.getClass().getSimpleName(), capacity);
         }
         Set<String> locked = new LinkedHashSet<>();
-        for (Node n : spell.body()) lockedRunes(n, available, locked);
+        // Counted as the page will be: what the compiler fills in on its own (an if's empty else) needs no learning.
+        for (String key : Unlocks.beyond(spell, null, available::contains)) locked.add(key.substring(key.indexOf(':') + 1));
         if (!locked.isEmpty()) {
-            return new Check(null, "搭档还没有掌握这些符文：" + String.join(", ", locked) + "。只能使用「可用符文」里的符文。", capacity);
+            return new Check(null, "搭档还没有掌握这些符文：" + String.join(", ", locked) + "。只能使用「可用符文」里的符文、元素和运动。", capacity);
         }
         return new Check(spell, "", capacity);
-    }
-
-    static void lockedRunes(Node n, Set<String> available, Set<String> into) {
-        if (n == null) return;
-        if (n.kind == Node.Kind.CALL && n.rune != null && !available.contains(n.rune.name)) into.add(n.rune.name);
-        for (Node a : n.args) lockedRunes(a, available, into);
-        for (Node a : n.kw.values()) lockedRunes(a, available, into);
-        for (Node a : n.body) lockedRunes(a, available, into);
-        for (List<Node> ev : n.events.values()) for (Node a : ev) lockedRunes(a, available, into);
     }
 
     /** Everything the language says about one rune. */
     static String lookup(String name, Set<String> available) {
         Rune r = Runes.get(name);
         if (r == null) return "没有叫 " + name + " 的符文。";
-        if (!available.contains(r.name)) return "搭档还没有掌握 " + name + "，不能使用。";
+        if (!available.contains(Unlocks.rune(r.name))) return "搭档还没有掌握 " + name + "，不能使用。";
         StringBuilder sb = new StringBuilder(r.signature()).append('\n').append(r.doc);
         for (Rune.Param p : r.params) {
             sb.append("\n· ").append(p.name()).append(' ').append(p.type().label());

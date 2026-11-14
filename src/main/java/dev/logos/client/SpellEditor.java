@@ -45,6 +45,7 @@ import dev.logos.graph.ContextSources;
 import dev.logos.graph.SpecialNodes;
 import dev.logos.graph.LogosNode;
 import dev.logos.graph.RuneNodes;
+import dev.logos.graph.Sealed;
 import dev.logos.item.DividersItem;
 import dev.logos.graph.SpellGraph;
 import dev.logos.item.PageTier;
@@ -53,6 +54,7 @@ import dev.logos.lang.Compiler;
 import dev.logos.lang.Examples;
 import dev.logos.lang.LogosError;
 import dev.logos.lang.Node;
+import dev.logos.lang.Unlocks;
 import dev.logos.net.EmitterEditPayload;
 import dev.logos.net.InscribePayload;
 import dev.vfyjxf.taffy.style.FlexDirection;
@@ -188,8 +190,10 @@ public final class SpellEditor {
                         && entry.createNode(orphan) instanceof ICustomNodeModel model
                         && model.getNode() instanceof LogosNode node) {
                     Component name = Component.translatableWithFallback(node.nameKey(), node.word());
-                    item.setDisplayName(name);
-                    item.setSearchableName(name.getString() + " " + node.word() + " " + item.getSearchableName());
+                    // A word the player has not learned is garbled and found by no search (符文解锁).
+                    boolean sealed = Sealed.node(node);
+                    item.setDisplayName(sealed ? Sealed.garble(name) : name);
+                    item.setSearchableName(sealed ? "" : name.getString() + " " + node.word() + " " + item.getSearchableName());
                 }
             });
             itemLibrary.nodeTree.reloadList();
@@ -204,16 +208,32 @@ public final class SpellEditor {
     private final @org.jspecify.annotations.Nullable SpellEmitterBlockEntity emitter;
     private EmitterGraphs.Kept kept = EmitterGraphs.Kept.DEFAULT;
 
-    private SpellEditor(BlockPos table, PageTier tier, @org.jspecify.annotations.Nullable SpellEmitterBlockEntity emitter) {
+    /** What the page said when opened: its words stay writable on it, learned or not (符文解锁). */
+    private final dev.logos.lang.@org.jspecify.annotations.Nullable Spell before;
+
+    private SpellEditor(BlockPos table, PageTier tier, @org.jspecify.annotations.Nullable SpellEmitterBlockEntity emitter, ItemStack page) {
         this.table = table;
         this.tier = tier;
         this.emitter = emitter;
+        String src = page.get(LogosMod.SPELL_SOURCE.get());
+        dev.logos.lang.Spell said = null;
+        try {
+            if (src != null) said = Compiler.compile(src);
+        } catch (LogosError ignored) {
+            // an unreadable page counts as blank
+        }
+        this.before = said;
+    }
+
+    /** The words the drawing adds that its player has not learned; the server refuses such a page as well. */
+    private int unlearned(dev.logos.lang.Spell spell) {
+        return Unlocks.beyond(spell, before, Sealed.known).size();
     }
 
     /** Opens the editor for the page on the inscription table at {@code table}, restoring its drawing (or its source). */
     public static void open(BlockPos table, ItemStack page) {
         PageTier tier = SpellPages.tier(page);
-        SpellEditor e = new SpellEditor(table, tier == null ? PageTier.BASIC : tier, null);
+        SpellEditor e = new SpellEditor(table, tier == null ? PageTier.BASIC : tier, null, page);
         e.voice = page.get(LogosMod.VOICE.get());
         e.load(initialGraph(page));
         Minecraft.getInstance().setScreen(new ModularUIScreen(e.createUI(), Component.literal("Logos")));
@@ -222,7 +242,7 @@ public final class SpellEditor {
     /** Opens the editor on the page in the spell emitter at {@code pos}, the emitter's settings in its node. */
     public static void openEmitter(BlockPos pos, SpellEmitterBlockEntity emitter) {
         PageTier tier = SpellPages.tier(emitter.page());
-        SpellEditor e = new SpellEditor(pos, tier == null ? PageTier.BASIC : tier, emitter);
+        SpellEditor e = new SpellEditor(pos, tier == null ? PageTier.BASIC : tier, emitter, emitter.page());
         e.load(initialGraph(emitter.page()));
         Minecraft.getInstance().setScreen(new ModularUIScreen(e.createUI(), Component.translatable("block.logos.spell_emitter")));
     }
@@ -554,6 +574,8 @@ public final class SpellEditor {
                         .append(emitter != null ? "（发射器没有焚式）" : s.immolate() ? "（持焚式法杖可放大上限，载页焚毁）" : "（已关闭焚式）").append('\n');
             }
             for (String note : s.notes()) sb.append("∴ ").append(note).append('\n');
+            int sealed = unlearned(s);
+            if (sealed > 0) sb.append("⚠ ").append(Component.translatable("logos.unlock.editor", sealed).getString()).append('\n');
             status.setText(Component.literal(sb.toString().strip()));
         } else {
             status.setText(Component.literal("✗ " + r.error()));
@@ -580,7 +602,9 @@ public final class SpellEditor {
         LogosNode node = selected.size() == 1 && selected.iterator().next() instanceof ICustomNodeModel model
                 && model.getNode() instanceof LogosNode rune ? rune : null;
         runeDescription.setDisplay(node == null ? TaffyDisplay.NONE : TaffyDisplay.FLEX);
-        runeDescription.setText(node == null ? Component.empty() : Component.literal(node.title() + "\n\n" + node.doc()));
+        Component help = node == null ? Component.empty() : Component.literal(node.title() + "\n\n" + node.doc());
+        // A word the player has not learned keeps its help to itself, as its node does (符文解锁).
+        runeDescription.setText(node != null && Sealed.node(node) ? Sealed.garble(help) : help);
     }
 
     private SpecialNodes.@org.jspecify.annotations.Nullable SpellRoot root() {
@@ -647,6 +671,11 @@ public final class SpellEditor {
         if (player == null) return;
         if (!r.ok()) {
             player.sendOverlayMessage(Component.literal("✗ 术式无法成立：" + r.error()));
+            return;
+        }
+        int sealed = unlearned(r.spell());
+        if (sealed > 0) {
+            player.sendOverlayMessage(dev.logos.runtime.RuneKnowledge.refusal(sealed));
             return;
         }
         // The server would refuse it, or past the packet quota drop the connection over it.

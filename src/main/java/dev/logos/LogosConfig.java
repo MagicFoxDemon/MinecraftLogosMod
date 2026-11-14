@@ -300,6 +300,17 @@ public final class LogosConfig {
 
     static {
         BUILDER.pop();
+        BUILDER.comment("Rune unlocks: which words of the language a player must learn before writing them").push("unlocks");
+    }
+
+    public static final ModConfigSpec.BooleanValue RUNE_UNLOCKS = BUILDER
+            .comment("Server: whether players write only the runes, elements and motions they have learned (a fresh player knows projectile, damage, physical and forward).",
+                    "Creative players write anything either way, and pages found or given always cast and copy. When false, every player writes everything.")
+            .translation("logos.configuration.runeUnlocks")
+            .define("runeUnlocks", true);
+
+    static {
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -357,6 +368,14 @@ public final class LogosConfig {
             return list.get().contains(id);
         } catch (IllegalStateException e) {
             return list.getDefault().contains(id);
+        }
+    }
+
+    public static boolean runeUnlocks() {
+        try {
+            return RUNE_UNLOCKS.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return true;
         }
     }
 

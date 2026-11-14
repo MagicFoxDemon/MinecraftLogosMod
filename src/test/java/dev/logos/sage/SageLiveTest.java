@@ -11,8 +11,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import dev.logos.lang.Rune;
-import dev.logos.lang.Runes;
+import dev.logos.lang.Unlocks;
 
 /**
  * Asks a real model, with the player's own sage settings ({@link SageSettings#client()}). Off unless
@@ -32,8 +31,7 @@ class SageLiveTest {
         SageEndpoint endpoint = SageSettings.client().endpoint();
         assertTrue(endpoint.configured(), "no sage settings: " + endpoint);
         System.out.println("[sage live] " + endpoint);
-        Set<String> all = new LinkedHashSet<>();
-        for (Rune r : Runes.all()) all.add(r.name);
+        Set<String> all = new LinkedHashSet<>(Unlocks.all());
         System.out.println("[sage live] system prompt: " + SagePrompt.system("zh_cn", all).length() + " chars");
         int held = 0;
         for (String wish : WISHES) {

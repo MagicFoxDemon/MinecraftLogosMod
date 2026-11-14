@@ -3,20 +3,21 @@ package dev.logos.sage;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import dev.logos.lang.Rune;
-import dev.logos.lang.Runes;
+import dev.logos.lang.Unlocks;
+import dev.logos.runtime.RuneKnowledge;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * Which runes the sage may write for a player. There is no rune learning yet, so every rune is
- * open; once there is, this is the one place to hook it in (and the client then needs the server's list).
+ * What the sage may write for a player: the {@link Unlocks} keys ({@code rune:freeze}, {@code element:fire}…) they may
+ * write (符文解锁). The prompt lists only those, and a spell using anything else is sent back like a compile error. The
+ * client gets the same answer, as its player's knowledge is synced to it.
  */
 public final class SageRunes {
     private SageRunes() {}
 
     public static Set<String> available(Player player) {
-        Set<String> all = new LinkedHashSet<>();
-        for (Rune r : Runes.all()) all.add(r.name);
-        return all;
+        Set<String> keys = new LinkedHashSet<>();
+        for (String key : Unlocks.all()) if (RuneKnowledge.knows(player, key)) keys.add(key);
+        return keys;
     }
 }

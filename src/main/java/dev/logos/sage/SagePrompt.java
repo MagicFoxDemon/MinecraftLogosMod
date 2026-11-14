@@ -17,6 +17,7 @@ import dev.logos.lang.Rune;
 import dev.logos.lang.Runes;
 import dev.logos.lang.Spell;
 import dev.logos.lang.Type;
+import dev.logos.lang.Unlocks;
 import dev.logos.lang.Weather;
 
 /**
@@ -64,9 +65,9 @@ public final class SagePrompt {
         sb.append("量级（□数）：");
         for (Map.Entry<String, Double> m : Compiler.MAGNITUDES.entrySet()) sb.append(m.getKey()).append('=').append(fmt(m.getValue())).append(' ');
         sb.append("\n元素 ✦：");
-        for (Element e : Element.values()) if (e.writable) sb.append(e.name().toLowerCase(Locale.ROOT)).append(' ');
+        for (Element e : Element.values()) if (available.contains(Unlocks.element(e))) sb.append(e.name().toLowerCase(Locale.ROOT)).append(' ');
         sb.append("\n运动 ∿：");
-        for (Motion m : Motion.values()) sb.append(m.name().toLowerCase(Locale.ROOT)).append(' ');
+        for (Motion m : Motion.values()) if (available.contains(Unlocks.motion(m))) sb.append(m.name().toLowerCase(Locale.ROOT)).append(' ');
         sb.append("\n形状 ⬡：");
         for (ConstructShape s : ConstructShape.values()) sb.append(s.word()).append(' ');
         sb.append("\n天气 ☁：");
@@ -77,7 +78,7 @@ public final class SagePrompt {
         sb.append("\n其他字面量：&物品id 外观，%粒子id 粒子，^名字 锚点，@维度，\"文字\"");
         sb.append("\n\n## 可用符文（签名 — 说明摘要）\n");
         for (Rune r : Runes.all()) {
-            if (!available.contains(r.name)) continue;
+            if (!available.contains(Unlocks.rune(r.name))) continue;
             sb.append(r.signature()).append(" — ").append(preview(r.doc)).append('\n');
         }
         sb.append("\n## 示例术式（用 get_example 取全文）\n");
