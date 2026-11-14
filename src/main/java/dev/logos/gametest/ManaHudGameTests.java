@@ -33,8 +33,6 @@ import net.neoforged.neoforge.network.registration.NetworkRegistry;
 final class ManaHudGameTests {
     /** 100 asked of a crystal page, which holds 150. */
     private static final String SPELL = "(spell :name \"测\" :mana 100 (mark caster #hud))";
-    /** Lit and unlit segments read alike; only their colour tells them apart. */
-    private static final String BAR = "█".repeat(10);
 
     private ManaHudGameTests() {}
 
@@ -102,7 +100,8 @@ final class ManaHudGameTests {
     }
 
     private static String line(ManaHudPayload hud) {
-        return hud.head().append(hud.spell().orElseThrow()).getString();
+        String spell = hud.spell().orElseThrow().getString();
+        return spell.isEmpty() ? hud.head().getString() : hud.head().getString() + " " + spell;
     }
 
     private static void says(GameTestHelper h, ManaHudPayload hud, String expected, ChatFormatting spellColor) {
@@ -201,10 +200,25 @@ final class ManaHudGameTests {
         p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         ManaHud.sync(p);
         ManaHud.sync(p);
-        List<ManaHudPayload> hidden = huds(drain(p));
-        h.assertTrue(hidden.equals(List.of(ManaHudPayload.HIDDEN)), "expected one hide, got " + hidden);
+        List<ManaHudPayload> put = huds(drain(p));
+        h.assertTrue(put.equals(List.of(ManaHudPayload.pool(1000, 1000))), "expected one update with the pool alone, got " + put);
         p.setItemInHand(InteractionHand.MAIN_HAND, wand());
-        h.assertTrue(syncedWithSpell(h, p).shown(), "taking up a wand should show the HUD");
+        h.assertTrue(syncedWithSpell(h, p).wand(), "taking up a wand should bring the spell back");
+        h.succeed();
+    }
+
+    /** With no wand in hand the pool still goes out as it fills, so the HUD can show it; a full, still pool sends nothing. */
+    static void poolWithoutWand(GameTestHelper h) {
+        ServerPlayer p = holder(h, ItemStack.EMPTY);
+        PlayerMagic m = PlayerMagic.of(p);
+        ManaHud.sync(p);
+        h.assertTrue(huds(drain(p)).equals(List.of(ManaHudPayload.pool(1000, 1000))), "the first check tells the client the pool");
+        m.mana = 400;
+        ManaHud.sync(p);
+        List<ManaHudPayload> low = huds(drain(p));
+        h.assertTrue(low.size() == 1 && !low.getFirst().wand() && low.getFirst().mana() == 400, "a pool not full should go out without a wand: " + low);
+        ManaHud.sync(p);
+        h.assertTrue(huds(drain(p)).isEmpty(), "nothing changed, yet the HUD sent again");
         h.succeed();
     }
 
@@ -215,39 +229,39 @@ final class ManaHudGameTests {
         PlayerMagic m = PlayerMagic.of(p);
         String stability = t("logos.hud.spell.stability", Node.fmt(SpellBag.selected(p, wand).spell().stability()), m.stability);
         String spell = t("logos.hud.spell", "测", "100");
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000" + spell + stability, ChatFormatting.GRAY);
+        says(h, syncedWithSpell(h, p), "☿ 1000/1000 " + spell + stability, ChatFormatting.GRAY);
         m.mana = 50;
         ManaHudPayload low = syncedWithSpell(h, p);
-        says(h, low, "☿ " + BAR + " 50/1000" + spell + stability, ChatFormatting.RED);
-        h.assertTrue(low.filled() == 1, "50 of 1000 lights " + low.filled() + " segments");
+        says(h, low, "☿ 50/1000 " + spell + stability, ChatFormatting.RED);
+        h.assertTrue(low.cost() == 100 && low.drawing() == 0, "the mark should stand at the spell's 100, nothing drawn yet: " + low);
 
         ItemStack staff = hung(new ItemStack(LogosMod.WOOD_STAFFS.getFirst().get()), SpellPages.inscribed(PageTier.CRYSTAL, SPELL, null));
         StaffItem.store(staff, 130);
         p.setItemInHand(InteractionHand.MAIN_HAND, staff);
         int capacity = (int) ((StaffItem) staff.getItem()).capacity();
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 50/1000" + t("logos.hud.staff", 130, capacity) + spell + stability, ChatFormatting.GRAY);
+        says(h, syncedWithSpell(h, p), "☿ 50/1000 " + t("logos.hud.staff", 130, capacity) + " " + spell + stability, ChatFormatting.GRAY);
 
         ItemStack empty = new ItemStack(LogosMod.WOOD_WANDS.getFirst().get());
         p.setItemInHand(InteractionHand.MAIN_HAND, empty);
         ManaHudPayload bare = syncedWithSpell(h, p);
-        h.assertTrue(line(bare).equals("☿ " + BAR + " 50/1000"), "a wand with no spell should show the bar alone, not \"" + line(bare) + "\"");
+        h.assertTrue(line(bare).equals("☿ 50/1000"), "a wand with no spell should show the bar alone, not \"" + line(bare) + "\"");
 
         m.mana = 1000;
         ItemStack charm = new ItemStack(LogosMod.VOICE_CHARM.get());
         ItemStack mute = hung(new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()), SpellPages.inscribed(PageTier.CRYSTAL, SPELL, null), charm);
         mute.set(LogosMod.VOICE_SELECTED.get(), true);
         p.setItemInHand(InteractionHand.MAIN_HAND, mute);
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000" + t("logos.hud.voice.none"), ChatFormatting.RED);
+        says(h, syncedWithSpell(h, p), "☿ 1000/1000 " + t("logos.hud.voice.none"), ChatFormatting.RED);
 
         ItemStack page = SpellPages.inscribed(PageTier.CRYSTAL, SPELL, null);
         page.set(LogosMod.VOICE.get(), "测");
         ItemStack voiced = hung(new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()), page, charm);
         voiced.set(LogosMod.VOICE_SELECTED.get(), true);
         p.setItemInHand(InteractionHand.MAIN_HAND, voiced);
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000" + t("logos.hud.voice.ready", 1), ChatFormatting.GRAY);
+        says(h, syncedWithSpell(h, p), "☿ 1000/1000 " + t("logos.hud.voice.ready", 1), ChatFormatting.GRAY);
 
         h.assertTrue(VoiceCasting.begin(p, voiced, InteractionHand.MAIN_HAND), "listening did not start");
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000" + t("logos.hud.voice.listening"), ChatFormatting.LIGHT_PURPLE);
+        says(h, syncedWithSpell(h, p), "☿ 1000/1000 " + t("logos.hud.voice.listening"), ChatFormatting.LIGHT_PURPLE);
         p.startUsingItem(InteractionHand.MAIN_HAND);
         for (int i = 0; i < 2; i++) voiced.getItem().onUseTick(h.getLevel(), p, voiced, p.getUseItemRemainingTicks());
         String gathered = Node.fmt(m.listen.injected());
