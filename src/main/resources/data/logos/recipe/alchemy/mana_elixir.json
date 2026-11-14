@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:raw_mash" },
+    { "ingredient": "logos:mana_shard" }
+  ],
+  "results": [
+    { "id": "logos:mana_elixir" }
+  ],
+  "mana": 10
+}

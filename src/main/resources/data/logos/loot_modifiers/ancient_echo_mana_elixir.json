@@ -1,0 +1,13 @@
+{
+  "type": "neoforge:add_table",
+  "conditions": [
+    {
+      "condition": "minecraft:any_of",
+      "terms": [
+        { "condition": "neoforge:loot_table_id", "loot_table_id": "minecraft:chests/ancient_city" },
+        { "condition": "neoforge:loot_table_id", "loot_table_id": "minecraft:chests/stronghold_corridor" }
+      ]
+    }
+  ],
+  "table": "logos:chests/ancient_echo_mana_elixir"
+}
