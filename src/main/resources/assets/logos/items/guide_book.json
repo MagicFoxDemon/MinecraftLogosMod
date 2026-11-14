@@ -1,0 +1,11 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "logos:item/guide_book",
+    "tints": [
+      { "type": "minecraft:constant", "value": -9556442 },
+      { "type": "minecraft:constant", "value": -1 },
+      { "type": "minecraft:constant", "value": -1 }
+    ]
+  }
+}

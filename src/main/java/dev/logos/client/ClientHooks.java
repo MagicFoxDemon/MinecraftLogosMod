@@ -19,6 +19,10 @@ public final class ClientHooks {
         net.minecraft.client.Minecraft.getInstance().setScreen(new AnchorScreens.Name(pos, face, into));
     }
 
+    public static void openGuide() {
+        GuideScreen.open();
+    }
+
     public static void openAnchorList() {
         net.minecraft.client.Minecraft.getInstance().setScreen(new AnchorScreens.List());
     }

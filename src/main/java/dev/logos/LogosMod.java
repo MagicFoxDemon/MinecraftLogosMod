@@ -174,6 +174,9 @@ public class LogosMod {
             dev.logos.item.SpellEmberItem::new, p -> p.stacksTo(1));
     public static final DeferredItem<dev.logos.item.CodexItem> SPELL_CODEX = ITEMS.registerItem("spell_codex",
             dev.logos.item.CodexItem::new, p -> p.stacksTo(1));
+    /** 逻各斯手记: the guide to Logos, handed to every player the first time they join. */
+    public static final DeferredItem<dev.logos.item.GuideBookItem> GUIDE_BOOK = ITEMS.registerItem("guide_book",
+            dev.logos.item.GuideBookItem::new, p -> p.stacksTo(1));
     /**
      * 连咏坠: a charm for a wand slot. Held right-click keeps casting: a wand lets each full charge go at once
      * and starts the next, a staff casts again at the shortest charge time for as long as it holds enough.
@@ -739,6 +742,7 @@ public class LogosMod {
             .title(Component.translatable("itemGroup.logos"))
             .icon(() -> new ItemStack(INSCRIBED_PAGE.get()))
             .displayItems((params, out) -> {
+                out.accept(GUIDE_BOOK.get());
                 for (var wand : WOOD_WANDS) out.accept(wand.get());
                 for (var staff : WOOD_STAFFS) out.accept(staff.get());
                 for (int i = 0; i < TIER_WANDS.size(); i++) {
@@ -872,6 +876,9 @@ public class LogosMod {
     public static final Supplier<AttachmentType<dev.logos.runtime.RuneKnowledge>> RUNE_KNOWLEDGE = ATTACHMENTS.register("rune_knowledge",
             () -> AttachmentType.builder(() -> new dev.logos.runtime.RuneKnowledge()).serialize(dev.logos.runtime.RuneKnowledge.CODEC).copyOnDeath()
                     .sync((holder, to) -> holder == to, dev.logos.runtime.RuneKnowledge.STREAM_CODEC).build());
+    /** On a player: whether they have been handed 逻各斯手记 (item/GuideBookItem#welcome). Kept through death, so it is handed once. */
+    public static final Supplier<AttachmentType<Boolean>> GUIDE_GIVEN = ATTACHMENTS.register("guide_given",
+            () -> AttachmentType.builder(() -> false).serialize(com.mojang.serialization.Codec.BOOL.fieldOf("given"), given -> given).copyOnDeath().build());
     /** On a summoned creature: whose familiar it is and until when. Saved only so a reloaded one is recognised and removed. */
     public static final Supplier<AttachmentType<dev.logos.runtime.Familiars.Bond>> FAMILIAR = ATTACHMENTS.register("familiar",
             () -> AttachmentType.builder(() -> dev.logos.runtime.Familiars.Bond.NONE).serialize(dev.logos.runtime.Familiars.Bond.CODEC.fieldOf("bond"))
@@ -1069,6 +1076,7 @@ public class LogosMod {
             dev.logos.runtime.Anchors.sync(sp);
             dev.logos.runtime.Attunement.record(sp);
             dev.logos.runtime.RuneKnowledge.sync(sp);
+            dev.logos.item.GuideBookItem.welcome(sp);
         }
     }
 

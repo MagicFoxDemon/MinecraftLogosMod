@@ -311,6 +311,17 @@ public final class LogosConfig {
 
     static {
         BUILDER.pop();
+        BUILDER.comment("逻各斯手记, the guide book").push("guide");
+    }
+
+    public static final ModConfigSpec.BooleanValue GIVE_GUIDE_ON_FIRST_JOIN = BUILDER
+            .comment("Server: whether a player is handed 逻各斯手记 (the guide book) the first time they join; each player is handed it once.",
+                    "Players who joined while this was off are handed theirs once it is turned on.")
+            .translation("logos.configuration.giveGuideOnFirstJoin")
+            .define("giveGuideOnFirstJoin", true);
+
+    static {
+        BUILDER.pop();
         BUILDER.comment("Debug: output for whoever builds or tests spells, all off for players").push("debug");
     }
 
@@ -452,6 +463,14 @@ public final class LogosConfig {
     public static boolean runeUnlocks() {
         try {
             return RUNE_UNLOCKS.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+    }
+
+    public static boolean giveGuideOnFirstJoin() {
+        try {
+            return GIVE_GUIDE_ON_FIRST_JOIN.getAsBoolean();
         } catch (IllegalStateException e) {
             return true;
         }
