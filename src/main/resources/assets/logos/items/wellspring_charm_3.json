@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "logos:item/voice_charm",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -8054
+      }
+    ]
+  }
+}
