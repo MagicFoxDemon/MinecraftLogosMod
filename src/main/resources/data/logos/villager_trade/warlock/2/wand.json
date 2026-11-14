@@ -1,0 +1,7 @@
+{
+  "wants": { "id": "minecraft:emerald", "count": 8 },
+  "gives": { "id": "logos:wand" },
+  "max_uses": 3,
+  "xp": 5,
+  "reputation_discount": 0.05
+}

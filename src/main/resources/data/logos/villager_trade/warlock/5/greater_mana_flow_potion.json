@@ -1,0 +1,7 @@
+{
+  "wants": { "id": "minecraft:emerald", "count": 12 },
+  "gives": { "id": "minecraft:potion", "components": { "minecraft:potion_contents": { "potion": "logos:greater_mana_flow" } } },
+  "max_uses": 8,
+  "xp": 30,
+  "reputation_discount": 0.05
+}

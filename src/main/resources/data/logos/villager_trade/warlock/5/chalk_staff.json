@@ -1,0 +1,8 @@
+{
+  "wants": { "id": "minecraft:emerald", "count": 56 },
+  "gives": { "id": "logos:chalk_staff" },
+  "max_uses": 3,
+  "xp": 30,
+  "reputation_discount": 0.05,
+  "merchant_predicate": { "condition": "minecraft:random_chance", "chance": 0.5 }
+}

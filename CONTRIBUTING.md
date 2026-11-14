@@ -200,6 +200,14 @@ gh pr create --fill                # 或在网页上开 PR
 - 书的图标：封面 `rune_book_cover`（灰度，按书在 `items/*.json` 里染色）、书页和金角 `rune_book_trim`、封面上的符号 `rune_book_<符号>`，都是 16×16。
 - 世界内测试的模拟玩家默认是创造模式，不受限制；要测限制，先 `setGameMode(GameType.SURVIVAL)`。
 
+### 术士村民
+
+职业 `logos:warlock`（`LogosMod.WARLOCK`），工作站是术式拓印台（兴趣点 `logos:warlock`，登记在 `#minecraft:acquirable_job_site`，没有工作的村民会去占）。
+
+- 交易全是数据：每笔一个文件 `data/logos/villager_trade/warlock/<等级>/<名字>.json`，每级一个标签 `tags/villager_trade/warlock/level_N.json` 和一个交易组 `trade_set/warlock/level_N.json`。交易组的 `amount` 等于这一级的交易数，所以每笔交易各自按 `merchant_predicate` 的 `random_chance` 出现，没写的必出。
+- 每级出售同档的魔杖和载页（长杖一半概率）、魔药（流魔，二级和四级另有随机元素增幅药水），收购这一级的炼金植物或材料。老手、专家、大师分别有 40%、55%、70% 概率出售一本随机家族书（指向、变、律、数、动之书，按家族大小加权，由战利品函数 `logos:random_family_book` 抽）。
+- 外观：`textures/entity/villager/profession/warlock.png`（兜帽在帽子层，`.mcmeta` 里 `hat: full` 盖住群系帽子），僵尸村民用 `zombie_villager/profession/warlock.png`（同一件袍子褪色、下摆破洞）。客户端场景 `logos_warlock` 截正、背、侧、僵尸和交易界面。
+
 ---
 
 ## 5. 开发约定
