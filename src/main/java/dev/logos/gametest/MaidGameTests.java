@@ -70,7 +70,7 @@ final class MaidGameTests {
     static void manaFollowsOwner(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
         FamiliarGameTests.forceAround(h, 1);
-        PlayerMagic.of(p).maxMana = 1000;
+        PlayerMagic.of(p).baseMaxMana = 1000;
         EntityMaid wild = maid(h, new Vec3(6.5, 2, 6.5));
         h.assertTrue(ManaVessels.of(wild) == null, "a wild maid should hold no mana");
         EntityMaid m = maid(h, new Vec3(3.5, 2, 3.5));

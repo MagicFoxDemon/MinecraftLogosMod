@@ -64,7 +64,7 @@ public final class LogosGameTests {
             "edit_inscribe_checks_before_compiling", "edit_oversized_graph_refused", "edit_route_takes_only_made_products", "edit_packets_throttled", "edit_deep_spell_runs",
             "spell_modifier_element_power", "spell_modifier_resistance", "spell_modifier_fire_is_vanilla_fire", "spell_modifier_arcane_damage", "spell_modifier_creature_life_damage",
             "staff_fill_no_item_sync", "staff_fill_switching_staffs", "staff_fill_spends_only_its_own", "staff_fill_thrown", "staff_fill_moved_as_copy", "staff_fill_death", "staff_fill_logout", "staff_fill_saved_midway",
-            "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "spell_modifier_heal_power", "spell_modifier_vulnerability", "spell_modifier_void_out_of_world_option", "spell_modifier_void_true_damage", "spell_modifier_void_on_players", "spell_modifier_void_absorption_option", "spell_modifier_void_totem_option", "spell_modifier_void_creature_cuts", "spell_modifier_execute_is_void",
+            "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "mana_growth_terms", "mana_growth_lifetime_xp", "mana_growth_overflow_drains", "mana_growth_attribute", "spell_modifier_heal_power", "spell_modifier_vulnerability", "spell_modifier_void_out_of_world_option", "spell_modifier_void_true_damage", "spell_modifier_void_on_players", "spell_modifier_void_absorption_option", "spell_modifier_void_totem_option", "spell_modifier_void_creature_cuts", "spell_modifier_execute_is_void",
             "buff_potions_brew", "buff_potions_dissolve", "buff_potions_effects", "element_effects_every_element", "herbs_grow_in_jars",
             "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts", "companion_one_per_master", "companion_keeps_its_own_mind", "creature_caster_tamed_side", "creature_caster_looked_up_pool",
             "mana_count_follows_blocks", "mana_work_skips_insulation", "mana_small_moves_stay_unsaved", "mana_reload_keeps_count_and_value", "mana_devices_take_turns",
@@ -493,6 +493,10 @@ public final class LogosGameTests {
         FUNCTIONS.register("spell_modifier_node_cost", () -> SpellModifierGameTests::nodeCostScalesItsCategory);
         FUNCTIONS.register("spell_modifier_channel_speed", () -> SpellModifierGameTests::channelSpeedHalvesCharge);
         FUNCTIONS.register("spell_modifier_mana_regeneration", () -> SpellModifierGameTests::manaRegenerationAndRestore);
+        FUNCTIONS.register("mana_growth_terms", () -> ManaGrowthGameTests::terms);
+        FUNCTIONS.register("mana_growth_lifetime_xp", () -> ManaGrowthGameTests::lifetimeXp);
+        FUNCTIONS.register("mana_growth_overflow_drains", () -> ManaGrowthGameTests::overflowDrains);
+        FUNCTIONS.register("mana_growth_attribute", () -> ManaGrowthGameTests::attribute);
         FUNCTIONS.register("buff_potions_brew", () -> AlchemyGameTests::buffPotionsBrew);
         FUNCTIONS.register("buff_potions_dissolve", () -> AlchemyGameTests::buffPotionsDissolve);
         FUNCTIONS.register("buff_potions_effects", () -> AlchemyGameTests::buffPotionsEffects);
@@ -567,7 +571,7 @@ public final class LogosGameTests {
         p.snapTo(pos.x, pos.y, pos.z, 0, 0); // yaw 0 faces +Z
         p.setYHeadRot(0);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 10000;
+        m.baseMaxMana = m.mana = 10000;
         m.trace = false;
         return p;
     }
@@ -738,7 +742,7 @@ public final class LogosGameTests {
             dev.logos.LogosConfig.MAX_RECURSION.set(40);
             dev.logos.LogosConfig.MAX_REPEAT.set(500);
             ServerPlayer p = caster(h);
-            PlayerMagic.of(p).maxMana = PlayerMagic.of(p).mana = 1e12;
+            PlayerMagic.of(p).baseMaxMana = PlayerMagic.of(p).mana = 1e12;
             // A repeat above the default 32 now compiles and runs every iteration.
             SpellInstance loop = cast(h, p, "(spell :mana 10000 (repeat 200 (mark caster #tick)))");
             h.assertTrue(dev.logos.runtime.StatusData.stacks(p, new dev.logos.lang.Status("#tick")) == 200,

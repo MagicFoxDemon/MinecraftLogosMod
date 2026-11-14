@@ -57,7 +57,7 @@ final class VoiceGameTests {
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
         p.snapTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1000;
+        m.baseMaxMana = m.mana = 1000;
         m.trace = false;
         List<ItemStack> slots = new ArrayList<>(List.of(voicePage(BIG, "蓄"), voicePage(SMALL, "小")));
         slots.addAll(List.of(extra));

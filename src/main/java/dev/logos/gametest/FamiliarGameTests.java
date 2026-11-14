@@ -39,7 +39,7 @@ final class FamiliarGameTests {
         // Mods run alongside may hand a new player starter items (Touhou Little Maid: a soul slab, its guide): start empty-handed.
         p.getInventory().clearContent();
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1e9;
+        m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
         return p;
     }

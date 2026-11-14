@@ -38,7 +38,8 @@ public final class ManaHud {
     private static ManaHudPayload state(ServerPlayer sp, PlayerMagic m) {
         ItemStack wand = SpellBag.heldWand(sp);
         if (wand == null) return ManaHudPayload.HIDDEN;
-        int filled = (int) Math.round(10 * m.mana / Math.max(1, m.maxMana));
+        double cap = PlayerMagic.maxMana(sp);
+        int filled = (int) Math.min(10, Math.round(10 * m.mana / Math.max(1, cap)));
         // A staff casts from what it holds, not from the pool.
         double source = m.mana;
         int stored = 0, capacity = 0;
@@ -47,7 +48,7 @@ public final class ManaHud {
             stored = (int) source;
             capacity = (int) staff.capacity();
         }
-        return new ManaHudPayload(true, (int) m.mana, (int) m.maxMana, filled, stored, capacity, Optional.of(spellText(sp, m, wand, source)));
+        return new ManaHudPayload(true, (int) m.mana, (int) cap, filled, stored, capacity, Optional.of(spellText(sp, m, wand, source)));
     }
 
     private static Component spellText(ServerPlayer sp, PlayerMagic m, ItemStack wand, double source) {

@@ -52,7 +52,7 @@ public class LifeformChargeScenario implements UIScenario {
                 .server("summon a level-3 lifeform with a grand fire page", sc -> {
                     var p = sc.player();
                     PlayerMagic m = PlayerMagic.of(p);
-                    m.maxMana = m.mana = 100000;
+                    m.baseMaxMana = m.mana = 100000;
                     m.trace = false;
                     Casting.cast(p, Casting.compile("(spell :mana 6000 (summon mana_lifeform :level 3 :at (pos-of caster)))"), null, null);
                     lf = (ManaLifeform) Familiars.latest(p, null);

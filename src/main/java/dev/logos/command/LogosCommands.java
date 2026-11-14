@@ -109,9 +109,11 @@ public final class LogosCommands {
                                 .executes(c -> runes(c, StringArgumentType.getString(c, "name")))))
                 .then(Commands.literal("mana").executes(LogosCommands::manaInfo)
                         .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0, Integer.MAX_VALUE)).executes(c -> {
-                            PlayerMagic m = PlayerMagic.of(c.getSource().getPlayerOrException());
+                            ServerPlayer p = c.getSource().getPlayerOrException();
+                            PlayerMagic m = PlayerMagic.of(p);
                             m.mana = DoubleArgumentType.getDouble(c, "amount");
-                            m.maxMana = Math.max(m.maxMana, m.mana);
+                            // Raise the permanent part as far as it takes for the whole cap to hold that much.
+                            m.baseMaxMana += Math.max(0, m.mana - PlayerMagic.maxMana(p));
                             return manaInfo(c);
                         })))
                 .then(Commands.literal("stability").then(Commands.argument("capacity", IntegerArgumentType.integer(1, 10000)).executes(c -> {
@@ -347,10 +349,26 @@ public final class LogosCommands {
         return 1;
     }
 
+    /** The pool, then where its cap and refill come from: the permanent base, each growth term, and the rest. */
     private static int manaInfo(CommandContext<CommandSourceStack> c) throws CommandSyntaxException {
-        PlayerMagic m = PlayerMagic.of(c.getSource().getPlayerOrException());
-        c.getSource().sendSuccess(() -> Component.literal("魔力 " + Node.fmt(m.mana) + " / " + Node.fmt(m.maxMana) + " · 稳定度上限 " + m.stability)
+        ServerPlayer p = c.getSource().getPlayerOrException();
+        PlayerMagic m = PlayerMagic.of(p);
+        double cap = PlayerMagic.maxMana(p);
+        c.getSource().sendSuccess(() -> Component.literal("魔力 " + Node.fmt(m.mana) + " / " + Node.fmt(cap) + " · 稳定度上限 " + m.stability)
                 .withStyle(ChatFormatting.AQUA), false);
+        var attr = p.getAttribute(dev.logos.runtime.SpellModifiers.MAX_MANA);
+        double rest = cap - m.baseMaxMana;
+        StringBuilder sb = new StringBuilder("  永久 ").append(Node.fmt(m.baseMaxMana));
+        for (var t : dev.logos.runtime.ManaGrowth.Term.values()) {
+            var mod = attr == null ? null : attr.getModifier(t.id);
+            if (mod == null) continue;
+            sb.append(" + ").append(t.zh).append(' ').append(Node.fmt(mod.amount()));
+            rest -= mod.amount();
+        }
+        if (Math.abs(rest) >= 0.5) sb.append(rest > 0 ? " + " : " − ").append("装备与其他 ").append(Node.fmt(Math.abs(rest)));
+        c.getSource().sendSuccess(() -> Component.literal(sb.toString()).withStyle(ChatFormatting.GRAY), false);
+        c.getSource().sendSuccess(() -> Component.literal("  回复 " + Node.fmt(dev.logos.runtime.SpellModifiers.regenerationPerTick(p) * 20) + "/秒 · 累计经验 "
+                + Node.fmt(m.lifetimeXp) + " · 累计耗魔 " + Node.fmt(m.manaSpent)).withStyle(ChatFormatting.DARK_GRAY), false);
         return 1;
     }
 

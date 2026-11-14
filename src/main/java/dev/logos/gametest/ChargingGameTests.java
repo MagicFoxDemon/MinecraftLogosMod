@@ -41,7 +41,7 @@ final class ChargingGameTests {
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
         p.snapTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1000;
+        m.baseMaxMana = m.mana = 1000;
         m.trace = false;
         ItemStack wand = new ItemStack(LogosMod.WOOD_WANDS.getFirst().get());
         wand.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(

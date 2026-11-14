@@ -53,7 +53,7 @@ public class StaffChargeScenario implements UIScenario {
                 .teleportPlayer(0.5, 101, 0.5, 0, 10)
                 .server("hand over an empty oak staff with a 100-mana page", sc -> {
                     PlayerMagic m = PlayerMagic.of(sc.player());
-                    m.maxMana = m.mana = 1000;
+                    m.baseMaxMana = m.mana = 1000;
                     m.trace = false;
                     ItemStack staff = new ItemStack(LogosMod.WOOD_STAFFS.getFirst().get());
                     staff.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(

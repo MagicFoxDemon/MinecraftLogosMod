@@ -46,7 +46,7 @@ public class WandChargeTiersScenario implements UIScenario {
                 .server("hand over a master wand with a grand and a colossal page", sc -> {
                     PlayerMagic m = PlayerMagic.of(sc.player());
                     // A slow pool: surge grows with max mana, so keep it small enough to see the charge build.
-                    m.maxMana = m.mana = 100000;
+                    m.baseMaxMana = m.mana = 100000;
                     m.trace = false;
                     ItemStack wand = new ItemStack(LogosMod.MASTER_WAND.get());
                     wand.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(

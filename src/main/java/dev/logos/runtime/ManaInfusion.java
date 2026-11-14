@@ -24,8 +24,7 @@ public final class ManaInfusion {
     /** How much more mana {@code e} can hold: 0 for a creature that holds none. */
     public static double room(Entity e) {
         if (e instanceof Player p) {
-            PlayerMagic m = PlayerMagic.of(p);
-            return Math.max(0, m.maxMana - m.mana);
+            return PlayerMagic.room(p);
         }
         ManaVessel v = ManaVessels.of(e);
         return v != null ? Math.max(0, v.maxMana() - v.mana()) : 0;

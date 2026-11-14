@@ -52,7 +52,7 @@ public class WaterWalkWorldScenario implements UIScenario {
                 .server("cast water-walk on oneself", sc -> {
                     var p = sc.player();
                     PlayerMagic m = PlayerMagic.of(p);
-                    m.maxMana = m.mana = 1000;
+                    m.baseMaxMana = m.mana = 1000;
                     if (Casting.cast(p, Casting.compile("(water-walk caster 60)"), null, p.position()) == null)
                         throw new AssertionError("the cast was refused");
                     if (!p.hasEffect(LogosMod.WATER_WALKING)) throw new AssertionError("no water walking after the cast");

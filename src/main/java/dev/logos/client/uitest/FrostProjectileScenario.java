@@ -141,7 +141,7 @@ public class FrostProjectileScenario implements UIScenario {
         s.server("cast a real frost projectile", sc -> {
             var player = sc.player();
             PlayerMagic magic = PlayerMagic.of(player);
-            magic.maxMana = magic.mana = 10000;
+            magic.baseMaxMana = magic.mana = 10000;
             Casting.cast(player, Casting.compile("(projectile :speed 0.4 :life 3 (on-hit (damage target 6 frost)))"), null, null);
         }).ticks(12).screenshot("frost_projectile_cast").ticks(45);
     }

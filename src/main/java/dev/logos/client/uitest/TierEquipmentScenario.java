@@ -55,7 +55,7 @@ abstract class TierEquipmentScenario implements UIScenario {
                     var p = sc.player();
                     p.getInventory().clearContent();
                     var m = PlayerMagic.of(p);
-                    m.maxMana = m.mana = 1000;
+                    m.baseMaxMana = m.mana = 1000;
                     m.trace = false;
                     for (int i = 0; i < equipment.size(); i++) {
                         ItemStack stack = new ItemStack(equipment.get(i));

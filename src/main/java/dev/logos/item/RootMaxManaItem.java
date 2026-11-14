@@ -37,14 +37,15 @@ public final class RootMaxManaItem extends Item {
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (!(player instanceof ServerPlayer sp)) return InteractionResult.SUCCESS;
         PlayerMagic m = PlayerMagic.of(sp);
-        double before = m.maxMana;
-        m.maxMana = Math.max(0, m.maxMana + delta);
-        m.mana = Math.min(m.mana, m.maxMana);
+        double before = PlayerMagic.maxMana(sp);
+        m.baseMaxMana = Math.max(0, m.baseMaxMana + delta);
+        double after = PlayerMagic.maxMana(sp);
+        m.mana = Math.min(m.mana, after);
         ItemStack stack = player.getItemInHand(hand);
         stack.consume(1, player);
         level.playSound(null, player.blockPosition(), delta > 0 ? SoundEvents.BEACON_POWER_SELECT : SoundEvents.BEACON_DEACTIVATE,
                 SoundSource.PLAYERS, 1f, 1f);
-        PlayerMagic.alert(sp, Component.literal("魔力上限 " + Node.fmt(before) + " → " + Node.fmt(m.maxMana))
+        PlayerMagic.alert(sp, Component.literal("魔力上限 " + Node.fmt(before) + " → " + Node.fmt(after))
                 .withStyle(delta > 0 ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.DARK_GRAY));
         return InteractionResult.SUCCESS_SERVER;
     }

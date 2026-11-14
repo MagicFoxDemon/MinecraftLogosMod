@@ -213,8 +213,7 @@ public final class FreeManaEntity extends Entity {
 
     private static boolean canGather(Player p) {
         if (p.isSpectator() || p.isDeadOrDying() || !(p instanceof ServerPlayer)) return false;
-        PlayerMagic m = PlayerMagic.of(p);
-        return m.mana < m.maxMana && p.getAttributeValue(LogosMod.MANA_ABSORPTION) > 0;
+        return PlayerMagic.room(p) > 0 && p.getAttributeValue(LogosMod.MANA_ABSORPTION) > 0;
     }
 
     /**
@@ -236,7 +235,7 @@ public final class FreeManaEntity extends Entity {
         if (!(player instanceof ServerPlayer sp) || age < PICKUP_DELAY || !canGather(sp)) return;
         PlayerMagic m = PlayerMagic.of(sp);
         double efficiency = sp.getAttributeValue(LogosMod.MANA_ABSORPTION);
-        double gain = Math.min(m.maxMana - m.mana, amount() * efficiency);
+        double gain = Math.min(PlayerMagic.room(sp), amount() * efficiency);
         m.mana += gain;
         double left = amount() - gain / efficiency;
         level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.4f,

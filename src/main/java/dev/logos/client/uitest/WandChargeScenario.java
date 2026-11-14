@@ -52,7 +52,7 @@ public class WandChargeScenario implements UIScenario {
                 .teleportPlayer(0.5, 101, 0.5, 0, 10)
                 .server("hand over an oak wand with a 100-mana page", sc -> {
                     PlayerMagic m = PlayerMagic.of(sc.player());
-                    m.maxMana = m.mana = 1000;
+                    m.baseMaxMana = m.mana = 1000;
                     m.trace = false;
                     ItemStack wand = new ItemStack(LogosMod.WOOD_WANDS.getFirst().get());
                     wand.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(

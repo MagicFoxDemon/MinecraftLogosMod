@@ -80,7 +80,7 @@ public class HealBurstScenario implements UIScenario {
                 .step("reset routing observation", ctx -> cache().clear())
                 .server("real heal on the cow", sc -> {
                     PlayerMagic magic = PlayerMagic.of(sc.player());
-                    magic.maxMana = magic.mana = 10000;
+                    magic.baseMaxMana = magic.mana = 10000;
                     if (Casting.cast(sc.player(), Casting.compile("(heal (nearest :radius 12) 2)"), null, null) == null)
                         throw new IllegalStateException("real test spell was refused");
                 }).ticks(5).screenshot("heal_real").ticks(30)

@@ -72,7 +72,7 @@ final class FxTrafficGameTests {
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         p.snapTo(at.x, at.y, at.z, 0, 0);
         PlayerMagic magic = PlayerMagic.of(p);
-        magic.maxMana = magic.mana = 100000;
+        magic.baseMaxMana = magic.mana = 100000;
         magic.trace = false;
         return p;
     }

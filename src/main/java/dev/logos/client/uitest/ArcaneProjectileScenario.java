@@ -128,7 +128,7 @@ public class ArcaneProjectileScenario implements UIScenario {
         s.server("cast a real arcane projectile", sc -> {
             var player = sc.player();
             PlayerMagic magic = PlayerMagic.of(player);
-            magic.maxMana = magic.mana = 10000;
+            magic.baseMaxMana = magic.mana = 10000;
             Casting.cast(player, Casting.compile("(projectile :speed 0.4 :life 3 (on-hit (mark target #star) (push target 1)))"), null, null);
         }).ticks(12).screenshot("arcane_projectile_cast").ticks(45);
     }

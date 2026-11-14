@@ -90,7 +90,7 @@ public class FrostBeamScenario implements UIScenario {
                 .step("draw the held wand", ctx -> Minecraft.getInstance().options.hideGui = false)
                 .server("released wand fires a real beam into a wall", sc -> {
                     sc.player().setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()));
-                    var magic = PlayerMagic.of(sc.player()); magic.maxMana = magic.mana = 10000;
+                    var magic = PlayerMagic.of(sc.player()); magic.baseMaxMana = magic.mana = 10000;
                     if (Casting.cast(sc.player(), Casting.compile("(beam :radius 0.35 :range 18 :life 2 (on-hit (damage target 1 frost)))"), null, null) == null)
                         throw new AssertionError("beam spell refused");
                 }).ticks(10)

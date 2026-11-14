@@ -38,7 +38,7 @@ final class ConstructGameTests {
         p.snapTo(pos.x, pos.y, pos.z, 0, 0); // yaw 0 faces +Z
         p.setYHeadRot(0);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1e9;
+        m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
         return p;
     }

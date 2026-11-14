@@ -81,7 +81,7 @@ public class FireDamageScenario implements UIScenario {
                     target.setNoAi(true);
                     sc.level().addFreshEntity(target);
                     PlayerMagic magic = PlayerMagic.of(sc.player());
-                    magic.maxMana = magic.mana = 10000;
+                    magic.baseMaxMana = magic.mana = 10000;
                     if (Casting.cast(sc.player(), Casting.compile("(damage (nearest :radius 12) 1 fire)"), null, null) == null)
                         throw new IllegalStateException("real test spell was refused");
                 }).ticks(3).screenshot("fire_real_damage").ticks(25)

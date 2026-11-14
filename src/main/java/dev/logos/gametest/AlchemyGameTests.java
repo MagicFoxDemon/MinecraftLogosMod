@@ -914,7 +914,7 @@ final class AlchemyGameTests {
         table.setMana(AlchemyTableBlockEntity.MAX_MANA - 30);
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 10000;
+        m.baseMaxMana = m.mana = 10000;
         m.trace = false;
         // South of the side half, facing north: two blocks ahead of the body is the side half.
         Vec3 at = h.absoluteVec(new Vec3(SIDE.getX() + 0.5, 2, SIDE.getZ() + 2.5));
@@ -1323,9 +1323,10 @@ final class AlchemyGameTests {
         }
         double[] total = {400, 1000, 5000};
         int[] seconds = {180, 180, 300};
+        double without = SpellModifiers.regenerationPerTick(p);
         for (int level = 0; level < 3; level++) {
             p.addEffect(new net.minecraft.world.effect.MobEffectInstance(BuffPotions.MANA_FLOW, 100, level));
-            double extra = (SpellModifiers.regenerationPerTick(p) - 0.3) * 20 * seconds[level];
+            double extra = (SpellModifiers.regenerationPerTick(p) - without) * 20 * seconds[level];
             h.assertTrue(Math.abs(extra - total[level]) < 1e-6, "流魔 " + (level + 1) + " restores " + extra + ", not " + total[level]);
             p.removeEffect(BuffPotions.MANA_FLOW);
         }

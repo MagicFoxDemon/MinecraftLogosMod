@@ -54,7 +54,7 @@ final class SpellModifierGameTests {
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
         p.snapTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = 1000;
+        m.baseMaxMana = m.mana = 1000;
         m.trace = false;
         return p;
     }
@@ -372,12 +372,15 @@ final class SpellModifierGameTests {
         h.succeed();
     }
 
-    /** Regeneration defaults to the old 0.3 a tick and follows its attribute; an instant restore stops at the pool's top. */
+    /**
+     * Regeneration defaults to the old 0.3 a tick plus 0.5% of the cap a second (1000 here: 0.25 a tick) and
+     * follows its attribute; an instant restore stops at the pool's top.
+     */
     static void manaRegenerationAndRestore(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        near(h, SpellModifiers.regenerationPerTick(p), 0.3, "default regeneration per tick");
+        near(h, SpellModifiers.regenerationPerTick(p), 0.55, "default regeneration per tick");
         buff(p, SpellModifiers.MANA_REGENERATION, 14);
-        near(h, SpellModifiers.regenerationPerTick(p), 1, "regeneration with +14 a second");
+        near(h, SpellModifiers.regenerationPerTick(p), 1.25, "regeneration with +14 a second");
         PlayerMagic m = PlayerMagic.of(p);
         m.mana = 900;
         near(h, SpellModifiers.restoreMana(p, 250), 100, "restored");

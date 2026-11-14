@@ -47,7 +47,7 @@ public class PhysicalRayScenario implements UIScenario {
 
     private static void cast(ServerPlayer player, String source, Vec3 here) {
         PlayerMagic magic = PlayerMagic.of(player);
-        magic.maxMana = magic.mana = 10000;
+        magic.baseMaxMana = magic.mana = 10000;
         float yaw = player.getYRot(), pitch = player.getXRot();
         // A side cast aims down +Z whichever way the watching camera faces; the client keeps its own view.
         if (here != null) { player.setYRot(0); player.setXRot(0); }

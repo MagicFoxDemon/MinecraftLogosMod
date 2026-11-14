@@ -64,7 +64,7 @@ public class ManaHudScenario implements UIScenario {
                 .teleportPlayer(0.5, 101, 0.5, 0, 10)
                 .server("hand over an oak wand with a page", sc -> {
                     PlayerMagic m = PlayerMagic.of(sc.player());
-                    m.maxMana = 1000;
+                    m.baseMaxMana = 1000;
                     m.mana = 640;
                     m.trace = false;
                     sc.player().setItemInHand(InteractionHand.MAIN_HAND, holding(LogosMod.WOOD_WANDS.getFirst().get(), "(spell :name \"蓄\" :mana 100 (mark caster #hud))"));

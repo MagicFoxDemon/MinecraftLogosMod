@@ -34,7 +34,7 @@ final class LeechGameTests {
     private static ServerPlayer prey(GameTestHelper h, double mana) {
         ServerPlayer p = FamiliarGameTests.master(h);
         PlayerMagic m = PlayerMagic.of(p);
-        m.maxMana = m.mana = mana;
+        m.baseMaxMana = m.mana = mana;
         p.getFoodData().setFoodLevel(17);
         p.getFoodData().setSaturation(0);
         return p;
@@ -62,7 +62,7 @@ final class LeechGameTests {
         Vec3 at = h.absoluteVec(new Vec3(7.5, 2, 7.5));
         rich.snapTo(at.x, at.y, at.z, 0, 0);
         rich.setGameMode(GameType.SURVIVAL);
-        PlayerMagic.of(rich).maxMana = PlayerMagic.of(rich).mana = 80;
+        PlayerMagic.of(rich).baseMaxMana = PlayerMagic.of(rich).mana = 80;
         ManaLeech leech = leech(h, 2.5, 4.5);
         h.succeedWhen(() -> h.assertTrue(leech.prey() == rich, "it should hunt the richer player, hunts " + leech.prey() + " (poor " + poor + ")"));
     }
@@ -175,7 +175,7 @@ final class LeechGameTests {
             h.assertTrue(leech.isAlive() && leech.getHealth() == leech.getMaxHealth(), "it must not drink from itself, health " + leech.getHealth());
             h.assertTrue(leech.prey() == null && leech.latchedOn() == null, "with no fight of its master's it must hunt nothing, hunts " + leech.prey());
             PlayerMagic m = PlayerMagic.of(p);
-            m.maxMana = 1000;
+            m.baseMaxMana = 1000;
             m.mana = 0;
             h.assertTrue(Familiars.order(leech, husk), "it should take the order");
             double[] last = {0};

@@ -57,7 +57,7 @@ final class MaidMana {
         ServerPlayer owner = owner(maid);
         if (owner == null) return fallback;
         int level = maid.getFavorabilityManager().getLevel();
-        return PlayerMagic.of(owner).maxMana * (1 + LogosConfig.maidManaPerFavorLevel() * level);
+        return PlayerMagic.maxMana(owner) * (1 + LogosConfig.maidManaPerFavorLevel() * level);
     }
 
     /** Every {@link #REFRESH} ticks on the server: her cap follows her owner and favorability, and her pool refills. */

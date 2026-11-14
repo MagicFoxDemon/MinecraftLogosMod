@@ -33,7 +33,7 @@ public class AreaWeatherSkyScenario implements UIScenario {
                 .teleportPlayer(.5, 101, -14, 0, -22).ticks(10);
         s.server("four zones", sc -> {
             PlayerMagic magic = PlayerMagic.of(sc.player());
-            magic.maxMana = magic.mana = 100000;
+            magic.baseMaxMana = magic.mana = 100000;
             for (int i = 0; i < KINDS.length; i++) {
                 var inst = Casting.cast(sc.player(), Casting.compile("(spell :mana 5000 (weather " + KINDS[i] + " :radius 8 :life 60))"), null,
                         new Vec3(x(i), 101, 40.5));

@@ -33,7 +33,7 @@ public class AreaWeatherClearScenario implements UIScenario {
                 .teleportPlayer(.5, 101, .5, 0, -10).ticks(10);
         s.server("a clear zone", sc -> {
                     PlayerMagic magic = PlayerMagic.of(sc.player());
-                    magic.maxMana = magic.mana = 100000;
+                    magic.baseMaxMana = magic.mana = 100000;
                     var inst = Casting.cast(sc.player(), Casting.compile("(spell :name \"晴\" :mana 5000 (weather clear :radius 16 :life 120))"), null, new Vec3(.5, 101, .5));
                     if (inst == null || inst.dead) throw new IllegalStateException("real test spell failed: " + (inst == null ? "refused" : inst.endReason()));
                 })
