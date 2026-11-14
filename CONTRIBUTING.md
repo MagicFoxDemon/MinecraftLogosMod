@@ -208,6 +208,35 @@ gh pr create --fill                # 或在网页上开 PR
 - 每级出售同档的魔杖和载页（长杖一半概率）、魔药（流魔，二级和四级另有随机元素增幅药水），收购这一级的炼金植物或材料。老手、专家、大师分别有 40%、55%、70% 概率出售一本随机家族书（指向、变、律、数、动之书，按家族大小加权，由战利品函数 `logos:random_family_book` 抽）。
 - 外观：`textures/entity/villager/profession/warlock.png`（兜帽在帽子层，`.mcmeta` 里 `hat: full` 盖住群系帽子），僵尸村民用 `zombie_villager/profession/warlock.png`（同一件袍子褪色、下摆破洞）。客户端场景 `logos_warlock` 截正、背、侧、僵尸和交易界面。
 
+### 逻各斯手记
+
+玩家手册，物品 `logos:guide_book`（`item/GuideBookItem`）。
+
+- **获取**：
+  - 第一次进入时送一本，放在快捷栏最后一格。附件 `logos:guide_given` 记下已经送过，随死亡保留，所以每人只送一次。配置 `guide.giveGuideOnFirstJoin` 可以关掉。
+  - 也能用书 + 青金石合成。
+- **界面**：右键在客户端打开 `client/GuideScreen`，和术式工坊同一张羊皮纸。页面由 `client/GuidePage` 画。解析和目录在 `guide/`，不依赖 Minecraft，可以写单元测试。
+- **文件**：正文是 Markdown，放在 `assets/<命名空间>/guide/<语言>/<章节>/<条目>.md`。
+  - 每章一个 `_chapter.md`，写 `title`、`ribbon`（书签上的字）、`icon`、`order`。
+  - 每个条目开头写 `title`、`icon`、`order`。
+  - 附属 mod 用自己的命名空间加章节，资源包可以覆盖页面。
+- **语言**：每页按玩家的语言取，没有就取英文，再没有就取中文。目前只写了 `zh_cn`。
+- **写法**（`guide/GuideParser`）：
+  - 块：`#`～`###` 标题、段落、`-` 或 `1.` 列表、`---` 分隔线。
+  - 行内：`**粗体**`、`*斜体*`、`` `符文名` ``、链接 `[文字](目标)`。
+  - 链接目标可以写同章的 `名字`、同命名空间的 `章节/名字`，或完整的 `命名空间:章节/名字`。
+  - `[文字](item:logos:wand)` 指向物品，悬停看物品说明。
+- **标签**（单独占一行）：
+  - `{{items 物品…}}`：一排物品。
+  - `{{recipe 物品}}`：这件物品的全部合成和锻造配方。配方由服务端的 `item/GuideRecipeSync` 同步到客户端。
+  - `{{image 贴图 宽 高}}`：图片。
+  - 新标签要同时加进 `GuideBook.TAGS` 和 `GuidePage.tag`。
+- **测试**：
+  - 单元测试 `GuideParserTest` 会读仓库里所有 `zh_cn` 页面，检查每个链接都指向存在的页面、每个标签都认识。
+  - 世界内测试 `guide_*`。
+  - 客户端场景 `logos_guide`。
+- **数值**：正文里尽量少写，以代码为准。写了的数字，改代码时要同步改页面。
+
 ---
 
 ## 5. 开发约定

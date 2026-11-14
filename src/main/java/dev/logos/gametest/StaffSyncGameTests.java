@@ -74,6 +74,8 @@ final class StaffSyncGameTests {
         Connection connection = new Connection(PacketFlow.SERVERBOUND);
         EmbeddedChannel channel = new EmbeddedChannel(connection);
         h.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
+        // What the player joined with (a new player's guide book) goes out now, before anything is counted.
+        player.containerMenu.broadcastChanges();
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
         player.snapTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(player);
