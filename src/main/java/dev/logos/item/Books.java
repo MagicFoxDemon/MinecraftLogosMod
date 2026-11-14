@@ -53,7 +53,7 @@ public final class Books {
         }
         if (!page.isEmpty()) pages.add(Filterable.passThrough(page.toString()));
         book.set(DataComponents.WRITABLE_BOOK_CONTENT, new WritableBookContent(pages));
-        book.set(DataComponents.CUSTOM_NAME, Component.literal("术式 · " + title));
+        book.set(DataComponents.CUSTOM_NAME, Component.translatable("logos.book.spell_title", title));
         return book;
     }
 }

@@ -71,7 +71,7 @@ public final class TimeSkipObj extends SpellObject {
         Holder<WorldClock> clock = level.dimensionType().hasFixedTime() ? null : level.dimensionType().defaultClock().orElse(null);
         Object key = clock != null ? clock : level;
         if (RUNNING.containsKey(key)) {
-            ctx.inst().terminate("时间已在加速之中，无法叠加");
+            ctx.inst().terminate(net.minecraft.network.chat.Component.translatable("logos.spell.end.time_skip_running"));
             return;
         }
         TimeSkipObj skip = new TimeSkipObj(node, ctx, pos, seconds * 20, clock, key);

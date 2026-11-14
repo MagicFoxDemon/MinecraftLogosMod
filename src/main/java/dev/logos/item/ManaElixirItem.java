@@ -120,21 +120,20 @@ public final class ManaElixirItem extends Item {
             m.baseMaxMana += grade.amount;
             m.elixirs.put(key(), n + 1);
             level.playSound(null, p.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6f, 1.4f);
-            PlayerMagic.alert(p, Component.translatable(getDescriptionId()).append(Component.literal(" " + (n + 1) + "/" + LIMIT
-                    + " · 魔力上限 " + Node.fmt(before) + " → " + Node.fmt(PlayerMagic.maxMana(p)))).withStyle(ChatFormatting.LIGHT_PURPLE));
+            PlayerMagic.alert(p, Component.translatable("logos.mana_elixir.drunk", Component.translatable(getDescriptionId()), n + 1, LIMIT,
+                    Node.fmt(before), Node.fmt(PlayerMagic.maxMana(p))).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
         return super.finishUsingItem(stack, level, entity);
     }
 
     private void full(ServerPlayer p) {
-        PlayerMagic.alert(p, Component.literal("这种药剂你已饮满 " + LIMIT + " 瓶，再喝也不会增加魔力上限").withStyle(ChatFormatting.GRAY));
+        PlayerMagic.alert(p, Component.translatable("logos.mana_elixir.full", LIMIT).withStyle(ChatFormatting.GRAY));
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
-        builder.accept(Component.literal("饮下后，永久增加 " + Node.fmt(grade.amount) + " 点魔力上限").withStyle(ChatFormatting.GRAY));
-        builder.accept(Component.literal("每人最多饮用 " + LIMIT + " 瓶").withStyle(ChatFormatting.DARK_GRAY));
-        builder.accept(Component.literal(ancient ? "古代遗物，只在遗迹的箱子里找到；与炼金配制的药剂分开计数"
-                : "炼金台配制；与遗迹里找到的古代药剂分开计数").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.translatable("logos.mana_elixir.raises", Node.fmt(grade.amount)).withStyle(ChatFormatting.GRAY));
+        builder.accept(Component.translatable("logos.mana_elixir.limit", LIMIT).withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.translatable(ancient ? "logos.mana_elixir.ancient" : "logos.mana_elixir.brewed").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

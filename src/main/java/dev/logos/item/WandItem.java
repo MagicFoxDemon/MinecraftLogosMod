@@ -122,7 +122,7 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     @Override
     public ModularUI createUI(HeldItemUIMenuType.HeldItemUIHolder holder) {
         return PageSlotsUI.create(holder.player, new PageContainer(holder.itemStack, slots, true), Math.min(slots, 9),
-                holder.itemStack.getHoverName(), Component.literal("挂上术式载页或杖饰 · 按术式轮盘键（默认 R）选择要施放的术式"));
+                holder.itemStack.getHoverName(), Component.translatable("logos.wand.slots_hint", Component.keybind("key.logos.spell_wheel")));
     }
 
     @Override
@@ -133,21 +133,21 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
         long n = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).count();
-        builder.accept(Component.literal("术式槽 " + n + "/" + slots).withStyle(ChatFormatting.GRAY));
+        builder.accept(Component.translatable("logos.wand.slots", n, slots).withStyle(ChatFormatting.GRAY));
         var pages = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).toList();
         if (VoiceCasting.armed(stack)) {
             long voiced = pages.stream().filter(p -> p.has(LogosMod.VOICE.get())).count();
-            builder.accept(Component.literal("当前：🗣 言出法随（" + voiced + " 个术式可念出）").withStyle(ChatFormatting.LIGHT_PURPLE));
+            builder.accept(Component.translatable("logos.wand.current_voice", voiced).withStyle(ChatFormatting.LIGHT_PURPLE));
         } else if (!pages.isEmpty()) {
             int sel = Math.floorMod(stack.getOrDefault(dev.logos.LogosMod.SELECTED.get(), 0), pages.size());
             var s = SpellPages.spell(pages.get(sel));
-            if (s != null) builder.accept(Component.literal("当前：《" + s.name() + "》 注入 " + Node.fmt(s.mana())).withStyle(ChatFormatting.LIGHT_PURPLE));
+            if (s != null) builder.accept(Component.translatable("logos.wand.current", s.name(), Node.fmt(s.mana())).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
-        builder.accept(Component.literal(usage() + " · 潜行右键挂载术式载页 · R 打开术式轮盘").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.translatable("logos.wand.use_hint", usage(), Component.keybind("key.logos.spell_wheel")).withStyle(ChatFormatting.DARK_GRAY));
     }
 
     /** How this wand casts, for its tooltip. */
-    protected String usage() {
-        return "按住右键蓄力，蓄满后松开施放";
+    protected Component usage() {
+        return Component.translatable("logos.wand.usage");
     }
 }

@@ -9,6 +9,7 @@ import dev.logos.lang.Spell;
 import dev.logos.net.ManaHudPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -55,15 +56,16 @@ public final class ManaHud {
         if (VoiceCasting.armed(wand)) {
             // 言出法随: listening, then the spell that was named (where the selected spell would show).
             if (m.listen != null) {
-                return Component.literal("  🗣 言出法随 · 聆听中…" + (m.listen.injected() > 0 ? " 已汇集 " + Node.fmt(m.listen.injected()) : ""))
+                return (m.listen.injected() > 0 ? Component.translatable("logos.hud.voice.listening_gathered", Node.fmt(m.listen.injected()))
+                        : Component.translatable("logos.hud.voice.listening"))
                         .withStyle(ChatFormatting.LIGHT_PURPLE);
             }
             if (m.charge != null && sp.isUsingItem()) {
-                return Component.literal("  🗣 即将释放《" + m.charge.spell().name() + "》 " + Node.fmt(m.charge.injected) + "/" + Node.fmt(m.charge.in.mana()))
+                return Component.translatable("logos.hud.voice.releasing", m.charge.spell().name(), Node.fmt(m.charge.injected), Node.fmt(m.charge.in.mana()))
                         .withStyle(ChatFormatting.LIGHT_PURPLE);
             }
             int n = VoiceCasting.spoken(sp, wand).size();
-            return Component.literal("  🗣 言出法随 · " + (n == 0 ? "法杖上没有言出法随的术式" : "按住右键念出咒语（" + n + " 个可用）"))
+            return (n == 0 ? Component.translatable("logos.hud.voice.none") : Component.translatable("logos.hud.voice.ready", n))
                     .withStyle(n == 0 ? ChatFormatting.RED : ChatFormatting.GRAY);
         }
         var selected = SpellBag.selected(sp, wand);
@@ -72,7 +74,8 @@ public final class ManaHud {
         var in = Casting.injection(s, selected.tier(), Casting.immolation(sp, wand));
         ChatFormatting c = source >= in.mana() ? ChatFormatting.GRAY : ChatFormatting.RED;
         String inject = in.mana() < s.mana() ? Node.fmt(in.mana()) + "/" + Node.fmt(s.mana()) : Node.fmt(in.mana());
-        return Component.literal("  《" + s.name() + "》注入 " + inject + (in.burns() ? " 🜂焚" : "")
-                + " · 稳定 " + Node.fmt(s.stability()) + "/" + m.stability).withStyle(c);
+        MutableComponent line = Component.translatable("logos.hud.spell", s.name(), inject);
+        if (in.burns()) line.append(Component.translatable("logos.hud.spell.burns"));
+        return line.append(Component.translatable("logos.hud.spell.stability", Node.fmt(s.stability()), m.stability)).withStyle(c);
     }
 }

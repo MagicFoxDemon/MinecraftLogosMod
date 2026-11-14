@@ -12,6 +12,7 @@ import dev.logos.lang.Node;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -28,11 +29,18 @@ import net.minecraft.world.item.component.TooltipDisplay;
  * faster charging…) is one more family over the spell attributes, with no code of its own.
  */
 public class TieredCharmItem extends WandCharmItem {
-    /** One modifier a family gives: the attribute (looked up late, as attributes register after items are declared) and how its amount applies. */
-    public record Bonus(Supplier<? extends Holder<Attribute>> attribute, AttributeModifier.Operation operation, String zh, String unit) {}
+    /**
+     * One modifier a family gives: the attribute (looked up late, as attributes register after items are declared), how its
+     * amount applies, and the language key that reads it out with the signed amount as its one argument.
+     */
+    public record Bonus(Supplier<? extends Holder<Attribute>> attribute, AttributeModifier.Operation operation, String key) {}
 
-    /** A kind of charm: its name and the modifiers every grade of it gives, in the same order as each grade's amounts. */
-    public record Family(String id, String zh, List<Bonus> bonuses) {
+    /** A kind of charm: its id (its name is {@code logos.charm.family.<id>}) and the modifiers every grade of it gives, in the same order as each grade's amounts. */
+    public record Family(String id, List<Bonus> bonuses) {
+        public Component name() {
+            return Component.translatable("logos.charm.family." + id);
+        }
+
         /** The modifier id of {@code bonus}: one per family and bonus, whatever the grade. */
         Identifier modifier(int bonus) {
             return Identifier.fromNamespaceAndPath(LogosMod.MODID, "charm_" + id + "_" + bonus);
@@ -42,8 +50,8 @@ public class TieredCharmItem extends WandCharmItem {
     private static final List<Family> FAMILIES = new ArrayList<>();
 
     /** Declares a family; {@link #apply} keeps its modifiers in step from then on. */
-    public static Family family(String id, String zh, Bonus... bonuses) {
-        Family f = new Family(id, zh, List.of(bonuses));
+    public static Family family(String id, Bonus... bonuses) {
+        Family f = new Family(id, List.of(bonuses));
         FAMILIES.add(f);
         return f;
     }
@@ -68,20 +76,19 @@ public class TieredCharmItem extends WandCharmItem {
         return grade;
     }
 
-    private static String describe(Family family, int grade, double[] amounts) {
-        StringBuilder sb = new StringBuilder("挂在主手法杖上：");
+    private static Component describe(Family family, int grade, double[] amounts) {
+        MutableComponent bonuses = Component.empty();
         for (int i = 0; i < amounts.length; i++) {
-            Bonus b = family.bonuses().get(i);
-            if (i > 0) sb.append("，");
-            sb.append(b.zh()).append(' ').append(amounts[i] >= 0 ? "+" : "").append(Node.fmt(amounts[i])).append(b.unit());
+            if (i > 0) bonuses.append(Component.translatable("logos.charm.list_separator"));
+            bonuses.append(Component.translatable(family.bonuses().get(i).key(), (amounts[i] >= 0 ? "+" : "") + Node.fmt(amounts[i])));
         }
-        return sb.toString();
+        return Component.translatable("logos.charm.tiered.effect", bonuses);
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
         super.appendHoverText(stack, context, display, builder, flag);
-        builder.accept(Component.literal("同一根法杖上的" + family.zh() + "只有等级最高的一枚生效").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.translatable("logos.charm.tiered.highest_only", family.name()).withStyle(ChatFormatting.DARK_GRAY));
     }
 
     /** The best grade of each family hung on {@code wand}. */

@@ -93,8 +93,7 @@ public class SpellGraph extends Graph {
             logger.error(Component.literal(last.error()), last.errorNode() == null ? null : last.errorNode().getNodeModel());
         } else {
             var s = last.spell();
-            logger.info(Component.literal("✓ 《" + s.name() + "》成立 · 注入 " + dev.logos.lang.Node.fmt(s.mana())
-                    + " · 稳定度 " + dev.logos.lang.Node.fmt(s.stability())));
+            logger.info(Component.translatable("logos.editor.log.holds", s.name(), dev.logos.lang.Node.fmt(s.mana()), dev.logos.lang.Node.fmt(s.stability())));
             for (String note : s.notes()) logger.info(Component.literal("∴ " + note));
         }
         listeners.forEach(Runnable::run);

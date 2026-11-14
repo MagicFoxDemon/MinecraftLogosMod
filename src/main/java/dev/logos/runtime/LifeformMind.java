@@ -152,14 +152,14 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     }
 
     @Override
-    public String doingZh() {
-        return current == null ? "发呆" : current.zh;
+    public String doing() {
+        return current == null ? "idle" : current.id;
     }
 
-    /** The scores of the last think, by behaviour name (tests). */
+    /** The scores of the last think, by behaviour id (tests). */
     public Map<String, Double> scores() {
         Map<String, Double> out = new LinkedHashMap<>();
-        lastScores.forEach((b, s) -> out.put(b.zh, s));
+        lastScores.forEach((b, s) -> out.put(b.id, s));
         return out;
     }
 
@@ -350,7 +350,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     /** gather: off to where it was sent, nothing else matters. */
     private final class Errand extends Behavior {
         Errand() {
-            super("前往");
+            super("errand");
         }
 
         @Override
@@ -368,7 +368,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     /** At its master's shoulder (or its post), looking where they look. */
     private final class Escort extends Behavior {
         Escort() {
-            super("随行");
+            super("escort");
         }
 
         @Override
@@ -395,7 +395,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     /** Its master's fight (or an order, or its hunt): keep at its attack's reach and cast. */
     private final class Engage extends Behavior {
         Engage() {
-            super("交战");
+            super("engage");
         }
 
         @Override
@@ -432,7 +432,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     /** Its master is hurt and it holds a HEAL page: close in and heal them. */
     private final class Support extends Behavior {
         Support() {
-            super("治疗");
+            super("support");
         }
 
         @Override
@@ -458,7 +458,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     /** Something is hunting its master: get between them, ward its master, strike the hunter. */
     private final class Protect extends Behavior {
         Protect() {
-            super("护主");
+            super("protect");
         }
 
         private @Nullable Mob nearest() {
@@ -498,7 +498,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     /** Free mana nearby and nothing to fight: go and drink it. */
     private final class Forage extends Behavior {
         Forage() {
-            super("觅魔");
+            super("forage");
         }
 
         @Override
@@ -520,7 +520,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     /** Badly hurt in a fight: slip behind its master. */
     private final class Retreat extends Behavior {
         Retreat() {
-            super("退避");
+            super("retreat");
         }
 
         @Override
@@ -549,7 +549,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         private long nextPick;
 
         Curious() {
-            super("闲逛");
+            super("wander");
         }
 
         @Override
@@ -592,7 +592,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     /** Its master sleeps: it settles low at their side. */
     private final class Rest extends Behavior {
         Rest() {
-            super("休憩");
+            super("rest");
         }
 
         @Override

@@ -72,13 +72,13 @@ public class ManaHudScenario implements UIScenario {
                 .ticks(8)
                 .step("show the HUD", ctx -> Minecraft.getInstance().options.hideGui = false)
                 .ticks(2)
-                .step("the HUD names mana and spell", ctx -> says("☿ ", "/1000", "《蓄》注入 100", "稳定 "))
+                .step("the HUD names mana and spell", ctx -> says("☿ ", "/1000", Component.translatable("logos.hud.spell", "蓄", "100").getString().strip(), LangText.before("logos.hud.spell.stability").strip()))
                 .screenshot("wand")
                 .server("a message from elsewhere on the action bar", sc -> sc.player().sendOverlayMessage(
                         Component.literal("来自其他模组的提示 · A message from another mod").withStyle(ChatFormatting.GOLD)))
                 // Longer than the old HUD's half-second refresh, which would have overwritten it by now.
                 .ticks(25)
-                .step("the HUD keeps updating beneath the message", ctx -> says("《蓄》注入 100"))
+                .step("the HUD keeps updating beneath the message", ctx -> says(Component.translatable("logos.hud.spell", "蓄", "100").getString().strip()))
                 .screenshot("with_action_bar")
                 .server("hand over a staff holding 30, too little for its spell", sc -> {
                     ItemStack staff = holding(LogosMod.WOOD_STAFFS.getFirst().get(), "(spell :name \"杖\" :mana 100 (mark caster #hud))");
@@ -86,7 +86,7 @@ public class ManaHudScenario implements UIScenario {
                     sc.player().setItemInHand(InteractionHand.MAIN_HAND, staff);
                 })
                 .ticks(8)
-                .step("the HUD shows what the staff holds", ctx -> says("杖内 30/", "《杖》注入 100"))
+                .step("the HUD shows what the staff holds", ctx -> says(Component.translatable("logos.hud.staff", 30, "").getString().strip(), Component.translatable("logos.hud.spell", "杖", "100").getString().strip()))
                 .screenshot("staff_short")
                 .step("press F1", ctx -> Minecraft.getInstance().options.hideGui = true)
                 .ticks(2)
@@ -94,7 +94,7 @@ public class ManaHudScenario implements UIScenario {
                 .step("press F1 again", ctx -> Minecraft.getInstance().options.hideGui = false)
                 .server("put the staff away", sc -> sc.player().setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY))
                 .ticks(48)
-                .step("still fading", ctx -> says("杖内 30/"))
+                .step("still fading", ctx -> says(Component.translatable("logos.hud.staff", 30, "").getString().strip()))
                 .screenshot("fading")
                 .ticks(25)
                 .step("gone", ctx -> {

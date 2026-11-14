@@ -60,7 +60,7 @@ public record EmitterEditPayload(BlockPos pos, String source, CompoundTag graph,
             return;
         }
         if (spell.isPassive()) {
-            sp.sendOverlayMessage(Component.literal("术式发射器只施放主动术式").withStyle(ChatFormatting.YELLOW));
+            sp.sendOverlayMessage(Component.translatable("logos.emitter.passive").withStyle(ChatFormatting.YELLOW));
             return;
         }
         if (!dev.logos.runtime.RuneKnowledge.mayWrite(sp, spell, emitter.page().get(dev.logos.LogosMod.SPELL_SOURCE.get()))) return;

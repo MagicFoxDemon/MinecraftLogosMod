@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
 
@@ -36,8 +38,13 @@ public abstract class UtilityMind<T extends Mob> extends Goal {
     /** Refreshes what it knows of its surroundings, just before it thinks. */
     abstract void sense();
 
-    /** What it is doing, in words. */
-    public abstract String doingZh();
+    /** What it is doing: the id of a behaviour or act, or of what it does with none ({@code logos.mind.<id>} reads it out). */
+    public abstract String doing();
+
+    /** {@link #doing}, for players to read. */
+    public Component doingName() {
+        return Component.translatable("logos.mind." + doing());
+    }
 
     @Override
     public boolean requiresUpdateEveryTick() {
@@ -78,18 +85,19 @@ public abstract class UtilityMind<T extends Mob> extends Goal {
     }
 
     /** Its scores at the last think, best first, for {@code /logos mind}. */
-    public String describe() {
-        StringBuilder sb = new StringBuilder("正在" + doingZh() + "｜");
-        lastScores.entrySet().stream().sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                .forEach(e -> sb.append(e.getKey().zh).append(' ').append(String.format("%.2f", e.getValue())).append("  "));
-        return sb.toString().strip();
+    public Component describe() {
+        MutableComponent scores = Component.empty();
+        lastScores.entrySet().stream().sorted((a, b) -> Double.compare(b.getValue(), a.getValue())).forEach(e -> scores.append("  ")
+                .append(Component.translatable("logos.mind." + e.getKey().id)).append(String.format(java.util.Locale.ROOT, " %.2f", e.getValue())));
+        return Component.translatable("logos.mind.describe", doingName(), scores);
     }
 
     abstract static class Behavior {
-        final String zh;
+        /** Its id, read out as {@code logos.mind.<id>}. */
+        final String id;
 
-        Behavior(String zh) {
-            this.zh = zh;
+        Behavior(String id) {
+            this.id = id;
         }
 
         abstract double score();

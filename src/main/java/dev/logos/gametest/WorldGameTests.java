@@ -382,10 +382,10 @@ final class WorldGameTests {
         h.assertTrue(p.position().distanceTo(a.pos()) < 2, "blink should land at the anchor, landed " + p.position() + " vs " + a.pos());
 
         SpellInstance missing = Casting.cast(p, Casting.compile("(blink ^不存在)"), null, null);
-        h.assertTrue(missing != null && missing.dead && missing.endReason().contains("不存在"), "a missing anchor must extinguish the spell");
+        h.assertTrue(missing != null && missing.dead && "logos.spell.end.no_anchor".equals(missing.endKey()), "a missing anchor must extinguish the spell");
 
         SpellInstance noNail = Casting.cast(p, Casting.compile("(anchor ^第二个 here)"), null, null);
-        h.assertTrue(noNail != null && noNail.dead && noNail.endReason().contains("锚钉"), "without a nail the anchor must fail");
+        h.assertTrue(noNail != null && noNail.dead && "logos.anchor.no_nail".equals(noNail.endKey()), "without a nail the anchor must fail");
         h.assertTrue(dev.logos.runtime.Anchors.of(p).get("第二个") == null, "and nothing must be saved");
         h.succeed();
     }
@@ -432,7 +432,7 @@ final class WorldGameTests {
         p.snapTo(800.5, 70, 1600.5, 0, 0);
         String spell = "(spell :mana 200 (blink (in-dimension @the_nether (pos-of caster))))";
         SpellInstance refused = Casting.cast(p, Casting.compile(spell), null, null);
-        h.assertTrue(refused != null && refused.dead && refused.endReason().contains("没有到过"),
+        h.assertTrue(refused != null && refused.dead && "logos.spell.end.unvisited_dimension".equals(refused.endKey()),
                 "an unvisited nether must extinguish the spell, got " + (refused == null ? "refused" : refused.endReason()));
         h.assertTrue(p.level().dimension() == Level.OVERWORLD, "the caster must stay put");
         h.assertTrue(refused.mana >= refused.injected - 1e-6, "the refused rune must not charge, pool " + refused.mana);
@@ -473,7 +473,7 @@ final class WorldGameTests {
             h.assertTrue(!sun.dead && sun.injected - sun.mana == 100, "clearing should cost 100, cost " + (sun.injected - sun.mana));
             h.assertTrue(!data.isRaining() && !data.isThundering() && data.getClearWeatherTime() == 12000, "it should clear for the default 600 s, clear time " + data.getClearWeatherTime());
             SpellInstance snow = Casting.cast(p, Casting.compile("(spell :mana 300 (world-weather snow))"), null, null);
-            h.assertTrue(snow.dead && snow.endReason().contains("不能下雪") && snow.mana == snow.injected, "snow should be refused for free, got " + snow.endReason());
+            h.assertTrue(snow.dead && "logos.spell.end.no_global_snow".equals(snow.endKey()) && snow.mana == snow.injected, "snow should be refused for free, got " + snow.endReason());
         } finally {
             data.setClearWeatherTime(clear);
             data.setRainTime(rain);
@@ -540,7 +540,7 @@ final class WorldGameTests {
         h.assertTrue(h.getBlockState(stone).is(Blocks.SNOW), "a snow zone should lay snow in any biome");
         SpellInstance poor = castAt(h, p, "(spell :mana 11 (weather thunder :radius 10 :life 30))", new BlockPos(4, 2, 4));
         h.succeedWhen(() -> {
-            h.assertTrue(poor.dead && poor.endReason().contains("魔力耗尽"), "a storm it cannot keep up should end, got " + poor.endReason());
+            h.assertTrue(poor.dead && "logos.spell.end.out_of_mana".equals(poor.endKey()), "a storm it cannot keep up should end, got " + poor.endReason());
             h.assertTrue(rain.finished() && clear.finished() && snow.finished(), "the zones are still up");
             // 10 to raise, then 0.02 × 1.5² a second for 2 seconds.
             double spent = rain.injected - rain.mana;
@@ -566,12 +566,12 @@ final class WorldGameTests {
         h.startSequence()
                 .thenWaitUntil(() -> h.assertTrue(dry.finished(), "the dry skip is still running"))
                 .thenExecute(() -> {
-                    h.assertTrue(dry.dead && dry.endReason().contains("魔力耗尽"), "it should stop when its mana runs dry, got " + dry.endReason());
+                    h.assertTrue(dry.dead && "logos.spell.end.out_of_mana".equals(dry.endKey()), "it should stop when its mana runs dry, got " + dry.endReason());
                     h.assertTrue(server.clockManager().getRate(clock) == rate, "a stopped skip should give the clock its rate back");
                     before[0] = server.clockManager().getTotalTicks(clock);
                     run[0] = Casting.cast(p, Casting.compile("(spell :mana 100 (time-skip 10))"), null, null);
                     SpellInstance second = Casting.cast(p, Casting.compile("(spell :mana 100 (time-skip 10))"), null, null);
-                    h.assertTrue(second.dead && second.endReason().contains("时间已在加速") && second.mana == second.injected,
+                    h.assertTrue(second.dead && "logos.spell.end.time_skip_running".equals(second.endKey()) && second.mana == second.injected,
                             "a second skip on the same clock should be refused for free, got " + second.endReason());
                 })
                 .thenExecuteAfter(5, () -> h.assertTrue(dev.logos.runtime.TimeSkipObj.randomTickSpeed(h.getLevel(), 3) > 3, "random ticks should speed up"))

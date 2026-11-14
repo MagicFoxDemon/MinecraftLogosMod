@@ -16,6 +16,7 @@ import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.net.AnchorsPayload;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -74,14 +75,14 @@ public final class Anchors {
      * Sets (or moves) anchor {@code name} to {@code pos}, spending one anchor nail from the
      * player's inventory unless they are in creative mode. Returns null on success, else why not.
      */
-    public static @Nullable String set(ServerPlayer p, String name, ServerLevel level, Vec3 pos) {
+    public static @Nullable Component set(ServerPlayer p, String name, ServerLevel level, Vec3 pos) {
         String n = clean(name);
-        if (n == null) return "锚点名需要 1~" + NAME_MAX + " 个字，不能有空格或括号";
+        if (n == null) return Component.translatable("logos.anchor.bad_name", NAME_MAX);
         Anchors a = of(p);
         if (!a.byName.containsKey(n) && a.byName.size() >= LogosConfig.maxAnchors()) {
-            return "锚点已达上限 " + LogosConfig.maxAnchors() + " 个，先撤掉一个（配置 maxAnchors）";
+            return Component.translatable("logos.anchor.too_many", LogosConfig.maxAnchors());
         }
-        if (!p.getAbilities().instabuild && !takeNail(p)) return "背包里没有锚钉";
+        if (!p.getAbilities().instabuild && !takeNail(p)) return Component.translatable("logos.anchor.no_nail");
         a.byName.put(n, new Anchor(n, level.dimension(), pos));
         sync(p);
         return null;

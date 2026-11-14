@@ -32,7 +32,7 @@ public final class Interp {
     /** ^name read as a place: the caster's anchor of that name. A missing anchor extinguishes the spell. */
     private static Object anchor(String name, Ctx c) {
         Place p = c.inst().caster instanceof net.minecraft.server.level.ServerPlayer sp ? Anchors.resolve(sp, name) : null;
-        if (p == null) c.inst().terminate("锚点 ^" + name + " 不存在（拿着锚钉右键方块立下，或用 anchor 符文）");
+        if (p == null) c.inst().terminate(net.minecraft.network.chat.Component.translatable("logos.spell.end.no_anchor", name));
         return p;
     }
 

@@ -12,6 +12,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
@@ -40,7 +41,7 @@ final class AnchorScreens {
         private EditBox box;
 
         Name(BlockPos pos, Direction face, boolean into) {
-            super(Component.literal("立下锚点"));
+            super(Component.translatable("logos.anchor.screen.set"));
             this.pos = pos;
             this.face = face;
             this.into = into;
@@ -48,15 +49,15 @@ final class AnchorScreens {
 
         private Component placeLabel() {
             BlockPos at = into ? pos : pos.relative(face);
-            return Component.literal((into ? "位置：钉进这个方块 " : "位置：立在这一面外 ") + at.toShortString());
+            return Component.translatable(into ? "logos.anchor.screen.into" : "logos.anchor.screen.on_face", at.toShortString());
         }
 
         @Override
         protected void init() {
             int x = (width - W) / 2, y = height / 2 - 70;
-            box = addRenderableWidget(new EditBox(font, x + 10, y + 30, W - 20, 18, Component.literal("锚点名")));
+            box = addRenderableWidget(new EditBox(font, x + 10, y + 30, W - 20, 18, Component.translatable("logos.anchor.screen.name")));
             box.setMaxLength(Anchors.NAME_MAX);
-            box.setHint(Component.literal("锚点名，如 家、矿洞、二楼"));
+            box.setHint(Component.translatable("logos.anchor.screen.name_hint"));
             setInitialFocus(box);
             var names = ClientAnchors.all();
             for (int i = 0; i < Math.min(MAX_SHOWN, names.size()); i++) {
@@ -68,8 +69,8 @@ final class AnchorScreens {
                 into = !into;
                 b.setMessage(placeLabel());
             }).bounds(x + 10, y + 120, W - 20, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("立下"), b -> confirm()).bounds(x + 10, y + 146, (W - 30) / 2, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("取消"), b -> onClose()).bounds(x + 20 + (W - 30) / 2, y + 146, (W - 30) / 2, 20).build());
+            addRenderableWidget(Button.builder(Component.translatable("logos.anchor.screen.confirm"), b -> confirm()).bounds(x + 10, y + 146, (W - 30) / 2, 20).build());
+            addRenderableWidget(Button.builder(Component.translatable("gui.cancel"), b -> onClose()).bounds(x + 20 + (W - 30) / 2, y + 146, (W - 30) / 2, 20).build());
         }
 
         private void confirm() {
@@ -100,12 +101,12 @@ final class AnchorScreens {
             super.extractRenderState(g, mouseX, mouseY, a);
             int x = (width - W) / 2, y = height / 2 - 70;
             g.blit(ICON, x + 8, y + 6, x + 24, y + 22, 0, 1, 0, 1);
-            g.text(font, "立下锚点 · 消耗一枚锚钉", x + 28, y + 11, GOLD);
+            g.text(font, I18n.get("logos.anchor.screen.heading"), x + 28, y + 11, GOLD);
             boolean taken = ClientAnchors.all().stream().anyMatch(e -> e.name().equals(box.getValue().strip()));
-            String hint = Anchors.clean(box.getValue()) == null ? "1~" + Anchors.NAME_MAX + " 个字，不能有空格或括号"
-                    : taken ? "将把 ^" + box.getValue().strip() + " 移到这里" : "术式里写作 ^" + box.getValue().strip();
+            String hint = Anchors.clean(box.getValue()) == null ? I18n.get("logos.anchor.screen.name_rule", Anchors.NAME_MAX)
+                    : I18n.get(taken ? "logos.anchor.screen.will_move" : "logos.anchor.screen.written_as", box.getValue().strip());
             g.text(font, hint, x + 10, y + 52, taken ? 0xFFE08A3F : DIM);
-            if (!ClientAnchors.all().isEmpty()) g.text(font, "已有的锚点（点击以移动它）", x + 10, y + 62, DIM);
+            if (!ClientAnchors.all().isEmpty()) g.text(font, I18n.get("logos.anchor.screen.existing"), x + 10, y + 62, DIM);
         }
 
         @Override
@@ -120,7 +121,7 @@ final class AnchorScreens {
         private int scroll;
 
         List() {
-            super(Component.literal("锚点"));
+            super(Component.translatable("logos.anchor.screen.list"));
         }
 
         void refresh() {
@@ -134,7 +135,7 @@ final class AnchorScreens {
             int x = (width - W) / 2, y = top();
             for (int i = 0; i < Math.min(ROWS, all.size() - scroll); i++) {
                 String n = all.get(scroll + i).name();
-                addRenderableWidget(Button.builder(Component.literal("撤去"), b -> ClientPacketDistributor.sendToServer(AnchorEditPayload.remove(n)))
+                addRenderableWidget(Button.builder(Component.translatable("logos.anchor.screen.remove"), b -> ClientPacketDistributor.sendToServer(AnchorEditPayload.remove(n)))
                         .bounds(x + W - 46, y + 28 + i * ROW, 40, 18).build());
             }
         }
@@ -163,8 +164,8 @@ final class AnchorScreens {
             var all = ClientAnchors.all();
             int x = (width - W) / 2, y = top();
             g.blit(ICON, x + 8, y + 6, x + 24, y + 22, 0, 1, 0, 1);
-            g.text(font, "我的锚点 " + all.size() + " · 拿着锚钉右键方块立下新锚点", x + 28, y + 11, GOLD);
-            if (all.isEmpty()) g.text(font, "还没有锚点", x + 12, y + 34, DIM);
+            g.text(font, I18n.get("logos.anchor.screen.list_heading", all.size()), x + 28, y + 11, GOLD);
+            if (all.isEmpty()) g.text(font, I18n.get("logos.anchor.screen.none"), x + 12, y + 34, DIM);
             var player = Minecraft.getInstance().player;
             String here = player == null ? "" : player.level().dimension().identifier().toString();
             for (int i = 0; i < Math.min(ROWS, all.size() - scroll); i++) {
@@ -174,7 +175,7 @@ final class AnchorScreens {
                 g.text(font, "^" + e.name(), x + 28, ry + 5, TEXT);
                 String where = String.format("%d, %d, %d", (int) Math.floor(e.x()), (int) Math.floor(e.y()), (int) Math.floor(e.z()));
                 String far = e.dimension().equals(here) && player != null
-                        ? String.format(" · %d 格", (int) player.position().distanceTo(new Vec3(e.x(), e.y(), e.z())))
+                        ? I18n.get("logos.anchor.screen.distance", (int) player.position().distanceTo(new Vec3(e.x(), e.y(), e.z())))
                         : " · " + e.dimension().replace("minecraft:", "");
                 g.text(font, where + far, x + 110, ry + 5, DIM);
             }

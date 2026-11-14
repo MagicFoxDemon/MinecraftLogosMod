@@ -80,12 +80,12 @@ public final class VoiceCasting {
         Charging.cancel(player);
         cancel(player);
         if (hand != InteractionHand.MAIN_HAND) {
-            PlayerMagic.alert(player, Component.literal("法杖要拿在主手才能施放").withStyle(ChatFormatting.YELLOW));
+            PlayerMagic.alert(player, Component.translatable("logos.cast.main_hand").withStyle(ChatFormatting.YELLOW));
             return false;
         }
         List<SpellBag.Entry> spells = spoken(player, wand);
         if (spells.isEmpty()) {
-            PlayerMagic.alert(player, Component.literal("法杖上没有言出法随的术式：在术式编纂台的「言出法随」页录制咒语，再写入载页").withStyle(ChatFormatting.YELLOW));
+            PlayerMagic.alert(player, Component.translatable("logos.voice.no_spoken_spells").withStyle(ChatFormatting.YELLOW));
             return false;
         }
         PlayerMagic m = PlayerMagic.of(player);
@@ -188,7 +188,7 @@ public final class VoiceCasting {
         Charging.hide(player);
         if (l.injected > 0) {
             spill(player, l.injected);
-            PlayerMagic.alert(player, Component.literal("没有念出咒语：已注入的 " + Node.fmt(l.injected) + " 魔力散为游离魔力").withStyle(ChatFormatting.GRAY));
+            PlayerMagic.alert(player, Component.translatable("logos.voice.nothing_named", Node.fmt(l.injected)).withStyle(ChatFormatting.GRAY));
         }
     }
 

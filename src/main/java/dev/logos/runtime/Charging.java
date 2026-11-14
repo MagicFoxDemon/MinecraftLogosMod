@@ -193,17 +193,16 @@ public final class Charging {
      */
     static SpellBag.@Nullable Entry castable(ServerPlayer player, ItemStack wand, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) {
-            PlayerMagic.alert(player, Component.literal("法杖要拿在主手才能施放").withStyle(ChatFormatting.YELLOW));
+            PlayerMagic.alert(player, Component.translatable("logos.cast.main_hand").withStyle(ChatFormatting.YELLOW));
             return null;
         }
         SpellBag.Entry entry = SpellBag.selected(player, wand);
         if (entry == null) {
-            PlayerMagic.alert(player, Component.literal("法杖上没有术式：潜行右键挂上术式载页，或在副手拿法式典籍").withStyle(ChatFormatting.YELLOW));
+            PlayerMagic.alert(player, Component.translatable("logos.cast.no_spell").withStyle(ChatFormatting.YELLOW));
             return null;
         }
         if (entry.spell().isPassive()) {
-            PlayerMagic.alert(player, Component.literal("《" + entry.spell().name() + "》是被动术式，会在"
-                    + dev.logos.lang.Spell.triggerZh(entry.spell().trigger()) + "自动触发，无需施放").withStyle(ChatFormatting.YELLOW));
+            PlayerMagic.alert(player, Component.translatable("logos.cast.passive", entry.spell().name(), dev.logos.lang.Spell.triggerName(entry.spell().trigger())).withStyle(ChatFormatting.YELLOW));
             return null;
         }
         return entry;
@@ -217,7 +216,7 @@ public final class Charging {
         double flow = channel(player, LogosMod.CHANNEL_FLOW, wand) * speed;
         double surge = channel(player, LogosMod.CHANNEL_SURGE, wand) * (1 + PlayerMagic.maxMana(player) / LogosConfig.chargeManaScale()) * speed * speed;
         if (flow <= 0 && surge <= 0) {
-            PlayerMagic.alert(player, Component.literal("这根法杖无法汇集魔力").withStyle(ChatFormatting.YELLOW));
+            PlayerMagic.alert(player, Component.translatable("logos.cast.no_channel").withStyle(ChatFormatting.YELLOW));
             return null;
         }
         return new Rate(flow, surge);
@@ -304,7 +303,7 @@ public final class Charging {
         if (c.injected <= 0) return;
         FreeManaEntity.release(player.level(), player.getEyePosition().add(player.getLookAngle().scale(0.8)), c.injected);
         Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.FIRE_EXTINGUISH, 0.4f, 1.6f);
-        PlayerMagic.alert(player, Component.literal("蓄力中断：已注入的 " + Node.fmt(c.injected) + " 魔力散为游离魔力").withStyle(ChatFormatting.GRAY));
+        PlayerMagic.alert(player, Component.translatable("logos.cast.charge_broken", Node.fmt(c.injected)).withStyle(ChatFormatting.GRAY));
     }
 
     /** Stops the player using the wand, and with it the charge (death, logout, changing dimension). */

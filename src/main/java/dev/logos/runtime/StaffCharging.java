@@ -142,8 +142,7 @@ public final class StaffCharging {
         if (f != null && f.staff == staff) settle(player, f);
         double stored = StaffItem.stored(staff);
         if (stored + 1e-9 < in.mana()) {
-            PlayerMagic.alert(player, Component.literal("法杖储能不足：《" + entry.spell().name() + "》需要注入 " + Node.fmt(in.mana())
-                    + "，杖内 " + Node.fmt(stored) + " · 按住左键充能").withStyle(ChatFormatting.RED));
+            PlayerMagic.alert(player, Component.translatable("logos.staff.too_little", entry.spell().name(), Node.fmt(in.mana()), Node.fmt(stored)).withStyle(ChatFormatting.RED));
             return false;
         }
         StaffItem.store(staff, Math.max(0, stored - in.mana()));

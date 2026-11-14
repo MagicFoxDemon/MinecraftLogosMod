@@ -47,8 +47,8 @@ public final class SpellInstance {
     public boolean dead;
     private int pending;
     private boolean finished;
-    private String endReason;
-    /** Whether the caster hears why it was extinguished when they get no report (see {@link #terminate(String, boolean)}). */
+    private @Nullable Component endReason;
+    /** Whether the caster hears why it was extinguished when they get no report (see {@link #terminate(Component, boolean)}). */
     private boolean told;
     private final long startTick;
     private long opsTick = -1;
@@ -106,7 +106,7 @@ public final class SpellInstance {
         amount *= modifiers.cost(category);
         if (inWrap()) amount *= modifiers.wrapCost();
         if (amount > mana + 1e-9) {
-            terminate("魔力耗尽（" + what + " 需要 " + Node.fmt(amount) + "，仅剩 " + Node.fmt(mana) + "）", false);
+            terminate(Component.translatable("logos.spell.end.out_of_mana", what, Node.fmt(amount), Node.fmt(mana)), false);
             return false;
         }
         mana -= amount;
@@ -123,7 +123,7 @@ public final class SpellInstance {
             ops = 0;
         }
         int max = dev.logos.LogosConfig.maxOpsPerTick();
-        if (++ops > max) terminate("法则失稳：一刻之内运转超过 " + max + " 步，世界承载不住");
+        if (++ops > max) terminate(Component.translatable("logos.spell.end.too_many_steps", max));
         return !dead;
     }
 
@@ -131,12 +131,23 @@ public final class SpellInstance {
         return finished;
     }
 
-    public String endReason() {
+    /** Why it ended, as its caster reads it; null while it runs. */
+    public @Nullable Component endReasonText() {
         return endReason;
     }
 
+    /** The language key of why it ended ({@code logos.spell.end.*} and the like), null for a reason that is not one: what tests compare. */
+    public @Nullable String endKey() {
+        return endReason != null && endReason.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t ? t.getKey() : null;
+    }
+
+    /** {@link #endReasonText} as plain text (in the server's language), for logs and tests. */
+    public @Nullable String endReason() {
+        return endReason == null ? null : endReason.getString();
+    }
+
     /** Extinguishes the spell because something went wrong (a missing anchor, a limit passed); its caster is told why. */
-    public void terminate(String reason) {
+    public void terminate(Component reason) {
         terminate(reason, true);
     }
 
@@ -144,7 +155,7 @@ public final class SpellInstance {
      * Extinguishes the spell; {@code tell} false when the caster needs no word of it: the mana ran out (how spells
      * end), the spell stopped itself, or whoever put it out tells them already.
      */
-    public void terminate(String reason, boolean tell) {
+    public void terminate(Component reason, boolean tell) {
         if (dead) return;
         dead = true;
         told = tell;
@@ -153,7 +164,7 @@ public final class SpellInstance {
     }
 
     /** Ends the spell as it asked to ({@code stop}): like a natural end, all leftover mana is set free. */
-    public void stop(String reason) {
+    public void stop(Component reason) {
         if (dead) return;
         stopped = true;
         terminate(reason, false);
@@ -168,7 +179,7 @@ public final class SpellInstance {
     void abandon() {
         if (finished) return;
         dead = finished = true;
-        endReason = "世界关闭";
+        endReason = Component.translatable("logos.spell.end.world_closed");
     }
 
     /** True if the spell ended on its own (or by its own stop); false if it was extinguished. */
@@ -189,7 +200,7 @@ public final class SpellInstance {
         if (finished) return;
         finished = true;
         SpellCasters.ended(this);
-        if (endReason == null) endReason = "自然消散";
+        if (endReason == null) endReason = Component.translatable("logos.spell.end.faded");
         // Runs wherever a spell ends, even while handling a crash: what it reaches (another mod's join-level listener) must not get out.
         try {
             settle();
@@ -207,18 +218,18 @@ public final class SpellInstance {
         if (!(caster instanceof ServerPlayer player)) return;
         if (!reports(player)) {
             // Without the report, a spell the world broke off still says why, once and briefly, where alerts go.
-            if (told && !player.hasDisconnected()) PlayerMagic.alert(player, Component.literal("《" + spell.name() + "》中断：" + endReason).withStyle(ChatFormatting.RED));
+            if (told && !player.hasDisconnected()) PlayerMagic.alert(player, Component.translatable("logos.spell.broken_off", spell.name(), endReason).withStyle(ChatFormatting.RED));
             return;
         }
         double secs = (SpellRuntime.now() - startTick) / 20.0;
         ChatFormatting color = endedNaturally() ? ChatFormatting.GRAY : ChatFormatting.RED;
-        String left = mana <= 0 ? "" : endedNaturally() ? " | 游离魔力 " + Node.fmt(free)
-                : " | 熵化魔力 " + Node.fmt(mana) + " × " + Math.round(recovery * 100) + "% → 游离 " + Node.fmt(free);
-        player.sendSystemMessage(Component.literal("《" + spell.name() + "》 " + endReason).withStyle(color)
-                .append(Component.literal(String.format(" | 魔力 %s → %s%s | 影响 %d 个实体 | %.1fs",
-                        Node.fmt(injected), Node.fmt(mana), left, affected.size(), secs)).withStyle(ChatFormatting.DARK_GRAY)));
+        Component left = mana <= 0 ? Component.empty() : endedNaturally() ? Component.translatable("logos.spell.report.free", Node.fmt(free))
+                : Component.translatable("logos.spell.report.entropic", Node.fmt(mana), Math.round(recovery * 100), Node.fmt(free));
+        player.sendSystemMessage(Component.translatable("logos.spell.report.ended", spell.name(), endReason).withStyle(color)
+                .append(Component.translatable("logos.spell.report.numbers", Node.fmt(injected), Node.fmt(mana), left, affected.size(),
+                        String.format(java.util.Locale.ROOT, "%.1f", secs)).withStyle(ChatFormatting.DARK_GRAY)));
         if (trace.size() > 2) {
-            player.sendSystemMessage(Component.literal("  轨迹: " + sampleTrace()).withStyle(ChatFormatting.DARK_GRAY));
+            player.sendSystemMessage(Component.translatable("logos.spell.report.trace", sampleTrace()).withStyle(ChatFormatting.DARK_GRAY));
         }
     }
 

@@ -157,7 +157,7 @@ public final class VoiceClient {
             if (casting) stopCasting();
         } else if (!casting && !heard) {
             casting = listen(VoiceClient::castHeard, () -> casting);
-            if (!casting) player.sendOverlayMessage(Component.literal("言出法随：打不开麦克风，检查系统的麦克风权限").withStyle(ChatFormatting.RED));
+            if (!casting) player.sendOverlayMessage(Component.translatable("logos.voice.no_microphone").withStyle(ChatFormatting.RED));
         }
         if (endpointer != null && !stillWanted.getAsBoolean()) stopListening();
         if (mic != null && endpointer == null && ++idle > KEEP_OPEN) {
@@ -181,11 +181,11 @@ public final class VoiceClient {
         withVoices(v -> v.recognize(audio, names)).thenAcceptAsync(r -> {
             if (!casting || heard) return;
             if (r == null) {
-                player.sendOverlayMessage(Component.literal("🗣 还没有录制这些咒语：到术式编纂台的「言出法随」页录制").withStyle(ChatFormatting.YELLOW));
+                player.sendOverlayMessage(Component.translatable("logos.voice.not_recorded").withStyle(ChatFormatting.YELLOW));
                 return;
             }
             if (!r.accepted()) {
-                player.sendOverlayMessage(Component.literal("🗣 没有听出咒语（最像《" + r.name() + "》）· 再念一遍").withStyle(ChatFormatting.GRAY));
+                player.sendOverlayMessage(Component.translatable("logos.voice.not_heard", r.name()).withStyle(ChatFormatting.GRAY));
                 return;
             }
             for (int i = 0; i < all.size(); i++) {

@@ -100,12 +100,12 @@ public class StaffItem extends WandItem {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
-        builder.accept(Component.literal("储能 " + Node.fmt(stored(stack)) + "/" + Node.fmt(capacity)).withStyle(ChatFormatting.AQUA));
+        builder.accept(Component.translatable("logos.staff.stored", Node.fmt(stored(stack)), Node.fmt(capacity)).withStyle(ChatFormatting.AQUA));
         super.appendHoverText(stack, context, display, builder, flag);
     }
 
     @Override
-    protected String usage() {
-        return "按住左键充能 · 右键用杖内魔力立即施放";
+    protected Component usage() {
+        return Component.translatable("logos.staff.usage");
     }
 }

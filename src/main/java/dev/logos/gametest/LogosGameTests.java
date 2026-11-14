@@ -708,7 +708,7 @@ public final class LogosGameTests {
         SpellInstance inst = cast(h, p, Examples.ALL.get("execute-brute"));
         h.succeedWhen(() -> {
             h.assertTrue(golem.isAlive(), "unproven execute of a 100hp golem should cost 400 > 120 injected");
-            h.assertTrue(inst.dead && inst.endReason().contains("魔力耗尽"), "expected mana exhaustion, got " + inst.endReason());
+            h.assertTrue(inst.dead && "logos.spell.end.out_of_mana".equals(inst.endKey()), "expected mana exhaustion, got " + inst.endReason());
         });
     }
 
@@ -719,14 +719,14 @@ public final class LogosGameTests {
         SpellInstance inst = cast(h, p, Examples.ALL.get("paradox"));
         h.succeedWhen(() -> {
             h.assertTrue(husk.isAlive(), "execute should not happen after the premise was broken");
-            h.assertTrue(inst.dead && inst.endReason().contains("悖论"), "expected paradox, got " + inst.endReason());
+            h.assertTrue(inst.dead && "logos.spell.end.paradox".equals(inst.endKey()), "expected paradox, got " + inst.endReason());
         });
     }
 
     private static void recursion(GameTestHelper h) {
         ServerPlayer p = caster(h);
         SpellInstance inst = cast(h, p, "(spell :mana 1000 (recurse))");
-        h.succeedWhen(() -> h.assertTrue(inst.dead && inst.endReason().contains("递归"), "expected recursion limit, got " + inst.endReason()));
+        h.succeedWhen(() -> h.assertTrue(inst.dead && "logos.spell.end.recursion".equals(inst.endKey()), "expected recursion limit, got " + inst.endReason()));
     }
 
     private static void runaway(GameTestHelper h) {
@@ -735,7 +735,7 @@ public final class LogosGameTests {
                 (spell :mana 1000
                   (projectile :speed 0.05 :life 10
                     (on-tick (projectile :speed 0.05 :life 10))))""");
-        h.succeedWhen(() -> h.assertTrue(inst.dead && inst.endReason().contains("形体"), "expected object limit, got " + inst.endReason()));
+        h.succeedWhen(() -> h.assertTrue(inst.dead && inst.endKey() != null && List.of("logos.spell.end.too_many_forms", "logos.spell.end.world_full_forms").contains(inst.endKey()), "expected object limit, got " + inst.endReason()));
     }
 
     private static void attackPassive(GameTestHelper h) {

@@ -673,11 +673,11 @@ public final class Runes {
                     Place from = place(n.arg(1), c);
                     ServerLevel target = dimension(c, id);
                     if (target == null) {
-                        c.inst().terminate("不存在的维度 @" + id);
+                        c.inst().terminate(Component.translatable("logos.spell.end.no_dimension", id));
                         return from;
                     }
                     if (!dev.logos.runtime.Attunement.reaches(c.inst().caster, target)) {
-                        c.inst().terminate("还没有到过维度 @" + id + "，无法与之共鸣");
+                        c.inst().terminate(Component.translatable("logos.spell.end.unvisited_dimension", id));
                         return from;
                     }
                     if (!c.inst().spend(2, "in-dimension")) return c.place();
@@ -971,7 +971,7 @@ public final class Runes {
                 .exec((n, c) -> {
                     if (!(c.inst().caster instanceof ServerPlayer p) || p instanceof FakePlayer) return null;
                     var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.tryParse((String) n.arg(0).value)).orElse(null);
-                    String why = dev.logos.runtime.Incarnation.refuse(p, type);
+                    Component why = dev.logos.runtime.Incarnation.refuse(p, type);
                     if (why != null) {
                         c.inst().terminate(why);
                         return null;
@@ -1065,7 +1065,7 @@ public final class Runes {
                     Node hunt = kw(n, "hunt"), radius = kw(n, "radius");
                     if (Compiler.MANA_LIFEFORM.equals(n.arg(0).value)) {
                         Node mana = kw(n, "mana");
-                        String why = dev.logos.runtime.Lifeforms.summon(c.inst(), sp, at.level(), at.pos(), name == null ? null : text(name, c),
+                        Component why = dev.logos.runtime.Lifeforms.summon(c.inst(), sp, at.level(), at.pos(), name == null ? null : text(name, c),
                                 (int) Math.floor(num(kw(n, "level"), c)), mana == null ? null : num(mana, c));
                         if (why != null) c.inst().terminate(why);
                         else if (hunt != null || radius != null) {
@@ -1074,7 +1074,7 @@ public final class Runes {
                         }
                         return why == null ? dev.logos.runtime.Familiars.latest(sp, null) : null;
                     }
-                    String why = dev.logos.runtime.Familiars.summon(c.inst(), sp, type, at.level(), at.pos(), name == null ? null : text(name, c),
+                    Component why = dev.logos.runtime.Familiars.summon(c.inst(), sp, type, at.level(), at.pos(), name == null ? null : text(name, c),
                             hunt == null ? null : filter(hunt, c), radius == null ? null : num(radius, c));
                     if (why != null) c.inst().terminate(why);
                     // The one just called: summon's 吾之使魔 output.
@@ -1116,7 +1116,7 @@ public final class Runes {
                     if (roleNode != null) {
                         role = dev.logos.runtime.ManaLifeform.Role.parse(text(roleNode, c).strip());
                         if (role == null) {
-                            c.inst().terminate(":role 只能是 auto / striker / guard / support（自然 / 进攻 / 护卫 / 辅助），不是 " + text(roleNode, c));
+                            c.inst().terminate(Component.translatable("logos.spell.end.bad_role", text(roleNode, c)));
                             return null;
                         }
                     }
@@ -1146,7 +1146,7 @@ public final class Runes {
                 .exec((n, c) -> {
                     if (!(c.inst().caster instanceof ServerPlayer sp)) return null;
                     Place at = place(n.arg(1), c);
-                    String why = dev.logos.runtime.Anchors.set(sp, (String) n.arg(0).value, at.level(), at.pos());
+                    Component why = dev.logos.runtime.Anchors.set(sp, (String) n.arg(0).value, at.level(), at.pos());
                     if (why != null) c.inst().terminate(why);
                     return null;
                 });
@@ -1203,9 +1203,9 @@ public final class Runes {
                         double cost = 2 + s.mana;
                         if (cost > c.inst().mana + 1e-9) continue; // too strong to stop now: a weaker one may still be
                         c.inst().spend(cost, "end-all");
-                        s.terminate("被万咒皆终终止", false);
+                        s.terminate(Component.translatable("logos.spell.end.end_all"), false);
                         if (s.caster instanceof ServerPlayer owner && owner != c.inst().caster) {
-                            owner.sendSystemMessage(Component.literal("✗ 你的术式《" + s.spell.name() + "》被万咒皆终终止").withStyle(ChatFormatting.RED));
+                            owner.sendSystemMessage(Component.translatable("logos.end_all.yours_ended", s.spell.name()).withStyle(ChatFormatting.RED));
                         }
                         ended++;
                         paid += cost;
@@ -1216,15 +1216,15 @@ public final class Runes {
                         if (cost > c.inst().mana + 1e-9) continue;
                         c.inst().spend(cost, "end-all");
                         dev.logos.runtime.Incarnation.end(t);
-                        if (t != c.inst().caster) t.sendSystemMessage(Component.literal("✗ 你的化身被万咒皆终打断").withStyle(ChatFormatting.RED));
+                        if (t != c.inst().caster) t.sendSystemMessage(Component.translatable("logos.end_all.incarnation_ended").withStyle(ChatFormatting.RED));
                         ended++;
                         paid += cost;
                     }
                     Vfx.burst(at.level(), at.pos(), Element.VOID, 30);
                     Vfx.sound(at.level(), at.pos(), SoundEvents.BEACON_DEACTIVATE, 1f, 0.8f);
                     if (c.inst().caster instanceof ServerPlayer p) {
-                        p.sendSystemMessage(Component.literal(ended == 0 ? "万咒皆终：范围内没有可以熄灭的术式"
-                                : "万咒皆终：熄灭了 " + ended + " 个术式，花费 " + Node.fmt(paid) + " 魔力").withStyle(ChatFormatting.GRAY));
+                        p.sendSystemMessage((ended == 0 ? Component.translatable("logos.end_all.none")
+                                : Component.translatable("logos.end_all.ended", ended, Node.fmt(paid))).withStyle(ChatFormatting.GRAY));
                     }
                     return null;
                 });
@@ -1239,7 +1239,7 @@ public final class Runes {
                         dev.logos.runtime.Incarnation.end(p);
                         c.inst().affected.add(p.getUUID());
                         Vfx.burst(lv(p), p, null, Element.ARCANE, Vfx.Burst.FORCE);
-                        if (!own) p.sendSystemMessage(Component.literal("✗ 你的化身被解除").withStyle(ChatFormatting.RED));
+                        if (!own) p.sendSystemMessage(Component.translatable("logos.revert.yours_reverted").withStyle(ChatFormatting.RED));
                     }
                     return null;
                 });
@@ -1282,7 +1282,7 @@ public final class Runes {
                         default -> v.toString();
                     };
                     if (c.inst().caster instanceof ServerPlayer sp) {
-                        sp.sendSystemMessage(Component.literal("echo " + n.arg(0).show() + " = " + s).withStyle(ChatFormatting.AQUA));
+                        sp.sendSystemMessage(Component.translatable("logos.echo", n.arg(0).show(), s).withStyle(ChatFormatting.AQUA));
                     }
                     return null;
                 });
@@ -1457,11 +1457,11 @@ public final class Runes {
                 .exec((n, c) -> {
                     Weather w = eval(n.arg(0), c) instanceof Weather x ? x : Weather.RAIN;
                     if (w == Weather.SNOW) {
-                        c.inst().terminate("全域天气不能下雪：原版天气无法让全世界下雪，请用区域天气");
+                        c.inst().terminate(Component.translatable("logos.spell.end.no_global_snow"));
                         return null;
                     }
                     if (!c.level().canHaveWeather()) {
-                        c.inst().terminate("这个维度没有天气");
+                        c.inst().terminate(Component.translatable("logos.spell.end.no_weather"));
                         return null;
                     }
                     int ticks = (int) Math.round(clamp(num(n.arg(1), c), 1, 1200) * 20);
@@ -1483,7 +1483,7 @@ public final class Runes {
                     Weather w = eval(n.arg(0), c) instanceof Weather x ? x : Weather.RAIN;
                     Place at = place(kw(n, "at"), c);
                     if (!at.level().canHaveWeather()) {
-                        c.inst().terminate("这个维度没有天气");
+                        c.inst().terminate(Component.translatable("logos.spell.end.no_weather"));
                         return null;
                     }
                     double radius = clamp(num(kw(n, "radius"), c), 1, 48);
@@ -1622,7 +1622,7 @@ public final class Runes {
             // The premise no longer holds: the world rejects the proof and the spell collapses on its author.
             inst.caster.hurtServer(casterLevel, inst.caster.damageSources().magic(), 4);
             Vfx.burst(casterLevel, inst.caster, null, Element.VOID, Vfx.Burst.DAMAGE);
-            inst.terminate("悖论：前提 " + broken.describe() + " 已不成立，术式反噬");
+            inst.terminate(Component.translatable("logos.spell.end.paradox", broken.describe()));
             return null;
         }
         double cost = ExecuteCost.cost(t, proof);
@@ -1631,8 +1631,8 @@ public final class Runes {
         Vfx.execute(lv(t), Targeting.center(t));
         Vfx.sound(lv(t), t.position(), SoundEvents.WITHER_SHOOT, 0.7f, 0.6f);
         if (inst.caster instanceof ServerPlayer sp) {
-            sp.sendSystemMessage(Component.literal("∴ 处决 " + t.getName().getString() + " · 代价 " + Node.fmt(cost)
-                    + (proof.isEmpty() ? "（无证明）" : " · 证明 " + proof.stream().map(Fact::describe).toList())).withStyle(ChatFormatting.DARK_PURPLE));
+            sp.sendSystemMessage((proof.isEmpty() ? Component.translatable("logos.execute.done_unproven", t.getName(), Node.fmt(cost))
+                    : Component.translatable("logos.execute.done", t.getName(), Node.fmt(cost), proof.stream().map(Fact::describe).toList().toString())).withStyle(ChatFormatting.DARK_PURPLE));
         }
         // A colossus is not killed by a proof: its mana is wiped and it powers down (a frenzy burns out). Configured as /kill, it dies like anything else.
         if (t instanceof dev.logos.runtime.AlchemicalColossus colossus && !LogosConfig.voidIsOutOfWorld()) {
@@ -1719,7 +1719,7 @@ public final class Runes {
                 .doc("禁忌：在当前 here/aim/target 上重新执行整个术式。3 魔力，稳定度代价高，层数上限见配置 maxRecursion")
                 .exec((n, c) -> {
                     if (c.depth() + 1 > LogosConfig.maxRecursion()) {
-                        c.inst().terminate("法则失稳：递归超过 " + LogosConfig.maxRecursion() + " 层");
+                        c.inst().terminate(Component.translatable("logos.spell.end.recursion", LogosConfig.maxRecursion()));
                         return null;
                     }
                     if (!c.inst().spend(3, "recurse")) return null;
@@ -1728,7 +1728,7 @@ public final class Runes {
                 });
         def("stop", LOGIC, ACTION).doc("立即熄灭整个术式")
                 .exec((n, c) -> {
-                    c.inst().stop("术式自行终止 (stop)");
+                    c.inst().stop(Component.translatable("logos.spell.end.stopped"));
                     return null;
                 });
     }

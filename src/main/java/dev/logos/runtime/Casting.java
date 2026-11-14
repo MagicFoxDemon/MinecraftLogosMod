@@ -104,8 +104,7 @@ public final class Casting {
             ServerLevel level = player.level();
             Vfx.sound(level, player.getEyePosition(), SoundEvents.FIRECHARGE_USE, 0.8f, 0.8f);
             Vfx.burst(level, player.getEyePosition().add(player.getLookAngle().scale(0.6)), dev.logos.lang.Element.FIRE, 18);
-            PlayerMagic.alert(player, Component.literal("🜂 焚式：《" + spell.name() + "》注入 " + Node.fmt(in.mana()) + "（载页承载 " + tier.capacity()
-                    + " ×" + Node.fmt(in.multiplier()) + "），载页化为术式余烬").withStyle(ChatFormatting.GOLD));
+            PlayerMagic.alert(player, Component.translatable("logos.cast.immolated", spell.name(), Node.fmt(in.mana()), tier.capacity(), Node.fmt(in.multiplier())).withStyle(ChatFormatting.GOLD));
         }
         return inst;
     }
@@ -121,8 +120,7 @@ public final class Casting {
     public static boolean stable(ServerPlayer player, Spell spell) {
         PlayerMagic m = PlayerMagic.of(player);
         if (spell.stability() <= m.stability) return true;
-        PlayerMagic.alert(player, Component.literal("法则不稳定：《" + spell.name() + "》复杂度 " + Node.fmt(spell.stability())
-                + " 超过你的稳定度上限 " + m.stability).withStyle(ChatFormatting.RED));
+        PlayerMagic.alert(player, Component.translatable("logos.cast.unstable", spell.name(), Node.fmt(spell.stability()), m.stability).withStyle(ChatFormatting.RED));
         return false;
     }
 
@@ -131,8 +129,7 @@ public final class Casting {
         if (!stable(player, spell)) return false;
         PlayerMagic m = PlayerMagic.of(player);
         if (m.mana < mana) {
-            PlayerMagic.alert(player, Component.literal("魔力不足：《" + spell.name() + "》需要注入 " + Node.fmt(mana)
-                    + "，当前 " + Node.fmt(m.mana)).withStyle(ChatFormatting.RED));
+            PlayerMagic.alert(player, Component.translatable("logos.cast.too_little", spell.name(), Node.fmt(mana), Node.fmt(m.mana)).withStyle(ChatFormatting.RED));
             return false;
         }
         return true;
@@ -191,6 +188,6 @@ public final class Casting {
     }
 
     public static void message(ServerPlayer p, LogosError e) {
-        p.sendSystemMessage(Component.literal("✗ 术式无法成立 — " + e.describe()).withStyle(ChatFormatting.RED));
+        p.sendSystemMessage(Component.translatable("logos.cast.invalid", e.describe()).withStyle(ChatFormatting.RED));
     }
 }

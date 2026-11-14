@@ -51,8 +51,9 @@ import net.minecraft.world.phys.Vec3;
  * the true dragon is brought back every summoned one is unmade.
  */
 public final class DragonFamiliar {
-    public static final String THRONE_TAKEN = "真龙尚居王座，岂容伪物僭越？";
-    public static final String THRONE_RECLAIMED = "真龙既归王座，伪物焉敢争辉？";
+    /** Language keys: why no dragon may be summoned while the true one lives, and what its summoners hear when it returns. */
+    public static final String THRONE_TAKEN = "logos.dragon.throne_taken";
+    public static final String THRONE_RECLAIMED = "logos.dragon.throne_reclaimed";
     /** Its ring is 40 blocks wide, so it is called back from much further than other familiars. */
     public static final double CALM_LEASH = 100, LOST = 160;
     private static final double RECENTRE = 32;
@@ -88,9 +89,9 @@ public final class DragonFamiliar {
     }
 
     /** Why a dragon may not be summoned in {@code level} right now, or null. */
-    public static @Nullable String forbidden(ServerLevel level) {
+    public static @Nullable Component forbidden(ServerLevel level) {
         var fight = level.getDragonFight();
-        if (level.dimension() == Level.END && fight != null && !((EnderDragonFightAccessor) fight).logos$dragonKilled()) return THRONE_TAKEN;
+        if (level.dimension() == Level.END && fight != null && !((EnderDragonFightAccessor) fight).logos$dragonKilled()) return Component.translatable(THRONE_TAKEN);
         return null;
     }
 
@@ -100,7 +101,7 @@ public final class DragonFamiliar {
             if (!(m instanceof EnderDragon d) || d.level() != level) continue;
             var b = Familiars.bondOf(d);
             Player owner = b == null ? null : level.getPlayerByUUID(b.owner());
-            if (owner != null) owner.sendSystemMessage(Component.literal(THRONE_RECLAIMED).withStyle(ChatFormatting.RED));
+            if (owner != null) owner.sendSystemMessage(Component.translatable(THRONE_RECLAIMED).withStyle(ChatFormatting.RED));
             Familiars.dismiss(d);
         }
     }
@@ -301,7 +302,7 @@ public final class DragonFamiliar {
 
     private static Component breathGauge(int left) {
         int full = Math.round(10f * left / BREATH_MAX);
-        return Component.literal("🐉 龙息 " + "■".repeat(full) + "□".repeat(10 - full)).withStyle(left < BREATH_RESTART ? ChatFormatting.GRAY : ChatFormatting.LIGHT_PURPLE);
+        return Component.translatable("logos.dragon.breath", "■".repeat(full) + "□".repeat(10 - full)).withStyle(left < BREATH_RESTART ? ChatFormatting.GRAY : ChatFormatting.LIGHT_PURPLE);
     }
 
     private static Vec3 mouth(EnderDragon d) {

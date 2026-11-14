@@ -46,8 +46,8 @@ public final class DividersItem extends Item {
                 Codec.INT.fieldOf("r").forGetter(Measure::r)).apply(i, Measure::new));
 
         /** "前 3、上 1、右 0", as the offset rune reads it. */
-        public String describe() {
-            return "前 " + f + "、上 " + u + "、右 " + r;
+        public Component describe() {
+            return Component.translatable("logos.dividers.offset", f, u, r);
         }
     }
 
@@ -85,19 +85,19 @@ public final class DividersItem extends Item {
         Measure m = stack.get(LogosMod.DIVIDERS.get());
         if (player.isSecondaryUseActive()) {
             stack.remove(LogosMod.DIVIDERS.get());
-            player.sendOverlayMessage(Component.literal("两脚规已收起").withStyle(ChatFormatting.GRAY));
+            player.sendOverlayMessage(Component.translatable("logos.dividers.put_away").withStyle(ChatFormatting.GRAY));
         } else if (m == null || m.done()) {
             Direction forward = forwardOf(ctx.getLevel().getBlockState(pos), player);
             stack.set(LogosMod.DIVIDERS.get(), new Measure(pos, dimension, forward, false, 0, 0, 0));
-            player.sendOverlayMessage(Component.literal("起点已定，以" + name(forward) + "为前 · 再右键目标方块").withStyle(ChatFormatting.AQUA));
+            player.sendOverlayMessage(Component.translatable("logos.dividers.started", name(forward)).withStyle(ChatFormatting.AQUA));
         } else if (!m.dimension().equals(dimension)) {
-            player.sendOverlayMessage(Component.literal("目标在另一个维度：在这里立一个锚点更合适").withStyle(ChatFormatting.YELLOW));
+            player.sendOverlayMessage(Component.translatable("logos.dividers.other_dimension").withStyle(ChatFormatting.YELLOW));
         } else {
             int[] d = Offsets.measure(m.from(), m.forward(), pos);
             Measure done = new Measure(m.from(), m.dimension(), m.forward(), true, d[0], d[1], d[2]);
             stack.set(LogosMod.DIVIDERS.get(), done);
             boolean far = Math.max(Math.abs(d[0]), Math.max(Math.abs(d[1]), Math.abs(d[2]))) > REACH;
-            player.sendOverlayMessage(Component.literal(done.describe() + (far ? " · 太远了：在这里立一个锚点更合适" : " · 在术式工坊里点「贴入两脚规」"))
+            player.sendOverlayMessage(Component.translatable(far ? "logos.dividers.measured_far" : "logos.dividers.measured", done.describe())
                     .withStyle(far ? ChatFormatting.YELLOW : ChatFormatting.AQUA));
         }
         return InteractionResult.SUCCESS;
@@ -110,23 +110,16 @@ public final class DividersItem extends Item {
         return player.getDirection();
     }
 
-    private static String name(Direction d) {
-        return switch (d) {
-            case NORTH -> "北";
-            case SOUTH -> "南";
-            case EAST -> "东";
-            case WEST -> "西";
-            case UP -> "上";
-            case DOWN -> "下";
-        };
+    private static Component name(Direction d) {
+        return Component.translatable("logos.direction." + d.getSerializedName());
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
         Measure m = stack.get(LogosMod.DIVIDERS.get());
-        if (m == null) builder.accept(Component.literal("右键起点方块，再右键目标方块").withStyle(ChatFormatting.GRAY));
-        else if (!m.done()) builder.accept(Component.literal("起点 " + m.from().toShortString() + "，以" + name(m.forward()) + "为前 · 再右键目标方块").withStyle(ChatFormatting.GRAY));
-        else builder.accept(Component.literal(m.describe()).withStyle(ChatFormatting.AQUA));
-        builder.accept(Component.literal("在术式工坊里贴入为偏移节点 · 潜行右键收起").withStyle(ChatFormatting.DARK_GRAY));
+        if (m == null) builder.accept(Component.translatable("logos.dividers.hint").withStyle(ChatFormatting.GRAY));
+        else if (!m.done()) builder.accept(Component.translatable("logos.dividers.from", m.from().toShortString(), name(m.forward())).withStyle(ChatFormatting.GRAY));
+        else builder.accept(m.describe().copy().withStyle(ChatFormatting.AQUA));
+        builder.accept(Component.translatable("logos.dividers.use_hint").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

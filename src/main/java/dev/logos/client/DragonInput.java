@@ -40,7 +40,7 @@ final class DragonInput {
         }
         while (ColossusInput.MODE.consumeClick()) {
             driving = !driving;
-            mc.gui.setOverlayMessage(Component.literal(driving ? "🐉 驾驭模式：左键龙息火球，按住右键持续吐息" : "🐉 乘坐模式：双手自由，移动仍由你控制"), false);
+            mc.gui.setOverlayMessage(Component.translatable(driving ? "logos.dragon.mode.drive" : "logos.dragon.mode.ride"), false);
         }
         boolean down = driving && mc.screen == null && mc.options.keyUse.isDown();
         if (down && !useWasDown) send(DragonFamiliar.BREATH_ON);

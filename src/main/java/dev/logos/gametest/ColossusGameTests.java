@@ -29,8 +29,8 @@ final class ColossusGameTests {
     private ColossusGameTests() {}
 
     private static AlchemicalColossus raise(GameTestHelper h, ServerPlayer owner, Vec3 rel) {
-        String why = Colossi.summon(owner, h.getLevel(), h.absoluteVec(rel), null);
-        h.assertTrue(why == null, "summon failed: " + why);
+        var why = Colossi.summon(owner, h.getLevel(), h.absoluteVec(rel), null);
+        h.assertTrue(why == null, "summon failed: " + (why == null ? "" : why.getString()));
         for (var m : Familiars.of(owner)) if (m instanceof AlchemicalColossus c) return c;
         throw new AssertionError("no colossus after summoning");
     }
@@ -235,7 +235,7 @@ final class ColossusGameTests {
             AlchemicalColossus.Act a = c.act();
             if (a == AlchemicalColossus.Act.PUNCH || a == AlchemicalColossus.Act.GRAB_REACH || a == AlchemicalColossus.Act.CANNON_PREPARE) fought[0] = true;
             h.assertTrue(!fought[0], "it should tread on the spider, not stop to fight it: " + a);
-            h.assertTrue(c.getZ() > h.absoluteVec(new Vec3(0, 0, 7)).z, "not past them yet: z " + (c.getZ() - h.absoluteVec(Vec3.ZERO).z) + ", " + c.mind().doingZh() + ", spider " + spider.isAlive());
+            h.assertTrue(c.getZ() > h.absoluteVec(new Vec3(0, 0, 7)).z, "not past them yet: z " + (c.getZ() - h.absoluteVec(Vec3.ZERO).z) + ", " + c.mind().doing() + ", spider " + spider.isAlive());
             h.assertTrue(!spider.isAlive(), "the cave spider underfoot should be crushed");
             h.assertTrue(chicken.isAlive(), "the chicken is no foe: spared");
         });
@@ -285,7 +285,7 @@ final class ColossusGameTests {
             if (striker.getHealth() < 200 && ordered.isAlive() && ordered.getHealth() >= ordered.getMaxHealth()) strikerFirst[0] = true;
             h.assertTrue(!strikerFirst[0], "it answered its own assailant before its master's order");
             h.assertTrue(!ordered.isAlive(), "the ordered husk first");
-            h.assertTrue(striker.getHealth() < 200, "then what struck it: " + c.mind().describe() + " act " + c.act() + " dist " + c.distanceTo(striker));
+            h.assertTrue(striker.getHealth() < 200, "then what struck it: " + c.mind().describe().getString() + " act " + c.act() + " dist " + c.distanceTo(striker));
         });
     }
 
@@ -487,7 +487,7 @@ final class ColossusGameTests {
                 stage[0] = 4;
             }
             if (stage[0] == 4) {
-                h.assertTrue(c.mind().doingZh().equals("听从驾驶"), "the shot should end: " + c.mind().doingZh());
+                h.assertTrue(c.mind().doing().equals("driven"), "the shot should end: " + c.mind().doing());
                 Colossi.control(p, Colossi.STRIKE);
                 stage[0] = 5;
             }

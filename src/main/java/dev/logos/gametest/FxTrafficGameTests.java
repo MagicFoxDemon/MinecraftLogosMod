@@ -318,7 +318,7 @@ final class FxTrafficGameTests {
         h.assertTrue(Math.abs(one.injected - one.mana - 0.02) < 1e-6, "one particle should cost 0.02, cost " + (one.injected - one.mana));
         h.assertTrue(Math.abs(full.injected - full.mana - 1.28) < 1e-6, "a full burst should cost 1.28, cost " + (full.injected - full.mana));
         h.assertTrue(Math.abs(past.injected - past.mana - 1.28) < 1e-6, "past 64 it stays a full burst, cost " + (past.injected - past.mana));
-        h.assertTrue(dry.dead && dry.endReason().contains("魔力耗尽"), "1 mana should not pay for 64 particles: " + dry.endReason());
+        h.assertTrue(dry.dead && "logos.spell.end.out_of_mana".equals(dry.endKey()), "1 mana should not pay for 64 particles: " + dry.endReason());
         h.runAfterDelay(1, () -> {
             List<FxPayload> shown = effects(sent(near)).stream().filter(e -> e.kindEnum() == Kind.PHANTASM).toList();
             h.assertTrue(shown.stream().map(FxPayload::variant).toList().equals(List.of((byte) 1, (byte) 64, (byte) 64)), "only what was paid for should be shown: " + shown.size());

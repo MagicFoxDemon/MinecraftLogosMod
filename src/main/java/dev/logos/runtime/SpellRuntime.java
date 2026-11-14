@@ -9,6 +9,7 @@ import java.util.PriorityQueue;
 
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 
@@ -18,9 +19,9 @@ public final class SpellRuntime {
      * Very deep recursion (a large maxRecursion) can exhaust the Java stack; the spell ends, the server does not. This
      * and {@link #CRASHED} are what its caster reads; the stack goes to the log.
      */
-    public static final String STACK_OVERFLOW = "法则失稳：递归过深，世界承载不住";
-    /** Why a spell went out when its own code crashed some other way. */
-    public static final String CRASHED = "法则失稳：术式运转时出了意外";
+    public static final String STACK_OVERFLOW = "logos.spell.end.stack_overflow";
+    /** Why a spell went out when its own code crashed some other way. Both are language keys. */
+    public static final String CRASHED = "logos.spell.end.crashed";
     /** Ticks before the same failure may log its stack again; and how many failures are remembered for that. */
     private static final long REPORT_EVERY = 1200;
     private static final int REPORTS_KEPT = 256;
@@ -86,7 +87,7 @@ public final class SpellRuntime {
 
     private static void crashed(SpellInstance inst, Throwable e) {
         report("Spell " + inst.spell.name(), e);
-        inst.terminate(e instanceof StackOverflowError ? STACK_OVERFLOW : CRASHED);
+        inst.terminate(Component.translatable(e instanceof StackOverflowError ? STACK_OVERFLOW : CRASHED));
     }
 
     /** Logs {@code e}'s stack, but only once in a while for {@code what}, so what keeps failing does not fill the log. */
@@ -102,11 +103,11 @@ public final class SpellRuntime {
     public static void spawn(SpellObject obj) {
         SpellInstance inst = obj.inst;
         if (inst.objects >= Limits.MAX_OBJECTS_PER_SPELL) {
-            inst.terminate("法则失稳：同时存在的形体超过 " + Limits.MAX_OBJECTS_PER_SPELL + " 个");
+            inst.terminate(Component.translatable("logos.spell.end.too_many_forms", Limits.MAX_OBJECTS_PER_SPELL));
             return;
         }
         if (OBJECTS.size() + SPAWNED.size() >= Limits.MAX_GLOBAL_OBJECTS) {
-            inst.terminate("世界的法则已饱和（全局形体上限）");
+            inst.terminate(Component.translatable("logos.spell.end.world_full_forms"));
             return;
         }
         inst.objects++;
@@ -120,7 +121,7 @@ public final class SpellRuntime {
             SCHEDULED.removeIf(SpellRuntime::dropIfDead);
         }
         if (pendingTasks() >= Limits.MAX_GLOBAL_TASKS) {
-            inst.terminate("世界的法则已饱和（全局任务上限）");
+            inst.terminate(Component.translatable("logos.spell.end.world_full_tasks"));
             return;
         }
         inst.hold();

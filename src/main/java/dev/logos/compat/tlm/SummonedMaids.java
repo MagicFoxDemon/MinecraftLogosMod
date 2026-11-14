@@ -34,7 +34,7 @@ final class SummonedMaids {
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.FAIL);
         if (!event.getLevel().isClientSide()) {
-            event.getEntity().sendOverlayMessage(Component.literal("召唤来的使魔女仆无法驯服").withStyle(ChatFormatting.YELLOW));
+            event.getEntity().sendOverlayMessage(Component.translatable("logos.maid.summoned_untameable").withStyle(ChatFormatting.YELLOW));
         }
     }
 }

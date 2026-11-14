@@ -18,6 +18,7 @@ import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -199,28 +200,28 @@ public final class Familiars {
     }
 
     /** Null if {@code p} has killed enough of {@code type} to call on it (or is in creative), else how far they are, as "击杀 n / m". */
-    public static @Nullable String locked(ServerPlayer p, EntityType<?> type) {
+    public static @Nullable Component locked(ServerPlayer p, EntityType<?> type) {
         if (p.getAbilities().instabuild || kills(p, type) >= killsNeeded(type)) return null;
-        return "击杀 " + kills(p, type) + " / " + killsNeeded(type);
+        return Component.translatable("logos.familiar.kills", kills(p, type), killsNeeded(type));
     }
 
     /**
      * Summons a {@code type} bound to {@code owner} at {@code at}, named {@code nickname} if given. Costs its maximum health × 2 from
      * the spell. Returns null on success, or why not.
      */
-    public static @Nullable String summon(SpellInstance inst, ServerPlayer owner, EntityType<?> type, ServerLevel level, Vec3 at, @Nullable String nickname,
+    public static @Nullable Component summon(SpellInstance inst, ServerPlayer owner, EntityType<?> type, ServerLevel level, Vec3 at, @Nullable String nickname,
             @Nullable Filter hunt, @Nullable Double huntRadius) {
-        String name = type.getDescription().getString();
+        Component name = type.getDescription();
         if (type == EntityType.ENDER_DRAGON) {
-            String why = DragonFamiliar.forbidden(level);
+            Component why = DragonFamiliar.forbidden(level);
             if (why != null) return why;
         }
-        String locked = locked(owner, type);
-        if (locked != null) return "还不能召唤" + name + "：" + locked;
-        if (of(owner).stream().filter(f -> !(f instanceof KeptFamiliar)).count() >= LogosConfig.maxFamiliars()) return "使魔已达上限 " + LogosConfig.maxFamiliars() + " 只（配置 maxFamiliars）";
-        if (!(type.create(level, EntitySpawnReason.MOB_SUMMONED) instanceof Mob m)) return name + "不是能召唤的生物";
+        Component locked = locked(owner, type);
+        if (locked != null) return Component.translatable("logos.familiar.locked", name, locked);
+        if (of(owner).stream().filter(f -> !(f instanceof KeptFamiliar)).count() >= LogosConfig.maxFamiliars()) return Component.translatable("logos.familiar.too_many", LogosConfig.maxFamiliars());
+        if (!(type.create(level, EntitySpawnReason.MOB_SUMMONED) instanceof Mob m)) return Component.translatable("logos.familiar.not_summonable", name);
         m.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);
-        if (!inst.spend(m.getMaxHealth() * 2, "召唤" + name, dev.logos.lang.Category.EFFECT)) return null; // the spell itself reports running dry
+        if (!inst.spend(m.getMaxHealth() * 2, "summon " + name.getString(), dev.logos.lang.Category.EFFECT)) return null; // the spell itself reports running dry
         try {
             m.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(at)), EntitySpawnReason.MOB_SUMMONED, null);
         } catch (RuntimeException e) {
@@ -545,7 +546,7 @@ public final class Familiars {
         if (stuck) {
             s.errand = null;
             m.getNavigation().stop();
-            owner.sendOverlayMessage(net.minecraft.network.chat.Component.literal("⚔ " + m.getName().getString() + " 到不了那里，放弃了")
+            owner.sendOverlayMessage(Component.translatable("logos.familiar.gave_up", m.getName())
                     .withStyle(net.minecraft.ChatFormatting.GRAY));
         }
     }
