@@ -1,6 +1,10 @@
 package dev.logos.graph;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+
+import org.jspecify.annotations.Nullable;
 
 import dev.logos.lang.Type;
 
@@ -8,51 +12,62 @@ import dev.logos.lang.Type;
 public final class NodeDescriptions {
     private NodeDescriptions() {}
 
-    public static String describe(LogosNode node) {
+    /**
+     * A node's help in parts, for the editor and for 逻各斯手记: what it is, a line for each port, option and event
+     * ({@code label}, {@code text}), what it gives, and anything else to know. Null for a node with no help written.
+     */
+    public record Help(String intro, List<Line> lines, @Nullable String result, @Nullable String note) {}
+
+    public record Line(String label, String text) {}
+
+    public static @Nullable Help help(LogosNode node) {
         String word = node.word();
-        if (!TEXT.containsKey(word + "/intro")) return "";
-        StringBuilder text = new StringBuilder(TEXT.get(word + "/intro"));
+        if (!TEXT.containsKey(word + "/intro")) return null;
+        List<Line> lines = new ArrayList<>();
         if (node instanceof RuneNode runeNode) {
             var rune = runeNode.rune();
-            if (rune.returns == Type.ANY) line(text, word, RuneNode.KIND, "");
+            if (rune.returns == Type.ANY) line(lines, word, RuneNode.KIND, "");
             for (var param : rune.params) {
                 if (param.rest()) {
-                    line(text, word, "argument-count", "");
+                    line(lines, word, "argument-count", "");
                     Integer count = node.option(RuneNode.COUNT, Integer.class);
                     // Branches and options picked by an index are numbered from 0, like the index.
                     int first = param.type() == Type.ACTION || param.type() == Type.ANY ? 0 : 1;
                     for (int i = first; i < first + Math.max(1, count == null ? 2 : count); i++) {
-                        line(text, word, param.name(), " " + i);
+                        line(lines, word, param.name(), " " + i);
                     }
-                } else line(text, word, param.name(), "");
+                } else line(lines, word, param.name(), "");
             }
-            for (var keyword : rune.keywords.values()) line(text, word, keyword.name(), "");
-            if (rune.body) line(text, word, RuneNode.BODY, "");
-            if (rune.yields != null) line(text, word, RuneNode.YIELD, "");
+            for (var keyword : rune.keywords.values()) line(lines, word, keyword.name(), "");
+            if (rune.body) line(lines, word, RuneNode.BODY, "");
+            if (rune.yields != null) line(lines, word, RuneNode.YIELD, "");
             for (var event : rune.events.values()) {
-                text.append("\n").append(NodeTerms.event(word, event.name()).getString()).append("：")
-                        .append(field(word, event.name()));
+                lines.add(new Line(NodeTerms.event(word, event.name()).getString(), field(word, event.name())));
             }
-            if (rune.returns == Type.ACTION) {
-                text.append("\n流程：上方箭头接入行动；下方箭头连接后续行动。");
-            }
+            if (rune.returns == Type.ACTION) lines.add(new Line("流程", "上方箭头接入行动；下方箭头连接后续行动。"));
         } else if (node instanceof SpecialNodes.EmitterRoot) {
-            for (String id : new String[] {"name", "mana", "players", "mode", "interval", "start"}) line(text, word, id, "");
+            for (String id : new String[] {"name", "mana", "players", "mode", "interval", "start"}) line(lines, word, id, "");
         } else if (node instanceof SpecialNodes.SpellRoot) {
-            for (String id : new String[] {"name", "mana", "trigger", "players", "immolate", "intent", "start"}) line(text, word, id, "");
+            for (String id : new String[] {"name", "mana", "trigger", "players", "immolate", "intent", "start"}) line(lines, word, id, "");
         } else if (node instanceof SpecialNodes.Remember) {
-            for (String id : new String[] {"kind", "value", "remembered"}) line(text, word, id, "");
-            text.append("\n流程：上方箭头接入行动；下方箭头连接使用铭记结果的后续行动。");
-        } else if (node instanceof SpecialNodes.AnchorValue) line(text, word, "anchor", "");
-        String result = TEXT.get(word + "/result");
-        if (result != null) text.append("\n\n结果：").append(result);
-        String note = TEXT.get(word + "/note");
-        if (note != null) text.append("\n\n说明：").append(note);
+            for (String id : new String[] {"kind", "value", "remembered"}) line(lines, word, id, "");
+            lines.add(new Line("流程", "上方箭头接入行动；下方箭头连接使用铭记结果的后续行动。"));
+        } else if (node instanceof SpecialNodes.AnchorValue) line(lines, word, "anchor", "");
+        return new Help(TEXT.get(word + "/intro"), List.copyOf(lines), TEXT.get(word + "/result"), TEXT.get(word + "/note"));
+    }
+
+    public static String describe(LogosNode node) {
+        Help help = help(node);
+        if (help == null) return "";
+        StringBuilder text = new StringBuilder(help.intro());
+        for (Line line : help.lines()) text.append("\n").append(line.label()).append("：").append(line.text());
+        if (help.result() != null) text.append("\n\n结果：").append(help.result());
+        if (help.note() != null) text.append("\n\n说明：").append(help.note());
         return text.toString();
     }
 
-    private static void line(StringBuilder text, String word, String id, String suffix) {
-        text.append("\n").append(NodeTerms.parameter(word, id).getString()).append(suffix).append("：").append(field(word, id));
+    private static void line(List<Line> lines, String word, String id, String suffix) {
+        lines.add(new Line(NodeTerms.parameter(word, id).getString() + suffix, field(word, id)));
     }
 
     private static String field(String word, String id) {

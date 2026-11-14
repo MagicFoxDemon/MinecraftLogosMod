@@ -8,33 +8,48 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.jspecify.annotations.Nullable;
 
 /**
  * 逻各斯手记 as loaded: its chapters in order, each with its entries in order, and every entry by id. An entry's id is
  * {@code <namespace>:<chapter>/<name>}, after the file {@code assets/<namespace>/guide/<language>/<chapter>/<name>.md};
- * a chapter's own file {@code _chapter.md} gives its title, icon, bookmark label and place.
+ * a chapter's own file {@code _chapter.md} gives its title, icon, bookmark label and place. Pages can also be made in
+ * code ({@link #withGenerated}), such as one for each rune; a file of the same id then adds to that page.
  */
 public final class GuideBook {
     /** The name of a chapter's own file, without {@code .md}. */
     public static final String CHAPTER_FILE = "_chapter";
     /** The tag lines a page may use; any other is drawn as a warning on the page. */
-    public static final Set<String> TAGS = Set.of("items", "recipe", "image");
+    public static final Set<String> TAGS = Set.of("items", "recipe", "image", "runes", "rune_overview");
     /** Where an entry or chapter without an {@code order} goes: after those that have one. */
     private static final int UNORDERED = 1000;
 
     public record Chapter(String id, String title, String icon, String ribbon, int order, List<Entry> entries) {}
 
-    public record Entry(String id, String chapter, String title, String icon, int order, GuideDoc doc) {}
+    /**
+     * One page. {@code group} heads a run of pages within the chapter's contents (empty for none). {@code lock} is
+     * the word the reader must have learned (符文解锁) for the page to be in the book at all, or null when anyone
+     * reads it.
+     */
+    public record Entry(String id, String chapter, String title, String icon, int order, String group, @Nullable String lock, GuideDoc doc) {
+        /** Whether a reader who knows the words {@code known} accepts has this page. */
+        public boolean shownTo(Predicate<String> known) {
+            return lock == null || known.test(lock);
+        }
+    }
 
     public static final GuideBook EMPTY = new GuideBook(List.of());
 
+    /** Every chapter declared, those with no page yet included, for pages made later to go into. */
+    private final List<Chapter> declared;
     private final List<Chapter> chapters;
     private final Map<String, Entry> entries = new LinkedHashMap<>();
 
-    private GuideBook(List<Chapter> chapters) {
-        this.chapters = chapters;
+    private GuideBook(List<Chapter> declared) {
+        this.declared = declared;
+        this.chapters = declared.stream().filter(c -> !c.entries().isEmpty()).toList();
         for (Chapter c : chapters) for (Entry e : c.entries()) entries.put(e.id(), e);
     }
 
@@ -54,19 +69,61 @@ public final class GuideBook {
                 heads.put(chapter, doc);
                 continue;
             }
-            list.add(new Entry(id, chapter, doc.meta("title", id.substring(id.lastIndexOf('/') + 1)), doc.meta("icon", ""), order(doc), doc));
+            String lock = doc.meta("lock", "");
+            list.add(new Entry(id, chapter, doc.meta("title", id.substring(id.lastIndexOf('/') + 1)), doc.meta("icon", ""), order(doc),
+                    doc.meta("group", ""), lock.isEmpty() ? null : lock, doc));
         }
         List<Chapter> chapters = new ArrayList<>();
         for (var c : byChapter.entrySet()) {
-            if (c.getValue().isEmpty()) continue;
             GuideDoc head = heads.getOrDefault(c.getKey(), new GuideDoc(Map.of(), List.of()));
             String title = head.meta("title", c.getKey().substring(c.getKey().indexOf(':') + 1));
-            List<Entry> sorted = new ArrayList<>(c.getValue());
+            chapters.add(new Chapter(c.getKey(), title, head.meta("icon", ""), head.meta("ribbon", title), order(head), List.copyOf(c.getValue())));
+        }
+        return of(chapters);
+    }
+
+    /** The chapters given, each sorted, in their order. */
+    private static GuideBook of(List<Chapter> unsorted) {
+        List<Chapter> chapters = new ArrayList<>();
+        for (Chapter c : unsorted) {
+            List<Entry> sorted = new ArrayList<>(c.entries());
             sorted.sort(Comparator.comparingInt(Entry::order).thenComparing(Entry::id));
-            chapters.add(new Chapter(c.getKey(), title, head.meta("icon", ""), head.meta("ribbon", title), order(head), List.copyOf(sorted)));
+            chapters.add(new Chapter(c.id(), c.title(), c.icon(), c.ribbon(), c.order(), List.copyOf(sorted)));
         }
         chapters.sort(Comparator.comparingInt(Chapter::order).thenComparing(Chapter::id));
         return new GuideBook(List.copyOf(chapters));
+    }
+
+    /**
+     * This book with pages made in code added, each into the chapter its id names. A file already in the book under
+     * the same id is not replaced: what it says follows the made page, under the made page's title and lock.
+     */
+    public GuideBook withGenerated(List<Entry> generated) {
+        Map<String, Chapter> byId = new LinkedHashMap<>();
+        Map<String, Map<String, Entry>> pages = new LinkedHashMap<>();
+        for (Chapter c : declared) {
+            byId.put(c.id(), c);
+            Map<String, Entry> list = pages.computeIfAbsent(c.id(), k -> new LinkedHashMap<>());
+            for (Entry e : c.entries()) list.put(e.id(), e);
+        }
+        for (Entry made : generated) {
+            Map<String, Entry> list = pages.computeIfAbsent(made.chapter(), k -> new LinkedHashMap<>());
+            byId.computeIfAbsent(made.chapter(), k -> {
+                String name = k.substring(k.indexOf(':') + 1);
+                return new Chapter(k, name, "", name, UNORDERED, List.of());
+            });
+            Entry written = list.get(made.id());
+            if (written != null) {
+                List<GuideDoc.Block> blocks = new ArrayList<>(made.doc().blocks());
+                blocks.addAll(written.doc().blocks());
+                made = new Entry(made.id(), made.chapter(), made.title(), made.icon(), made.order(), made.group(), made.lock(),
+                        new GuideDoc(made.doc().meta(), List.copyOf(blocks)));
+            }
+            list.put(made.id(), made);
+        }
+        List<Chapter> out = new ArrayList<>();
+        for (var c : byId.values()) out.add(new Chapter(c.id(), c.title(), c.icon(), c.ribbon(), c.order(), List.copyOf(pages.get(c.id()).values())));
+        return of(out);
     }
 
     private static int order(GuideDoc doc) {
@@ -122,10 +179,16 @@ public final class GuideBook {
 
     /** The entries whose title holds {@code query}, then those whose text does, each in book order. */
     public List<Entry> search(String query) {
+        return search(query, key -> true);
+    }
+
+    /** As {@link #search(String)}, among the pages a reader who knows the words {@code known} accepts has. */
+    public List<Entry> search(String query, Predicate<String> known) {
         String q = query.strip().toLowerCase(Locale.ROOT);
         if (q.isEmpty()) return List.of();
         List<Entry> byTitle = new ArrayList<>(), byText = new ArrayList<>();
         for (Entry e : entries.values()) {
+            if (!e.shownTo(known)) continue;
             if (e.title().toLowerCase(Locale.ROOT).contains(q)) byTitle.add(e);
             else if (e.doc().plainText().toLowerCase(Locale.ROOT).contains(q)) byText.add(e);
         }
