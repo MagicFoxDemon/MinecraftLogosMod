@@ -243,6 +243,22 @@ public class LogosMod {
         }
     }
 
+    /** 符文之书: read, each teaches its reader words of the language they have not learned (符文解锁); found in chests. */
+    public static final Map<dev.logos.item.RuneBookItem.Kind, DeferredItem<dev.logos.item.RuneBookItem>> RUNE_BOOKS =
+            new EnumMap<>(dev.logos.item.RuneBookItem.Kind.class);
+
+    static {
+        for (var k : dev.logos.item.RuneBookItem.Kind.values()) {
+            RUNE_BOOKS.put(k, ITEMS.registerItem(k.id, p -> new dev.logos.item.RuneBookItem(p, k), p -> dev.logos.item.RuneBookItem.properties(p, k)));
+        }
+    }
+
+    public static final DeferredRegister<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.predicates.LootItemCondition>> LOOT_CONDITIONS =
+            DeferredRegister.create(net.minecraft.core.registries.Registries.LOOT_CONDITION_TYPE, MODID);
+    /** Loot condition: the chest stands in an end city's ship, where the 虚空之书 is far likelier than in the city. */
+    public static final DeferredHolder<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.predicates.LootItemCondition>,
+            com.mojang.serialization.MapCodec<dev.logos.item.InEndShip>> IN_END_SHIP = LOOT_CONDITIONS.register("in_end_ship", () -> dev.logos.item.InEndShip.CODEC);
+
     // Alchemical colossus materials. Placeholders for now: their alchemy (recipes, planting) comes later.
     /** 巨像之心: the flower a colossus offers its master. An alchemical material. */
     public static final DeferredItem<net.minecraft.world.item.Item> COLOSSUS_HEART = ITEMS.registerSimpleItem("colossus_heart",
@@ -714,6 +730,7 @@ public class LogosMod {
                 out.accept(MANA_SPREADER_ITEM.get());
                 MANA_ELIXIRS.values().forEach(e -> out.accept(e.get()));
                 ANCIENT_MANA_ELIXIRS.values().forEach(e -> out.accept(e.get()));
+                RUNE_BOOKS.values().forEach(b -> out.accept(b.get()));
                 out.accept(ROOT_AUTHORITY.get());
                 out.accept(ROOT_STRIP.get());
             }).build());
@@ -878,6 +895,7 @@ public class LogosMod {
     public LogosMod(IEventBus modBus, ModContainer container) {
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, LogosConfig.SPEC);
         ITEMS.register(modBus);
+        LOOT_CONDITIONS.register(modBus);
         BLOCKS.register(modBus);
         BLOCK_ENTITIES.register(modBus);
         RECIPE_TYPES.register(modBus);

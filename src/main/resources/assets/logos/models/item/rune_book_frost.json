@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "logos:item/rune_book_cover",
+    "layer1": "logos:item/rune_book_trim",
+    "layer2": "logos:item/rune_book_frost"
+  }
+}
