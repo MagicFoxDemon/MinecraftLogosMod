@@ -311,6 +311,17 @@ public final class LogosConfig {
 
     static {
         BUILDER.pop();
+        BUILDER.comment("Debug: output for whoever builds or tests spells, all off for players").push("debug");
+    }
+
+    public static final ModConfigSpec.BooleanValue SPELL_TRACE = BUILDER
+            .comment("Server: after every spell, tell its caster in chat how it ended, the mana it took in and left behind, and how the mana ran down.",
+                    "/logos trace on turns the same report on for one player.")
+            .translation("logos.configuration.spellTrace")
+            .define("spellTrace", false);
+
+    static {
+        BUILDER.pop();
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
@@ -368,6 +379,15 @@ public final class LogosConfig {
             return list.get().contains(id);
         } catch (IllegalStateException e) {
             return list.getDefault().contains(id);
+        }
+    }
+
+    /** Whether every caster gets the end-of-spell report (see {@link dev.logos.runtime.SpellInstance}); off unless a server turns it on. */
+    public static boolean spellTrace() {
+        try {
+            return SPELL_TRACE.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return false;
         }
     }
 

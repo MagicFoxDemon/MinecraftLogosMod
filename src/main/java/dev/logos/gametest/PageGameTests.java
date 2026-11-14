@@ -227,11 +227,13 @@ final class PageGameTests {
     static void sourceCommandReadsPage(GameTestHelper h) {
         ServerPlayer p = caster(h);
         var dispatcher = h.getLevel().getServer().getCommands().getDispatcher();
+        // A game master acting as the player: the command writes on the server.
+        var master = h.getLevel().getServer().createCommandSourceStack().withEntity(p).withSuppressedOutput();
         Path file = LogosCommands.spellDir().resolve("gametest_page_source.logos");
         try {
-            h.assertTrue(dispatcher.execute("logos source", p.createCommandSourceStack()) == 0, "empty hands should have no source");
+            h.assertTrue(dispatcher.execute("logos source", master) == 0, "empty hands should have no source");
             p.setItemInHand(InteractionHand.OFF_HAND, SpellPages.inscribed(HUNGRY, null));
-            h.assertTrue(dispatcher.execute("logos source gametest_page_source", p.createCommandSourceStack()) == 1, "the off-hand page was not read");
+            h.assertTrue(dispatcher.execute("logos source gametest_page_source", master) == 1, "the off-hand page was not read");
             h.assertTrue(HUNGRY.equals(Files.readString(file, StandardCharsets.UTF_8)), "the saved file should hold the page's exact source");
         } catch (CommandSyntaxException | IOException e) {
             throw new IllegalStateException(e);

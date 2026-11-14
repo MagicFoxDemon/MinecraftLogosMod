@@ -139,7 +139,7 @@ public final class Compiler {
         }
         Scope root = new Scope(!trigger.equals("cast"), Map.of(), List.of(), 0, false, false);
         List<Node> body = statements(bodyRaw, root);
-        if (recursive) notes.add("含有递归 (recurse)：每层递归都会重新支付魔力，最多 " + LogosConfig.maxRecursion() + " 层（配置 maxRecursion）");
+        if (recursive) notes.add("含有递归 (recurse)：每层递归都会重新支付魔力，最多 " + LogosConfig.maxRecursion() + " 层");
         return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src, SpellProfile.of(body, declared), inferElement(body));
     }
 
