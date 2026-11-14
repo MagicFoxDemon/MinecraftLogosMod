@@ -197,6 +197,17 @@ final class PageGameTests {
         h.succeed();
     }
 
+    /** Two basic spell pages over a lectern craft the copy table. */
+    static void copyTableCrafted(GameTestHelper h) {
+        ItemStack page = new ItemStack(LogosMod.SPELL_PAGE.get());
+        var input = net.minecraft.world.item.crafting.CraftingInput.of(2, 2,
+                List.of(page.copy(), page.copy(), new ItemStack(net.minecraft.world.item.Items.LECTERN), ItemStack.EMPTY));
+        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
+                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+        h.assertTrue(out.is(LogosMod.COPY_TABLE_ITEM.get()) && out.getCount() == 1, "two pages over a lectern made " + out);
+        h.succeed();
+    }
+
     /** Writing turns each page into its own written form: an empty page into its grade's written page, a written page stays itself. */
     static void writeKeepsLook(GameTestHelper h) {
         String src = "(spell :name \"抄\" :mana 10 (mark caster #c))";

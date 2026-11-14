@@ -26,6 +26,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import java.util.Map;
+import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.core.BlockPos;
@@ -155,20 +156,59 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
             }
         });
 
-        UIElement inputs = new UIElement().layout(l -> l.gapAll(6));
-        inputs.addChildren(labelled("原本", original), labelled("空载页", blank));
-        UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(14).alignItems(AlignItems.CENTER));
-        row.addChildren(inputs, new Label().setText(Component.literal("➜")), labelled("抄本", copy));
+        // Drawn like the table: the original's page and the empty paper in iron trays on its top,
+        // the copy on the dark banner between them, a golden thread joining them while a copy is ready.
+        original.style(s -> s.background(dev.logos.client.CopyTableArt.socket(true)));
+        blank.style(s -> s.background(dev.logos.client.CopyTableArt.socket(true)));
+        copy.style(s -> s.background(dev.logos.client.CopyTableArt.socket(false)));
+        UIElement originalTray = tray(original, dev.logos.client.CopyTableArt.originalTray(() -> original.getSlot().hasItem()));
+        UIElement blankTray = tray(blank, dev.logos.client.CopyTableArt.blankTray(() -> blank.getSlot().hasItem()));
+        UIElement banner = new UIElement().layout(l -> l.width(26).height(TRAY_H - 14).alignItems(AlignItems.CENTER).paddingTop(8));
+        banner.style(s -> s.background(dev.logos.client.CopyTableArt.banner()));
+        banner.addChild(copy);
+        UIElement middle = new UIElement().layout(l -> l.alignItems(AlignItems.CENTER).justifyContent(AlignContent.FLEX_END).height(TRAY_H));
+        middle.addChild(banner);
+
+        UIElement trays = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).justifyContent(AlignContent.SPACE_BETWEEN)
+                .alignItems(AlignItems.CENTER).paddingAll(5));
+        trays.addChildren(originalTray, middle, blankTray);
+        UIElement captions = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).justifyContent(AlignContent.SPACE_BETWEEN)
+                .paddingHorizontal(5).paddingBottom(4));
+        captions.addChildren(caption("logos.copy_table.original", TRAY_W), caption("logos.copy_table.copy", 40),
+                caption("logos.copy_table.blank", TRAY_W));
+        UIElement desk = new UIElement().layout(l -> l.width(WIDTH));
+        desk.style(s -> s.background(dev.logos.client.CopyTableArt.top()));
+        desk.addChildren(trays, captions);
+        trays.style(s -> s.overlay(dev.logos.client.CopyTableArt.thread(originalTray, blankTray, copy, () -> copy.getSlot().hasItem())));
 
         Label hint = new Label();
-        hint.setText(Component.literal("上方放写有术式的载页或术式余烬，下方放任意空载页。抄本沿用空载页的品级，原本保留"));
+        hint.setText(Component.translatable("logos.copy_table.hint"));
         hint.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true));
-        hint.layout(l -> l.width(9 * 19));
+        hint.layout(l -> l.width(9 * 18));
+        UIElement page = new UIElement().layout(l -> l.width(WIDTH).paddingAll(5).paddingTop(7).gapAll(5).alignItems(AlignItems.CENTER));
+        page.style(s -> s.background(dev.logos.client.CopyTableArt.ledger()));
+        dev.logos.client.CopyTableArt.inked(page);
+        InventorySlots inventory = new InventorySlots();
+        paperSlots(inventory);
+        page.addChildren(hint, inventory);
 
-        UIElement root = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(7).gapAll(5));
-        root.addChildren(new Label().setText(Component.translatable("block.logos.copy_table")), row, hint, new InventorySlots());
-        return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
+        Label title = new Label();
+        title.setText(Component.translatable("block.logos.copy_table"));
+        title.textStyle(s -> s.textColor(0xFF2A1A08).textShadow(false).adaptiveWidth(true));
+        UIElement plate = new UIElement().layout(l -> l.paddingHorizontal(9).paddingVertical(3));
+        plate.style(s -> s.background(dev.logos.client.CopyTableArt.plate()));
+        plate.addChild(title);
+
+        UIElement root = new UIElement().layout(l -> l.paddingAll(9).gapAll(6).alignItems(AlignItems.CENTER));
+        root.style(s -> s.background(dev.logos.client.CopyTableArt.box()));
+        root.addChildren(plate, desk, page);
+        return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
+                StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)), player);
     }
+
+    private static final net.minecraft.resources.Identifier MANUSCRIPT =
+            net.minecraft.resources.Identifier.fromNamespaceAndPath(dev.logos.LogosMod.MODID, "lss/manuscript.lss");
+    private static final int WIDTH = 9 * 18 + 10, TRAY_W = 46, TRAY_H = 58;
 
     private static ItemSlot slot(Slot s) {
         ItemSlot slot = new ItemSlot();
@@ -176,9 +216,26 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
         return slot;
     }
 
-    private static UIElement labelled(String text, ItemSlot slot) {
-        UIElement e = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(4).alignItems(AlignItems.CENTER));
-        e.addChildren(slot, new Label().setText(Component.literal(text)));
+    private static UIElement tray(ItemSlot slot, com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture art) {
+        UIElement e = new UIElement().layout(l -> l.width(TRAY_W).height(TRAY_H).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
+        e.style(s -> s.background(art));
+        e.addChild(slot);
         return e;
+    }
+
+    /** The player's slots drawn as shallow squares inked on the parchment, like the trays' own. */
+    private static void paperSlots(UIElement element) {
+        for (UIElement child : element.getChildren()) {
+            if (child instanceof ItemSlot slot) slot.style(s -> s.background(dev.logos.client.CopyTableArt.socket(true)));
+            else paperSlots(child);
+        }
+    }
+
+    private static Label caption(String key, int width) {
+        Label label = new Label();
+        label.setText(Component.translatable(key));
+        label.textStyle(s -> s.textColor(dev.logos.client.CopyTableArt.ON_WOOD).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));
+        label.layout(l -> l.width(width));
+        return label;
     }
 }
