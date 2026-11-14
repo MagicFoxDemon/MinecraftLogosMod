@@ -37,14 +37,14 @@ public class CodexItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     @Override
     public ModularUI createUI(HeldItemUIMenuType.HeldItemUIHolder holder) {
         return PageSlotsUI.create(holder.player, new PageContainer(holder.itemStack, SIZE), 9,
-                Component.translatable("item.logos.spell_codex"), Component.literal("只能放入术式载页 · 放在副手时，法杖可以使用其中的术式"));
+                Component.translatable("item.logos.spell_codex"), Component.translatable("logos.codex.slots_hint"));
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
         long n = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).count();
-        builder.accept(Component.literal("收录 " + n + " 篇术式").withStyle(ChatFormatting.GRAY));
-        builder.accept(Component.literal("右键打开 · 放在副手时，其中的术式可被法杖使用").withStyle(ChatFormatting.DARK_GRAY));
-        builder.accept(Component.literal("被动术式（受伤/攻击/击杀时）拿在任一只手上就会生效").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.translatable("logos.codex.count", n).withStyle(ChatFormatting.GRAY));
+        builder.accept(Component.translatable("logos.codex.use_hint").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(Component.translatable("logos.codex.passive_hint").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

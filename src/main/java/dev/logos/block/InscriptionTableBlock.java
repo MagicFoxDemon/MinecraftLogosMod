@@ -129,7 +129,7 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
         if (!(level.getBlockEntity(pos) instanceof InscriptionTableBlockEntity table)) return InteractionResult.PASS;
         if (table.page().isEmpty()) {
             if (!level.isClientSide()) {
-                player.sendOverlayMessage(Component.literal("先用术式载页右键，把它放到术式编纂台上").withStyle(ChatFormatting.YELLOW));
+                player.sendOverlayMessage(Component.translatable("logos.inscription_table.empty_hint").withStyle(ChatFormatting.YELLOW));
             }
             return InteractionResult.SUCCESS;
         }

@@ -24,6 +24,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -104,6 +105,11 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
 
         public final String word, zh;
         public final double engage, support, protect;
+
+        /** Its name for players ({@code logos.lifeform.role.<word>}); {@link #zh} is the word a spell may also write. */
+        public Component title() {
+            return Component.translatable("logos.lifeform.role." + word);
+        }
 
         Role(String word, String zh, double engage, double support, double protect) {
             this.word = word;
@@ -633,7 +639,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         if (fuel != null) {
             if (level().isClientSide()) return InteractionResult.SUCCESS;
             if (mana() >= maxMana()) {
-                player.sendOverlayMessage(Component.literal("魔力已满").withStyle(ChatFormatting.GRAY));
+                player.sendOverlayMessage(Component.translatable("logos.mana.full").withStyle(ChatFormatting.GRAY));
                 return InteractionResult.CONSUME;
             }
             receiveMana(fuel.mana());
@@ -657,15 +663,17 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
 
     public Component status() {
         int lv = lifeLevel();
-        String doing = isDormant() ? "沉寂" : mind == null ? "" : mind.doingZh();
-        return Component.literal("✦ " + getName().getString() + " · " + lv + " 级 · 魔力 " + Math.round(mana()) + "/" + Math.round(maxMana())
-                + " · 生命 " + Math.round(getHealth()) + "/" + Math.round(getMaxHealth()) + " · " + role.zh + (doing.isEmpty() ? "" : " · " + doing))
+        MutableComponent line = Component.translatable("logos.lifeform.status", getName(), lv, Math.round(mana()), Math.round(maxMana()),
+                Math.round(getHealth()), Math.round(getMaxHealth()), role.title());
+        Component doing = isDormant() ? Component.translatable("logos.lifeform.dormant") : mind == null ? null : mind.doingName();
+        if (doing != null) line.append(Component.translatable("logos.status.doing", doing));
+        return line
                 .withStyle(isDormant() ? ChatFormatting.DARK_GRAY : ChatFormatting.AQUA);
     }
 
     /** Its temperament in words, for the status and the debug view. */
-    public String temperamentZh() {
-        return "勇敢 " + Math.round(bravery * 100) + "% · 好奇 " + Math.round(curiosity * 100) + "% · 黏人 " + Math.round(loyalty * 100) + "%";
+    public Component temperament() {
+        return Component.translatable("logos.lifeform.temperament", Math.round(bravery * 100), Math.round(curiosity * 100), Math.round(loyalty * 100));
     }
 
     // ---- animation ------------------------------------------------------------------------------

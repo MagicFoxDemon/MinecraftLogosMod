@@ -160,10 +160,10 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     }
 
     @Override
-    public String doingZh() {
-        if (sequence != null) return sequence.zh;
-        if (c.driver() != null) return "听从驾驶";
-        return current == null ? "待命" : current.zh;
+    public String doing() {
+        if (sequence != null) return sequence.id;
+        if (c.driver() != null) return "driven";
+        return current == null ? "awaiting" : current.id;
     }
 
     // ---- sensing --------------------------------------------------------------------------------
@@ -479,7 +479,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     /** gather: off to where it was sent. */
     private final class Errand extends Behavior {
         Errand() {
-            super("前往");
+            super("errand");
         }
 
         @Override
@@ -497,7 +497,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     /** At its master's side — or its post — standing watch, turning toward anything that moves nearby. */
     private final class Guard extends Behavior {
         Guard() {
-            super("守望");
+            super("guard");
         }
 
         @Override
@@ -539,7 +539,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     /** Its master's fight, an order, its hunt, or what goes for its master. */
     private final class Engage extends Behavior {
         Engage() {
-            super("交战");
+            super("engage");
         }
 
         @Override
@@ -556,7 +556,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     /** Something shoots at its master: step into the line of fire, facing it, and answer with the cannon. */
     private final class ShieldMaster extends Behavior {
         ShieldMaster() {
-            super("挡箭");
+            super("shield");
         }
 
         @Override
@@ -589,7 +589,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     /** Its master asleep or away: it kneels down and powers low until they return. */
     private final class Standby extends Behavior {
         Standby() {
-            super("待机");
+            super("standby");
         }
 
         @Override
@@ -620,7 +620,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     /** It wants to give its master a flower: walk over and kneel. */
     private final class OfferFlower extends Behavior {
         OfferFlower() {
-            super("献花");
+            super("offer_flower");
         }
 
         @Override
@@ -648,7 +648,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     /** In a frenzy: after whatever is near, master included. */
     private final class Rampage extends Behavior {
         Rampage() {
-            super("暴走");
+            super("rampage");
         }
 
         @Override
@@ -670,7 +670,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
      */
     private final class SelfDefense extends Behavior {
         SelfDefense() {
-            super("自卫");
+            super("self_defense");
         }
 
         @Override
@@ -688,11 +688,11 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
 
     /** Something it does with its whole body, timed act by act. */
     abstract class Sequence {
-        final String zh;
+        final String id;
         int t;
 
-        Sequence(String zh) {
-            this.zh = zh;
+        Sequence(String id) {
+            this.id = id;
         }
 
         void begin() {}
@@ -708,7 +708,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
         private final @Nullable LivingEntity at;
 
         Punch(@Nullable LivingEntity at) {
-            super("挥拳");
+            super("punch");
             this.at = at;
         }
 
@@ -767,7 +767,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
         private @Nullable Vec3 diedAt;
 
         Grab(LivingEntity victim) {
-            super("抓取");
+            super("grab");
             this.victim = victim;
         }
 
@@ -908,7 +908,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
         private int releasedAt = -1;
 
         CannonShot(@Nullable LivingEntity target, @Nullable Player rider) {
-            super("掌心炮");
+            super("cannon");
             this.target = target;
             this.rider = rider;
             this.beam = new ColossusCannon(c, target, rider);
@@ -994,7 +994,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
         private final Hold seat;
 
         Board(Player p, Hold seat) {
-            super("扶上肩");
+            super("board");
             this.p = p;
             this.seat = seat;
         }
@@ -1032,7 +1032,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
         private final Hold seat;
 
         PutDown(Player p, Hold seat) {
-            super("放下");
+            super("put_down");
             this.p = p;
             this.seat = seat;
         }
@@ -1065,7 +1065,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
         private boolean taken;
 
         Flower(Player to) {
-            super("献花");
+            super("offer_flower");
             this.to = to;
         }
 

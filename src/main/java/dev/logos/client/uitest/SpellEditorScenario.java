@@ -135,8 +135,8 @@ public class SpellEditorScenario implements UIScenario {
                         new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(table), net.minecraft.core.Direction.UP, table, false)))
                 .awaitModularUI()
                 .ticks(10)
-                .checkTextContains("#status", "成立")
-                .checkTextContains("#overview", "意图")
+                .checkTextContains("#status", LangText.before("logos.editor.status.holds"))
+                .checkTextContains("#overview", LangText.before("logos.editor.overview.intent_guessed"))
                 .step("check the standalone navigation", SpellEditorScenario::checkNavigation)
                 .screenshot("fireball_graph")
                 .step("click the navigation away from its center", ctx -> {
@@ -239,7 +239,7 @@ public class SpellEditorScenario implements UIScenario {
                 .step("pick the block-magic template", ctx -> selectTemplate(ctx, "harvest"))
                 .click("#load_template")
                 .ticks(10)
-                .checkTextContains("#status", "成立")
+                .checkTextContains("#status", LangText.before("logos.editor.status.holds"))
                 .step("check navigation after switching templates", SpellEditorScenario::checkNavigation)
                 .screenshot("harvest_graph")
                 .step("resize the open editor to a taller window", ctx -> {

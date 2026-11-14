@@ -41,7 +41,7 @@ public record ManaHudPayload(boolean shown, int mana, int maxMana, int filled, i
                 .append(Component.literal("█".repeat(lit)).withStyle(ChatFormatting.BLUE))
                 .append(Component.literal("█".repeat(10 - lit)).withStyle(ChatFormatting.DARK_GRAY))
                 .append(Component.literal(" " + mana + "/" + maxMana).withStyle(ChatFormatting.AQUA));
-        if (capacity > 0) hud.append(Component.literal("  杖内 " + stored + "/" + capacity).withStyle(ChatFormatting.DARK_AQUA));
+        if (capacity > 0) hud.append(Component.translatable("logos.hud.staff", stored, capacity).withStyle(ChatFormatting.DARK_AQUA));
         return hud;
     }
 

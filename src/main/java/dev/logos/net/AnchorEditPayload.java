@@ -50,18 +50,18 @@ public record AnchorEditPayload(String name, BlockPos pos, Direction face, boole
     public static void handle(AnchorEditPayload p, IPayloadContext ctx) {
         if (!(ctx.player() instanceof ServerPlayer sp)) return;
         if (p.remove) {
-            if (Anchors.remove(sp, p.name)) sp.sendOverlayMessage(Component.literal("⚓ 已撤去锚点 " + p.name).withStyle(ChatFormatting.GOLD));
+            if (Anchors.remove(sp, p.name)) sp.sendOverlayMessage(Component.translatable("logos.anchor.removed", p.name).withStyle(ChatFormatting.GOLD));
             return;
         }
         if (!sp.isWithinBlockInteractionRange(p.pos, 1.0)) return;
         BlockPos at = p.into ? p.pos : p.pos.relative(p.face);
-        String why = Anchors.set(sp, p.name, sp.level(), place(p.pos, p.face, p.into));
+        Component why = Anchors.set(sp, p.name, sp.level(), place(p.pos, p.face, p.into));
         if (why != null) {
-            sp.sendOverlayMessage(Component.literal("⚓ " + why).withStyle(ChatFormatting.RED));
+            sp.sendOverlayMessage(Component.translatable("logos.anchor.refused", why).withStyle(ChatFormatting.RED));
             return;
         }
         sp.level().playSound(null, at, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1f, 0.8f);
-        sp.sendOverlayMessage(Component.literal("⚓ 锚点 ^" + Anchors.clean(p.name) + (p.into ? " 已钉进方块 " : " 已立于 ") + at.toShortString())
+        sp.sendOverlayMessage(Component.translatable(p.into ? "logos.anchor.set_into" : "logos.anchor.set_at", Anchors.clean(p.name), at.toShortString())
                 .withStyle(ChatFormatting.GOLD));
     }
 }

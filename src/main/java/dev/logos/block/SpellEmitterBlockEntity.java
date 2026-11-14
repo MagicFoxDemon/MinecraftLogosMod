@@ -107,7 +107,7 @@ public class SpellEmitterBlockEntity extends SyncedManaVesselBlockEntity {
     /** Whether {@code player} may change it: whoever placed it (anyone, if no one did). Tells anyone else whose it is. */
     public boolean mayChange(Player player) {
         if (owner == null || owner.equals(player.getUUID())) return true;
-        player.sendOverlayMessage(Component.literal("这台术式发射器属于 " + ownerName + "，只有放置者能更改它").withStyle(ChatFormatting.YELLOW));
+        player.sendOverlayMessage(Component.translatable("logos.emitter.not_yours", ownerName).withStyle(ChatFormatting.YELLOW));
         return false;
     }
 

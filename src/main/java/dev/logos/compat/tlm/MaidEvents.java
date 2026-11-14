@@ -70,7 +70,7 @@ final class MaidEvents {
         CreatureMana pool = MaidMana.of(maid);
         if (pool == null) return;
         if (pool.mana() >= pool.maxMana()) {
-            event.getPlayer().sendOverlayMessage(Component.literal("魔力已满").withStyle(ChatFormatting.GRAY));
+            event.getPlayer().sendOverlayMessage(Component.translatable("logos.mana.full").withStyle(ChatFormatting.GRAY));
             return;
         }
         pool.receiveMana(fuel.mana());
@@ -81,7 +81,7 @@ final class MaidEvents {
     }
 
     static Component status(EntityMaid maid, CreatureMana pool) {
-        return Component.literal(maid.getName().getString() + " · 魔力 " + Math.round(pool.mana()) + " / " + Math.round(pool.maxMana()))
+        return Component.translatable("logos.maid.status", maid.getName(), Math.round(pool.mana()), Math.round(pool.maxMana()))
                 .withStyle(ChatFormatting.AQUA);
     }
 

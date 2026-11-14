@@ -45,14 +45,14 @@ public final class RootMaxManaItem extends Item {
         stack.consume(1, player);
         level.playSound(null, player.blockPosition(), delta > 0 ? SoundEvents.BEACON_POWER_SELECT : SoundEvents.BEACON_DEACTIVATE,
                 SoundSource.PLAYERS, 1f, 1f);
-        PlayerMagic.alert(sp, Component.literal("魔力上限 " + Node.fmt(before) + " → " + Node.fmt(after))
+        PlayerMagic.alert(sp, Component.translatable("logos.mana.cap_changed", Node.fmt(before), Node.fmt(after))
                 .withStyle(delta > 0 ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.DARK_GRAY));
         return InteractionResult.SUCCESS_SERVER;
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
-        builder.accept(Component.literal((delta > 0 ? "使用后，永久增加 " : "使用后，永久降低 ") + Node.fmt(Math.abs(delta)) + " 点魔力上限")
+        builder.accept(Component.translatable(delta > 0 ? "logos.root_mana.raises" : "logos.root_mana.lowers", Node.fmt(Math.abs(delta)))
                 .withStyle(ChatFormatting.GRAY));
     }
 }

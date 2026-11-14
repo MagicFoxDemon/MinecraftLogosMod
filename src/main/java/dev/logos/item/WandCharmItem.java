@@ -14,10 +14,10 @@ import net.minecraft.world.item.component.TooltipDisplay;
  * casts. Each charm is one item; what it does is read where the wand casts, through {@link #on}.
  */
 public class WandCharmItem extends Item {
-    private final String effect;
+    private final Component effect;
 
     /** {@code effect}: what it does, for the tooltip. */
-    public WandCharmItem(Properties properties, String effect) {
+    public WandCharmItem(Properties properties, Component effect) {
         super(properties);
         this.effect = effect;
     }
@@ -29,7 +29,7 @@ public class WandCharmItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
-        builder.accept(Component.literal(effect).withStyle(ChatFormatting.GRAY));
-        builder.accept(Component.literal("潜行右键法杖，挂进术式槽生效（占一个槽）").withStyle(ChatFormatting.DARK_GRAY));
+        builder.accept(effect.copy().withStyle(ChatFormatting.GRAY));
+        builder.accept(Component.translatable("logos.charm.hang_hint").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

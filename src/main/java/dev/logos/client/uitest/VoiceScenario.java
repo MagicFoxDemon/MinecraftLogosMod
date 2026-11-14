@@ -90,7 +90,7 @@ public class VoiceScenario implements UIScenario {
                 .step("open the workbench on 火球", ctx -> ClientHooks.openTableEditor(BlockPos.ZERO, SpellPages.inscribed(SPELL, null)))
                 .awaitModularUI()
                 .ticks(10)
-                .checkTextContains("#overview", "言出法随：未启用")
+                .checkTextContains("#overview", LangText.before("logos.editor.voice.off"))
                 .click("#tab_voice")
                 .ticks(5)
                 .step("the voice page is open on 火球", ctx -> {
@@ -109,7 +109,7 @@ public class VoiceScenario implements UIScenario {
                 .screenshot("voice_tested")
                 .click("#voice_apply")
                 .waitUntil("applied", ctx -> label(ctx, "#voice_state").equals(tr("logos.voice.state.on", "火球")))
-                .checkTextContains("#overview", "言出法随：可用")
+                .checkTextContains("#overview", LangText.before("logos.editor.voice.ready"))
                 .screenshot("voice_applied")
                 .step("back to the microphone", ctx -> VoiceClient.simulated = false);
     }

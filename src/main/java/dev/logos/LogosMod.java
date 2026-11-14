@@ -179,23 +179,23 @@ public class LogosMod {
      * and starts the next, a staff casts again at the shortest charge time for as long as it holds enough.
      */
     public static final DeferredItem<dev.logos.item.WandCharmItem> CHANT_CHARM = ITEMS.registerItem("chant_charm",
-            p -> new dev.logos.item.WandCharmItem(p, "挂在法杖上：按住右键连续施放。法杖每蓄满一次立即放出并开始下一轮；长杖只要储能足够，以最短间隔连发"),
+            p -> new dev.logos.item.WandCharmItem(p, Component.translatable("item.logos.chant_charm.effect")),
             p -> p.stacksTo(1));
     /**
      * 言灵坠: a charm for a wand slot that adds 言出法随 to the spell wheel. Chosen there, held right-click
      * listens: name a voice-cast spell on the wand and it is cast (see {@link dev.logos.runtime.VoiceCasting}).
      */
     public static final DeferredItem<dev.logos.item.WandCharmItem> VOICE_CHARM = ITEMS.registerItem("voice_charm",
-            p -> new dev.logos.item.WandCharmItem(p, "挂在法杖上：术式轮盘里多出「言出法随」。选中后按住右键，喊出任意一张言出法随载页的咒语名即可施放"),
+            p -> new dev.logos.item.WandCharmItem(p, Component.translatable("item.logos.voice_charm.effect")),
             p -> p.stacksTo(1));
     /** 蓄灵坠: a graded charm that raises the mana cap while its wand is in the main hand. */
-    public static final dev.logos.item.TieredCharmItem.Family RESERVOIR = dev.logos.item.TieredCharmItem.family("reservoir", "蓄灵坠",
+    public static final dev.logos.item.TieredCharmItem.Family RESERVOIR = dev.logos.item.TieredCharmItem.family("reservoir",
             new dev.logos.item.TieredCharmItem.Bonus(() -> dev.logos.runtime.SpellModifiers.MAX_MANA,
-                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE, "魔力上限", ""));
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE, "logos.charm.bonus.max_mana"));
     /** 涌泉坠: a graded charm that quickens mana regeneration while its wand is in the main hand. */
-    public static final dev.logos.item.TieredCharmItem.Family WELLSPRING = dev.logos.item.TieredCharmItem.family("wellspring", "涌泉坠",
+    public static final dev.logos.item.TieredCharmItem.Family WELLSPRING = dev.logos.item.TieredCharmItem.family("wellspring",
             new dev.logos.item.TieredCharmItem.Bonus(() -> dev.logos.runtime.SpellModifiers.MANA_REGENERATION,
-                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE, "魔力回复", "/秒"));
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE, "logos.charm.bonus.mana_regeneration"));
     public static final List<DeferredItem<dev.logos.item.TieredCharmItem>> RESERVOIR_CHARMS = tieredCharms(RESERVOIR, 100, 300, 800);
     public static final List<DeferredItem<dev.logos.item.TieredCharmItem>> WELLSPRING_CHARMS = tieredCharms(WELLSPRING, 1, 3, 8);
 

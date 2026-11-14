@@ -28,4 +28,9 @@ public record Spell(String name, String trigger, boolean affectsPlayers, boolean
             default -> "主动施放";
         };
     }
+
+    /** When a spell with {@code trigger} goes off, for players to read in their own language ({@code logos.trigger.*}). */
+    public static net.minecraft.network.chat.MutableComponent triggerName(String trigger) {
+        return net.minecraft.network.chat.Component.translatable("logos.trigger." + (TRIGGERS.contains(trigger) ? trigger : "cast"));
+    }
 }

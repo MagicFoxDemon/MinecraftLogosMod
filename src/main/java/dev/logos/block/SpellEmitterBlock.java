@@ -122,7 +122,7 @@ public class SpellEmitterBlock extends DirectionalBlock implements EntityBlock {
             if (!emitter.mayChange(player)) return InteractionResult.SUCCESS;
             var spell = SpellPages.spell(stack);
             if (spell != null && spell.isPassive()) {
-                player.sendOverlayMessage(Component.literal("《" + spell.name() + "》是被动术式：术式发射器只施放主动术式").withStyle(ChatFormatting.YELLOW));
+                player.sendOverlayMessage(Component.translatable("logos.emitter.passive_named", spell.name()).withStyle(ChatFormatting.YELLOW));
                 return InteractionResult.SUCCESS;
             }
             emitter.setPage(stack.copyWithCount(1), player);
@@ -137,8 +137,7 @@ public class SpellEmitterBlock extends DirectionalBlock implements EntityBlock {
         if (!(level.getBlockEntity(pos) instanceof SpellEmitterBlockEntity emitter)) return InteractionResult.PASS;
         if (emitter.page().isEmpty()) {
             if (level instanceof ServerLevel) {
-                player.sendOverlayMessage(Component.literal("先用术式载页右键，把它放进术式发射器 · 魔力 " + (int) emitter.mana() + "/"
-                        + (int) SpellEmitterBlockEntity.MAX_MANA).withStyle(ChatFormatting.YELLOW));
+                player.sendOverlayMessage(Component.translatable("logos.emitter.empty_hint", (int) emitter.mana(), (int) SpellEmitterBlockEntity.MAX_MANA).withStyle(ChatFormatting.YELLOW));
             }
             return InteractionResult.SUCCESS;
         }

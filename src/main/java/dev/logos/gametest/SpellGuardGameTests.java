@@ -40,7 +40,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
  */
 final class SpellGuardGameTests {
     private static final String CRASH = "guard test crash";
-    /** Why a spell that crashed goes out, as its caster reads it; what crashed is in the log. */
+    /** The language keys of why a spell that crashed goes out, as its caster reads it; what crashed is in the log. */
     private static final String ENDED = SpellRuntime.CRASHED;
     private static final String OVERFLOW = SpellRuntime.STACK_OVERFLOW;
     /** The creatures a spell's damage crashes on; whether as a stack overflow. */
@@ -98,7 +98,7 @@ final class SpellGuardGameTests {
     }
 
     private static void assertCrashed(GameTestHelper h, SpellInstance inst, String name, String reason) {
-        h.assertTrue(inst.dead && inst.endReason() != null && inst.endReason().contains(reason), name + " should go out over the crash, got " + inst.endReason());
+        h.assertTrue(inst.dead && reason.equals(inst.endKey()), name + " should go out over the crash, got " + inst.endReason());
         h.assertTrue(inst.objects == 0, name + " should have no bodies left, has " + inst.objects);
         h.assertTrue(logged(name) > 0, name + " should have logged its stack");
     }
@@ -250,7 +250,7 @@ final class SpellGuardGameTests {
         Spell spell = Casting.compile("(spell :name \"" + name + "\" :mana 5 (damage (nearest :radius 3) 1 arcane))");
         for (int k = 0; k < 3; k++) {
             SpellInstance inst = Casting.cast(p, spell, null, null);
-            h.assertTrue(inst != null && inst.dead && inst.endReason().contains(ENDED), "every cast should go out over the crash");
+            h.assertTrue(inst != null && inst.dead && ENDED.equals(inst.endKey()), "every cast should go out over the crash");
         }
         h.assertTrue(logged(name) == 1, "three crashes should log one stack, logged " + logged(name));
         h.succeed();

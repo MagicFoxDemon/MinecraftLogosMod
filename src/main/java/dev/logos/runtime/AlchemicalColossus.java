@@ -22,6 +22,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -402,7 +403,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         level.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 2, getZ(), 50, 1, 1.2, 1, 0.03);
         powerDown();
         Player master = Familiars.masterOf(this) == null ? null : level.getPlayerByUUID(Familiars.masterOf(this));
-        if (master != null) master.sendSystemMessage(Component.literal("⛨ " + getName().getString() + " 的魔力暴走平息了，留下一块失序结晶").withStyle(ChatFormatting.GOLD));
+        if (master != null) master.sendSystemMessage(Component.translatable("logos.colossus.calmed", getName()).withStyle(ChatFormatting.GOLD));
     }
 
     // ---- body ------------------------------------------------------------------------------------
@@ -915,10 +916,13 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     }
 
     public Component status() {
-        String doing = isDormant() ? "停机" : isBerserk() ? "魔力暴走！" : mind == null ? "" : mind.doingZh();
-        return Component.literal("⛨ " + getName().getString() + " · 魔力 " + Math.round(mana()) + "/" + Math.round(maxMana())
-                + " · 生命 " + Math.round(getHealth()) + "/" + Math.round(getMaxHealth())
-                + (isDriven() ? " · 驾驶中" : "") + (doing.isEmpty() ? "" : " · " + doing))
+        MutableComponent line = Component.translatable("logos.colossus.status", getName(), Math.round(mana()), Math.round(maxMana()),
+                Math.round(getHealth()), Math.round(getMaxHealth()));
+        if (isDriven()) line.append(Component.translatable("logos.colossus.status.driven"));
+        Component doing = isDormant() ? Component.translatable("logos.colossus.dormant") : isBerserk() ? Component.translatable("logos.colossus.berserk")
+                : mind == null ? null : mind.doingName();
+        if (doing != null) line.append(Component.translatable("logos.status.doing", doing));
+        return line
                 .withStyle(isBerserk() ? ChatFormatting.RED : isDormant() ? ChatFormatting.DARK_GRAY : ChatFormatting.GOLD);
     }
 

@@ -207,7 +207,8 @@ final class FamiliarGameTests {
         h.assertTrue(end != null, "the test server has no End");
         var fight = end.getDragonFight();
         if (fight != null && !((dev.logos.mixin.EnderDragonFightAccessor) fight).logos$dragonKilled()) {
-            h.assertTrue(dev.logos.runtime.DragonFamiliar.THRONE_TAKEN.equals(dev.logos.runtime.DragonFamiliar.forbidden(end)),
+            h.assertTrue(dev.logos.runtime.DragonFamiliar.forbidden(end) instanceof net.minecraft.network.chat.MutableComponent why
+                    && why.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t && t.getKey().equals(dev.logos.runtime.DragonFamiliar.THRONE_TAKEN),
                     "while the true dragon lives, a dragon may not be summoned in the End");
         }
         h.assertTrue(dev.logos.runtime.DragonFamiliar.forbidden(h.getLevel()) == null, "outside the End there is no throne to take");

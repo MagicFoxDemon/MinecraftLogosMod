@@ -12,6 +12,7 @@ import dev.logos.runtime.PlayerMagic;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -87,9 +88,8 @@ public class SpellPageItem extends Item {
     /** As above, naming {@code page}'s own item, so a look-alike page is called by its name. */
     public static void warnCapacity(ServerPlayer player, Spell spell, PageTier tier, ItemStack page) {
         if (spell.mana() <= tier.capacity()) return;
-        player.sendSystemMessage(Component.literal("⚠ 这张" + Component.translatable(page.getItem().getDescriptionId()).getString()
-                + "只能承载 " + tier.capacity() + " 魔力，术式要求注入 " + Node.fmt(spell.mana()) + "：施放时只会注入 " + tier.capacity()
-                + (spell.immolate() ? "（持焚式法杖施放可放大上限，但载页会焚毁）" : "（术式关闭了焚式）")).withStyle(ChatFormatting.GOLD));
+        player.sendSystemMessage(Component.translatable(spell.immolate() ? "logos.page.over_capacity.immolate" : "logos.page.over_capacity.no_immolate",
+                Component.translatable(page.getItem().getDescriptionId()), tier.capacity(), Node.fmt(spell.mana())).withStyle(ChatFormatting.GOLD));
     }
 
     /** Lets sneak + right-click with a page in hand still reach the inscription table (to take its page). */
@@ -106,28 +106,29 @@ public class SpellPageItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
-        Component grade = Component.literal("承载 " + tier.capacity() + " 魔力 · 熵化魔力回收 " + Math.round(tier.recovery() * 100) + "%")
+        Component grade = Component.translatable("logos.page.grade", tier.capacity(), Math.round(tier.recovery() * 100))
                 .withStyle(ChatFormatting.AQUA);
         if (!inscribed) {
             builder.accept(grade);
-            builder.accept(Component.literal("在术式编纂台上铭刻，或另一只手拿写好的书右键").withStyle(ChatFormatting.GRAY));
+            builder.accept(Component.translatable("logos.page.blank_hint").withStyle(ChatFormatting.GRAY));
             return;
         }
         Spell s = SpellPages.spell(stack);
         if (s == null) {
-            builder.accept(Component.literal("术式已损坏").withStyle(ChatFormatting.RED));
+            builder.accept(Component.translatable("logos.page.broken").withStyle(ChatFormatting.RED));
             return;
         }
-        builder.accept(Component.literal(Spell.triggerZh(s.trigger()) + " · 注入 " + Node.fmt(s.mana()) + " · 稳定度 " + Node.fmt(s.stability())
-                + (s.affectsPlayers() ? " · 影响玩家" : "")).withStyle(ChatFormatting.GRAY));
+        MutableComponent line = Component.translatable("logos.page.summary", Spell.triggerName(s.trigger()), Node.fmt(s.mana()), Node.fmt(s.stability()));
+        if (s.affectsPlayers()) line.append(Component.translatable("logos.page.affects_players"));
+        builder.accept(line.withStyle(ChatFormatting.GRAY));
         builder.accept(grade);
         if (s.mana() > tier.capacity()) {
-            builder.accept(Component.literal("⚠ 超出载页承载：施放时只注入 " + tier.capacity()
-                    + (s.immolate() ? "，焚式可放大（载页焚毁）" : "，术式不允许焚式")).withStyle(ChatFormatting.GOLD));
+            builder.accept(Component.translatable(s.immolate() ? "logos.page.over_capacity_short.immolate" : "logos.page.over_capacity_short.no_immolate",
+                    tier.capacity()).withStyle(ChatFormatting.GOLD));
         }
         String voice = stack.get(LogosMod.VOICE.get());
-        if (voice != null) builder.accept(Component.literal("🗣 言出法随：法杖挂上言灵坠后，喊出「" + voice + "」即可施放").withStyle(ChatFormatting.LIGHT_PURPLE));
-        builder.accept(Component.literal("挂到法杖上（潜行右键法杖）或放进法式典籍").withStyle(ChatFormatting.DARK_GRAY));
+        if (voice != null) builder.accept(Component.translatable("logos.page.voice", voice).withStyle(ChatFormatting.LIGHT_PURPLE));
+        builder.accept(Component.translatable("logos.page.use_hint").withStyle(ChatFormatting.DARK_GRAY));
     }
 
     /** A page written with 言出法随 shimmers, so it stands out on a wand and in a chest. */

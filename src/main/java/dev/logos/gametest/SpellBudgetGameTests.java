@@ -216,7 +216,7 @@ final class SpellBudgetGameTests {
         SpellRuntime.schedule(inst, 4, () -> ran.add("c@" + (SpellRuntime.now() - start)));
         SpellRuntime.schedule(inst, 0, () -> ran.add("d@" + (SpellRuntime.now() - start)));
         SpellRuntime.schedule(dead, 1, () -> ran.add("dead"));
-        dead.terminate("test over");
+        dead.terminate(Component.literal("test over"));
         h.onEachTick(() -> h.assertTrue(inst.finished() == (ran.size() == 6), "the spell should stay open until its last task has run, ran " + ran));
         h.succeedWhen(() -> {
             h.assertTrue(inst.finished() && !inst.dead, "the spell should end on its own, got " + inst.endReason());
@@ -233,10 +233,10 @@ final class SpellBudgetGameTests {
         SpellInstance over = instance(h, p, "budget-cap-over");
         boolean[] ran = {false, false};
         SpellRuntime.schedule(over, 0, () -> ran[0] = true);
-        h.assertTrue(over.dead && over.endReason().contains("全局任务上限"), "past the cap the spell should go out, got " + over.endReason());
+        h.assertTrue(over.dead && "logos.spell.end.world_full_tasks".equals(over.endKey()), "past the cap the spell should go out, got " + over.endReason());
         h.assertTrue(SpellRuntime.pendingTasks() == Limits.MAX_GLOBAL_TASKS, "the refused task should not be queued");
 
-        filler.terminate("test over");
+        filler.terminate(Component.literal("test over"));
         SpellInstance after = instance(h, p, "budget-cap-after");
         SpellRuntime.schedule(after, 0, () -> ran[1] = true);
         h.assertTrue(!after.dead, "a dead spell's tasks should make way, got " + after.endReason());
@@ -333,7 +333,7 @@ final class SpellBudgetGameTests {
                 h.assertTrue(w.ticks < w.life(), "the tasks should not have had to wait for the forms to end");
                 h.assertTrue(!w.spell.dead, "waiting should not extinguish it: " + w.spell.endReason());
             }
-            many.forEach(w -> w.spell.terminate("test over"));
+            many.forEach(w -> w.spell.terminate(Component.literal("test over")));
         });
     }
 
@@ -422,7 +422,7 @@ final class SpellBudgetGameTests {
             h.assertTrue(form.getKey().startsWith("ray") || inst.objects == 1, form.getKey() + " should have spawned, has " + inst.objects + " bodies");
             h.assertTrue(new SpellBag.Entry(ItemStack.EMPTY, spell, false, ItemStack.EMPTY, 0).element() == spell.element(), "a page should look as its spell does");
             h.assertTrue(handlers.reads == 0, "spawning " + form.getKey() + " should not walk its handlers, read them " + handlers.reads + " times");
-            inst.terminate("test over");
+            inst.terminate(Component.literal("test over"));
         }
         h.succeed();
     }
@@ -465,10 +465,10 @@ final class SpellBudgetGameTests {
         }
         String line = String.join("\n", said);
         h.assertTrue(SpellRuntime.pendingTasks() >= 1 && SpellRuntime.liveForms() >= 1, "the task and the form should be counted");
-        h.assertTrue(line.contains("待执行任务 " + SpellRuntime.pendingTasks() + " / " + Limits.MAX_GLOBAL_TASKS), "pending tasks: " + line);
-        h.assertTrue(line.contains("存活形体 " + SpellRuntime.liveForms() + " / " + Limits.MAX_GLOBAL_OBJECTS), "live forms: " + line);
-        h.assertTrue(line.contains("上一刻运算 " + SpellRuntime.stepsLastTick() + " / " + LogosConfig.maxOpsPerTickGlobal()), "steps: " + line);
-        inst.terminate("test over");
+        h.assertTrue(line.contains(SpellRuntime.pendingTasks() + " / " + Limits.MAX_GLOBAL_TASKS), "pending tasks: " + line);
+        h.assertTrue(line.contains(SpellRuntime.liveForms() + " / " + Limits.MAX_GLOBAL_OBJECTS), "live forms: " + line);
+        h.assertTrue(line.contains(SpellRuntime.stepsLastTick() + " / " + LogosConfig.maxOpsPerTickGlobal()), "steps: " + line);
+        inst.terminate(Component.literal("test over"));
         h.succeed();
     }
 
@@ -526,12 +526,12 @@ final class SpellBudgetGameTests {
         ServerPlayer p = ConstructGameTests.caster(h);
         Spell spell = Casting.compile("(spell :name \"budget-quiet\" :mana 1 (field))");
         sent(p);
-        new SpellInstance(spell, p, h.getLevel(), 10, 1).terminate("ran dry", false);
+        new SpellInstance(spell, p, h.getLevel(), 10, 1).terminate(Component.literal("ran dry"), false);
         SpellInstance stopped = new SpellInstance(spell, p, h.getLevel(), 10, 1);
-        stopped.stop("stop");
+        stopped.stop(Component.literal("stop"));
         List<ClientboundSystemChatPacket> quiet = sent(p);
         h.assertTrue(quiet.isEmpty(), "spells that ran dry or stopped themselves should say nothing, said " + quiet);
-        new SpellInstance(spell, p, h.getLevel(), 10, 1).terminate("broke");
+        new SpellInstance(spell, p, h.getLevel(), 10, 1).terminate(Component.literal("broke"));
         List<ClientboundSystemChatPacket> told = sent(p);
         h.assertTrue(told.size() == 1 && told.getFirst().overlay() && told.getFirst().content().getString().contains("broke"),
                 "a spell the world broke off should say why once on the action bar, said " + told);

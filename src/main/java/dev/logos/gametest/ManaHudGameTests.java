@@ -96,6 +96,11 @@ final class ManaHudGameTests {
         return huds.getFirst();
     }
 
+    /** {@code key} as the server reads it out, the way the HUD's own text is put together. */
+    private static String t(String key, Object... args) {
+        return Component.translatable(key, args).getString();
+    }
+
     private static String line(ManaHudPayload hud) {
         return hud.head().append(hud.spell().orElseThrow()).getString();
     }
@@ -208,18 +213,19 @@ final class ManaHudGameTests {
         ItemStack wand = wand();
         ServerPlayer p = holder(h, wand);
         PlayerMagic m = PlayerMagic.of(p);
-        String stability = " · 稳定 " + Node.fmt(SpellBag.selected(p, wand).spell().stability()) + "/" + m.stability;
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000  《测》注入 100" + stability, ChatFormatting.GRAY);
+        String stability = t("logos.hud.spell.stability", Node.fmt(SpellBag.selected(p, wand).spell().stability()), m.stability);
+        String spell = t("logos.hud.spell", "测", "100");
+        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000" + spell + stability, ChatFormatting.GRAY);
         m.mana = 50;
         ManaHudPayload low = syncedWithSpell(h, p);
-        says(h, low, "☿ " + BAR + " 50/1000  《测》注入 100" + stability, ChatFormatting.RED);
+        says(h, low, "☿ " + BAR + " 50/1000" + spell + stability, ChatFormatting.RED);
         h.assertTrue(low.filled() == 1, "50 of 1000 lights " + low.filled() + " segments");
 
         ItemStack staff = hung(new ItemStack(LogosMod.WOOD_STAFFS.getFirst().get()), SpellPages.inscribed(PageTier.CRYSTAL, SPELL, null));
         StaffItem.store(staff, 130);
         p.setItemInHand(InteractionHand.MAIN_HAND, staff);
         int capacity = (int) ((StaffItem) staff.getItem()).capacity();
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 50/1000  杖内 130/" + capacity + "  《测》注入 100" + stability, ChatFormatting.GRAY);
+        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 50/1000" + t("logos.hud.staff", 130, capacity) + spell + stability, ChatFormatting.GRAY);
 
         ItemStack empty = new ItemStack(LogosMod.WOOD_WANDS.getFirst().get());
         p.setItemInHand(InteractionHand.MAIN_HAND, empty);
@@ -231,25 +237,25 @@ final class ManaHudGameTests {
         ItemStack mute = hung(new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()), SpellPages.inscribed(PageTier.CRYSTAL, SPELL, null), charm);
         mute.set(LogosMod.VOICE_SELECTED.get(), true);
         p.setItemInHand(InteractionHand.MAIN_HAND, mute);
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000  🗣 言出法随 · 法杖上没有言出法随的术式", ChatFormatting.RED);
+        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000" + t("logos.hud.voice.none"), ChatFormatting.RED);
 
         ItemStack page = SpellPages.inscribed(PageTier.CRYSTAL, SPELL, null);
         page.set(LogosMod.VOICE.get(), "测");
         ItemStack voiced = hung(new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()), page, charm);
         voiced.set(LogosMod.VOICE_SELECTED.get(), true);
         p.setItemInHand(InteractionHand.MAIN_HAND, voiced);
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000  🗣 言出法随 · 按住右键念出咒语（1 个可用）", ChatFormatting.GRAY);
+        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000" + t("logos.hud.voice.ready", 1), ChatFormatting.GRAY);
 
         h.assertTrue(VoiceCasting.begin(p, voiced, InteractionHand.MAIN_HAND), "listening did not start");
-        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000  🗣 言出法随 · 聆听中…", ChatFormatting.LIGHT_PURPLE);
+        says(h, syncedWithSpell(h, p), "☿ " + BAR + " 1000/1000" + t("logos.hud.voice.listening"), ChatFormatting.LIGHT_PURPLE);
         p.startUsingItem(InteractionHand.MAIN_HAND);
         for (int i = 0; i < 2; i++) voiced.getItem().onUseTick(h.getLevel(), p, voiced, p.getUseItemRemainingTicks());
         String gathered = Node.fmt(m.listen.injected());
         ManaHudPayload listening = syncedWithSpell(h, p);
-        h.assertTrue(line(listening).endsWith("🗣 言出法随 · 聆听中… 已汇集 " + gathered), "while gathering the HUD says \"" + line(listening) + "\"");
+        h.assertTrue(line(listening).endsWith(t("logos.hud.voice.listening_gathered", gathered)), "while gathering the HUD says \"" + line(listening) + "\"");
         VoiceCasting.heard(p, 0, "测");
         ManaHudPayload named = syncedWithSpell(h, p);
-        h.assertTrue(line(named).endsWith("🗣 即将释放《测》 " + gathered + "/100"), "once named the HUD says \"" + line(named) + "\"");
+        h.assertTrue(line(named).endsWith(t("logos.hud.voice.releasing", "测", gathered, "100")), "once named the HUD says \"" + line(named) + "\"");
         h.succeed();
     }
 }

@@ -21,7 +21,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
 final class SpellCasters {
-    private static final String LEFT = "施法者已离开世界";
+    private static final String LEFT = "logos.spell.end.caster_left";
 
     /** The spells still running; weak, so a spell dropped without ending (a test's) is not kept for this. */
     private static final Set<SpellInstance> RUNNING = Collections.newSetFromMap(new WeakHashMap<>());
@@ -47,7 +47,7 @@ final class SpellCasters {
     }
 
     private static void extinguish(Predicate<SpellInstance> left) {
-        for (SpellInstance inst : RUNNING.stream().filter(left).toList()) inst.terminate(LEFT, false);
+        for (SpellInstance inst : RUNNING.stream().filter(left).toList()) inst.terminate(net.minecraft.network.chat.Component.translatable(LEFT), false);
     }
 
     @SubscribeEvent

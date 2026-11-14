@@ -50,6 +50,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -128,7 +129,7 @@ public final class LogosCommands {
                 })))
                 .then(Commands.literal("trace").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("on", BoolArgumentType.bool()).executes(c -> {
                     PlayerMagic.of(c.getSource().getPlayerOrException()).trace = BoolArgumentType.getBool(c, "on");
-                    c.getSource().sendSuccess(() -> Component.literal("法术轨迹报告: " + BoolArgumentType.getBool(c, "on")), false);
+                    c.getSource().sendSuccess(() -> Component.translatable(BoolArgumentType.getBool(c, "on") ? "logos.command.trace.on" : "logos.command.trace.off"), false);
                     return 1;
                 })))
                 .then(Commands.literal("passives").executes(LogosCommands::passives))
@@ -156,7 +157,7 @@ public final class LogosCommands {
     private static int unlock(CommandContext<CommandSourceStack> c, Collection<ServerPlayer> players, String key, boolean learn) {
         boolean all = key.equals("all");
         if (!all && !Unlocks.lockable(key)) {
-            c.getSource().sendFailure(Component.literal("没有可解锁的 " + key + "：写成 rune:freeze、element:fire、motion:arc，或 all"));
+            c.getSource().sendFailure(Component.translatable("logos.command.unlock.unknown", key));
             return 0;
         }
         int changed = 0;
@@ -166,16 +167,16 @@ public final class LogosCommands {
             }
         }
         int n = changed;
-        c.getSource().sendSuccess(() -> Component.literal((learn ? "领悟了 " : "遗忘了 ") + n + " 项（" + players.size() + " 名玩家）"), true);
+        c.getSource().sendSuccess(() -> Component.translatable(learn ? "logos.command.unlock.learned" : "logos.command.unlock.forgot", n, players.size()), true);
         return n;
     }
 
     /** What {@code p} has learned, family by family; creative play and a server with runeUnlocks off write everything anyway. */
     private static int unlocks(CommandContext<CommandSourceStack> c, ServerPlayer p) {
         CommandSourceStack s = c.getSource();
-        String note = !dev.logos.LogosConfig.runeUnlocks() ? "（本服务器已关闭符文解锁，人人都能写全部符文）"
-                : p.hasInfiniteMaterials() ? "（创造模式下全部可写）" : "";
-        s.sendSuccess(() -> Component.literal("✦ " + p.getName().getString() + " 已领悟" + note).withStyle(ChatFormatting.GOLD), false);
+        Component note = !dev.logos.LogosConfig.runeUnlocks() ? Component.translatable("logos.command.unlocks.off")
+                : p.hasInfiniteMaterials() ? Component.translatable("logos.command.unlocks.creative") : Component.empty();
+        s.sendSuccess(() -> Component.translatable("logos.command.unlocks.head", p.getName(), note).withStyle(ChatFormatting.GOLD), false);
         for (Category cat : Category.values()) {
             List<String> words = new ArrayList<>();
             int total = 0;
@@ -184,18 +185,18 @@ public final class LogosCommands {
                 total++;
                 if (RuneKnowledge.learned(p, Unlocks.rune(r.name))) words.add(r.name);
             }
-            if (total > 0) listed(s, "[" + cat.zh + "] ", cat.color, words, total);
+            if (total > 0) listed(s, Component.literal("[" + cat.zh + "] "), cat.color, words, total);
         }
         List<String> elements = new ArrayList<>(), motions = new ArrayList<>();
         for (dev.logos.lang.Element e : dev.logos.lang.Element.values()) if (RuneKnowledge.learned(p, Unlocks.element(e))) elements.add(e.name().toLowerCase(java.util.Locale.ROOT));
         for (Motion m : Motion.values()) if (RuneKnowledge.learned(p, Unlocks.motion(m))) motions.add(m.name().toLowerCase(java.util.Locale.ROOT));
-        listed(s, "[元素] ", ChatFormatting.GOLD, elements, dev.logos.lang.Element.values().length);
-        listed(s, "[运动] ", ChatFormatting.AQUA, motions, Motion.values().length);
+        listed(s, Component.translatable("logos.command.unlocks.elements"), ChatFormatting.GOLD, elements, dev.logos.lang.Element.values().length);
+        listed(s, Component.translatable("logos.command.unlocks.motions"), ChatFormatting.AQUA, motions, Motion.values().length);
         return 1;
     }
 
-    private static void listed(CommandSourceStack s, String head, ChatFormatting color, List<String> words, int total) {
-        s.sendSuccess(() -> Component.literal(head + words.size() + "/" + total + "  ").withStyle(color)
+    private static void listed(CommandSourceStack s, Component head, ChatFormatting color, List<String> words, int total) {
+        s.sendSuccess(() -> head.copy().append(words.size() + "/" + total + "  ").withStyle(color)
                 .append(Component.literal(String.join("  ", words)).withStyle(ChatFormatting.WHITE)), false);
     }
 
@@ -204,7 +205,7 @@ public final class LogosCommands {
         try {
             Spell s = Casting.compile(src);
             if (s.isPassive()) {
-                c.getSource().sendFailure(Component.literal("被动术式不能直接施放：把它写进术式载页并挂在法杖上，就会在" + Spell.triggerZh(s.trigger()) + "自动触发"));
+                c.getSource().sendFailure(Component.translatable("logos.command.cast.passive", Spell.triggerName(s.trigger())));
                 return 0;
             }
             return Casting.cast(p, s, null, null) != null ? 1 : 0;
@@ -228,7 +229,7 @@ public final class LogosCommands {
     private static int book(CommandContext<CommandSourceStack> c, String id) throws CommandSyntaxException {
         String src = Examples.ALL.get(id);
         if (src == null) {
-            c.getSource().sendFailure(Component.literal("没有名为 " + id + " 的示例。/logos examples 查看全部"));
+            c.getSource().sendFailure(Component.translatable("logos.command.book.unknown", id));
             return 0;
         }
         give(c.getSource().getPlayerOrException(), Books.create(id, src));
@@ -239,20 +240,20 @@ public final class LogosCommands {
         ServerPlayer p = c.getSource().getPlayerOrException();
         Path path = spellDir().resolve(file + ".logos").normalize();
         if (!path.startsWith(spellDir()) || !Files.exists(path)) {
-            c.getSource().sendFailure(Component.literal("找不到 " + path));
+            c.getSource().sendFailure(Component.translatable("logos.command.load.missing", path.toString()));
             return 0;
         }
         String src;
         try {
             src = Files.readString(path, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            c.getSource().sendFailure(Component.literal("读取失败: " + e.getMessage()));
+            c.getSource().sendFailure(Component.translatable("logos.command.load.failed", String.valueOf(e.getMessage())));
             return 0;
         }
         try {
             Spell s = Casting.compile(src);
             give(p, SpellPages.fitting(src));
-            c.getSource().sendSuccess(() -> Component.literal("已给予术式载页《" + s.name() + "》"), false);
+            c.getSource().sendSuccess(() -> Component.translatable("logos.command.book.given", s.name()), false);
             return 1;
         } catch (LogosError e) {
             Casting.message(p, e);
@@ -269,33 +270,33 @@ public final class LogosCommands {
             if (src != null) break;
         }
         if (src == null) {
-            c.getSource().sendFailure(Component.literal("主手或副手没有写着术式的载页或术式余烬"));
+            c.getSource().sendFailure(Component.translatable("logos.command.source.none"));
             return 0;
         }
         String text = src;
-        c.getSource().sendSuccess(() -> Component.literal("术式原文（点击复制）:").withStyle(ChatFormatting.GOLD), false);
+        c.getSource().sendSuccess(() -> Component.translatable("logos.command.source.head").withStyle(ChatFormatting.GOLD), false);
         c.getSource().sendSuccess(() -> Component.literal(text).withStyle(st -> st.withColor(ChatFormatting.WHITE)
                 .withClickEvent(new ClickEvent.CopyToClipboard(text))
-                .withHoverEvent(new HoverEvent.ShowText(Component.literal("点击复制到剪贴板")))), false);
+                .withHoverEvent(new HoverEvent.ShowText(Component.translatable("chat.copy.click")))), false);
         if (file == null) return 1;
         Path path = spellDir().resolve(file + ".logos").normalize();
         if (!path.startsWith(spellDir())) {
-            c.getSource().sendFailure(Component.literal("文件名不合法: " + file));
+            c.getSource().sendFailure(Component.translatable("logos.command.source.bad_name", file));
             return 0;
         }
         try {
             Files.createDirectories(spellDir());
             Files.writeString(path, text, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            c.getSource().sendFailure(Component.literal("写入失败: " + e.getMessage()));
+            c.getSource().sendFailure(Component.translatable("logos.command.source.failed", String.valueOf(e.getMessage())));
             return 0;
         }
-        c.getSource().sendSuccess(() -> Component.literal("已保存到 " + path + "（/logos load " + file + " 可取回）").withStyle(ChatFormatting.GRAY), false);
+        c.getSource().sendSuccess(() -> Component.translatable("logos.command.source.saved", path.toString(), file).withStyle(ChatFormatting.GRAY), false);
         return 1;
     }
 
     private static int examples(CommandContext<CommandSourceStack> c) {
-        c.getSource().sendSuccess(() -> Component.literal("示例术式（/logos book <名字>，或编辑 " + spellDir() + " 下的文件后 /logos load <名字>）:")
+        c.getSource().sendSuccess(() -> Component.translatable("logos.command.examples.head", spellDir().toString())
                 .withStyle(ChatFormatting.GOLD), false);
         for (Map.Entry<String, String> e : Examples.ALL.entrySet()) {
             String desc = e.getValue().lines().findFirst().orElse("").replaceFirst("^;\\s*", "");
@@ -308,12 +309,12 @@ public final class LogosCommands {
     private static int colossus(CommandContext<CommandSourceStack> c, @org.jspecify.annotations.Nullable String name) throws CommandSyntaxException {
         var p = c.getSource().getPlayerOrException();
         var at = p.position().add(p.getLookAngle().multiply(1, 0, 1).normalize().scale(3));
-        String why = dev.logos.runtime.Colossi.summon(p, p.level(), at, name);
+        Component why = dev.logos.runtime.Colossi.summon(p, p.level(), at, name);
         if (why != null) {
-            c.getSource().sendFailure(net.minecraft.network.chat.Component.literal(why));
+            c.getSource().sendFailure(why);
             return 0;
         }
-        c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("⛨ 炼金术巨像已启动：右键乘上肩膀，潜行右键打开炼金道具槽，乘坐时按 V 切换驾驶"), false);
+        c.getSource().sendSuccess(() -> Component.translatable("logos.command.colossus.raised", Component.keybind("key.logos.colossus_mode")), false);
         return 1;
     }
 
@@ -324,25 +325,24 @@ public final class LogosCommands {
         for (var m : dev.logos.runtime.Familiars.of(p)) {
             if (m instanceof dev.logos.runtime.AlchemicalColossus col) {
                 n++;
-                String mind = col.isDormant() || col.mind() == null ? "停机" : col.mind().describe();
-                c.getSource().sendSuccess(() -> col.status().copy().append(net.minecraft.network.chat.Component.literal("\n  " + mind)), false);
+                Component mind = col.isDormant() || col.mind() == null ? Component.translatable("logos.colossus.dormant") : col.mind().describe();
+                c.getSource().sendSuccess(() -> col.status().copy().append("\n  ").append(mind), false);
                 continue;
             }
             if (!(m instanceof dev.logos.runtime.ManaLifeform lf)) continue;
             n++;
-            String mind = lf.isDormant() || lf.mind() == null ? "沉寂" : lf.mind().describe();
-            c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("✦ " + lf.getName().getString() + "（" + lf.role().zh + "，" + lf.temperamentZh() + "）\n  " + mind), false);
+            Component mind = lf.isDormant() || lf.mind() == null ? Component.translatable("logos.lifeform.dormant") : lf.mind().describe();
+            c.getSource().sendSuccess(() -> Component.translatable("logos.command.mind.lifeform", lf.getName(), lf.role().title(), lf.temperament()).append("\n  ").append(mind), false);
         }
-        if (n == 0) c.getSource().sendFailure(net.minecraft.network.chat.Component.literal("附近没有你的魔力生命体或巨像"));
+        if (n == 0) c.getSource().sendFailure(Component.translatable("logos.command.mind.none"));
         return n;
     }
 
     /** Debug: how much the running spells ask of the server: what waits, what lives, and the last tick's interpreter steps. */
     private static int stats(CommandContext<CommandSourceStack> c) {
-        String line = "术式运行：待执行任务 " + SpellRuntime.pendingTasks() + " / " + Limits.MAX_GLOBAL_TASKS
-                + " · 存活形体 " + SpellRuntime.liveForms() + " / " + Limits.MAX_GLOBAL_OBJECTS
-                + " · 上一刻运算 " + SpellRuntime.stepsLastTick() + " / " + dev.logos.LogosConfig.maxOpsPerTickGlobal() + " 步";
-        c.getSource().sendSuccess(() -> Component.literal(line).withStyle(ChatFormatting.AQUA), false);
+        Component line = Component.translatable("logos.command.stats", SpellRuntime.pendingTasks(), Limits.MAX_GLOBAL_TASKS,
+                SpellRuntime.liveForms(), Limits.MAX_GLOBAL_OBJECTS, SpellRuntime.stepsLastTick(), dev.logos.LogosConfig.maxOpsPerTickGlobal());
+        c.getSource().sendSuccess(() -> line.copy().withStyle(ChatFormatting.AQUA), false);
         return 1;
     }
 
@@ -350,10 +350,10 @@ public final class LogosCommands {
         ServerPlayer p = c.getSource().getPlayerOrException();
         var all = dev.logos.runtime.Anchors.of(p).all();
         if (all.isEmpty()) {
-            c.getSource().sendSuccess(() -> Component.literal("⚓ 还没有锚点：拿着锚钉右键方块立下，或在术式里用 (anchor ^名字 位置)"), false);
+            c.getSource().sendSuccess(() -> Component.translatable("logos.command.anchors.none"), false);
             return 0;
         }
-        c.getSource().sendSuccess(() -> Component.literal("⚓ 锚点 " + all.size() + " / " + dev.logos.LogosConfig.maxAnchors()), false);
+        c.getSource().sendSuccess(() -> Component.translatable("logos.command.anchors.head", all.size(), dev.logos.LogosConfig.maxAnchors()), false);
         for (var a : all) {
             String line = String.format("  ^%s  %.0f, %.0f, %.0f  %s", a.name(), a.pos().x, a.pos().y, a.pos().z, a.dimension().identifier());
             c.getSource().sendSuccess(() -> Component.literal(line), false);
@@ -382,8 +382,7 @@ public final class LogosCommands {
         give(p, new ItemStack(LogosMod.SPELL_PAGE.get(), 8));
         give(p, new ItemStack(LogosMod.ANCHOR_NAIL.get(), 16));
         give(p, new ItemStack(Items.WRITABLE_BOOK));
-        c.getSource().sendSuccess(() -> Component.literal("已给予：大师法杖（挂着 " + onWand + " 篇示例术式）、法式典籍（其余 " + (pages.size() - onWand)
-                + " 篇，放在副手即可使用）、术式编纂台、术式拓印台、炼金术桌、8 张空白术式载页、16 枚锚钉。按 R 打开术式轮盘选择术式。")
+        c.getSource().sendSuccess(() -> Component.translatable("logos.command.kit.given", onWand, pages.size() - onWand, Component.keybind("key.logos.spell_wheel"))
                 .withStyle(ChatFormatting.GOLD), false);
         return 1;
     }
@@ -393,14 +392,14 @@ public final class LogosCommands {
         if (name != null) {
             Rune r = Runes.get(name);
             if (r == null) {
-                s.sendFailure(Component.literal("没有符文 " + name));
+                s.sendFailure(Component.translatable("logos.command.runes.unknown", name));
                 return 0;
             }
             s.sendSuccess(() -> Component.literal("[" + r.category.zh + "] ").withStyle(r.category.color)
                     .append(Component.literal(r.signature()).withStyle(ChatFormatting.WHITE)), false);
-            s.sendSuccess(() -> Component.literal("  " + r.doc + " · 稳定度 " + Node.fmt(r.stability)).withStyle(ChatFormatting.GRAY), false);
+            s.sendSuccess(() -> Component.translatable("logos.command.runes.doc", r.doc, Node.fmt(r.stability)).withStyle(ChatFormatting.GRAY), false);
             for (Rune.EventSpec e : r.events.values()) {
-                s.sendSuccess(() -> Component.literal("  (" + e.name() + " …) " + e.doc() + (e.bindsTarget() ? "，提供 target" : ""))
+                s.sendSuccess(() -> Component.translatable(e.bindsTarget() ? "logos.command.runes.event_target" : "logos.command.runes.event", e.name(), e.doc())
                         .withStyle(ChatFormatting.AQUA), false);
             }
             return 1;
@@ -415,8 +414,8 @@ public final class LogosCommands {
             s.sendSuccess(() -> Component.literal("[" + cat.zh + "] ").withStyle(cat.color)
                     .append(Component.literal(String.join("  ", names)).withStyle(ChatFormatting.WHITE)), false);
         }
-        s.sendSuccess(() -> Component.literal("[元素] physical fire frost lightning void  [状态] burning frozen #任意印记").withStyle(ChatFormatting.GRAY), false);
-        s.sendSuccess(() -> Component.literal("/logos runes <名字> 查看插槽与说明").withStyle(ChatFormatting.DARK_GRAY), false);
+        s.sendSuccess(() -> Component.translatable("logos.command.runes.literals").withStyle(ChatFormatting.GRAY), false);
+        s.sendSuccess(() -> Component.translatable("logos.command.runes.more").withStyle(ChatFormatting.DARK_GRAY), false);
         return 1;
     }
 
@@ -425,35 +424,35 @@ public final class LogosCommands {
         ServerPlayer p = c.getSource().getPlayerOrException();
         PlayerMagic m = PlayerMagic.of(p);
         double cap = PlayerMagic.maxMana(p);
-        c.getSource().sendSuccess(() -> Component.literal("魔力 " + Node.fmt(m.mana) + " / " + Node.fmt(cap) + " · 稳定度上限 " + m.stability)
+        c.getSource().sendSuccess(() -> Component.translatable("logos.command.mana.head", Node.fmt(m.mana), Node.fmt(cap), m.stability)
                 .withStyle(ChatFormatting.AQUA), false);
         var attr = p.getAttribute(dev.logos.runtime.SpellModifiers.MAX_MANA);
         double rest = cap - m.baseMaxMana;
-        StringBuilder sb = new StringBuilder("  永久 ").append(Node.fmt(m.baseMaxMana));
+        MutableComponent sb = Component.translatable("logos.command.mana.base", Node.fmt(m.baseMaxMana));
         for (var t : dev.logos.runtime.ManaGrowth.Term.values()) {
             var mod = attr == null ? null : attr.getModifier(t.id);
             if (mod == null) continue;
-            sb.append(" + ").append(t.zh).append(' ').append(Node.fmt(mod.amount()));
+            sb.append(Component.translatable("logos.command.mana.term", Component.translatable("logos.mana_growth." + t.id.getPath().replace("growth_", "")), Node.fmt(mod.amount())));
             rest -= mod.amount();
         }
-        if (Math.abs(rest) >= 0.5) sb.append(rest > 0 ? " + " : " − ").append("装备与其他 ").append(Node.fmt(Math.abs(rest)));
-        c.getSource().sendSuccess(() -> Component.literal(sb.toString()).withStyle(ChatFormatting.GRAY), false);
-        c.getSource().sendSuccess(() -> Component.literal("  回复 " + Node.fmt(dev.logos.runtime.SpellModifiers.regenerationPerTick(p) * 20) + "/秒 · 累计经验 "
-                + Node.fmt(m.lifetimeXp) + " · 累计耗魔 " + Node.fmt(m.manaSpent)).withStyle(ChatFormatting.DARK_GRAY), false);
+        if (Math.abs(rest) >= 0.5) sb.append(Component.translatable(rest > 0 ? "logos.command.mana.rest" : "logos.command.mana.rest_less", Node.fmt(Math.abs(rest))));
+        c.getSource().sendSuccess(() -> sb.withStyle(ChatFormatting.GRAY), false);
+        c.getSource().sendSuccess(() -> Component.translatable("logos.command.mana.growth", Node.fmt(dev.logos.runtime.SpellModifiers.regenerationPerTick(p) * 20),
+                Node.fmt(m.lifetimeXp), Node.fmt(m.manaSpent)).withStyle(ChatFormatting.DARK_GRAY), false);
         return 1;
     }
 
     private static int passives(CommandContext<CommandSourceStack> c) throws CommandSyntaxException {
         var list = SpellBag.passives(c.getSource().getPlayerOrException());
         if (list.isEmpty()) {
-            c.getSource().sendSuccess(() -> Component.literal("主手和副手的法杖、法式典籍里都没有被动术式。把带 :trigger hurt/attack/kill 的术式载页放进去，拿在任一只手上即可"), false);
+            c.getSource().sendSuccess(() -> Component.translatable("logos.command.passives.none"), false);
             return 1;
         }
         for (var e : list) {
             Spell s = e.spell();
             int cap = e.tier().capacity();
-            String inject = s.mana() > cap ? Node.fmt(s.mana()) + "（载页承载 " + cap + "）" : Node.fmt(s.mana());
-            c.getSource().sendSuccess(() -> Component.literal("⚑ 《" + s.name() + "》 " + Spell.triggerZh(s.trigger()) + " · 注入 " + inject)
+            Component inject = s.mana() > cap ? Component.translatable("logos.command.passives.over", Node.fmt(s.mana()), cap) : Component.literal(Node.fmt(s.mana()));
+            c.getSource().sendSuccess(() -> Component.translatable("logos.command.passives.entry", s.name(), Spell.triggerName(s.trigger()), inject)
                     .withStyle(ChatFormatting.AQUA), false);
         }
         return 1;

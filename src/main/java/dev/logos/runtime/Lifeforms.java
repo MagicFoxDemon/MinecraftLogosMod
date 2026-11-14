@@ -25,6 +25,7 @@ import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -138,7 +139,7 @@ public final class Lifeforms {
      * Counts {@code m} as {@code owner}'s, making room first: past {@code limit} of its kind the oldest
      * is unmade ({@code noun} names the kind in the message).
      */
-    static void enlist(ServerLevel level, ServerPlayer owner, Mob m, int limit, String noun) {
+    static void enlist(ServerLevel level, ServerPlayer owner, Mob m, int limit, Component noun) {
         Registry r = registry(level.getServer(), m);
         List<UUID> mine = r.of(owner.getUUID());
         while (mine.size() >= Math.max(1, limit)) unmake(level.getServer(), owner, mine.removeFirst(), noun);
@@ -151,20 +152,21 @@ public final class Lifeforms {
      * default all the spell has left, up to its pool; at least {@link ManaLifeform#minMana}. What it
      * took becomes its mana. Past the player's limit the oldest is unmade. Returns null or why not.
      */
-    public static @Nullable String summon(SpellInstance inst, ServerPlayer owner, ServerLevel level, Vec3 at, @Nullable String nickname,
+    public static @Nullable Component summon(SpellInstance inst, ServerPlayer owner, ServerLevel level, Vec3 at, @Nullable String nickname,
             int lifeLevel, @Nullable Double wanted) {
         int limit = LogosConfig.maxLifeforms();
-        if (limit <= 0) return "魔力生命体已被配置关闭（maxLifeforms = 0）";
-        if (lifeLevel < 1 || lifeLevel > ManaLifeform.MAX_LEVEL) return "魔力生命体的等级只能是 1–" + ManaLifeform.MAX_LEVEL + "，不是 " + lifeLevel;
+        if (limit <= 0) return Component.translatable("logos.lifeform.disabled");
+        if (lifeLevel < 1 || lifeLevel > ManaLifeform.MAX_LEVEL) return Component.translatable("logos.lifeform.bad_level", ManaLifeform.MAX_LEVEL, lifeLevel);
         double min = ManaLifeform.minMana(lifeLevel), max = ManaLifeform.maxMana(lifeLevel);
         double amount = Math.min(wanted != null ? wanted : inst.mana, max);
         if (amount < min || inst.mana < min) {
-            return "魔力不足：凝聚 " + lifeLevel + " 级魔力生命体至少要 " + Math.round(min) + "，术式只剩 " + Math.round(inst.mana)
-                    + (wanted != null && wanted < min ? "（:mana 写了 " + Math.round(wanted) + "）" : "");
+            return wanted != null && wanted < min
+                    ? Component.translatable("logos.lifeform.too_little_asked", lifeLevel, Math.round(min), Math.round(inst.mana), Math.round(wanted))
+                    : Component.translatable("logos.lifeform.too_little", lifeLevel, Math.round(min), Math.round(inst.mana));
         }
         ManaLifeform lf = LogosMod.MANA_LIFEFORM.get().create(level, EntitySpawnReason.MOB_SUMMONED);
-        if (lf == null) return "魔力生命体无法生成";
-        if (!inst.spend(amount, "凝聚魔力生命体")) return null; // the spell itself reports running dry
+        if (lf == null) return Component.translatable("logos.lifeform.cannot_spawn");
+        if (!inst.spend(amount, "gather lifeform")) return null; // the spell itself reports running dry
         lf.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);
         lf.setLifeLevel(lifeLevel);
         lf.setMana(amount);
@@ -182,19 +184,19 @@ public final class Lifeforms {
     /** Spells and eggs share the same persistent owner binding and per-player lifeform limit. */
     public static void bindSummoned(ManaLifeform lf, ServerPlayer owner) {
         Familiars.bind(lf, owner, Long.MAX_VALUE);
-        enlist((ServerLevel) lf.level(), owner, lf, LogosConfig.maxLifeforms(), "魔力生命体");
+        enlist((ServerLevel) lf.level(), owner, lf, LogosConfig.maxLifeforms(), lf.getType().getDescription());
     }
 
     /** The oldest makes way for a new one: if it is loaded it is unmade now, otherwise when it next loads. */
-    private static void unmake(MinecraftServer server, ServerPlayer owner, UUID id, String noun) {
+    private static void unmake(MinecraftServer server, ServerPlayer owner, UUID id, Component noun) {
         for (ServerLevel l : server.getAllLevels()) {
             if (l.getEntity(id) instanceof Mob old && old instanceof KeptFamiliar) {
-                owner.sendSystemMessage(Component.literal("✦ " + old.getName().getString() + " 消散了，为新的" + noun + "让出位置").withStyle(ChatFormatting.GRAY));
+                owner.sendSystemMessage(Component.translatable("logos.familiar.made_way", old.getName(), noun).withStyle(ChatFormatting.GRAY));
                 Familiars.dismiss(old);
                 return;
             }
         }
-        owner.sendSystemMessage(Component.literal("✦ 远方的" + noun + "将在下次被加载时消散，为新的让出位置").withStyle(ChatFormatting.GRAY));
+        owner.sendSystemMessage(Component.translatable("logos.familiar.will_make_way", noun).withStyle(ChatFormatting.GRAY));
     }
 
     /** One that was unmade while unloaded comes back only to drop what it carried and disperse. */
@@ -248,34 +250,33 @@ public final class Lifeforms {
     private static ModularUI corePanel(Player player, @Nullable ManaLifeform lf) {
         UIElement root = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(7).gapAll(4));
         if (lf == null) {
-            root.addChildren(new Label().setText(Component.literal("（魔力生命体已不在）")), new InventorySlots());
+            root.addChildren(new Label().setText(Component.translatable("logos.lifeform.gone")), new InventorySlots());
             return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
         }
         int lv = lf.lifeLevel();
         UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(8));
         row.addChildren(
-                group(lf, "主动", ManaLifeform.ACTIVE_FIRST, ManaLifeform.activeSlots(lv)),
-                group(lf, "被动", ManaLifeform.PASSIVE_FIRST, ManaLifeform.passiveSlots(lv)),
-                group(lf, "炼金道具", ManaLifeform.DEVICE_FIRST, ManaLifeform.deviceSlots(lv)));
+                group(lf, Component.translatable("logos.lifeform.core.active"), ManaLifeform.ACTIVE_FIRST, ManaLifeform.activeSlots(lv)),
+                group(lf, Component.translatable("logos.lifeform.core.passive"), ManaLifeform.PASSIVE_FIRST, ManaLifeform.passiveSlots(lv)),
+                group(lf, Component.translatable("logos.lifeform.core.devices"), ManaLifeform.DEVICE_FIRST, ManaLifeform.deviceSlots(lv)));
         Label hint = new Label();
-        hint.setText(Component.literal("主动：放主动启式的术式。按意图使用：攻击类对准敌人，较便宜的那张是普攻，"
-                + "魔力充足（放完仍剩三成）时较贵的那张一起放出；治疗、守护类用来照顾你。"
-                + "被动：受击（hurt）、主人出手（attack）、目标倒下（kill）时触发。施法花的是它自己的魔力。"
-                + (ManaLifeform.quick(lv) ? "4 级起它的施法、移动与恢复更快。" : "")));
+        MutableComponent help = Component.translatable("logos.lifeform.core.hint");
+        if (ManaLifeform.quick(lv)) help.append(Component.translatable("logos.lifeform.core.hint_quick"));
+        hint.setText(help);
         hint.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
         hint.layout(x -> x.width(9 * 19));
         root.addChildren(
-                new Label().setText(Component.literal("✦ " + lf.getName().getString() + " 的心核 · " + lv + " 级 · " + lf.role().zh)),
-                new Label().setText(Component.literal(lf.temperamentZh())),
+                new Label().setText(Component.translatable("logos.lifeform.core.title", lf.getName(), lv, lf.role().title())),
+                new Label().setText(lf.temperament()),
                 row, hint, new InventorySlots());
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
     }
 
     /** A labelled column of {@code n} core slots from {@code first}; a group with none open is left out. */
-    private static UIElement group(ManaLifeform lf, String title, int first, int n) {
+    private static UIElement group(ManaLifeform lf, Component title, int first, int n) {
         UIElement col = new UIElement().layout(l -> l.gapAll(1));
         if (n <= 0) return col;
-        col.addChild(new Label().setText(Component.literal(title)));
+        col.addChild(new Label().setText(title));
         UIElement slots = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(1));
         for (int i = 0; i < n; i++) {
             ItemSlot slot = new ItemSlot();

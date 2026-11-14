@@ -12,6 +12,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
@@ -39,7 +40,7 @@ public class SpellWheelScreen extends Screen {
     }
 
     public SpellWheelScreen(List<SpellBag.Entry> entries, int selected, ItemStack voice, boolean voiceSelected) {
-        super(Component.literal("术式轮盘"));
+        super(Component.translatable("key.logos.spell_wheel"));
         this.entries = entries;
         this.voice = voice;
         this.voiced = (int) entries.stream().filter(e -> e.page().has(dev.logos.LogosMod.VOICE.get()) && !e.spell().isPassive()).count();
@@ -82,7 +83,7 @@ public class SpellWheelScreen extends Screen {
                 g.fill(x - BOX / 2, y - BOX / 2, x + BOX / 2, y + BOX / 2, bg);
                 g.outline(x - BOX / 2, y - BOX / 2, BOX, BOX, 0xFFD67FF0);
                 g.item(voice, x - 8, y - 8);
-                g.centeredText(font, "🗣 言出法随", x, y + BOX / 2 + 3, k == hovered ? 0xFFFFFFFF : 0xFFE6B8F5);
+                g.centeredText(font, I18n.get("logos.wheel.voice_slot"), x, y + BOX / 2 + 3, k == hovered ? 0xFFFFFFFF : 0xFFE6B8F5);
                 continue;
             }
             SpellBag.Entry e = entries.get(global);
@@ -100,18 +101,18 @@ public class SpellWheelScreen extends Screen {
         if (show == entries.size() && !voice.isEmpty()) {
             g.fill(cx - 70, cy - 26, cx + 70, cy + 26, 0xC0101018);
             g.outline(cx - 70, cy - 26, 140, 52, 0xFFD67FF0);
-            g.centeredText(font, "言出法随", cx, cy - 20, 0xFFE6B8F5);
-            g.centeredText(font, "按住右键，念出咒语即施放", cx, cy - 8, 0xFFCFCFCF);
-            g.centeredText(font, voiced == 0 ? "还没有言出法随的载页" : voiced + " 个术式可以念出", cx, cy + 4, voiced == 0 ? 0xFFE07F6F : 0xFF9F9FAF);
-            if (pages() > 1) g.centeredText(font, "◀ " + (page + 1) + " / " + pages() + " ▶  滚轮翻页", cx, cy + 15, 0xFF6FD3E0);
+            g.centeredText(font, I18n.get("logos.wheel.voice"), cx, cy - 20, 0xFFE6B8F5);
+            g.centeredText(font, I18n.get("logos.wheel.voice_how"), cx, cy - 8, 0xFFCFCFCF);
+            g.centeredText(font, voiced == 0 ? I18n.get("logos.wheel.voice_none") : I18n.get("logos.wheel.voice_count", voiced), cx, cy + 4, voiced == 0 ? 0xFFE07F6F : 0xFF9F9FAF);
+            if (pages() > 1) g.centeredText(font, I18n.get("logos.wheel.pages", page + 1, pages()), cx, cy + 15, 0xFF6FD3E0);
         } else if (!entries.isEmpty() && show < entries.size()) {
             Spell s = entries.get(show).spell();
             g.fill(cx - 70, cy - 26, cx + 70, cy + 26, 0xC0101018);
             g.outline(cx - 70, cy - 26, 140, 52, 0xFFB57FE0);
             g.centeredText(font, "《" + SpellPages.name(entries.get(show).page(), s).getString() + "》", cx, cy - 20, 0xFFE8B84A);
-            g.centeredText(font, Spell.triggerZh(s.trigger()) + " · 注入 " + Node.fmt(s.mana()), cx, cy - 8, 0xFFCFCFCF);
-            g.centeredText(font, (entries.get(show).fromCodex() ? "来自法式典籍" : "挂在法杖上") + " · 稳定度 " + Node.fmt(s.stability()), cx, cy + 4, 0xFF9F9FAF);
-            if (pages() > 1) g.centeredText(font, "◀ " + (page + 1) + " / " + pages() + " ▶  滚轮翻页", cx, cy + 15, 0xFF6FD3E0);
+            g.centeredText(font, I18n.get("logos.wheel.trigger_mana", Spell.triggerName(s.trigger()).getString(), Node.fmt(s.mana())), cx, cy - 8, 0xFFCFCFCF);
+            g.centeredText(font, I18n.get(entries.get(show).fromCodex() ? "logos.wheel.from_codex" : "logos.wheel.on_wand", Node.fmt(s.stability())), cx, cy + 4, 0xFF9F9FAF);
+            if (pages() > 1) g.centeredText(font, I18n.get("logos.wheel.pages", page + 1, pages()), cx, cy + 15, 0xFF6FD3E0);
         }
     }
 
@@ -161,7 +162,7 @@ public class SpellWheelScreen extends Screen {
         var entries = SpellBag.entries(mc.player, wand);
         ItemStack charm = dev.logos.item.PageContainer.pages(wand).stream().filter(s -> s.is(dev.logos.LogosMod.VOICE_CHARM.get())).findFirst().orElse(ItemStack.EMPTY);
         if (entries.isEmpty() && charm.isEmpty()) {
-            mc.player.sendOverlayMessage(Component.literal("法杖上没有术式：潜行右键挂上术式载页，或在副手拿法式典籍"));
+            mc.player.sendOverlayMessage(Component.translatable("logos.cast.no_spell"));
             return;
         }
         mc.setScreen(new SpellWheelScreen(entries, wand.getOrDefault(dev.logos.LogosMod.SELECTED.get(), 0), charm,

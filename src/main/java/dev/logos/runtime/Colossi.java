@@ -21,6 +21,7 @@ import dev.logos.LogosMod;
 import dev.logos.runtime.AlchemicalColossus.Hold;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -68,10 +69,10 @@ public final class Colossi {
      * Raises a colossus for {@code owner} at {@code at}, full to its visible pool, bound to them like a
      * familiar. Past their limit (config maxColossi) the oldest is unmade.
      */
-    public static @Nullable String summon(ServerPlayer owner, ServerLevel level, Vec3 at, @Nullable String name) {
-        if (LogosConfig.maxColossi() <= 0) return "炼金术巨像已被配置关闭（maxColossi = 0）";
+    public static @Nullable Component summon(ServerPlayer owner, ServerLevel level, Vec3 at, @Nullable String name) {
+        if (LogosConfig.maxColossi() <= 0) return Component.translatable("logos.colossus.disabled");
         AlchemicalColossus c = LogosMod.ALCHEMICAL_COLOSSUS.get().create(level, EntitySpawnReason.MOB_SUMMONED);
-        if (c == null) return "炼金术巨像无法生成";
+        if (c == null) return Component.translatable("logos.colossus.cannot_spawn");
         c.snapTo(at.x, at.y, at.z, owner.getYRot() + 180, 0);
         c.yBodyRot = c.yHeadRot = owner.getYRot() + 180;
         if (name != null && !name.isBlank()) {
@@ -88,7 +89,7 @@ public final class Colossi {
         c.setMana(AlchemicalColossus.DISPLAY_CAP);
         if (owner != null) {
             Familiars.bind(c, owner, Long.MAX_VALUE);
-            Lifeforms.enlist((ServerLevel) c.level(), owner, c, LogosConfig.maxColossi(), "炼金术巨像");
+            Lifeforms.enlist((ServerLevel) c.level(), owner, c, LogosConfig.maxColossi(), c.getType().getDescription());
         }
         c.play(AlchemicalColossus.Act.STARTUP);
         Vfx.sound((ServerLevel) c.level(), c.position(), SoundEvents.IRON_GOLEM_REPAIR, 1.4f, 0.5f);
@@ -186,7 +187,7 @@ public final class Colossi {
         switch (action) {
             case TOGGLE_DRIVE -> {
                 c.setDriven(!c.isDriven());
-                p.sendOverlayMessage(Component.literal(c.isDriven() ? "⛨ 驾驶模式：移动由你控制，左键挥拳/抓取，按住右键蓄力能量炮" : "⛨ 乘坐模式：巨像自行行动"));
+                p.sendOverlayMessage(Component.translatable(c.isDriven() ? "logos.colossus.mode.drive" : "logos.colossus.mode.ride"));
             }
             case STRIKE -> {
                 if (c.isDriven()) c.mind().driverStrike(p);
@@ -227,7 +228,7 @@ public final class Colossi {
     private static ModularUI panel(Player player, @Nullable AlchemicalColossus c) {
         UIElement root = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(7).gapAll(4));
         if (c == null) {
-            root.addChildren(new Label().setText(Component.literal("（巨像已不在）")), new InventorySlots());
+            root.addChildren(new Label().setText(Component.translatable("logos.colossus.gone")), new InventorySlots());
         } else {
             UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(1));
             for (int i = 0; i < c.deviceSlots(); i++) {
@@ -236,11 +237,12 @@ public final class Colossi {
                 row.addChild(slot);
             }
             Label hint = new Label();
-            hint.setText(Component.literal("炼金术道具：装在巨像身上持续生效（如缓慢回魔、魔力护盾）。"
-                    + (c.isTempered() ? "历经暴走后多出两个槽位。" : "")));
+            MutableComponent help = Component.translatable("logos.colossus.devices.hint");
+            if (c.isTempered()) help.append(Component.translatable("logos.colossus.devices.tempered"));
+            hint.setText(help);
             hint.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
             hint.layout(x -> x.width(9 * 19));
-            root.addChildren(new Label().setText(c.status()), new Label().setText(Component.literal("炼金术道具")), row, hint, new InventorySlots());
+            root.addChildren(new Label().setText(c.status()), new Label().setText(Component.translatable("logos.colossus.devices")), row, hint, new InventorySlots());
         }
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
     }

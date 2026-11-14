@@ -77,8 +77,8 @@ public class SpellEmitterScenario implements UIScenario {
                         new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(EDITED), Direction.UP, EDITED, false)))
                 .awaitModularUI()
                 .ticks(10)
-                .checkTextContains("#status", "成立")
-                .checkTextContains("#overview", "发射器魔力")
+                .checkTextContains("#status", LangText.before("logos.editor.status.holds"))
+                .checkTextContains("#overview", LangText.before("logos.editor.emitter.mana"))
                 .check("the emitter's node stands in for the invocation", ctx -> {
                     var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
                     SpellGraph g = (SpellGraph) view.getGraph();

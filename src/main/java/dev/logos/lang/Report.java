@@ -14,18 +14,18 @@ public final class Report {
     public static void analyze(Spell s, int capacity, Consumer<Component> out) {
         out.accept(Component.literal("═══ 《" + s.name() + "》 ═══").withStyle(ChatFormatting.GOLD));
         ChatFormatting stab = s.stability() > capacity ? ChatFormatting.RED : ChatFormatting.GREEN;
-        out.accept(Component.literal("启式 " + Spell.triggerZh(s.trigger()) + " · 注入魔力 " + Node.fmt(s.mana()) + " · ")
+        out.accept(Component.translatable("logos.report.head", Spell.triggerName(s.trigger()), Node.fmt(s.mana()))
                 .withStyle(ChatFormatting.GRAY)
-                .append(Component.literal("稳定度 " + Node.fmt(s.stability()) + " / " + capacity).withStyle(stab)));
+                .append(Component.translatable("logos.report.stability", Node.fmt(s.stability()), capacity).withStyle(stab)));
         for (Node n : s.body()) tree(n, "", out);
         for (String note : s.notes()) out.accept(Component.literal("∴ " + note).withStyle(ChatFormatting.DARK_PURPLE));
     }
 
     public static void summary(Spell s, int capacity, Consumer<Component> out) {
         ChatFormatting stab = s.stability() > capacity ? ChatFormatting.RED : ChatFormatting.GREEN;
-        out.accept(Component.literal("✓ 《" + s.name() + "》 成立").withStyle(ChatFormatting.GOLD)
-                .append(Component.literal(" · " + Spell.triggerZh(s.trigger()) + " · 注入 " + Node.fmt(s.mana()) + " · ").withStyle(ChatFormatting.GRAY))
-                .append(Component.literal("稳定度 " + Node.fmt(s.stability()) + "/" + capacity).withStyle(stab)));
+        out.accept(Component.translatable("logos.report.holds", s.name()).withStyle(ChatFormatting.GOLD)
+                .append(Component.translatable("logos.report.summary", Spell.triggerName(s.trigger()), Node.fmt(s.mana())).withStyle(ChatFormatting.GRAY))
+                .append(Component.translatable("logos.report.stability", Node.fmt(s.stability()), capacity).withStyle(stab)));
         for (String note : s.notes()) out.accept(Component.literal("∴ " + note).withStyle(ChatFormatting.DARK_PURPLE));
     }
 
@@ -43,10 +43,10 @@ public final class Report {
         switch (n.rune.name) {
             case "if" -> {
                 out.accept(Component.literal(indent).append(tag(n)).append(Component.literal("if " + n.arg(0).show())));
-                out.accept(Component.literal(next + "✔ 成立:").withStyle(ChatFormatting.DARK_GREEN));
+                out.accept(Component.literal(next).append(Component.translatable("logos.report.then")).withStyle(ChatFormatting.DARK_GREEN));
                 tree(n.arg(1), next + "   ", out);
                 if (n.arg(2) != null) {
-                    out.accept(Component.literal(next + "✘ 否则:").withStyle(ChatFormatting.DARK_RED));
+                    out.accept(Component.literal(next).append(Component.translatable("logos.report.else")).withStyle(ChatFormatting.DARK_RED));
                     tree(n.arg(2), next + "   ", out);
                 }
                 return;

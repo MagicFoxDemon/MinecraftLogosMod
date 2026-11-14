@@ -62,6 +62,7 @@ import dev.vfyjxf.taffy.style.TaffyDisplay;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
@@ -297,22 +298,22 @@ public final class SpellEditor {
         templates.setSelected("fireball", false);
         templates.layout(l -> l.widthPercent(100));
 
-        Button loadTemplate = new Button().setText("载入模板");
+        Button loadTemplate = new Button().setText(Component.translatable("logos.editor.load_template"));
         loadTemplate.setId("load_template");
         loadTemplate.setOnClick(ev -> {
             String id = templates.getValue();
             if (id != null && Examples.ALL.containsKey(id)) load(GraphBuilder.build(Compiler.compile(Examples.ALL.get(id))));
         });
-        Button clear = new Button().setText("清空");
+        Button clear = new Button().setText(Component.translatable("logos.editor.clear"));
         clear.setOnClick(ev -> load(GraphBuilder.empty()));
-        Button paste = new Button().setText("贴入两脚规");
+        Button paste = new Button().setText(Component.translatable("logos.editor.paste_dividers"));
         paste.setId("paste_dividers");
         paste.setOnClick(ev -> pasteDividers());
-        Button inscribe = new Button().setText(emitter == null ? "写入术式载页" : "写入发射器");
+        Button inscribe = new Button().setText(Component.translatable(emitter == null ? "logos.editor.inscribe" : "logos.editor.inscribe_emitter"));
         inscribe.setId("inscribe");
         inscribe.setOnClick(ev -> inscribe());
         // 试射: save, then cast once as soon as the emitter is charged.
-        Button testFire = new Button().setText("试射");
+        Button testFire = new Button().setText(Component.translatable("logos.editor.test_fire"));
         testFire.setId("test_fire");
         testFire.setOnClick(ev -> {
             fireOnSave = true;
@@ -351,14 +352,14 @@ public final class SpellEditor {
         overviewPage = side;
         UIElement details = new UIElement().layout(l -> l.widthPercent(100).gapAll(5).paddingAll(6));
         details.addChildren(
-                new Label().setText(Component.literal(emitter == null ? "☉ Logos 术式工坊" : "☉ 术式发射器 · 载页")),
-                new Label().setText(Component.literal("模板")),
+                new Label().setText(Component.translatable(emitter == null ? "logos.editor.title" : "logos.editor.title_emitter")),
+                new Label().setText(Component.translatable("logos.editor.templates")),
                 templates,
                 row,
                 status,
-                new Label().setText(Component.literal("☷ 总览")));
+                new Label().setText(Component.translatable("logos.editor.overview_heading")));
         // The emitter casts on its own trigger; the intent a lifeform reads stays as the page had it.
-        if (emitter == null) details.addChildren(new Label().setText(Component.literal("意图（魔力生命体据此决定何时施放）")), intent);
+        if (emitter == null) details.addChildren(new Label().setText(Component.translatable("logos.editor.intent")), intent);
         details.addChildren(runeDescription, overview);
         for (UIElement child : details.getChildren()) {
             if (child instanceof Label label) {
@@ -529,7 +530,7 @@ public final class SpellEditor {
         var player = Minecraft.getInstance().player;
         DividersItem.Measure m = player == null ? null : DividersItem.carried(player);
         if (m == null) {
-            if (player != null) player.sendOverlayMessage(Component.literal("身上没有量好的两脚规：先右键起点方块，再右键目标方块"));
+            if (player != null) player.sendOverlayMessage(Component.translatable("logos.editor.no_dividers"));
             return;
         }
         if (!(editor.getCurrentView() instanceof SpellGraphView view)) return;
@@ -566,12 +567,11 @@ public final class SpellEditor {
         GraphCompiler.Result r = graph.result();
         if (r.ok()) {
             var s = r.spell();
-            StringBuilder sb = new StringBuilder("✓ 《" + s.name() + "》成立\n");
-            sb.append("注入魔力 ").append(Node.fmt(s.mana())).append(" · 稳定度 ").append(Node.fmt(s.stability())).append('\n');
+            StringBuilder sb = new StringBuilder(I18n.get("logos.editor.status.holds", s.name())).append('\n');
+            sb.append(I18n.get("logos.editor.status.numbers", Node.fmt(s.mana()), Node.fmt(s.stability()))).append('\n');
             if (s.mana() > tier.capacity()) {
-                sb.append(emitter == null ? "⚠ 台上的载页只能承载 " : "⚠ 发射器里的载页只能承载 ").append(tier.capacity())
-                        .append(" 魔力：可以照常写入，施放时只注入 ").append(tier.capacity())
-                        .append(emitter != null ? "（发射器没有焚式）" : s.immolate() ? "（持焚式法杖可放大上限，载页焚毁）" : "（已关闭焚式）").append('\n');
+                String where = emitter != null ? "emitter" : s.immolate() ? "immolate" : "no_immolate";
+                sb.append(I18n.get("logos.editor.status.over_capacity." + where, tier.capacity())).append('\n');
             }
             for (String note : s.notes()) sb.append("∴ ").append(note).append('\n');
             int sealed = unlearned(s);
@@ -617,14 +617,14 @@ public final class SpellEditor {
         var p = s.profile();
         StringBuilder sb = new StringBuilder();
         double left = s.mana() - p.estimate();
-        sb.append("✦ 一次施放估计约需 ").append(Math.round(p.estimate())).append(" 魔力（注入 ").append(Node.fmt(s.mana())).append("）\n");
-        if (left < 0) sb.append("⚠ 估计比注入的多 ").append(Math.round(-left)).append("：术式可能在中途魔力耗尽而熄灭\n");
-        else if (left > Math.max(5, s.mana() * 0.5)) sb.append("∴ 估计会剩下约 ").append(Math.round(left)).append("，自然结束时化为游离魔力，可以少注入一些\n");
-        else sb.append("∴ 注入大致合适\n");
-        sb.append("⚑ 意图：").append(p.intentsZh()).append(p.declared() ? "（已指定）" : "（推测）").append('\n');
-        if (p.range() > 0) sb.append("➶ 作用距离约 ").append(Math.round(p.range())).append(" 格\n");
+        sb.append(I18n.get("logos.editor.overview.estimate", Math.round(p.estimate()), Node.fmt(s.mana()))).append('\n');
+        if (left < 0) sb.append(I18n.get("logos.editor.overview.short", Math.round(-left))).append('\n');
+        else if (left > Math.max(5, s.mana() * 0.5)) sb.append(I18n.get("logos.editor.overview.spare", Math.round(left))).append('\n');
+        else sb.append(I18n.get("logos.editor.overview.fits")).append('\n');
+        sb.append(I18n.get(p.declared() ? "logos.editor.overview.intent_declared" : "logos.editor.overview.intent_guessed", p.intentsZh())).append('\n');
+        if (p.range() > 0) sb.append(I18n.get("logos.editor.overview.range", Math.round(p.range()))).append('\n');
         if (!p.assumptions().isEmpty()) {
-            sb.append("\n估算依据：\n");
+            sb.append('\n').append(I18n.get("logos.editor.overview.basis")).append('\n');
             for (String a : p.assumptions()) sb.append(" · ").append(a).append('\n');
         }
         return sb.toString().strip();
@@ -632,30 +632,29 @@ public final class SpellEditor {
 
     /** Whether the page will be written with 言出法随, in one line; the voice page has the rest. */
     private String voiceLine(String name) {
-        if (name.equals(voice)) return "🗣 言出法随：可用（写入后喊「" + name + "」施放）";
-        if (voice != null) return "🗣 言出法随：咒语名已改，需在「言出法随」页重新录制";
-        return "🗣 言出法随：未启用（在「言出法随」页录制）";
+        if (name.equals(voice)) return I18n.get("logos.editor.voice.ready", name);
+        if (voice != null) return I18n.get("logos.editor.voice.renamed");
+        return I18n.get("logos.editor.voice.off");
     }
 
     /** The emitter's store, how long one charge takes, and what its trigger does, as set on its node. */
     private String emitterInfo(dev.logos.lang.@org.jspecify.annotations.Nullable Spell s) {
-        StringBuilder sb = new StringBuilder("⚙ 发射器魔力 ").append((int) emitter.mana()).append(" / ").append((int) SpellEmitterBlockEntity.MAX_MANA)
-                .append("（收集器对准它，或用灌魔补充）\n");
+        StringBuilder sb = new StringBuilder(I18n.get("logos.editor.emitter.mana", (int) emitter.mana(), (int) SpellEmitterBlockEntity.MAX_MANA)).append('\n');
         if (s != null) {
             double in = Math.min(s.mana(), tier.capacity());
             double secs = dev.logos.runtime.Charging.ticks(in, SpellEmitterBlockEntity.FLOW, SpellEmitterBlockEntity.SURGE) / 20.0;
-            sb.append("⌛ 每次注入 ").append(Node.fmt(in)).append("，蓄满约 ").append(String.format("%.1f", secs)).append(" 秒\n");
+            sb.append(I18n.get("logos.editor.emitter.charge", Node.fmt(in), String.format(java.util.Locale.ROOT, "%.1f", secs))).append('\n');
         }
         SpecialNodes.EmitterRoot node = EmitterGraphs.root(graph, SpecialNodes.EmitterRoot.class);
         SpecialNodes.EmitterMode mode = node == null ? emitter.mode() : node.mode();
         int every = node == null ? emitter.interval() : node.interval();
-        sb.append("⚑ ").append(switch (mode) {
-            case PULSE -> "红石脉冲：收到信号时施放一次（蓄满后）";
-            case HOLD -> "红石持续：有信号期间，每次蓄满就施放";
-            case TIMED -> "定时：每 " + Math.clamp(every, 1, SpellEmitterBlockEntity.MAX_INTERVAL) + " 秒施放一次，每次另耗 " + Node.fmt(SpellEmitterBlockEntity.AUTO_COST) + " 魔力";
-            case FULL -> "满能即放：每次蓄满就施放，每次另耗 " + Node.fmt(SpellEmitterBlockEntity.AUTO_COST) + " 魔力";
+        sb.append(switch (mode) {
+            case PULSE -> I18n.get("logos.editor.emitter.pulse");
+            case HOLD -> I18n.get("logos.editor.emitter.hold");
+            case TIMED -> I18n.get("logos.editor.emitter.timed", Math.clamp(every, 1, SpellEmitterBlockEntity.MAX_INTERVAL), Node.fmt(SpellEmitterBlockEntity.AUTO_COST));
+            case FULL -> I18n.get("logos.editor.emitter.full", Node.fmt(SpellEmitterBlockEntity.AUTO_COST));
         });
-        sb.append("\n☉ 从发射器中心施放，没指定方向时朝它面对的方向");
+        sb.append('\n').append(I18n.get("logos.editor.emitter.origin"));
         return sb.toString();
     }
 
@@ -670,7 +669,7 @@ public final class SpellEditor {
         var player = Minecraft.getInstance().player;
         if (player == null) return;
         if (!r.ok()) {
-            player.sendOverlayMessage(Component.literal("✗ 术式无法成立：" + r.error()));
+            player.sendOverlayMessage(Component.translatable("logos.editor.invalid", r.error()));
             return;
         }
         int sealed = unlearned(r.spell());
@@ -704,7 +703,7 @@ public final class SpellEditor {
         GraphCompiler.Result r = GraphCompiler.compile(page);
         var player = Minecraft.getInstance().player;
         if (!r.ok() || player == null) {
-            if (player != null) player.sendOverlayMessage(Component.literal("✗ 术式无法成立：" + r.error()));
+            if (player != null) player.sendOverlayMessage(Component.translatable("logos.editor.invalid", r.error()));
             return;
         }
         TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());

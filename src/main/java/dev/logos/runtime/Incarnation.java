@@ -215,15 +215,15 @@ public final class Incarnation {
     }
 
     /** Why {@code p} cannot become a {@code type} now, or null if they can. */
-    public static @Nullable String refuse(ServerPlayer p, @Nullable EntityType<?> type) {
-        if (type == null) return "没有这种生物";
-        String name = type.getDescription().getString();
-        if (Possession.possessing(p)) return "附身时不能化身";
-        if (p.isSpectator() || p.isSleeping() || !p.isAlive()) return "现在不能化身";
-        if (!(type.create(p.level(), EntitySpawnReason.TRIGGERED) instanceof Mob m) || m instanceof KeptFamiliar) return name + "不是能化身的生物";
-        String locked = Familiars.locked(p, type);
-        if (locked != null) return "还不能化身为" + name + "：" + locked;
-        if (!p.level().noCollision(p, type.getDimensions().makeBoundingBox(p.position()).deflate(1e-7))) return "这里容不下" + name;
+    public static @Nullable Component refuse(ServerPlayer p, @Nullable EntityType<?> type) {
+        if (type == null) return Component.translatable("logos.incarnate.no_such_creature");
+        Component name = type.getDescription();
+        if (Possession.possessing(p)) return Component.translatable("logos.incarnate.while_possessing");
+        if (p.isSpectator() || p.isSleeping() || !p.isAlive()) return Component.translatable("logos.incarnate.not_now");
+        if (!(type.create(p.level(), EntitySpawnReason.TRIGGERED) instanceof Mob m) || m instanceof KeptFamiliar) return Component.translatable("logos.incarnate.not_a_form", name);
+        Component locked = Familiars.locked(p, type);
+        if (locked != null) return Component.translatable("logos.incarnate.locked", name, locked);
+        if (!p.level().noCollision(p, type.getDimensions().makeBoundingBox(p.position()).deflate(1e-7))) return Component.translatable("logos.incarnate.no_room", name);
         return null;
     }
 

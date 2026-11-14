@@ -33,13 +33,13 @@ public record SelectSpellPayload(int index) implements CustomPacketPayload {
         if (p.index == VOICE) {
             if (!WandCharmItem.on(wand, LogosMod.VOICE_CHARM.get())) return;
             wand.set(LogosMod.VOICE_SELECTED.get(), true);
-            sp.sendOverlayMessage(Component.literal("✦ 已选择言出法随：按住右键，念出咒语").withStyle(ChatFormatting.LIGHT_PURPLE));
+            sp.sendOverlayMessage(Component.translatable("logos.wheel.selected_voice").withStyle(ChatFormatting.LIGHT_PURPLE));
             return;
         }
         var entries = SpellBag.entries(sp, wand);
         if (p.index < 0 || p.index >= entries.size()) return;
         wand.remove(LogosMod.VOICE_SELECTED.get());
         wand.set(LogosMod.SELECTED.get(), p.index);
-        sp.sendOverlayMessage(Component.literal("✦ 已选择《" + entries.get(p.index).spell().name() + "》").withStyle(ChatFormatting.LIGHT_PURPLE));
+        sp.sendOverlayMessage(Component.translatable("logos.wheel.selected", entries.get(p.index).spell().name()).withStyle(ChatFormatting.LIGHT_PURPLE));
     }
 }
