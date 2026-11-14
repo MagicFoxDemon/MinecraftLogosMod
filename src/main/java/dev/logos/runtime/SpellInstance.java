@@ -48,6 +48,8 @@ public final class SpellInstance {
     private int pending;
     private boolean finished;
     private String endReason;
+    /** Whether the caster hears why it was extinguished when they get no report (see {@link #terminate(String, boolean)}). */
+    private boolean told;
     private final long startTick;
     private long opsTick = -1;
     private int ops;
@@ -64,7 +66,7 @@ public final class SpellInstance {
         this.mana = injected;
         SpellCasters.started(this);
         this.startTick = SpellRuntime.now();
-        this.tracing = caster instanceof ServerPlayer p && !(p instanceof net.neoforged.neoforge.common.util.FakePlayer) && PlayerMagic.of(p).trace;
+        this.tracing = caster instanceof ServerPlayer p && !(p instanceof net.neoforged.neoforge.common.util.FakePlayer) && reports(p);
         if (tracing) trace.add(mana);
     }
 
@@ -104,7 +106,7 @@ public final class SpellInstance {
         amount *= modifiers.cost(category);
         if (inWrap()) amount *= modifiers.wrapCost();
         if (amount > mana + 1e-9) {
-            terminate("魔力耗尽（" + what + " 需要 " + Node.fmt(amount) + "，仅剩 " + Node.fmt(mana) + "）");
+            terminate("魔力耗尽（" + what + " 需要 " + Node.fmt(amount) + "，仅剩 " + Node.fmt(mana) + "）", false);
             return false;
         }
         mana -= amount;
@@ -121,7 +123,7 @@ public final class SpellInstance {
             ops = 0;
         }
         int max = dev.logos.LogosConfig.maxOpsPerTick();
-        if (++ops > max) terminate("法则失稳：单刻运算超过 " + max + " 步（配置 maxOpsPerTick）");
+        if (++ops > max) terminate("法则失稳：一刻之内运转超过 " + max + " 步，世界承载不住");
         return !dead;
     }
 
@@ -133,9 +135,19 @@ public final class SpellInstance {
         return endReason;
     }
 
+    /** Extinguishes the spell because something went wrong (a missing anchor, a limit passed); its caster is told why. */
     public void terminate(String reason) {
+        terminate(reason, true);
+    }
+
+    /**
+     * Extinguishes the spell; {@code tell} false when the caster needs no word of it: the mana ran out (how spells
+     * end), the spell stopped itself, or whoever put it out tells them already.
+     */
+    public void terminate(String reason, boolean tell) {
         if (dead) return;
         dead = true;
+        told = tell;
         endReason = reason;
         finish();
     }
@@ -144,7 +156,12 @@ public final class SpellInstance {
     public void stop(String reason) {
         if (dead) return;
         stopped = true;
-        terminate(reason);
+        terminate(reason, false);
+    }
+
+    /** Whether {@code p} gets the end-of-spell report: their own {@code /logos trace}, or the server's debug option. */
+    private static boolean reports(ServerPlayer p) {
+        return PlayerMagic.of(p).trace || dev.logos.LogosConfig.spellTrace();
     }
 
     /** The server is stopping and the world may already be closed: it ends here, setting no mana free and telling no one. */
@@ -187,7 +204,12 @@ public final class SpellInstance {
         ManaVessel vessel = ManaVessels.of(caster);
         if (vessel != null) vessel.receiveMana(free);
         else FreeManaEntity.release(this, lastLevel, lastPos, free);
-        if (!(caster instanceof ServerPlayer player) || !PlayerMagic.of(player).trace) return;
+        if (!(caster instanceof ServerPlayer player)) return;
+        if (!reports(player)) {
+            // Without the report, a spell the world broke off still says why, once and briefly, where alerts go.
+            if (told && !player.hasDisconnected()) PlayerMagic.alert(player, Component.literal("《" + spell.name() + "》中断：" + endReason).withStyle(ChatFormatting.RED));
+            return;
+        }
         double secs = (SpellRuntime.now() - startTick) / 20.0;
         ChatFormatting color = endedNaturally() ? ChatFormatting.GRAY : ChatFormatting.RED;
         String left = mana <= 0 ? "" : endedNaturally() ? " | 游离魔力 " + Node.fmt(free)

@@ -213,10 +213,7 @@ public final class Familiars {
         String name = type.getDescription().getString();
         if (type == EntityType.ENDER_DRAGON) {
             String why = DragonFamiliar.forbidden(level);
-            if (why != null) {
-                owner.sendSystemMessage(net.minecraft.network.chat.Component.literal(why).withStyle(net.minecraft.ChatFormatting.RED));
-                return why;
-            }
+            if (why != null) return why;
         }
         String locked = locked(owner, type);
         if (locked != null) return "还不能召唤" + name + "：" + locked;

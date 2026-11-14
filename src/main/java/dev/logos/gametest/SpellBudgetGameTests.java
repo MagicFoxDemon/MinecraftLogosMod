@@ -23,12 +23,14 @@ import dev.logos.runtime.SpellObject;
 import dev.logos.runtime.SpellRuntime;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
+import io.netty.channel.embedded.EmbeddedChannel;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInfo;
 import net.minecraft.gametest.framework.GameTestListener;
 import net.minecraft.gametest.framework.GameTestRunner;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -513,5 +515,36 @@ final class SpellBudgetGameTests {
         creature.spend(1, "test");
         h.assertTrue(creature.trace.isEmpty(), "a creature should keep no trace, has " + creature.trace);
         h.succeed();
+    }
+
+    /**
+     * Without the report, which starts off, a spell that ends as spells do says nothing; one the world broke off says why
+     * once on the action bar, never in chat.
+     */
+    static void reportOffByDefault(GameTestHelper h) {
+        h.assertFalse(new PlayerMagic().trace, "a new player should start with the end-of-spell report off");
+        ServerPlayer p = ConstructGameTests.caster(h);
+        Spell spell = Casting.compile("(spell :name \"budget-quiet\" :mana 1 (field))");
+        sent(p);
+        new SpellInstance(spell, p, h.getLevel(), 10, 1).terminate("ran dry", false);
+        SpellInstance stopped = new SpellInstance(spell, p, h.getLevel(), 10, 1);
+        stopped.stop("stop");
+        List<ClientboundSystemChatPacket> quiet = sent(p);
+        h.assertTrue(quiet.isEmpty(), "spells that ran dry or stopped themselves should say nothing, said " + quiet);
+        new SpellInstance(spell, p, h.getLevel(), 10, 1).terminate("broke");
+        List<ClientboundSystemChatPacket> told = sent(p);
+        h.assertTrue(told.size() == 1 && told.getFirst().overlay() && told.getFirst().content().getString().contains("broke"),
+                "a spell the world broke off should say why once on the action bar, said " + told);
+        h.succeed();
+    }
+
+    /** The messages sent down {@code p}'s mock connection since the last call. */
+    private static List<ClientboundSystemChatPacket> sent(ServerPlayer p) {
+        EmbeddedChannel channel = (EmbeddedChannel) p.connection.getConnection().channel();
+        channel.flushOutbound();
+        List<ClientboundSystemChatPacket> out = new ArrayList<>();
+        for (Object o : channel.outboundMessages()) if (o instanceof ClientboundSystemChatPacket c) out.add(c);
+        channel.outboundMessages().clear();
+        return out;
     }
 }

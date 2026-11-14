@@ -14,8 +14,13 @@ import net.minecraft.world.phys.Vec3;
 
 /** Server-side scheduler for living spell objects and delayed continuations. */
 public final class SpellRuntime {
-    /** Very deep recursion (a large maxRecursion) can exhaust the Java stack; the spell ends, the server does not. */
-    static final String STACK_OVERFLOW = "法则失稳：递归过深，世界无法承载（Java 栈溢出）";
+    /**
+     * Very deep recursion (a large maxRecursion) can exhaust the Java stack; the spell ends, the server does not. This
+     * and {@link #CRASHED} are what its caster reads; the stack goes to the log.
+     */
+    public static final String STACK_OVERFLOW = "法则失稳：递归过深，世界承载不住";
+    /** Why a spell went out when its own code crashed some other way. */
+    public static final String CRASHED = "法则失稳：术式运转时出了意外";
     /** Ticks before the same failure may log its stack again; and how many failures are remembered for that. */
     private static final long REPORT_EVERY = 1200;
     private static final int REPORTS_KEPT = 256;
@@ -81,7 +86,7 @@ public final class SpellRuntime {
 
     private static void crashed(SpellInstance inst, Throwable e) {
         report("Spell " + inst.spell.name(), e);
-        inst.terminate(e instanceof StackOverflowError ? STACK_OVERFLOW : "运行错误: " + e);
+        inst.terminate(e instanceof StackOverflowError ? STACK_OVERFLOW : CRASHED);
     }
 
     /** Logs {@code e}'s stack, but only once in a while for {@code what}, so what keeps failing does not fill the log. */

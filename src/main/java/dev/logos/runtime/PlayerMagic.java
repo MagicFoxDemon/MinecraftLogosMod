@@ -25,7 +25,7 @@ public final class PlayerMagic {
             Codec.DOUBLE.fieldOf("mana").forGetter(PlayerMagic::savedMana),
             Codec.DOUBLE.fieldOf("max_mana").forGetter(m -> m.baseMaxMana),
             Codec.INT.fieldOf("stability").forGetter(m -> m.stability),
-            Codec.BOOL.fieldOf("trace").forGetter(m -> m.trace),
+            Codec.BOOL.optionalFieldOf("spell_trace", false).forGetter(m -> m.trace),
             Codec.DOUBLE.optionalFieldOf("lifetime_xp", 0.0).forGetter(m -> m.lifetimeXp),
             Codec.DOUBLE.optionalFieldOf("xp_seen", -1.0).forGetter(m -> m.xpSeen),
             Codec.DOUBLE.optionalFieldOf("mana_spent", 0.0).forGetter(m -> m.manaSpent),
@@ -39,6 +39,10 @@ public final class PlayerMagic {
      */
     public double baseMaxMana;
     public int stability;
+    /**
+     * Whether this player gets the end-of-spell report ({@code /logos trace}), off to start. Saved as {@code spell_trace}: saves from
+     * before kept {@code trace}, on for everyone; that key is no longer read, so it is off for them too.
+     */
     public boolean trace;
     /** Experience points ever gained, never lowered by spending or dying (see {@link ManaGrowth}). */
     public double lifetimeXp;
@@ -64,7 +68,7 @@ public final class PlayerMagic {
     public net.minecraft.world.item.@org.jspecify.annotations.Nullable ItemStack chanting;
 
     public PlayerMagic() {
-        this(Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_STABILITY, true, 0, -1, 0, Map.of());
+        this(Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_STABILITY, false, 0, -1, 0, Map.of());
     }
 
     private PlayerMagic(double mana, double maxMana, int stability, boolean trace, double lifetimeXp, double xpSeen, double manaSpent,
