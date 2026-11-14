@@ -8,6 +8,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import dev.logos.lang.Node;
 import dev.logos.LogosMod;
 import dev.logos.runtime.Charging;
+import dev.logos.runtime.SpellModifiers;
 import dev.logos.runtime.VoiceCasting;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -43,16 +44,34 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
 
     /** {@code flow} and {@code surge} are what the wand adds, in the main hand, to the channel attributes. */
     public WandItem(Properties properties, int slots, double flow, double surge) {
+        this(properties, slots, flow, surge, 0, 0);
+    }
+
+    /**
+     * Besides flow and surge, {@code maxMana} and {@code regeneration} (mana a second) are what the wand adds
+     * in the main hand to its bearer's mana cap and refill; a better wand holds and draws more.
+     */
+    public WandItem(Properties properties, int slots, double flow, double surge, double maxMana, double regeneration) {
         super(properties.component(DataComponents.USE_EFFECTS, new UseEffects(true, false, 1.0f))
-                .attributes(ItemAttributeModifiers.builder()
-                        .add(LogosMod.CHANNEL_FLOW, new AttributeModifier(FLOW_ID, flow, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                        .add(LogosMod.CHANNEL_SURGE, new AttributeModifier(SURGE_ID, surge, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-                        .build()));
+                .attributes(attributes(flow, surge, maxMana, regeneration)));
         this.slots = slots;
+    }
+
+    private static ItemAttributeModifiers attributes(double flow, double surge, double maxMana, double regeneration) {
+        var b = ItemAttributeModifiers.builder()
+                .add(LogosMod.CHANNEL_FLOW, new AttributeModifier(FLOW_ID, flow, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                .add(LogosMod.CHANNEL_SURGE, new AttributeModifier(SURGE_ID, surge, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND);
+        if (maxMana != 0) b.add(SpellModifiers.MAX_MANA, new AttributeModifier(MAX_MANA_ID, maxMana, AttributeModifier.Operation.ADD_VALUE),
+                EquipmentSlotGroup.MAINHAND);
+        if (regeneration != 0) b.add(SpellModifiers.MANA_REGENERATION, new AttributeModifier(REGENERATION_ID, regeneration,
+                AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND);
+        return b.build();
     }
 
     private static final Identifier FLOW_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_flow");
     private static final Identifier SURGE_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_surge");
+    private static final Identifier MAX_MANA_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_max_mana");
+    private static final Identifier REGENERATION_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_mana_regeneration");
 
     public int slots() {
         return slots;

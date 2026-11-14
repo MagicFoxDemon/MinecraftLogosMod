@@ -109,19 +109,20 @@ public class LogosMod {
                             .sized(1, 1).noSave().noSummon().fireImmune().clientTrackingRange(10).updateInterval(1)
                             .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
 
+    // new WandItem(slots, flow, surge, max mana, mana a second): see CONTRIBUTING.md, 法杖数值.
     /** Tiers 2, 4 and 6 keep their original registry ids so existing wands and their pages survive the new series. */
-    public static final DeferredItem<WandItem> WAND = ITEMS.registerItem("wand", p -> new WandItem(p, 3, 55, 60), p -> p.stacksTo(1));
-    public static final DeferredItem<WandItem> ADEPT_WAND = ITEMS.registerItem("adept_wand", p -> new WandItem(p, 6, 90, 184), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE));
+    public static final DeferredItem<WandItem> WAND = ITEMS.registerItem("wand", p -> new WandItem(p, 3, 55, 60, 50, 0.5), p -> p.stacksTo(1));
+    public static final DeferredItem<WandItem> ADEPT_WAND = ITEMS.registerItem("adept_wand", p -> new WandItem(p, 6, 90, 184, 200, 2), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE));
     public static final DeferredItem<WandItem> MASTER_WAND = ITEMS.registerItem("master_wand",
-            p -> new WandItem(p, 9, 135, 445), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC));
+            p -> new WandItem(p, 9, 135, 445, 500, 5), p -> p.stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC));
     public static final DeferredItem<WandItem> ECHO_WAND = ITEMS.registerItem("echo_wand",
-            p -> new WandItem(p, 5, 70, 130), p -> p.stacksTo(1).rarity(Rarity.UNCOMMON));
+            p -> new WandItem(p, 5, 70, 130, 100, 1), p -> p.stacksTo(1).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<WandItem> CHALK_WAND = ITEMS.registerItem("chalk_wand",
-            p -> new WandItem(p, 8, 110, 282), p -> p.stacksTo(1).rarity(Rarity.RARE));
+            p -> new WandItem(p, 8, 110, 282, 350, 3), p -> p.stacksTo(1).rarity(Rarity.RARE));
     public static final DeferredItem<WandItem> SAGE_WAND = ITEMS.registerItem("sage_wand",
-            p -> new WandItem(p, 11, 160, 720), p -> p.stacksTo(1).rarity(Rarity.EPIC));
+            p -> new WandItem(p, 11, 160, 720, 800, 8), p -> p.stacksTo(1).rarity(Rarity.EPIC));
     public static final DeferredItem<WandItem> PRINCIPLE_WAND = ITEMS.registerItem("principle_wand",
-            p -> new WandItem(p, 12, 300, 6100), p -> p.stacksTo(1).rarity(Rarity.EPIC));
+            p -> new WandItem(p, 12, 300, 6100, 2000, 20), p -> p.stacksTo(1).rarity(Rarity.EPIC));
     /** The seven higher-tier wands, ordered by their matching page grades (crystal through principle). */
     public static final List<DeferredItem<WandItem>> TIER_WANDS = List.of(
             WAND, ECHO_WAND, ADEPT_WAND, CHALK_WAND, MASTER_WAND, SAGE_WAND, PRINCIPLE_WAND);
@@ -138,19 +139,19 @@ public class LogosMod {
             .map(wood -> ITEMS.registerItem(wood + "_staff", p -> new dev.logos.item.StaffItem(p, 3, 28, 14, 150), p -> p.stacksTo(1))).toList();
     /** Staffs store three same-grade page injections; one full fill takes about three separate wand charges. */
     public static final DeferredItem<dev.logos.item.StaffItem> CRYSTAL_STAFF = ITEMS.registerItem("crystal_staff",
-            p -> new dev.logos.item.StaffItem(p, 3, 29, 32, 450), p -> p.stacksTo(1));
+            p -> new dev.logos.item.StaffItem(p, 3, 29, 32, 450, 75, 0.75), p -> p.stacksTo(1));
     public static final DeferredItem<dev.logos.item.StaffItem> ECHO_STAFF = ITEMS.registerItem("echo_staff",
-            p -> new dev.logos.item.StaffItem(p, 5, 30, 57, 1200), p -> p.stacksTo(1).rarity(Rarity.UNCOMMON));
+            p -> new dev.logos.item.StaffItem(p, 5, 30, 57, 1200, 150, 1.5), p -> p.stacksTo(1).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<dev.logos.item.StaffItem> TRANSMUTED_STAFF = ITEMS.registerItem("transmuted_staff",
-            p -> new dev.logos.item.StaffItem(p, 6, 37, 75, 2400), p -> p.stacksTo(1).rarity(Rarity.RARE));
+            p -> new dev.logos.item.StaffItem(p, 6, 37, 75, 2400, 300, 3), p -> p.stacksTo(1).rarity(Rarity.RARE));
     public static final DeferredItem<dev.logos.item.StaffItem> CHALK_STAFF = ITEMS.registerItem("chalk_staff",
-            p -> new dev.logos.item.StaffItem(p, 8, 43, 109, 4800), p -> p.stacksTo(1).rarity(Rarity.RARE));
+            p -> new dev.logos.item.StaffItem(p, 8, 43, 109, 4800, 525, 4.5), p -> p.stacksTo(1).rarity(Rarity.RARE));
     public static final DeferredItem<dev.logos.item.StaffItem> FIRMAMENT_STAFF = ITEMS.registerItem("firmament_staff",
-            p -> new dev.logos.item.StaffItem(p, 9, 50, 165, 9600), p -> p.stacksTo(1).rarity(Rarity.EPIC));
+            p -> new dev.logos.item.StaffItem(p, 9, 50, 165, 9600, 750, 7.5), p -> p.stacksTo(1).rarity(Rarity.EPIC));
     public static final DeferredItem<dev.logos.item.StaffItem> SAGE_STAFF = ITEMS.registerItem("sage_staff",
-            p -> new dev.logos.item.StaffItem(p, 11, 57, 257, 19200), p -> p.stacksTo(1).rarity(Rarity.EPIC));
+            p -> new dev.logos.item.StaffItem(p, 11, 57, 257, 19200, 1200, 12), p -> p.stacksTo(1).rarity(Rarity.EPIC));
     public static final DeferredItem<dev.logos.item.StaffItem> PRINCIPLE_STAFF = ITEMS.registerItem("principle_staff",
-            p -> new dev.logos.item.StaffItem(p, 12, 103, 2099, 38400), p -> p.stacksTo(1).rarity(Rarity.EPIC));
+            p -> new dev.logos.item.StaffItem(p, 12, 103, 2099, 38400, 3000, 30), p -> p.stacksTo(1).rarity(Rarity.EPIC));
     public static final List<DeferredItem<dev.logos.item.StaffItem>> TIER_STAFFS = List.of(
             CRYSTAL_STAFF, ECHO_STAFF, TRANSMUTED_STAFF, CHALK_STAFF, FIRMAMENT_STAFF, SAGE_STAFF, PRINCIPLE_STAFF);
     /** Every grade of 术式载页: an empty and a written item each. */
@@ -187,6 +188,29 @@ public class LogosMod {
     public static final DeferredItem<dev.logos.item.WandCharmItem> VOICE_CHARM = ITEMS.registerItem("voice_charm",
             p -> new dev.logos.item.WandCharmItem(p, "挂在法杖上：术式轮盘里多出「言出法随」。选中后按住右键，喊出任意一张言出法随载页的咒语名即可施放"),
             p -> p.stacksTo(1));
+    /** 蓄灵坠: a graded charm that raises the mana cap while its wand is in the main hand. */
+    public static final dev.logos.item.TieredCharmItem.Family RESERVOIR = dev.logos.item.TieredCharmItem.family("reservoir", "蓄灵坠",
+            new dev.logos.item.TieredCharmItem.Bonus(() -> dev.logos.runtime.SpellModifiers.MAX_MANA,
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE, "魔力上限", ""));
+    /** 涌泉坠: a graded charm that quickens mana regeneration while its wand is in the main hand. */
+    public static final dev.logos.item.TieredCharmItem.Family WELLSPRING = dev.logos.item.TieredCharmItem.family("wellspring", "涌泉坠",
+            new dev.logos.item.TieredCharmItem.Bonus(() -> dev.logos.runtime.SpellModifiers.MANA_REGENERATION,
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE, "魔力回复", "/秒"));
+    public static final List<DeferredItem<dev.logos.item.TieredCharmItem>> RESERVOIR_CHARMS = tieredCharms(RESERVOIR, 100, 300, 800);
+    public static final List<DeferredItem<dev.logos.item.TieredCharmItem>> WELLSPRING_CHARMS = tieredCharms(WELLSPRING, 1, 3, 8);
+
+    /** Grades I, II, III of {@code family} ({@code <id>_charm_1} and on), one amount each for its one bonus. */
+    private static List<DeferredItem<dev.logos.item.TieredCharmItem>> tieredCharms(dev.logos.item.TieredCharmItem.Family family, double... amounts) {
+        Rarity[] rarity = {Rarity.UNCOMMON, Rarity.RARE, Rarity.EPIC};
+        List<DeferredItem<dev.logos.item.TieredCharmItem>> out = new ArrayList<>();
+        for (int i = 0; i < amounts.length; i++) {
+            int grade = i + 1;
+            double amount = amounts[i];
+            out.add(ITEMS.registerItem(family.id() + "_charm_" + grade, p -> new dev.logos.item.TieredCharmItem(p, family, grade, amount),
+                    p -> p.stacksTo(1).rarity(rarity[grade - 1])));
+        }
+        return List.copyOf(out);
+    }
     public static final DeferredItem<dev.logos.item.SageUpgradeTemplateItem> SAGE_UPGRADE_TEMPLATE = ITEMS.registerItem("sage_upgrade_smithing_template",
             dev.logos.item.SageUpgradeTemplateItem::new, p -> p.rarity(Rarity.RARE));
     /** 锚钉: spent to set an anchor, by hand or by the anchor rune. Crafted later through alchemy. */
@@ -679,6 +703,8 @@ public class LogosMod {
                 out.accept(SPELL_CODEX.get());
                 out.accept(CHANT_CHARM.get());
                 out.accept(VOICE_CHARM.get());
+                RESERVOIR_CHARMS.forEach(c -> out.accept(c.get()));
+                WELLSPRING_CHARMS.forEach(c -> out.accept(c.get()));
                 out.accept(SAGE_UPGRADE_TEMPLATE.get());
                 out.accept(INSCRIPTION_TABLE_ITEM.get());
                 out.accept(COPY_TABLE_ITEM.get());
@@ -1079,6 +1105,7 @@ public class LogosMod {
     public void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer sp)) return;
         PlayerMagic m = PlayerMagic.of(sp);
+        dev.logos.item.TieredCharmItem.apply(sp);
         dev.logos.runtime.ManaGrowth.tick(sp);
         dev.logos.runtime.StaffCharging.tick(sp);
         if (sp.level().getGameTime() % dev.logos.runtime.ManaHud.INTERVAL == 0) dev.logos.runtime.ManaHud.sync(sp);
