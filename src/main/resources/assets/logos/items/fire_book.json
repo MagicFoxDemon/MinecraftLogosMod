@@ -1,0 +1,11 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "logos:item/rune_book_fire",
+    "tints": [
+      { "type": "minecraft:constant", "value": -4049377 },
+      { "type": "minecraft:constant", "value": -1 },
+      { "type": "minecraft:constant", "value": -1 }
+    ]
+  }
+}

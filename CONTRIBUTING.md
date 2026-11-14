@@ -195,6 +195,9 @@ gh pr create --fill                # 或在网页上开 PR
 - 有创造模式物品栏（`hasInfiniteMaterials`）的玩家不受限制；配置 `runeUnlocks` 关闭时人人都能写全部。
 - 编辑器（`graph/Sealed`）：没领悟的节点、它的端口和说明、节点库条目、元素和运动下拉项都用原版的混淆文字（§k）显示，节点库搜不到它们。书灵只会用玩家领悟了的（`SageRunes.available`）。
 - 命令：`/logos unlocks [玩家]` 查看；`/logos unlock <玩家> <键|all>`、`/logos lock <玩家> <键|all>` 需要管理员权限。
+- 符文之书（`item/RuneBookItem`，14 种）：阅读后从这本书的范围里随机领悟一个读者还没领悟的（形、指向、变、律、数之书对应一个家族，动之书对应运动，元素之书对应元素）；火焰、寒霜、雷霆、虚空、奥秘之书各领悟一种元素；万理之书随机任意一种；启悟之书一次领悟全部。都不会给生命元素。没东西可教时书不消耗。
+- 书的来源全在一张战利品表 `data/logos/loot_table/chests/rune_books.json`：每个池子用 `neoforge:loot_table_id` 指明来源箱子、`random_chance` 写概率，由 `loot_modifiers/rune_books.json` 挂到这些原版箱子上，只追加、不改原有奖池。末地船和末地城共用一张表，靠条件 `logos:in_end_ship`（`item/InEndShip`）区分。元素之书和启悟之书目前不在任何箱子里，只能在创造模式拿。
+- 书的图标：封面 `rune_book_cover`（灰度，按书在 `items/*.json` 里染色）、书页和金角 `rune_book_trim`、封面上的符号 `rune_book_<符号>`，都是 16×16。
 - 世界内测试的模拟玩家默认是创造模式，不受限制；要测限制，先 `setGameMode(GameType.SURVIVAL)`。
 
 ---
