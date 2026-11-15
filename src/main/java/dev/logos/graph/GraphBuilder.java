@@ -128,10 +128,36 @@ public final class GraphBuilder {
         float top = y;
         String text = wrap(note.text(), NOTE_W);
         float noteHeight = text.isEmpty() ? 0 : noteHeight(text) + PAD;
-        y += TITLE_H + noteHeight + PAD;
+        y += header(note);
         float[] box = {x, y, x + NODE_W, y};
         open.add(box);
         return new Region(note, text, top, noteHeight, box);
+    }
+
+    /** The room a region for {@code note} keeps above what it frames: its title bar and sticky note. */
+    private static float header(SourceNotes.@Nullable Note note) {
+        if (note == null) return 0;
+        String text = wrap(note.text(), NOTE_W);
+        return TITLE_H + (text.isEmpty() ? 0 : noteHeight(text) + PAD) + PAD;
+    }
+
+    /**
+     * How far below where {@code stmts} start their first node lands: the headers of the regions opening there,
+     * following {@link #chain} (a block without a note runs on into what comes after it).
+     */
+    private float lead(List<Node> stmts) {
+        if (stmts.isEmpty()) return 0;
+        Node s = stmts.getFirst();
+        SourceNotes.Note note = notes.at(s);
+        if (s.rune.name.equals("do")) {
+            if (note != null) return header(note) + lead(s.body);
+            List<Node> flat = new ArrayList<>(s.body);
+            flat.addAll(stmts.subList(1, stmts.size()));
+            return lead(flat);
+        }
+        if (note == null && s.rune.name.equals("let") && s.arg(1).kind == Node.Kind.CALL && s.arg(1).rune.yields != null
+                && s.arg(1).type == dev.logos.lang.Type.ACTION) note = notes.at(s.arg(1));
+        return header(note);
     }
 
     /** Draws the region round what was laid out since {@link #open}, and moves on below it. */
@@ -331,6 +357,8 @@ public final class GraphBuilder {
      * column past everything the previous one placed, so no wire has to pass another branch to reach
      * its target. Wires leave the node's side ports, so when they would cross value lanes or other
      * branches, all branches start below the node and every wire reaches its target from above.
+     * A branch that opens with a noted region keeps room for its header, so the first nodes of all
+     * branches line up below the lowest header: no wire runs down through a neighbour's first node.
      * Leaves {@code y} at the bottom of the lowest branch.
      */
     private void branches(RuneNode n, float top, float x, Map<PortModel, List<Node>> branches) {
@@ -339,9 +367,11 @@ public final class GraphBuilder {
         float bottom = top;
         float edge = x + NODE_W;
         float outer = right;
+        float lead = 0;
+        for (List<Node> b : branches.values()) lead = Math.max(lead, lead(b));
         for (var b : branches.entrySet()) {
             float bx = edge + GAP_X + lanes(b.getValue()) * LANE_W;
-            y = start;
+            y = start + lead - lead(b.getValue());
             right = bx + NODE_W;
             chain(b.getValue(), b.getKey(), bx);
             bottom = Math.max(bottom, y);

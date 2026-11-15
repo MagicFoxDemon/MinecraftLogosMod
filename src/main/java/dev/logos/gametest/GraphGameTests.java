@@ -134,6 +134,11 @@ final class GraphGameTests {
                 net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
         h.assertTrue(reloaded.graphModel.getPlacematModels().size() == 4 && reloaded.graphModel.getStickyNoteModels().size() == 3
                 && reloaded.graphModel.getPlacematModels().stream().anyMatch(p -> p.getName().equals("余波")), "regions and notes are saved with the drawing");
+        // A branch that opens with a region keeps its first node level with the other branch's, so the wire to it passes above that one.
+        String forked = "(spell :mana 60 (ray (on-hit (if (alive target) (execute target)\n  ;; 补刀\n  ;; 不成立时点燃并灼伤。\n  (do (ignite target 4) (damage target 2))))))";
+        SpellGraph fork = GraphBuilder.build(Compiler.compile(forked), SourceNotes.read(forked));
+        h.assertTrue(Math.abs(at(fork, "execute").y - at(fork, "ignite").y) < 0.5f,
+                "both branches start level: execute at " + at(fork, "execute").y + ", ignite at " + at(fork, "ignite").y);
     }
 
     /** Event targets feed species through a real kind wire, rather than the old inline kind dropdown. */
