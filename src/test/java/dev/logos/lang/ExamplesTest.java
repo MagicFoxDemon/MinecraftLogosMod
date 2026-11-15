@@ -73,8 +73,6 @@ class ExamplesTest {
     void examplesInjectWhatTheyAreEstimatedToSpend() {
         for (var e : Examples.ALL.entrySet()) {
             Spell s = Compiler.compile(e.getValue());
-            // The estimate adds up every branch of a switch, though only one of them runs.
-            if (uses(s.body(), Set.of("switch"))) continue;
             assertTrue(s.profile().estimate() <= s.mana(), e.getKey() + " is estimated at " + s.profile().estimate() + " but injects " + s.mana());
         }
     }

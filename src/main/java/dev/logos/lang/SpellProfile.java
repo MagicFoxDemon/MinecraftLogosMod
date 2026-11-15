@@ -127,7 +127,14 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
             String r = n.rune.name;
             double own = 0;
             double children = 0;
-            for (Node a : n.args) children += cost(a, inGroup);
+            // switch and choose evaluate one of the arguments after the index each time: the dearest counts, not their sum.
+            boolean picksOne = r.equals("switch") || r.equals("choose");
+            double dearest = 0;
+            for (int i = 0; i < n.args.size(); i++) {
+                double c = cost(n.args.get(i), inGroup);
+                if (picksOne && i > 0) dearest = Math.max(dearest, c);
+                else children += c;
+            }
             for (Node k : n.kw.values()) children += cost(k, inGroup);
             double body = 0;
             for (Node b : n.body) body += cost(b, inGroup);
@@ -375,6 +382,10 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                 }
                 case "each-block" -> {
                     return children + own + body * count(n.arg(0));
+                }
+                case "switch", "choose" -> {
+                    // on-other runs instead of a branch, never with one.
+                    return own + children + Math.max(dearest, events(n, "on-other", inGroup)) + body;
                 }
                 case "recurse" -> {
                     assumptions.add("递归按 " + ASSUMED_DEPTH + " 层估算");
