@@ -300,6 +300,14 @@ class CompilerTest {
     }
 
     @Test
+    void ifIsEstimatedAtItsDearerSide() {
+        // Only one side runs: the condition (nearest = 1), 0.5 for the if and the dearer side (heal 4 = 6), not both added up.
+        assertEquals(1 + 0.5 + 6, Compiler.compile("(if (< (hp-ratio (nearest)) 0.5) (heal caster 1) (heal caster 4))").profile().estimate(), 1e-9);
+        assertEquals(1 + 0.5 + 6, Compiler.compile("(if (< (hp-ratio (nearest)) 0.5) (heal caster 4) (heal caster 1))").profile().estimate(), 1e-9);
+        assertEquals(1 + 0.5 + 6, Compiler.compile("(if (< (hp-ratio (nearest)) 0.5) (heal caster 4))").profile().estimate(), 1e-9);
+    }
+
+    @Test
     void formsAndSummonHandBackWhatTheyMade() {
         assertError("(heal caster (life-of form))", "此形");
         Compiler.compile("(projectile (on-tick (heal caster (life-of form))))");
