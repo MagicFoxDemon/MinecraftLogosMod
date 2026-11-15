@@ -124,5 +124,6 @@ public final class SageClient {
         serverOffered = false;
         admin = false;
         PENDING.clear();
+        SageWork.cancel();
     }
 }
