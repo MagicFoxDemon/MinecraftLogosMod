@@ -77,7 +77,6 @@ final class SagePanel extends UIElement {
     private final UIElement settingsView = column();
     private final Button serverTab = button("logos.sage.settings.server", () -> show(View.SERVER));
     private SageChats.Chat chat;
-    private SageClient.Handle running;
     private View view = View.CHAT;
 
     SagePanel(Canvas canvas) {
@@ -154,16 +153,38 @@ final class SagePanel extends UIElement {
         addChildren(header, chatView, settingsView);
 
         // Writing the page down adopts a preview without passing through this page.
-        addEventListener(UIEvents.TICK, e -> refreshPreview());
+        addEventListener(UIEvents.TICK, e -> {
+            refreshPreview();
+            if (!isDisplayed()) return;
+            SageToast.dismiss();
+            if (view == View.CHAT && chat == SageWork.chat()) SageWork.seen();
+        });
+        SageWork.watch(new SageWork.View() {
+            @Override
+            public void status(Component c) {
+                if (chat == SageWork.chat() && view == View.CHAT) status.setText(c);
+            }
+
+            @Override
+            public void answered(SageChats.Chat in, SageAgent.Turn answer) {
+                refreshChats();
+                if (chat != in) return;
+                messages.addScrollViewChild(turn(answer));
+                scrollDown();
+                if (view == View.CHAT) idle();
+            }
+        });
+        // A question still in flight from an editor closed before it was answered: back to its conversation.
         List<SageChats.Chat> kept = SageChats.all();
-        open(kept.isEmpty() ? SageChats.create() : kept.getFirst());
-        idle();
+        open(SageWork.busy() ? SageWork.chat() : kept.isEmpty() ? SageChats.create() : kept.getFirst());
+        if (SageWork.busy()) busy();
+        else idle();
         refreshPreview();
     }
 
     /** Called when the page is opened: whether the sage can be reached may have changed since. */
     void opened() {
-        if (view == View.CHAT && running == null) idle();
+        if (view == View.CHAT && !SageWork.busy()) idle();
         refreshPreview();
     }
 
@@ -187,7 +208,7 @@ final class SagePanel extends UIElement {
     }
 
     private void open(SageChats.Chat c) {
-        if (running != null && c != chat) stop();
+        if (SageWork.busy() && c != SageWork.chat()) stop();
         chat = c;
         refreshChats();
         messages.clearAllScrollViewChildren();
@@ -205,7 +226,7 @@ final class SagePanel extends UIElement {
 
     private void submit() {
         String message = input.getValue().strip();
-        if (message.isEmpty() || running != null) return;
+        if (message.isEmpty() || SageWork.busy()) return;
         if (message.length() > SageAgent.MAX_MESSAGE) message = message.substring(0, SageAgent.MAX_MESSAGE);
         if (SageClient.route() == SageClient.Route.NONE) {
             status.setText(Component.translatable("logos.sage.error.unconfigured"));
@@ -219,30 +240,13 @@ final class SagePanel extends UIElement {
         messages.addScrollViewChild(turn(asked));
         scrollDown();
         input.setValue("", false);
-        SageChats.Chat askedIn = chat;
-        busy();
-        running = SageClient.ask(history, message, canvas.currentSource(), canvas.capacity(), canvas.emitter(),
-                (key, arg) -> {
-                    if (chat == askedIn) status.setText(Component.translatable("logos.sage.status." + key, arg));
-                },
-                out -> {
-                    running = null;
-                    SageAgent.Turn answer = out.ok() ? new SageAgent.Turn(false, out.text(), out.source())
-                            : new SageAgent.Turn(false, Component.translatable(out.error(), out.detail()).getString(), out.source());
-                    SageChats.add(askedIn, answer);
-                    if (chat == askedIn) {
-                        refreshChats();
-                        messages.addScrollViewChild(turn(answer));
-                        scrollDown();
-                        idle();
-                    }
-                });
+        SageWork.ask(chat, history, message, canvas.currentSource(), canvas.capacity(), canvas.emitter());
+        if (SageWork.busy()) busy();
     }
 
     private void stop() {
-        if (running == null) return;
-        running.cancel();
-        running = null;
+        if (!SageWork.busy()) return;
+        SageWork.cancel();
         idle();
         status.setText(Component.translatable("logos.sage.cancelled"));
     }
@@ -250,7 +254,7 @@ final class SagePanel extends UIElement {
     private void busy() {
         send.setDisplay(TaffyDisplay.NONE);
         cancel.setDisplay(TaffyDisplay.FLEX);
-        status.setText(Component.translatable("logos.sage.status.thinking"));
+        status.setText(SageWork.status());
     }
 
     private void idle() {
@@ -323,7 +327,10 @@ final class SagePanel extends UIElement {
             SageClient.adminListener = this::server;
             ClientPacketDistributor.sendToServer(SageAdminPayload.read());
         }
-        if (v == View.CHAT) idle();
+        if (v == View.CHAT) {
+            if (SageWork.busy()) busy();
+            else idle();
+        }
     }
 
     private UIElement tabs() {
