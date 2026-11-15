@@ -118,7 +118,8 @@ final class RuneUnlockGameTests {
     }
 
     /**
-     * What a player knows: the start, then what they learn, by command too; the sage is offered the same. Learning
+     * What a player knows: the start, then what they learn, by command too; the sage is offered the same, and
+     * everything in creative play. Learning
      * is saved, and life is learned only when given.
      */
     static void knowledgeAndCommands(GameTestHelper h) {
@@ -139,6 +140,10 @@ final class RuneUnlockGameTests {
         commands.performPrefixedCommand(source, "logos lock @s all");
         h.assertTrue(RuneKnowledge.unlearned(p).size() == Unlocks.all().size() - Unlocks.STARTING.size(), "/logos lock all left something learned");
         h.assertTrue(RuneKnowledge.learned(p, Unlocks.rune("damage")), "a starting word was forgotten");
+        p.setGameMode(GameType.CREATIVE);
+        h.assertTrue(SageRunes.available(p).containsAll(Unlocks.all()), "the sage held a creative player to what they have learned");
+        p.setGameMode(GameType.SURVIVAL);
+        h.assertTrue(!SageRunes.available(p).contains(Unlocks.rune("freeze")), "leaving creative kept the sage's every word");
         commands.performPrefixedCommand(source, "logos unlock @s all");
         h.assertTrue(RuneKnowledge.unlearned(p).isEmpty() && RuneKnowledge.knows(p, "element:life"), "/logos unlock all left something out");
         h.succeed();
