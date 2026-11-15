@@ -31,6 +31,8 @@ import net.minecraft.world.phys.Vec3;
 public final class Targeting {
     /** Block searches are cubic; this keeps one selector to at most ~4k blocks. */
     public static final int MAX_BLOCK_RADIUS = 8;
+    /** The furthest any entity search reaches; {@code maxGroupRadius} may not go past it, since a group is priced by its radius. */
+    public static final int MAX_RADIUS = 64;
 
     private Targeting() {}
 
@@ -79,7 +81,7 @@ public final class Targeting {
     }
 
     public static List<Entity> near(SpellInstance inst, ServerLevel level, Vec3 at, double radius, boolean fresh, Predicate<Entity> filter) {
-        double r = Math.max(0, Math.min(radius, 64));
+        double r = Math.max(0, Math.min(radius, MAX_RADIUS));
         // Distance first: most of what the box catches stops there, before the costlier filter (isEnemy) is asked.
         List<Entity> found = level.getEntities(inst.caster, new AABB(at, at).inflate(r), e -> center(e).distanceTo(at) <= r + e.getBbWidth() / 2
                 && (!fresh || !inst.affected.contains(e.getUUID())) && filter.test(e));
@@ -97,7 +99,7 @@ public final class Targeting {
         Entity self = inst.caster;
         if (!c.vars().containsKey(Ctx.IN_FIELD) || !inst.spell.affectsPlayers()) return found;
         if (!self.isAlive() || self.isSpectator() || self.level() != at.level() || found.contains(self)) return found;
-        double r = Math.max(0, Math.min(radius, 64));
+        double r = Math.max(0, Math.min(radius, MAX_RADIUS));
         if (center(self).distanceTo(at.pos()) > r + self.getBbWidth() / 2 || !admits.test(self)) return found;
         List<E> out = new ArrayList<>(found);
         @SuppressWarnings("unchecked") E e = (E) self;

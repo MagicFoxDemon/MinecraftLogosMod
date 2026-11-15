@@ -2,6 +2,7 @@ package dev.logos.gametest;
 
 import java.util.List;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.item.SpellPages;
 import dev.logos.lang.Element;
@@ -11,6 +12,7 @@ import dev.logos.runtime.Casting;
 import dev.logos.runtime.Effects;
 import dev.logos.runtime.ManaWrap;
 import dev.logos.runtime.PlayerMagic;
+import dev.logos.runtime.SpellInstance;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.TimeStop;
 import dev.logos.runtime.Vfx;
@@ -26,6 +28,7 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.zombie.Husk;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.Mob;
@@ -207,6 +210,36 @@ final class RuneGameTests {
         check.accept("(let $g (enemies) $G)", 5.0);
         check.accept("(let $g (enemies :radius 20) $G)", 20.0);
         check.accept("(let $g (enemies :radius 200) $G)", 64.0);
+        h.succeed();
+    }
+
+    /**
+     * A group selector searches as far as {@code maxGroupRadius} and is priced at that radius, whatever larger :radius it
+     * is given; the setting itself stops at 64, as far as any entity search reaches.
+     */
+    static void groupRadiusFollowsConfig(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        for (int z = 0; z < 16; z++) h.setBlock(4, 1, z, Blocks.STONE);
+        Husk near = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 7.5));
+        Husk far = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 13.5));
+        near.setNoAi(true);
+        far.setNoAi(true);
+        h.assertTrue(LogosConfig.MAX_GROUP_RADIUS.getSpec().test(64) && !LogosConfig.MAX_GROUP_RADIUS.getSpec().test(65),
+                "maxGroupRadius should accept 64 and refuse 65");
+        int was = LogosConfig.MAX_GROUP_RADIUS.get();
+        SpellInstance inst;
+        LogosConfig.MAX_GROUP_RADIUS.set(8);
+        try {
+            inst = Casting.cast(p, Casting.compile("(spell :mana 200 (let $g (entities :radius 100) (damage-all $g 1)))"), null, null);
+        } finally {
+            LogosConfig.MAX_GROUP_RADIUS.set(was);
+        }
+        h.assertTrue(inst != null && !inst.dead, "cast failed" + (inst == null ? "" : ": " + inst.endReason()));
+        // entities 2, then 1 physical point (0.8) × 3 × (8/5)^1.5: priced at the 8 it searched, not the 100 written.
+        double expected = 2 + 0.8 * 3 * Math.pow(8 / 5.0, 1.5), spent = inst.injected - inst.mana;
+        h.assertTrue(Math.abs(spent - expected) < 1e-6, "it should cost " + expected + ", cost " + spent);
+        h.assertTrue(near.getHealth() < near.getMaxHealth(), "the husk 6 blocks off is within 8 and should be hit");
+        h.assertTrue(far.getHealth() == far.getMaxHealth(), "the husk 12 blocks off is past 8 and should be spared");
         h.succeed();
     }
 

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.IntSupplier;
 
 import dev.logos.item.PageTier;
+import dev.logos.runtime.Targeting;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -106,9 +107,10 @@ public final class LogosConfig {
             .defineInRange("groupRadiusExponent", 1.5, 0.0, 4.0);
 
     public static final ModConfigSpec.IntValue MAX_GROUP_RADIUS = BUILDER
-            .comment("The largest :radius a group selector (enemies, entities, players, items, marked) searches.")
+            .comment("The largest :radius a group selector (enemies, entities, players, items, marked) searches.",
+                    "At most 64: entity searches reach no further, and a group effect is priced by this radius.")
             .translation("logos.configuration.maxGroupRadius")
-            .defineInRange("maxGroupRadius", 64, 1, 256);
+            .defineInRange("maxGroupRadius", 64, 1, Targeting.MAX_RADIUS);
 
     public static final ModConfigSpec.IntValue CHARGE_MIN_TICKS = BUILDER
             .comment("The shortest a wand cast may charge, in ticks, however little it injects.")
