@@ -10,8 +10,11 @@ import dev.logos.graph.RuneNode;
 import dev.logos.graph.RuneNodes;
 import dev.logos.graph.SpecialNodes;
 import dev.logos.graph.SpellGraph;
+import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wiget.PlacematModel;
+
 import dev.logos.lang.Compiler;
 import dev.logos.lang.Examples;
+import dev.logos.lang.SourceNotes;
 import dev.logos.lang.Spell;
 import net.minecraft.gametest.framework.GameTestHelper;
 
@@ -19,11 +22,13 @@ import net.minecraft.gametest.framework.GameTestHelper;
 final class GraphGameTests {
     private GraphGameTests() {}
 
-    /** Every example survives source → graph → source with the same meaning. */
+    /** Every example survives source → graph → source with the same meaning, with every note it carries drawn. */
     static void roundtrip(GameTestHelper h) {
         for (Map.Entry<String, String> e : Examples.ALL.entrySet()) {
             Spell original = Compiler.compile(e.getValue());
-            SpellGraph graph = GraphBuilder.build(original);
+            SourceNotes notes = SourceNotes.read(e.getValue());
+            SpellGraph graph = GraphBuilder.build(original, notes);
+            h.assertTrue(notes.unused().isEmpty(), e.getKey() + ": notes before forms that take none: " + notes.unused());
             GraphCompiler.Result r = GraphCompiler.compile(graph);
             h.assertTrue(r.ok(), e.getKey() + ": graph does not compile: " + r.error() + "\n" + r.source());
             Spell back = r.spell();
@@ -53,7 +58,82 @@ final class GraphGameTests {
         veinKeywordsFollowPath(h);
         creatureLookRoundtrip(h);
         speciesRoundtrip(h);
+        notesDrawn(h);
         h.succeed();
+    }
+
+    private static final String NOTED = String.join("\n",
+            ";; 注释示范",
+            ";; 根节点上方的总览。",
+            "(spell :name \"注释示范\" :mana 200",
+            "  ;; 记住落点",
+            "  (let $p (look-point 20)",
+            "    ;; 发射",
+            "    ;; 从落点上方向下射出魔弹。",
+            "    (projectile :from (above $p 8) :dir down",
+            "      (on-hit",
+            "        ;; 伤害",
+            "        (damage target 5 fire)))",
+            "    ;; 余波",
+            "    ;; 一个块里的两条语句一同框住。",
+            "    (do",
+            "      (delay 0.5 (each (enemies :at $p :radius 3) (ignite target 2)))",
+            "      (each (enemies :at $p :radius 3) (push target 1)))))");
+
+    /** The node of the rune {@code word} in {@code graph}, and where it stands. */
+    private static Vector2f at(SpellGraph graph, String word) {
+        return graph.getNodes().stream().filter(n -> n instanceof dev.logos.graph.LogosNode l && l.word().equals(word))
+                .map(n -> ((dev.logos.graph.LogosNode) n).model().getPosition()).findFirst().orElseThrow(() -> new AssertionError("no " + word));
+    }
+
+    private static PlacematModel region(SpellGraph graph, String title) {
+        return graph.graphModel.getPlacematModels().stream().filter(p -> p.getName().equals(title)).findFirst()
+                .orElseThrow(() -> new AssertionError("no region " + title));
+    }
+
+    private static boolean inside(PlacematModel p, Vector2f point) {
+        Vector2f at = p.getPosition(), size = p.getSize();
+        return point.x >= at.x && point.y >= at.y && point.x <= at.x + size.x && point.y <= at.y + size.y;
+    }
+
+    private static boolean overlap(PlacematModel a, PlacematModel b) {
+        Vector2f ap = a.getPosition(), as = a.getSize(), bp = b.getPosition(), bs = b.getSize();
+        return ap.x < bp.x + bs.x && bp.x < ap.x + as.x && ap.y < bp.y + bs.y && bp.y < ap.y + as.y;
+    }
+
+    /**
+     * ;; notes become regions round what they annotate, nested as written, with their text on sticky notes; a block
+     * is framed whole, a remembering only with its value; the spell's own note sits above the root. None of it changes
+     * the spell, and all of it is saved with the drawing.
+     */
+    private static void notesDrawn(GameTestHelper h) {
+        SourceNotes notes = SourceNotes.read(NOTED);
+        Spell original = Compiler.compile(NOTED);
+        SpellGraph graph = GraphBuilder.build(original, notes);
+        h.assertTrue(notes.unused().isEmpty(), "every note should be drawn: " + notes.unused());
+        h.assertTrue(graph.graphModel.getPlacematModels().size() == 4, "four regions: " + graph.graphModel.getPlacematModels().size());
+        h.assertTrue(graph.graphModel.getStickyNoteModels().size() == 3, "three notes with text: " + graph.graphModel.getStickyNoteModels().size());
+        PlacematModel launch = region(graph, "发射"), hit = region(graph, "伤害"), kept = region(graph, "记住落点"), after = region(graph, "余波");
+        h.assertTrue(inside(launch, at(graph, "projectile")) && inside(launch, at(graph, "damage")), "the launch region frames the projectile and its hit");
+        h.assertTrue(inside(hit, at(graph, "damage")) && inside(launch, hit.getPosition()), "the damage region sits inside the launch region");
+        h.assertTrue(inside(kept, at(graph, "let")) && !inside(kept, at(graph, "projectile")), "the remembering frames only itself");
+        h.assertTrue(inside(after, at(graph, "delay")) && inside(after, at(graph, "each")), "the block region frames both its statements");
+        h.assertTrue(!overlap(launch, after) && !overlap(kept, launch), "regions side by side do not overlap");
+        var overview = graph.graphModel.getStickyNoteModels().stream().filter(n -> n.getContent().startsWith("注释示范")).findFirst();
+        h.assertTrue(overview.isPresent() && overview.get().getPosition().y < at(graph, "spell").y, "the spell's note sits above its root");
+        var launchNote = graph.graphModel.getStickyNoteModels().stream().filter(n -> n.getContent().startsWith("从落点上方")).findFirst().orElseThrow();
+        h.assertTrue(inside(launch, launchNote.getPosition()) && launchNote.getPosition().y + launchNote.getSize().y <= at(graph, "projectile").y,
+                "the launch note sits in its region above the projectile");
+        GraphCompiler.Result r = GraphCompiler.compile(graph);
+        h.assertTrue(r.ok() && r.spell().name().equals(original.name()) && r.spell().mana() == original.mana(), "notes change nothing: " + r.error());
+        var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
+                net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+        graph.graphModel.serialize(out);
+        SpellGraph reloaded = new SpellGraph();
+        reloaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(
+                net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
+        h.assertTrue(reloaded.graphModel.getPlacematModels().size() == 4 && reloaded.graphModel.getStickyNoteModels().size() == 3
+                && reloaded.graphModel.getPlacematModels().stream().anyMatch(p -> p.getName().equals("余波")), "regions and notes are saved with the drawing");
     }
 
     /** Event targets feed species through a real kind wire, rather than the old inline kind dropdown. */

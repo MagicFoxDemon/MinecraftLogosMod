@@ -54,6 +54,7 @@ import dev.logos.lang.Compiler;
 import dev.logos.lang.Examples;
 import dev.logos.lang.LogosError;
 import dev.logos.lang.Node;
+import dev.logos.lang.SourceNotes;
 import dev.logos.lang.Unlocks;
 import dev.logos.net.EmitterEditPayload;
 import dev.logos.net.InscribePayload;
@@ -262,7 +263,8 @@ public final class SpellEditor {
         String src = wand.get(LogosMod.SPELL_SOURCE.get());
         if (src != null) {
             try {
-                return GraphBuilder.build(Compiler.compile(src));
+                // The source's ;; notes come back as regions and sticky notes.
+                return GraphBuilder.build(Compiler.compile(src), SourceNotes.read(src));
             } catch (LogosError ignored) {
                 // fall through to an empty graph
             }
@@ -302,7 +304,8 @@ public final class SpellEditor {
         loadTemplate.setId("load_template");
         loadTemplate.setOnClick(ev -> {
             String id = templates.getValue();
-            if (id != null && Examples.ALL.containsKey(id)) load(GraphBuilder.build(Compiler.compile(Examples.ALL.get(id))));
+            String src = id == null ? null : Examples.ALL.get(id);
+            if (src != null) load(GraphBuilder.build(Compiler.compile(src), SourceNotes.read(src)));
         });
         Button clear = new Button().setText(Component.translatable("logos.editor.clear"));
         clear.setOnClick(ev -> load(GraphBuilder.empty()));
