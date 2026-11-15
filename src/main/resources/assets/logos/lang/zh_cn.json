@@ -52,6 +52,8 @@
   "logos.configuration.maxRecursion.tooltip": "recurse 最多可以嵌套的层数",
   "logos.configuration.maxRepeat": "循环次数上限",
   "logos.configuration.maxRepeat.tooltip": "单个 repeat 最多执行的次数",
+  "logos.configuration.maxPhantasmParticles": "幻像粒子上限",
+  "logos.configuration.maxPhantasmParticles.tooltip": "单个 phantasm 最多显现的粒子数，每个 0.02 魔力。特效包只用一个字节记数量，所以最多 255",
   "logos.configuration.maxOpsPerTick": "单刻运算步数上限",
   "logos.configuration.maxOpsPerTick.tooltip": "一个法术每刻最多执行的解释步数；大循环/深递归被截断时调高它",
   "logos.configuration.maxOpsPerTickGlobal": "全局单刻运算步数上限",

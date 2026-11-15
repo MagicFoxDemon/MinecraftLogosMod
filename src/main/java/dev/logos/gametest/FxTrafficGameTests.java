@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.Deflater;
 
+import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
@@ -305,7 +306,10 @@ final class FxTrafficGameTests {
         });
     }
 
-    /** {@code phantasm} costs 0.02 a particle; a spell that cannot pay shows nothing. */
+    /**
+     * {@code phantasm} costs 0.02 a particle, up to its cap ({@code maxPhantasmParticles}, 64 by default, which the
+     * second half raises); a spell that cannot pay shows nothing. One test, as two would see each other's particles.
+     */
     static void phantasmPrice(GameTestHelper h) {
         Vec3 at = aloft(h, 4);
         ServerPlayer near = listener(h, at);
@@ -314,14 +318,25 @@ final class FxTrafficGameTests {
         SpellInstance full = Casting.cast(caster, Casting.compile("(spell :mana 5 (phantasm %portal :count 64))"), null, at);
         SpellInstance past = Casting.cast(caster, Casting.compile("(spell :mana 5 (phantasm %portal :count 1000))"), null, at);
         SpellInstance dry = Casting.cast(caster, Casting.compile("(spell :mana 1 (phantasm %portal :count 64))"), null, at);
-        h.assertTrue(one != null && full != null && past != null && dry != null, "a cast was refused");
+        int was = LogosConfig.MAX_PHANTASM_PARTICLES.get();
+        SpellInstance raised, capped;
+        LogosConfig.MAX_PHANTASM_PARTICLES.set(200);
+        try {
+            raised = Casting.cast(caster, Casting.compile("(spell :mana 5 (phantasm %portal :count 150))"), null, at);
+            capped = Casting.cast(caster, Casting.compile("(spell :mana 5 (phantasm %portal :count 1000))"), null, at);
+        } finally {
+            LogosConfig.MAX_PHANTASM_PARTICLES.set(was);
+        }
+        h.assertTrue(one != null && full != null && past != null && dry != null && raised != null && capped != null, "a cast was refused");
         h.assertTrue(Math.abs(one.injected - one.mana - 0.02) < 1e-6, "one particle should cost 0.02, cost " + (one.injected - one.mana));
         h.assertTrue(Math.abs(full.injected - full.mana - 1.28) < 1e-6, "a full burst should cost 1.28, cost " + (full.injected - full.mana));
         h.assertTrue(Math.abs(past.injected - past.mana - 1.28) < 1e-6, "past 64 it stays a full burst, cost " + (past.injected - past.mana));
         h.assertTrue(dry.dead && "logos.spell.end.out_of_mana".equals(dry.endKey()), "1 mana should not pay for 64 particles: " + dry.endReason());
+        h.assertTrue(Math.abs(raised.injected - raised.mana - 3) < 1e-6, "with the cap at 200, 150 particles should cost 3, cost " + (raised.injected - raised.mana));
+        h.assertTrue(Math.abs(capped.injected - capped.mana - 4) < 1e-6, "past a cap of 200 it should cost 4, cost " + (capped.injected - capped.mana));
         h.runAfterDelay(1, () -> {
-            List<FxPayload> shown = effects(sent(near)).stream().filter(e -> e.kindEnum() == Kind.PHANTASM).toList();
-            h.assertTrue(shown.stream().map(FxPayload::variant).toList().equals(List.of((byte) 1, (byte) 64, (byte) 64)), "only what was paid for should be shown: " + shown.size());
+            List<Integer> shown = effects(sent(near)).stream().filter(e -> e.kindEnum() == Kind.PHANTASM).map(e -> e.variant() & 0xFF).toList();
+            h.assertTrue(shown.equals(List.of(1, 64, 64, 150, 200)), "only what was paid for should be shown: " + shown);
             h.succeed();
         });
     }

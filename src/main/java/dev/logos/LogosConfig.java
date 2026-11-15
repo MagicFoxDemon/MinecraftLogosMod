@@ -37,6 +37,11 @@ public final class LogosConfig {
             .translation("logos.configuration.maxRepeat")
             .defineInRange("maxRepeat", 32, 0, Integer.MAX_VALUE);
 
+    public static final ModConfigSpec.IntValue MAX_PHANTASM_PARTICLES = BUILDER
+            .comment("Most particles a single (phantasm …) may show; each costs 0.02 mana. An effect carries its count in one byte, so 255 at most.")
+            .translation("logos.configuration.maxPhantasmParticles")
+            .defineInRange("maxPhantasmParticles", 64, 1, 255);
+
     public static final ModConfigSpec.IntValue MAX_OPS_PER_TICK = BUILDER
             .comment("Interpreter steps one spell may take per tick before it destabilises.",
                     "Raise this together with maxRecursion / maxRepeat if large loops get cut off.")
@@ -407,6 +412,10 @@ public final class LogosConfig {
 
     public static int maxRepeat() {
         return read(MAX_REPEAT::getAsInt, 32);
+    }
+
+    public static int maxPhantasmParticles() {
+        return read(MAX_PHANTASM_PARTICLES::getAsInt, 64);
     }
 
     public static int maxOpsPerTick() {

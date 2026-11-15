@@ -52,6 +52,8 @@
   "logos.configuration.maxRecursion.tooltip": "How deep recurse may nest",
   "logos.configuration.maxRepeat": "Max Repeat Count",
   "logos.configuration.maxRepeat.tooltip": "Most iterations a single repeat may run",
+  "logos.configuration.maxPhantasmParticles": "Max Phantasm Particles",
+  "logos.configuration.maxPhantasmParticles.tooltip": "Most particles a single phantasm may show, at 0.02 mana each. An effect carries the count in one byte, so 255 at most",
   "logos.configuration.maxOpsPerTick": "Max Steps Per Tick",
   "logos.configuration.maxOpsPerTick.tooltip": "Interpreter steps a spell may take per tick; raise it if big loops get cut off",
   "logos.configuration.maxOpsPerTickGlobal": "Max Steps Per Tick (All Spells)",
