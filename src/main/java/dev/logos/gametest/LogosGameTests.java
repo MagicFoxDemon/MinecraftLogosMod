@@ -85,6 +85,8 @@ public final class LogosGameTests {
 
     /** Tests of the optional compats whose mods are installed (see {@link #compatTests}). */
     private static final List<String> COMPAT_TESTS = new java.util.ArrayList<>();
+    /** One per example of the first course groups ({@link ExampleHitGameTests}), run as a batch of their own. */
+    private static final List<String> EXAMPLE_TESTS = new java.util.ArrayList<>();
 
     private LogosGameTests() {}
 
@@ -548,6 +550,7 @@ public final class LogosGameTests {
             COMPAT_TESTS.addAll(compatTests("dev.logos.gametest.MaidGameTests"));
             MockClientChannels.knowChannelsOf("touhou_little_maid");
         }
+        EXAMPLE_TESTS.addAll(ExampleHitGameTests.register(FUNCTIONS));
         FUNCTIONS.register(modBus);
         modBus.addListener(LogosGameTests::onRegisterTests);
     }
@@ -573,6 +576,12 @@ public final class LogosGameTests {
             event.registerTest(id(name), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id(name)),
                     // 400 ticks: polled tests finish as soon as they pass; the headroom is for a loaded machine.
                     new TestData<>(batch, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
+        }
+        // The examples' spells reach further than most tests': side by side with each other only.
+        Holder<TestEnvironmentDefinition<?>> examples = event.registerEnvironment(id("examples"), new TestEnvironmentDefinition.AllOf());
+        for (String name : EXAMPLE_TESTS) {
+            event.registerTest(id(name), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id(name)),
+                    new TestData<>(examples, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
         }
         // Batches run one after another, one per environment: clearing the runtime would end the other tests' spells.
         Holder<TestEnvironmentDefinition<?>> alone = event.registerEnvironment(id("alone"), new TestEnvironmentDefinition.AllOf());
@@ -710,7 +719,7 @@ public final class LogosGameTests {
     private static void executeBrute(GameTestHelper h) {
         ServerPlayer p = caster(h);
         var golem = mob(h, EntityType.IRON_GOLEM, 4.5, 8.5);
-        SpellInstance inst = cast(h, p, Examples.ALL.get("execute-brute"));
+        SpellInstance inst = cast(h, p, "(spell :name \"蛮力处决\" :mana 120 (ray :range 24 (on-hit (execute target))))");
         h.succeedWhen(() -> {
             h.assertTrue(golem.isAlive(), "unproven execute of a 100hp golem should cost 400 > 120 injected");
             h.assertTrue(inst.dead && "logos.spell.end.out_of_mana".equals(inst.endKey()), "expected mana exhaustion, got " + inst.endReason());
@@ -721,7 +730,7 @@ public final class LogosGameTests {
         ServerPlayer p = caster(h);
         var husk = mob(h, EntityType.HUSK, 4.5, 8.5);
         husk.setHealth(6);
-        SpellInstance inst = cast(h, p, Examples.ALL.get("paradox"));
+        SpellInstance inst = cast(h, p, "(spell :name \"悖论反噬\" :mana 80 (ray :range 24 (on-hit (if (< (hp-ratio target) 0.5) (do (heal target 20) (execute target))))))");
         h.succeedWhen(() -> {
             h.assertTrue(husk.isAlive(), "execute should not happen after the premise was broken");
             h.assertTrue(inst.dead && "logos.spell.end.paradox".equals(inst.endKey()), "expected paradox, got " + inst.endReason());

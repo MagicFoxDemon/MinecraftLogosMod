@@ -3,7 +3,6 @@ package dev.logos.gametest;
 import java.util.ArrayList;
 import java.util.List;
 
-import dev.logos.lang.Examples;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellInstance;
@@ -14,6 +13,27 @@ import net.minecraft.world.phys.Vec3;
 
 /** The 1.5-second disk fires six real rays and pays one upkeep, within its 120 mana budget. */
 final class PrismaticBarrageGameTests {
+    /** 虹彩轮射, once an example: a disk that fires a random element's ray every 0.25 seconds, six times. */
+    private static final String BARRAGE = """
+            (spell :name "虹彩轮射" :mana 120 :trigger cast
+              (construct :shape disk :radius 1 :life 1.5 :every 0.25
+                :solid (kind none) :sigil
+                (on-tick
+                  (switch (random 5 :whole)
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 15 arcane)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 21.42 fire)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 18.75 physical)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 15 frost)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 10 void)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 13.63 lightning)))))))
+            """;
+
     private PrismaticBarrageGameTests() {}
 
     static void budget(GameTestHelper h) {
@@ -31,7 +51,7 @@ final class PrismaticBarrageGameTests {
         target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(10000);
         target.setHealth(10000);
         target.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1);
-        String source = Examples.ALL.get("prismatic-barrage");
+        String source = BARRAGE;
         List<SpellInstance> casts = new ArrayList<>();
         // Fix just the random selection to exercise each element deterministically.
         for (int i = 0; i < 6; i++) {

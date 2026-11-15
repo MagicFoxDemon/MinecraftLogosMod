@@ -120,6 +120,11 @@ gh pr create --fill                # 或在网页上开 PR
     - 便利贴的文字框不会自动换行，所以 `GraphBuilder.wrap` 先按宽度把正文断好行。
     - 存回源码时注释不保留（`GraphCompiler` 不认识框和便利贴），但它们随图一起存在载页上。
     - 示例术式要用这种注释写说明；`GraphGameTests` 会检查每个示例的注释块都画了出来。
+  - 示例术式（`lang/Examples`）是一套按顺序排好的课程，每个示例属于一组：入门、进阶、近战与被动、实用、魔灵、大型（`Examples.GROUPS`，组名是 `logos.example.group.*`），工坊的模板列表显示「组名 · 示例名」。
+    - 示例要拿出来就能在游戏里用：攻击类示例必须造成伤害，需要前提的（锚点、使魔、心核）在总览注释里写明。
+    - 每个示例开头写一段总览注释，复杂的部分各自加区域注释，用正式的书面语。
+    - 单元测试 `ExamplesTest` 检查分组顺序、中英文名字、总览注释、攻击示例会造成伤害，以及估算的消耗不超过注入量（含择路的示例除外，估算会把每条分支都算上）。
+    - 世界内测试 `example_hits_*` 让玩家对着尸壳施放入门、进阶组的每个攻击示例，要求打中且不中途耗尽魔力；这些测试由 `ExampleHitGameTests` 按示例生成，不用手动登记。
 - `item/`、`block/`：法杖、载页（`PageTier` 品级）、典籍、编纂台、拓印台。
 - `mixin/`：对原版的少量改动。影响玩法的登记在 `src/main/resources/logos.mixins.json`，注入点找不到就启动失败；只影响画面的登记在 `logos.cosmetic.mixins.json`，注入点找不到时那项效果消失，日志里有一条警告（`compat/CosmeticMixinPlugin`，靠方法名 `logos$...` 认出注入方法，新写的也要这样命名）。
 - `compat/`：可选的其他 mod 对接，缺了对方也能跑。`compat/jei` 在 JEI 里显示炼金配方；`compat/aiplayer` 给 AI Player 的物品使用声明：`assets/logos/ai_usage/*.md` 写编纂台和载页的用法与动作，`AiPlayerActions` 是声明里点名的处理类，签名只用 Gson 和 JDK 类型，所以不依赖对方的 jar。`compat/tlm` 是车万女仆（Touhou Little Maid）的对接：`LogosMaidExtension` 带 `@LittleMaidExtension`，由女仆模组扫描并只在它安装时创建，事件监听也在它的构造器里登记（按女仆模组开发文档的要求不用 `@EventBusSubscriber`），所以缺了女仆模组时这些类一个都不加载。它加「施法」工作模式（`SpellcastingTask`：主手法杖、副手典籍，`CastSpells` 像魔力生命体一样按意图选页、蓄力、释放），给被驯服的女仆一个魔力池（`MaidMana`，上限 = 主人上限 × (1 + `maidManaPerFavorLevel` × 好感度等级)，存在通用附件 `logos:creature_mana` 上，经 `runtime/ManaVessels` 交给法术、渡魔和药水），召唤成使魔的野生女仆不能被驯服（`SummonedMaids`）。被驯服的施法生物站在主人一边由核心的 `Familiars.sideOf` 负责：`(master)` 是主人，法术不伤主人一方。

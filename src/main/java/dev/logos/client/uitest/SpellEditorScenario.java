@@ -81,6 +81,9 @@ public class SpellEditorScenario implements UIScenario {
 
     private static void addAnnotations(TestContext ctx) {
         var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
+        // The example page comes with its own notes; ours are counted on top of them.
+        ctx.put("notes_before", view.getGraph().graphModel.getStickyNoteModels().size());
+        ctx.put("regions_before", view.getGraph().graphModel.getPlacematModels().size());
         float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
         for (UIElement child : view.getLayer(NodeElement.NODE_LAYER).getChildren()) {
             if (!(child instanceof NodeElement node)) continue;
@@ -101,8 +104,9 @@ public class SpellEditorScenario implements UIScenario {
     private static void checkAnnotations(TestContext ctx) {
         var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
         var graph = view.getGraph().graphModel;
-        ctx.check("one paper note exists", graph.getStickyNoteModels().size() == 1);
-        ctx.check("one ink region exists", graph.getPlacematModels().size() == 1);
+        int notes = ctx.get("notes_before"), regions = ctx.get("regions_before");
+        ctx.check("one more paper note exists", graph.getStickyNoteModels().size() == notes + 1);
+        ctx.check("one more ink region exists", graph.getPlacematModels().size() == regions + 1);
         ctx.check("note uses the spell paper renderer", view.getModelElement(graph.getStickyNoteModels().getFirst())
                 .getClass().getName().contains("SpellAnnotations$PaperNote"));
         ctx.check("region uses the spell ink renderer", view.getModelElement(graph.getPlacematModels().getFirst())
@@ -177,7 +181,8 @@ public class SpellEditorScenario implements UIScenario {
                     checkAnnotations(ctx);
                     var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;
                     view.getHistoryStack().undo();
-                    ctx.check("undo removes the region", view.getGraph().graphModel.getPlacematModels().isEmpty());
+                    int regions = ctx.get("regions_before");
+                    ctx.check("undo removes the region", view.getGraph().graphModel.getPlacematModels().size() == regions);
                     view.getHistoryStack().redo();
                 })
                 .ticks(5)
@@ -266,7 +271,7 @@ public class SpellEditorScenario implements UIScenario {
                 .step("restore the original window size", ctx -> Minecraft.getInstance().getWindow()
                         .setWindowed(ctx.get("original_width"), ctx.get("original_height")))
                 .ticks(10)
-                .step("pick the proof-chain template", ctx -> selectTemplate(ctx, "sever"))
+                .step("pick the proof-chain template", ctx -> selectTemplate(ctx, "execute-proof"))
                 .click("#load_template")
                 .ticks(10)
                 .checkTextContains("#status", "已证明")
