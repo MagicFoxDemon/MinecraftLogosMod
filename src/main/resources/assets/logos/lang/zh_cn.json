@@ -113,7 +113,7 @@
   "logos.configuration.groupRadiusExponent": "群体范围的消耗指数",
   "logos.configuration.groupRadiusExponent.tooltip": "选出群的半径超过 5 时，群体效果的倍率再乘 (半径 ÷ 5) 的这个次方（默认 1.5：半径 10 约 2.8 倍，半径 64 约 46 倍）",
   "logos.configuration.maxGroupRadius": "群体选择器半径上限",
-  "logos.configuration.maxGroupRadius.tooltip": "enemies、entities、players、items、marked 最多搜索的半径（默认 64）",
+  "logos.configuration.maxGroupRadius.tooltip": "enemies、entities、players、items、marked 最多搜索的半径（默认 64，最多 64：实体搜索不会更远）",
   "logos.configuration.chargeMinTicks": "最短蓄力时长",
   "logos.configuration.chargeMinTicks.tooltip": "法杖施法至少蓄力这么多刻，无论注入多少（默认 5）",
   "logos.configuration.timeSkipMaxRate": "时间加速最高倍率",
