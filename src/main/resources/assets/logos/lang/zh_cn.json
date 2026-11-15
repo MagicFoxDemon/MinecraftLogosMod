@@ -299,7 +299,7 @@
   "logos.copy_table.original": "原本",
   "logos.copy_table.blank": "空载页",
   "logos.copy_table.copy": "抄本",
-  "logos.copy_table.hint": "左盘放写有术式的载页或术式余烬，右盘放任意空载页。抄本沿用空载页的品级，原本保留。",
+  "logos.copy_table.hint": "左边的斜架上放写有术式的载页或术式余烬，右边的垫板上放任意空载页。抄本沿用空载页的品级，原本保留。",
   "block.logos.alchemy_table": "炼金术桌",
   "block.logos.mana_spreader": "魔力散布器",
   "block.logos.mana_collector": "魔力收集器",

@@ -73,7 +73,7 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
     public static final EnumProperty<Sheet> LEFT_PAGE = EnumProperty.create("left_page", Sheet.class);
     public static final EnumProperty<Sheet> RIGHT_PAGE = EnumProperty.create("right_page", Sheet.class);
     private static final Map<Direction, VoxelShape> SHAPES = Shapes.rotateHorizontal(Shapes.or(
-            Block.box(0, 0, 0, 16, 12, 16), Block.box(.6, 12, 12.25, 15.4, 19.12, 14.7)));
+            Block.box(0, 0, 0, 16, 12, 16), Block.box(8.75, 12, 2.5, 14.75, 15.5, 10.5), Block.box(.5, 12, 14, 15.5, 13.75, 15.75)));
 
     public CopyTableBlock(Properties properties) {
         super(properties);
@@ -156,18 +156,18 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
             }
         });
 
-        // Drawn like the table: the original's page and the empty paper in iron trays on its top,
-        // the copy on the dark banner between them, a golden thread joining them while a copy is ready.
+        // Drawn like the table: the original on the copy stand and the empty paper on the blotter, the
+        // copy on the gilt-framed navy panel under the inkwell, a golden thread joining them while a copy is ready.
         original.style(s -> s.background(dev.logos.client.CopyTableArt.socket(true)));
         blank.style(s -> s.background(dev.logos.client.CopyTableArt.socket(true)));
         copy.style(s -> s.background(dev.logos.client.CopyTableArt.socket(false)));
         UIElement originalTray = tray(original, dev.logos.client.CopyTableArt.originalTray(() -> original.getSlot().hasItem()));
         UIElement blankTray = tray(blank, dev.logos.client.CopyTableArt.blankTray(() -> blank.getSlot().hasItem()));
-        UIElement banner = new UIElement().layout(l -> l.width(26).height(TRAY_H - 14).alignItems(AlignItems.CENTER).paddingTop(8));
-        banner.style(s -> s.background(dev.logos.client.CopyTableArt.banner()));
-        banner.addChild(copy);
+        UIElement panel = new UIElement().layout(l -> l.width(26).height(TRAY_H - 24).alignItems(AlignItems.CENTER).paddingTop(4));
+        panel.style(s -> s.background(dev.logos.client.CopyTableArt.copyPanel()));
+        panel.addChild(copy);
         UIElement middle = new UIElement().layout(l -> l.alignItems(AlignItems.CENTER).justifyContent(AlignContent.FLEX_END).height(TRAY_H));
-        middle.addChild(banner);
+        middle.addChild(panel);
 
         UIElement trays = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).justifyContent(AlignContent.SPACE_BETWEEN)
                 .alignItems(AlignItems.CENTER).paddingAll(5));
