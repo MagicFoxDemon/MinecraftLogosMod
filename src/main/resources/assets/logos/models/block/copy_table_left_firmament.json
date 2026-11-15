@@ -1,32 +1,16 @@
 {
   "textures": {
     "page": "logos:block/inscription_table_page_firmament_inscribed",
-    "particle": "logos:block/copy_table"
+    "particle": "logos:block/inscription_table"
   },
   "elements": [
     {
-      "name": "左原本载页",
-      "from": [
-        9.6,
-        12.13,
-        2.64
-      ],
-      "to": [
-        14.4,
-        12.13,
-        9.94
-      ],
+      "name": "original_page",
+      "from": [9.35, 12.76, 4],
+      "to": [14.15, 12.76, 8.8],
+      "rotation": {"angle": -22.5, "axis": "x", "origin": [11.75, 12.5, 3.5]},
       "faces": {
-        "up": {
-          "texture": "#page",
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "rotation": 180
-        }
+        "up": {"uv": [0, 0, 16, 16], "rotation": 180, "texture": "#page"}
       }
     }
   ]
