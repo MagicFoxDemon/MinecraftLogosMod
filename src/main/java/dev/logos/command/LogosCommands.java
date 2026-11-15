@@ -435,6 +435,11 @@ public final class LogosCommands {
             sb.append(Component.translatable("logos.command.mana.term", Component.translatable("logos.mana_growth." + t.id.getPath().replace("growth_", "")), Node.fmt(mod.amount())));
             rest -= mod.amount();
         }
+        var wand = attr == null ? null : attr.getModifier(dev.logos.item.WandItem.MAX_MANA_ID);
+        if (wand != null) {
+            sb.append(Component.translatable("logos.command.mana.term", Component.translatable("logos.mana_growth.wand"), Node.fmt(wand.amount())));
+            rest -= wand.amount();
+        }
         if (Math.abs(rest) >= 0.5) sb.append(Component.translatable(rest > 0 ? "logos.command.mana.rest" : "logos.command.mana.rest_less", Node.fmt(Math.abs(rest))));
         c.getSource().sendSuccess(() -> sb.withStyle(ChatFormatting.GRAY), false);
         c.getSource().sendSuccess(() -> Component.translatable("logos.command.mana.growth", Node.fmt(dev.logos.runtime.SpellModifiers.regenerationPerTick(p) * 20),

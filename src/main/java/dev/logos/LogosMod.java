@@ -191,10 +191,10 @@ public class LogosMod {
     public static final DeferredItem<dev.logos.item.WandCharmItem> VOICE_CHARM = ITEMS.registerItem("voice_charm",
             p -> new dev.logos.item.WandCharmItem(p, Component.translatable("item.logos.voice_charm.effect")),
             p -> p.stacksTo(1));
-    /** 蓄灵坠: a graded charm that raises the mana cap while its wand is in the main hand. */
+    /** 蓄灵坠: a graded charm that raises its wand's mana cap, which counts while the wand is carried at all. */
     public static final dev.logos.item.TieredCharmItem.Family RESERVOIR = dev.logos.item.TieredCharmItem.family("reservoir",
             new dev.logos.item.TieredCharmItem.Bonus(() -> dev.logos.runtime.SpellModifiers.MAX_MANA,
-                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE, "logos.charm.bonus.max_mana"));
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE, "logos.charm.bonus.max_mana", true));
     /** 涌泉坠: a graded charm that quickens mana regeneration while its wand is in the main hand. */
     public static final dev.logos.item.TieredCharmItem.Family WELLSPRING = dev.logos.item.TieredCharmItem.family("wellspring",
             new dev.logos.item.TieredCharmItem.Bonus(() -> dev.logos.runtime.SpellModifiers.MANA_REGENERATION,
@@ -1177,6 +1177,7 @@ public class LogosMod {
         if (!(event.getEntity() instanceof ServerPlayer sp)) return;
         PlayerMagic m = PlayerMagic.of(sp);
         dev.logos.item.TieredCharmItem.apply(sp);
+        dev.logos.item.WandItem.applyCarried(sp);
         dev.logos.runtime.ManaGrowth.tick(sp);
         dev.logos.runtime.StaffCharging.tick(sp);
         if (sp.level().getGameTime() % dev.logos.runtime.ManaHud.INTERVAL == 0) dev.logos.runtime.ManaHud.sync(sp);
