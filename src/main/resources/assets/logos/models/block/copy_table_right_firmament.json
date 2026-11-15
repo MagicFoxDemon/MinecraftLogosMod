@@ -1,32 +1,15 @@
 {
   "textures": {
     "page": "logos:block/inscription_table_page_firmament_blank",
-    "particle": "logos:block/copy_table"
+    "particle": "logos:block/inscription_table"
   },
   "elements": [
     {
-      "name": "右空白载页",
-      "from": [
-        1.5999999999999996,
-        12.13,
-        2.64
-      ],
-      "to": [
-        6.4,
-        12.13,
-        9.94
-      ],
+      "name": "blank_page",
+      "from": [2, 12.21, 3.3],
+      "to": [7, 12.21, 8.3],
       "faces": {
-        "up": {
-          "texture": "#page",
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "rotation": 180
-        }
+        "up": {"uv": [0, 0, 16, 16], "rotation": 180, "texture": "#page"}
       }
     }
   ]
