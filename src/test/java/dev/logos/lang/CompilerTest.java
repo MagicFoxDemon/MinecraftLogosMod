@@ -291,6 +291,12 @@ class CompilerTest {
         assertError("(heal caster (choose 0 1 here))", "同一种");
         assertError("(heal caster (choose 0 fire fire))", "只能在");
         assertError("(blink (choose 0 1 2))", "插槽形状不符");
+        // Only one branch runs: 0.5 for the switch and the dearest branch (heal 4 = 6), not every branch added up.
+        assertEquals(0.5 + 6, Compiler.compile("(switch (random 2 :whole) (heal caster 1) (heal caster 4))").profile().estimate(), 1e-9);
+        // on-other runs instead of a branch: here it is the dearest (heal 2 = 3).
+        assertEquals(0.5 + 3, Compiler.compile("(switch (random 2 :whole) (heal caster 1) (do) (on-other (heal caster 2)))").profile().estimate(), 1e-9);
+        // choose evaluates only the picked value: enemies (2), not players (1) + enemies; heal 4 on a group of 3 = 18.
+        assertEquals(18 + 2, Compiler.compile("(spell :players true (heal (choose 0 (players) (enemies)) 4))").profile().estimate(), 1e-9);
     }
 
     @Test
