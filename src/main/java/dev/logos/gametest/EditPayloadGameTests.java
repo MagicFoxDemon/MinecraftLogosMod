@@ -21,6 +21,7 @@ import dev.logos.item.SpellPages;
 import dev.logos.lang.Compiler;
 import dev.logos.lang.Examples;
 import dev.logos.lang.Reader;
+import dev.logos.lang.SourceNotes;
 import dev.logos.lang.Spell;
 import dev.logos.net.AlchemyCardPayload;
 import dev.logos.net.EditLimits;
@@ -106,7 +107,7 @@ final class EditPayloadGameTests {
     }
 
     private static CompoundTag serialized(GameTestHelper h, String source) {
-        SpellGraph graph = GraphBuilder.build(Compiler.compile(source));
+        SpellGraph graph = GraphBuilder.build(Compiler.compile(source), SourceNotes.read(source));
         TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, h.getLevel().registryAccess());
         graph.graphModel.serialize(out);
         return out.buildResult();
@@ -182,8 +183,8 @@ final class EditPayloadGameTests {
         EmitterEditPayload.handle(new EmitterEditPayload(h.absolutePos(at), spell("新"), drawing("新"), SpecialNodes.EmitterMode.PULSE, 1, false), from(q));
         h.assertTrue("新".equals(SpellPages.spell(emitter.page()).name()), "a proper emitter edit was refused");
 
-        CompoundTag largestExample = serialized(h, Examples.ALL.get("prismatic-barrage"));
-        h.assertTrue(EditLimits.fits(largestExample), "the largest example spell's drawing was refused");
+        // Every example's drawing, its notes included, fits; the largest of them is what the limits are measured against.
+        for (var e : Examples.ALL.entrySet()) h.assertTrue(EditLimits.fits(serialized(h, e.getValue())), "the drawing of example " + e.getKey() + " was refused");
         CompoundTag huge = serialized(h, "(spell :name \"长\" :mana 5" + " (heal caster 1)".repeat(250) + ")");
         h.assertTrue(EditLimits.fits(huge), "a drawing ten times the largest example's was refused");
         var buffer = Unpooled.buffer();

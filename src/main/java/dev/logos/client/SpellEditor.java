@@ -295,7 +295,9 @@ public final class SpellEditor {
 
         Selector<String> templates = new Selector<>();
         templates.setId("templates");
-        templates.setCandidateUIProvider(UIElementProvider.text(id -> Component.translatableWithFallback("logos.example." + id, id)));
+        // "Group · name", in course order.
+        templates.setCandidateUIProvider(UIElementProvider.text(id -> Component.translatable("logos.example.group." + Examples.group(id))
+                .append(" · ").append(Component.translatableWithFallback("logos.example." + id, id))));
         templates.setCandidates(new ArrayList<>(Examples.ALL.keySet()));
         templates.setSelected("fireball", false);
         templates.layout(l -> l.widthPercent(100));

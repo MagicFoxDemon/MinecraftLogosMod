@@ -29,7 +29,7 @@ class SpellTextTest {
 
     @Test
     void noteIsTheLeadingCommentOfAnExample() {
-        assertEquals("最简单的术式：弹丸 → 命中 → 伤害", SpellText.note(Examples.ALL.get("hello")));
+        assertEquals("启蒙魔弹 向视线方向射出一枚魔弹，命中敌人时造成轻微的物理伤害。本术式只用到开始时就已领悟的符文：魔弹、伤害、物理元素与直行。", SpellText.note(Examples.ALL.get("hello")));
         assertTrue(SpellText.note(Examples.ALL.get("prismatic-volley")).startsWith("虹彩飞矢"));
         assertEquals("", SpellText.note("(spell :name \"x\" :mana 1 (projectile))"));
     }

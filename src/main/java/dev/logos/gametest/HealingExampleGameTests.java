@@ -63,7 +63,7 @@ final class HealingExampleGameTests {
         var outside = patient(h, EntityType.VILLAGER, 4.5, 20.5);
         var stranger = patient(h, EntityType.IRON_GOLEM, 6.5, 6.5);
         var enemy = patient(h, EntityType.HUSK, 2.5, 6.5);
-        var spell = Casting.compile(Examples.ALL.get("npc-group-heal"));
+        var spell = Casting.compile("(spell :name \"生息之环\" :mana 100 (heal (entities :at (pos-of caster) :radius 16 :filter (kind (species caster))) 6))");
         var inst = Casting.castAs(caster, spell, spell.mana(), 0, null, h.absoluteVec(new Vec3(4.5, 2, 40.5)));
         h.assertTrue(inst.endedNaturally(), "group heal must complete with 100 mana");
         h.assertTrue(near.getHealth() == 10 && distant.getHealth() == 10,

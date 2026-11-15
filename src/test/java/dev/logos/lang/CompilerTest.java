@@ -11,6 +11,42 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class CompilerTest {
+    /** Spells that used to be examples, kept here for the rules they exercise. */
+    private static final String NPC_GROUP_HEAL = """
+            (spell :name "生息之环" :mana 100
+              (heal (entities :at (pos-of caster) :radius 16 :filter (kind (species caster))) 6))
+            """;
+    private static final String SEVER = """
+            (spell :name "终证·断魂" :mana 200
+              (ray :range 32
+                (on-hit
+                  (if (and (< (hp-ratio target) 0.25)
+                           (has target burning)
+                           (has target frozen)
+                           (>= (stacks target #ash) 3))
+                    (execute target)
+                    (echo (hp-ratio target))))))
+            """;
+    private static final String PRISMATIC_BARRAGE = """
+            (spell :name "虹彩轮射" :mana 120 :trigger cast
+              (construct :shape disk :radius 1 :life 1.5 :every 0.25
+                :solid (kind none) :sigil
+                (on-tick
+                  (switch (random 5 :whole)
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 15 arcane)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 21.42 fire)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 18.75 physical)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 15 frost)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 10 void)))
+                    (ray :from (pos-of form) :dir (dir-of form) :range 24
+                      (on-hit (damage target 13.63 lightning)))))))
+            """;
+
     @Test
     void prismaticVolleyKeepsSixExclusiveHomingBranches() {
         Spell s = Compiler.compile(Examples.ALL.get("prismatic-volley"));
@@ -37,7 +73,7 @@ class CompilerTest {
 
     @Test
     void speciesProducesAKindThatCanBeFiltered() {
-        Spell s = Compiler.compile(Examples.ALL.get("npc-group-heal"));
+        Spell s = Compiler.compile(NPC_GROUP_HEAL);
         Node kind = s.body().getFirst().arg(0).kw.get("filter");
         assertEquals(Type.FILTER, kind.type);
         assertEquals("species", kind.arg(0).rune.name);
@@ -105,7 +141,7 @@ class CompilerTest {
 
     @Test
     void prismaticBarrageUsesSixExclusiveRaysWithCappedHitCosts() {
-        Spell s = Compiler.compile(Examples.ALL.get("prismatic-barrage"));
+        Spell s = Compiler.compile(PRISMATIC_BARRAGE);
         assertEquals(120, s.mana());
         Node construct = s.body().getFirst();
         assertEquals(ConstructShape.DISK, construct.kw.get("shape").value);
@@ -159,7 +195,7 @@ class CompilerTest {
 
     @Test
     void proofIsAttachedToExecute() {
-        Spell s = Compiler.compile(Examples.ALL.get("sever"));
+        Spell s = Compiler.compile(SEVER);
         Node ray = s.body().getFirst();
         Node ifNode = ray.events.get("on-hit").getFirst();
         Node exec = ifNode.arg(1);

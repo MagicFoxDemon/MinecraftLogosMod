@@ -15,7 +15,6 @@ import dev.logos.graph.RuneNode;
 import dev.logos.graph.RuneNodes;
 import dev.logos.graph.SpellGraph;
 import dev.logos.item.SpellPages;
-import dev.logos.lang.Examples;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -40,7 +39,7 @@ public class SpeciesScenario implements UIScenario {
                     return reload.isDone() && !reload.isCompletedExceptionally();
                 })
                 .step("open Circle of Renewal", ctx -> ClientHooks.openTableEditor(BlockPos.ZERO,
-                        SpellPages.fitting(Examples.ALL.get("npc-group-heal"))))
+                        SpellPages.fitting("(spell :name \"生息之环\" :mana 100\n  (heal (entities :at (pos-of caster) :radius 16 :filter (kind (species caster))) 6))\n")))
                 .awaitModularUI().ticks(10)
                 .step("species is connected and explained", ctx -> {
                     var view = ctx.ui().select("#spell_navigation", GraphPreview.class).findFirst().orElseThrow().graphView;

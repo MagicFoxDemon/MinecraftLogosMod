@@ -105,7 +105,7 @@ public class SpellVfxScenario implements UIScenario {
                 .ticks(5)
                 .screenshot("storm_hammer_look")
                 .ticks(40)
-                .server("cast ender gale", sc -> cast(sc, "ender-gale"))
+                .server("cast ender gale", sc -> castSrc(sc, "(spell :mana 30 (projectile :trail %portal :speed 1.3 (on-hit (damage target minor void) (push target 2) (phantasm %gust_emitter_large))))"))
                 .ticks(4)
                 .screenshot("ender_gale_trail")
                 .ticks(30)
