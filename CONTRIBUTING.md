@@ -112,6 +112,14 @@ gh pr create --fill                # 或在网页上开 PR
   - 一次性施法动作：`CastPose.play(施法者, 姿势 id)` 播放一次，不用释放；时长由客户端的姿势自己给（`Pose.duration()`，0 表示持续姿势），画法方法带 `age`（已播放的刻数）。每次施放（`:trigger cast`）按启式后的第一条语句选动作（`CastPose.gesture`）：魔弹、射线、领域、炼成体、游脉、缠绕各有一个，其他开头用普通施法，光柱开头不播（改为持姿）。动作在 `client/CastGestures`，侧面/正面截图场景 `logos_cast_gestures`，第一人称 `logos_cast_gestures_view`。
   - 法术拦截：魔弹、光柱、游脉、巨像的掌心炮每走一步都问 `Constructs.stopSpell`，由离得最近、愿意拦的那个付费拦下。除了炼成体，附属包可以用 `Constructs.addWards` 登记自己的 `SpellWard`（比如能挡法术的武器）。格挡事件里要分辨这一下是什么元素时用 `Effects.dealing()`：除物理、火、虚空以外的元素伤害都是原版 `indirect_magic`，光看伤害类型分不出来。
 - `graph/`：LDLib2 节点编辑器。`RuneNodes` 每个符文一个节点类，`GraphCompiler` 图 → 源码，`GraphBuilder` 源码 → 图。
+  - 源码注释画进图里（`lang/SourceNotes`）：紧贴在一个形式前面、以 `;;` 开头的几行是一个注释块。
+    - 第一行是区域框的标题，其余行是框内顶部便利贴的正文；只有一行时只画框。
+    - 写在 `(spell …)` 前面的注释块，画成根节点上方的总览便利贴。
+    - 能注释的是一条语句（框住它的节点、取值、事件和分支）、一个 `(do …)` 块（框住块里的整串语句），以及 `let`（只框住铭记节点和它的取值）。写在取值前面的注释块不会被画出来。
+    - 单个 `;` 是普通注释，不画。
+    - 便利贴的文字框不会自动换行，所以 `GraphBuilder.wrap` 先按宽度把正文断好行。
+    - 存回源码时注释不保留（`GraphCompiler` 不认识框和便利贴），但它们随图一起存在载页上。
+    - 示例术式要用这种注释写说明；`GraphGameTests` 会检查每个示例的注释块都画了出来。
 - `item/`、`block/`：法杖、载页（`PageTier` 品级）、典籍、编纂台、拓印台。
 - `mixin/`：对原版的少量改动。影响玩法的登记在 `src/main/resources/logos.mixins.json`，注入点找不到就启动失败；只影响画面的登记在 `logos.cosmetic.mixins.json`，注入点找不到时那项效果消失，日志里有一条警告（`compat/CosmeticMixinPlugin`，靠方法名 `logos$...` 认出注入方法，新写的也要这样命名）。
 - `compat/`：可选的其他 mod 对接，缺了对方也能跑。`compat/jei` 在 JEI 里显示炼金配方；`compat/aiplayer` 给 AI Player 的物品使用声明：`assets/logos/ai_usage/*.md` 写编纂台和载页的用法与动作，`AiPlayerActions` 是声明里点名的处理类，签名只用 Gson 和 JDK 类型，所以不依赖对方的 jar。`compat/tlm` 是车万女仆（Touhou Little Maid）的对接：`LogosMaidExtension` 带 `@LittleMaidExtension`，由女仆模组扫描并只在它安装时创建，事件监听也在它的构造器里登记（按女仆模组开发文档的要求不用 `@EventBusSubscriber`），所以缺了女仆模组时这些类一个都不加载。它加「施法」工作模式（`SpellcastingTask`：主手法杖、副手典籍，`CastSpells` 像魔力生命体一样按意图选页、蓄力、释放），给被驯服的女仆一个魔力池（`MaidMana`，上限 = 主人上限 × (1 + `maidManaPerFavorLevel` × 好感度等级)，存在通用附件 `logos:creature_mana` 上，经 `runtime/ManaVessels` 交给法术、渡魔和药水），召唤成使魔的野生女仆不能被驯服（`SummonedMaids`）。被驯服的施法生物站在主人一边由核心的 `Familiars.sideOf` 负责：`(master)` 是主人，法术不伤主人一方。

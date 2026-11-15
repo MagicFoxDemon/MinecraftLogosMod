@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.joml.Vector2f;
+import org.jspecify.annotations.Nullable;
 
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.PortModel;
 
@@ -19,6 +20,7 @@ import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
 import dev.logos.lang.Node;
 import dev.logos.lang.Rune;
+import dev.logos.lang.SourceNotes;
 import dev.logos.lang.Spell;
 import dev.logos.lang.Status;
 
@@ -26,6 +28,9 @@ import dev.logos.lang.Status;
  * Lays out a compiled spell as a node graph. Flow runs down a column; each column keeps a lane
  * to its left for value expressions (one sub-lane per nesting level); event, body and then/else branches
  * open columns side by side to the right, far enough out to leave room for their own value lanes.
+ * <p>Notes written into the source ({@link SourceNotes}) are drawn as comments are read: a note on a statement frames
+ * it, with its values and branches, in a titled region whose text sits on a sticky note at the top; a note on the
+ * whole spell is a sticky note above the root.
  */
 public final class GraphBuilder {
     /** Measured in graph units at default zoom: flow nodes reach ~306 wide (beam), value nodes ~268 (enemies), context nodes ~60. */
@@ -34,24 +39,39 @@ public final class GraphBuilder {
     private static final float GAP_X = 50;
     private static final float GAP_Y = 24;
     private static final float VALUE_GAP_Y = 12;
+    /** A region's title bar (the toolkit's placemat draws its title in this much), its margin round what it frames. */
+    private static final float TITLE_H = 29, PAD = 12;
+    /** A sticky note's width inside a region, and the overview note's above the root; its type size. */
+    private static final float NOTE_W = NODE_W - 2 * PAD, OVERVIEW_W = 420;
+    private static final int NOTE_FONT = 11;
 
     private final SpellGraph graph = new SpellGraph();
     private final Map<String, PortModel> vars = new HashMap<>();
+    private final SourceNotes notes;
+    /** The regions being laid out, outermost first, each the box of everything placed inside it so far. */
+    private final List<float[]> open = new ArrayList<>();
     private float y;
     /** Right edge of the flow nodes placed so far in the branch being laid out. */
     private float right;
 
-    private GraphBuilder() {}
+    private GraphBuilder(SourceNotes notes) {
+        this.notes = notes;
+    }
 
     /** A graph containing only a fresh root node. */
     public static SpellGraph empty() {
-        GraphBuilder b = new GraphBuilder();
+        GraphBuilder b = new GraphBuilder(SourceNotes.NONE);
         b.create(new SpellRoot(), 0, 0);
         return b.graph;
     }
 
     public static SpellGraph build(Spell spell) {
-        GraphBuilder b = new GraphBuilder();
+        return build(spell, SourceNotes.NONE);
+    }
+
+    /** The spell laid out with the notes its source carried, drawn as regions and sticky notes. */
+    public static SpellGraph build(Spell spell, SourceNotes notes) {
+        GraphBuilder b = new GraphBuilder(notes);
         float x = lanes(spell.body()) * LANE_W;
         SpellRoot root = b.create(new SpellRoot(), x, 0);
         root.setOption(SpellRoot.NAME, spell.name());
@@ -61,6 +81,13 @@ public final class GraphBuilder {
         root.setOption(SpellRoot.IMMOLATE, spell.immolate());
         // Only a declared intent is kept on the node; an inferred one is worked out again on compiling.
         root.setOption(SpellRoot.INTENT, spell.profile().declared() ? SpecialNodes.IntentChoice.of(spell.profile().primary()) : SpecialNodes.IntentChoice.AUTO);
+        SourceNotes.Note head = notes.head();
+        if (head != null) {
+            // The whole spell's note hangs above the root, its title as the first line.
+            String text = wrap(head.text().isEmpty() ? head.title() : head.title() + "\n" + head.text(), OVERVIEW_W);
+            float h = noteHeight(text);
+            b.sticky(text, x, -h - GAP_Y, OVERVIEW_W, h);
+        }
         b.y = height(root) + GAP_Y;
         b.chain(spell.body(), root.out(SpellRoot.START), x);
         return b.graph;
@@ -68,7 +95,123 @@ public final class GraphBuilder {
 
     private <T extends LogosNode> T create(T node, float x, float y) {
         graph.graphModel.createNodeModel(node, new Vector2f(x, y));
+        if (!open.isEmpty()) {
+            float w = width(node), h = height(node);
+            for (float[] r : open) take(r, x, y, x + w, y + h);
+        }
         return node;
+    }
+
+    /** Roughly how wide a node is drawn, for the regions round it: flow nodes are wide, values less, cards and contexts narrow. */
+    private static float width(LogosNode n) {
+        if (n instanceof ContextValue) return 60;
+        if (n instanceof EnumValues.Value || n instanceof SpecialNodes.AnchorValue) return 130;
+        if (n instanceof RuneNode r && r.rune().returns != dev.logos.lang.Type.ACTION) return 268;
+        return NODE_W;
+    }
+
+    private static void take(float[] r, float left, float top, float right, float bottom) {
+        r[0] = Math.min(r[0], left);
+        r[1] = Math.min(r[1], top);
+        r[2] = Math.max(r[2], right);
+        r[3] = Math.max(r[3], bottom);
+    }
+
+    // ---- notes -------------------------------------------------------------------------------
+
+    /** A region being laid out: its note, its text as wrapped, where its title bar starts, and the box of what it frames. */
+    private record Region(SourceNotes.Note note, String text, float top, float noteHeight, float[] box) {}
+
+    /** Starts a region for {@code note} at {@code x}: keeps room above for its title and sticky note, and frames what follows. */
+    private @Nullable Region open(SourceNotes.@Nullable Note note, float x) {
+        if (note == null) return null;
+        float top = y;
+        String text = wrap(note.text(), NOTE_W);
+        float noteHeight = text.isEmpty() ? 0 : noteHeight(text) + PAD;
+        y += header(note);
+        float[] box = {x, y, x + NODE_W, y};
+        open.add(box);
+        return new Region(note, text, top, noteHeight, box);
+    }
+
+    /** The room a region for {@code note} keeps above what it frames: its title bar and sticky note. */
+    private static float header(SourceNotes.@Nullable Note note) {
+        if (note == null) return 0;
+        String text = wrap(note.text(), NOTE_W);
+        return TITLE_H + (text.isEmpty() ? 0 : noteHeight(text) + PAD) + PAD;
+    }
+
+    /**
+     * How far below where {@code stmts} start their first node lands: the headers of the regions opening there,
+     * following {@link #chain} (a block without a note runs on into what comes after it).
+     */
+    private float lead(List<Node> stmts) {
+        if (stmts.isEmpty()) return 0;
+        Node s = stmts.getFirst();
+        SourceNotes.Note note = notes.at(s);
+        if (s.rune.name.equals("do")) {
+            if (note != null) return header(note) + lead(s.body);
+            List<Node> flat = new ArrayList<>(s.body);
+            flat.addAll(stmts.subList(1, stmts.size()));
+            return lead(flat);
+        }
+        if (note == null && s.rune.name.equals("let") && s.arg(1).kind == Node.Kind.CALL && s.arg(1).rune.yields != null
+                && s.arg(1).type == dev.logos.lang.Type.ACTION) note = notes.at(s.arg(1));
+        return header(note);
+    }
+
+    /** Draws the region round what was laid out since {@link #open}, and moves on below it. */
+    private void close(@Nullable Region r) {
+        if (r == null) return;
+        open.remove(r.box());
+        float left = r.box()[0] - PAD, right = Math.max(r.box()[2], r.box()[0] + NODE_W) + PAD;
+        float bottom = Math.max(r.box()[3], y - GAP_Y) + PAD;
+        var mat = graph.graphModel.createPlacemat(r.note().title(), new Vector2f(left, r.top()), new Vector2f(right - left, bottom - r.top()));
+        // Regions laid out later are drawn over earlier ones, so an inner region stays above the one it sits in.
+        mat.setZOrder(open.size());
+        if (r.noteHeight() > 0) sticky(r.text(), left + PAD, r.top() + TITLE_H, NOTE_W, r.noteHeight() - PAD);
+        for (float[] outer : open) take(outer, left, r.top(), right, bottom);
+        y = Math.max(y, bottom + GAP_Y);
+    }
+
+    private void sticky(String text, float x, float top, float width, float height) {
+        var note = graph.graphModel.createStickyNote(new Vector2f(x, top));
+        note.setContent(text);
+        note.setFontSize(NOTE_FONT);
+        note.setSize(new Vector2f(width, height));
+    }
+
+    /** Punctuation that never starts a line; a break before it is moved after it. */
+    private static final String NO_LINE_START = "，。、；：！？）」』》〉,.;:!?)";
+
+    /**
+     * {@code text} broken into lines that fit a sticky note {@code width} wide at {@link #NOTE_FONT}, as the note's
+     * text box does not wrap by itself: a Chinese character counts a full em, anything else about two thirds, with a
+     * little room spare for the font's own widths.
+     */
+    static String wrap(String text, float width) {
+        float usable = (width - 24) * 0.92f, em = NOTE_FONT;
+        StringBuilder out = new StringBuilder();
+        for (String line : text.split("\n", -1)) {
+            if (!out.isEmpty()) out.append('\n');
+            float w = 0;
+            for (int i = 0; i < line.length(); i++) {
+                char c = line.charAt(i);
+                float cw = c < 0x2E80 ? em * 0.6f : em;
+                if (w + cw > usable && w > 0 && NO_LINE_START.indexOf(c) < 0) {
+                    out.append('\n');
+                    w = 0;
+                }
+                out.append(c);
+                w += cw;
+            }
+        }
+        return out.toString();
+    }
+
+    /** How tall a sticky note must be to show {@code text}, already wrapped: its header, a row per line, its margin. */
+    static float noteHeight(String text) {
+        return 24 + text.split("\n", -1).length * (NOTE_FONT + 2) + 14;
     }
 
     private void wire(PortModel from, PortModel to) {
@@ -131,43 +274,57 @@ public final class GraphBuilder {
 
     // ---- flow --------------------------------------------------------------------------------
 
-    private void chain(List<Node> stmts, PortModel from, float x) {
+    /** Lays out {@code stmts} down a column from {@code from}; returns the last statement's way on. */
+    private PortModel chain(List<Node> stmts, PortModel from, float x) {
         PortModel prev = from;
         for (int i = 0; i < stmts.size(); i++) {
             Node s = stmts.get(i);
             if (s.rune.name.equals("do")) {
+                // A block with a note is framed as one; without one it has no node and simply runs on.
+                Region region = open(notes.at(s), x);
+                if (region != null) {
+                    prev = chain(s.body, prev, x);
+                    close(region);
+                    continue;
+                }
                 List<Node> flat = new ArrayList<>(s.body);
                 flat.addAll(stmts.subList(i + 1, stmts.size()));
-                chain(flat, prev, x);
-                return;
+                return chain(flat, prev, x);
             }
             if (s.rune.name.equals("let") && s.arg(1).kind == Node.Kind.CALL && s.arg(1).rune.yields != null && s.arg(1).type == dev.logos.lang.Type.ACTION) {
                 // Keeping what a form or summon made: that node's own 此形 / 吾之使魔 output, not a remember node.
+                SourceNotes.Note note = notes.at(s);
+                Region region = open(note != null ? note : notes.at(s.arg(1)), x);
                 RuneNode n = statement(s.arg(1), x);
+                close(region);
                 wire(prev, n.in(RuneNode.IN));
                 vars.put((String) s.arg(0).value, n.out(RuneNode.YIELD));
                 List<Node> rest = new ArrayList<>(s.body);
                 rest.addAll(stmts.subList(i + 1, stmts.size()));
-                chain(rest, n.out(RuneNode.NEXT), x);
-                return;
+                return chain(rest, n.out(RuneNode.NEXT), x);
             }
             if (s.rune.name.equals("let")) {
+                // A note on it frames what is remembered; the scope that follows is the rest of the column.
+                Region region = open(notes.at(s), x);
                 Remember r = create(new Remember(), x, y);
                 r.setOption(Remember.KIND, RememberKind.of(s.arg(1).type));
                 wire(prev, r.in(RuneNode.IN));
                 float bottom = value(s.arg(1), r.in(Remember.VALUE), x - LANE_W, y);
                 vars.put((String) s.arg(0).value, r.out(RuneNode.OUT));
                 y = Math.max(y + height(r), bottom) + GAP_Y;
+                close(region);
                 // In the graph, everything after "remember" is inside its scope.
                 List<Node> rest = new ArrayList<>(s.body);
                 rest.addAll(stmts.subList(i + 1, stmts.size()));
-                chain(rest, r.out(RuneNode.NEXT), x);
-                return;
+                return chain(rest, r.out(RuneNode.NEXT), x);
             }
+            Region region = open(notes.at(s), x);
             RuneNode n = statement(s, x);
+            close(region);
             wire(prev, n.in(RuneNode.IN));
             prev = n.out(RuneNode.NEXT);
         }
+        return prev;
     }
 
     private RuneNode statement(Node s, float x) {
@@ -200,6 +357,8 @@ public final class GraphBuilder {
      * column past everything the previous one placed, so no wire has to pass another branch to reach
      * its target. Wires leave the node's side ports, so when they would cross value lanes or other
      * branches, all branches start below the node and every wire reaches its target from above.
+     * A branch that opens with a noted region keeps room for its header, so the first nodes of all
+     * branches line up below the lowest header: no wire runs down through a neighbour's first node.
      * Leaves {@code y} at the bottom of the lowest branch.
      */
     private void branches(RuneNode n, float top, float x, Map<PortModel, List<Node>> branches) {
@@ -208,9 +367,11 @@ public final class GraphBuilder {
         float bottom = top;
         float edge = x + NODE_W;
         float outer = right;
+        float lead = 0;
+        for (List<Node> b : branches.values()) lead = Math.max(lead, lead(b));
         for (var b : branches.entrySet()) {
             float bx = edge + GAP_X + lanes(b.getValue()) * LANE_W;
-            y = start;
+            y = start + lead - lead(b.getValue());
             right = bx + NODE_W;
             chain(b.getValue(), b.getKey(), bx);
             bottom = Math.max(bottom, y);
@@ -221,8 +382,10 @@ public final class GraphBuilder {
         y = bottom;
     }
 
-    private static List<Node> flatten(Node action) {
-        return action.rune != null && action.rune.name.equals("do") ? action.body : List.of(action);
+    /** A branch's statements: a {@code do}'s body, unless the block carries a note and so is framed whole. */
+    private List<Node> flatten(Node action) {
+        boolean block = action.rune != null && action.rune.name.equals("do");
+        return block && notes.at(action) == null ? action.body : List.of(action);
     }
 
     // ---- values ------------------------------------------------------------------------------
