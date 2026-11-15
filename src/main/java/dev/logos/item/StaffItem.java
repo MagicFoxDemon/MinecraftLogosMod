@@ -30,7 +30,7 @@ public class StaffItem extends WandItem {
         this(properties, slots, flow, surge, capacity, 0, 0);
     }
 
-    /** With what it adds in the main hand to the mana cap and its refill, as {@link WandItem}'s. */
+    /** With what it adds to the mana cap while carried and to its refill in the main hand, as {@link WandItem}'s. */
     public StaffItem(Properties properties, int slots, double flow, double surge, double capacity, double maxMana, double regeneration) {
         super(properties, slots, flow, surge, maxMana, regeneration);
         this.capacity = capacity;

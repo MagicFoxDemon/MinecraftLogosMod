@@ -25,15 +25,22 @@ import net.minecraft.world.item.component.TooltipDisplay;
 /**
  * 分级杖饰: a wand charm of a {@link Family} at a grade (1 up). Hung on the wand in the main hand, it gives its
  * bearer the family's attribute modifiers at its grade's amounts; of several charms of one family on that
- * wand only the highest grade counts, so stacking copies gains nothing. A new kind (more damage, less cost,
- * faster charging…) is one more family over the spell attributes, with no code of its own.
+ * wand only the highest grade counts, so stacking copies gains nothing. A bonus to the mana cap counts instead
+ * while its wand is carried at all, on the wand's own cap ({@link WandItem#applyCarried}). A new kind (more damage,
+ * less cost, faster charging…) is one more family over the spell attributes, with no code of its own.
  */
 public class TieredCharmItem extends WandCharmItem {
     /**
      * One modifier a family gives: the attribute (looked up late, as attributes register after items are declared), how its
-     * amount applies, and the language key that reads it out with the signed amount as its one argument.
+     * amount applies, and the language key that reads it out with the signed amount as its one argument. A {@code carried}
+     * bonus (the mana cap's, an amount added) counts while its wand is carried anywhere, as the best wand's cap does, and not
+     * from the main hand: a cap that fell whenever the hand changed would drain the pool above it.
      */
-    public record Bonus(Supplier<? extends Holder<Attribute>> attribute, AttributeModifier.Operation operation, String key) {}
+    public record Bonus(Supplier<? extends Holder<Attribute>> attribute, AttributeModifier.Operation operation, String key, boolean carried) {
+        public Bonus(Supplier<? extends Holder<Attribute>> attribute, AttributeModifier.Operation operation, String key) {
+            this(attribute, operation, key, false);
+        }
+    }
 
     /** A kind of charm: its id (its name is {@code logos.charm.family.<id>}) and the modifiers every grade of it gives, in the same order as each grade's amounts. */
     public record Family(String id, List<Bonus> bonuses) {
@@ -76,13 +83,22 @@ public class TieredCharmItem extends WandCharmItem {
         return grade;
     }
 
+    /** What the charm gives: in the main hand, and while its wand is carried, each part under its own heading. */
     private static Component describe(Family family, int grade, double[] amounts) {
-        MutableComponent bonuses = Component.empty();
+        MutableComponent held = Component.empty(), carried = Component.empty();
+        boolean anyHeld = false, anyCarried = false;
         for (int i = 0; i < amounts.length; i++) {
-            if (i > 0) bonuses.append(Component.translatable("logos.charm.list_separator"));
-            bonuses.append(Component.translatable(family.bonuses().get(i).key(), (amounts[i] >= 0 ? "+" : "") + Node.fmt(amounts[i])));
+            Bonus bonus = family.bonuses().get(i);
+            MutableComponent into = bonus.carried() ? carried : held;
+            if (bonus.carried() ? anyCarried : anyHeld) into.append(Component.translatable("logos.charm.list_separator"));
+            into.append(Component.translatable(bonus.key(), (amounts[i] >= 0 ? "+" : "") + Node.fmt(amounts[i])));
+            if (bonus.carried()) anyCarried = true;
+            else anyHeld = true;
         }
-        return Component.translatable("logos.charm.tiered.effect", bonuses);
+        if (!anyCarried) return Component.translatable("logos.charm.tiered.effect", held);
+        if (!anyHeld) return Component.translatable("logos.charm.tiered.effect_carried", carried);
+        return Component.translatable("logos.charm.tiered.effect", held).append(Component.translatable("logos.charm.list_separator"))
+                .append(Component.translatable("logos.charm.tiered.effect_carried", carried));
     }
 
     @Override
@@ -101,9 +117,22 @@ public class TieredCharmItem extends WandCharmItem {
         return best;
     }
 
+    /** What the best charm of each family on {@code wand} adds to {@code attribute} while the wand is carried ({@link Bonus#carried}). */
+    public static double carried(ItemStack wand, Holder<Attribute> attribute) {
+        double sum = 0;
+        for (TieredCharmItem c : best(wand).values()) {
+            for (int i = 0; i < c.family.bonuses().size(); i++) {
+                Bonus bonus = c.family.bonuses().get(i);
+                if (bonus.carried() && bonus.attribute().get().value() == attribute.value()) sum += c.amounts[i];
+            }
+        }
+        return sum;
+    }
+
     /**
      * Puts on {@code p} the modifiers of the charms on its main-hand wand and takes off those of families no
-     * longer there; called every tick, it writes an attribute only when its amount changes.
+     * longer there; called every tick, it writes an attribute only when its amount changes. Carried bonuses are
+     * left to the wand's own cap ({@link WandItem#applyCarried}).
      */
     public static void apply(Player p) {
         Map<Family, TieredCharmItem> best = best(p.getMainHandItem());
@@ -114,7 +143,7 @@ public class TieredCharmItem extends WandCharmItem {
                 if (attr == null) continue;
                 Identifier id = f.modifier(i);
                 AttributeModifier old = attr.getModifier(id);
-                if (c == null) {
+                if (c == null || f.bonuses().get(i).carried()) {
                     if (old != null) attr.removeModifier(id);
                 } else if (old == null || old.amount() != c.amounts[i]) {
                     attr.addOrUpdateTransientModifier(new AttributeModifier(id, c.amounts[i], f.bonuses().get(i).operation()));

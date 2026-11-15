@@ -10,7 +10,7 @@ order: 2
 {{recipe logos:oak_wand}}
 {{items logos:oak_wand logos:spruce_wand logos:birch_wand logos:jungle_wand logos:acacia_wand logos:dark_oak_wand logos:cherry_wand}}
 
-更高级的法杖能挂更多载页、蓄力更快，拿在主手时还会提高魔力上限和回复。它们要用更好的材料合成，术士村民也会出售。
+更高级的法杖能挂更多载页、蓄力更快。只要带在身上，它就会提高你的魔力上限（带着好几根时只算最高的一根）；拿在主手时还会加快魔力回复。它们要用更好的材料合成，术士村民也会出售。
 
 ## 术式载页
 一张纸加一颗金粒，就是一张[基础术式载页](item:logos:spell_page)。空白的载页要先写上术式才能施放。
