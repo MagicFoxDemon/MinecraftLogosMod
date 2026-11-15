@@ -299,7 +299,7 @@
   "logos.copy_table.original": "Original",
   "logos.copy_table.blank": "Blanks",
   "logos.copy_table.copy": "Copy",
-  "logos.copy_table.hint": "Put a written page or a spell ember in the left tray and any empty pages in the right. The copy takes the empty page's grade; the original is kept.",
+  "logos.copy_table.hint": "Lean a written page or a spell ember on the stand at the left and lay any empty pages on the blotter at the right. The copy takes the empty page's grade; the original is kept.",
   "block.logos.alchemy_table": "Alchemy Table",
   "block.logos.mana_spreader": "Mana Spreader",
   "block.logos.mana_collector": "Mana Collector",
