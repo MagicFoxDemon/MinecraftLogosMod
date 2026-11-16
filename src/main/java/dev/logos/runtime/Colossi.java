@@ -143,8 +143,8 @@ public final class Colossi {
             event.setCanceled(true);
             long now = c.level().getGameTime();
             Long asked = ASKED_DOWN.put(p, now);
-            if (c.mind().puttingDown(p) || asked != null && now - asked <= DOUBLE_PRESS) LogosMod.defer(() -> c.mind().jumpOff(p));
-            else LogosMod.defer(() -> c.mind().requestPutDown(p));
+            if (c.mind().puttingDown(p) || asked != null && now - asked <= DOUBLE_PRESS) SpellRuntime.defer(() -> c.mind().jumpOff(p));
+            else SpellRuntime.defer(() -> c.mind().requestPutDown(p));
             return;
         }
         if (h == Hold.GRIP || HELD.contains(rider)) event.setCanceled(true);

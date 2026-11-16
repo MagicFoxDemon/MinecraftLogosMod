@@ -12,8 +12,17 @@ import dev.logos.LogosMod;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
-/** Server-side scheduler for living spell objects and delayed continuations. */
+/**
+ * Server-side scheduler for living spell objects and delayed continuations.
+ * <p>
+ * Its listeners are registered by {@link LogosMod}'s constructor, not by {@code @EventBusSubscriber}, so that they run
+ * before those of the annotated classes: spells tick, and end with the server, ahead of what else the mod does then.
+ */
 public final class SpellRuntime {
     /**
      * Very deep recursion (a large maxRecursion) can exhaust the Java stack; the spell ends, the server does not. This
@@ -41,6 +50,8 @@ public final class SpellRuntime {
     private static final List<Task> SCHEDULED = new ArrayList<>();
     /** When each failure last logged its stack; see {@link #report}. */
     private static final Map<String, Long> REPORTED = new HashMap<>();
+    /** Passive spells triggered inside damage events run on the next tick, outside the event. */
+    private static final List<Runnable> DEFERRED = new ArrayList<>();
     private static long now;
     private static long nextOrder;
     /** Interpreter steps taken since the last {@link #tick} ended, events included; and how many that was for the tick before. */
@@ -132,6 +143,26 @@ public final class SpellRuntime {
         if (!t.inst.dead) return false;
         t.inst.release();
         return true;
+    }
+
+    /** Runs {@code r} after this server tick's events, outside whatever event is being handled now. */
+    public static void defer(Runnable r) {
+        DEFERRED.add(r);
+    }
+
+    @SubscribeEvent
+    static void onServerTick(ServerTickEvent.Post event) {
+        List<Runnable> run = new ArrayList<>(DEFERRED);
+        DEFERRED.clear();
+        // One failing task costs neither the others nor the running spells their tick.
+        for (Runnable r : run) {
+            try {
+                r.run();
+            } catch (StackOverflowError | RuntimeException e) {
+                report("Deferred task", e);
+            }
+        }
+        tick();
     }
 
     public static void tick() {
@@ -229,5 +260,19 @@ public final class SpellRuntime {
         WrapObj.clear();
         ManaWrap.clear();
         SpellCasters.clear();
+    }
+
+    /** Spells end before players leave and the world is saved and closed, while what their ends touch is still there. */
+    @SubscribeEvent
+    static void onServerStopping(ServerStoppingEvent event) {
+        clear();
+    }
+
+    /** Again, as a crash stops the server without the event above. */
+    @SubscribeEvent
+    static void onServerStopped(ServerStoppedEvent event) {
+        clear();
+        AreaWeather.clearServer();
+        DEFERRED.clear();
     }
 }

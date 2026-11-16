@@ -9,6 +9,7 @@ import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 import dev.logos.LogosMod;
 import dev.logos.alchemy.BuffPotions;
 import dev.logos.block.CultivationJarBlockEntity;
+import dev.logos.block.JarHerb;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
@@ -43,7 +44,7 @@ public class BuffPotionsScenario implements UIScenario {
                 .fill(ORIGIN.offset(-2, 0, -3), ORIGIN.offset(10, 0, 5), Blocks.SMOOTH_STONE.defaultBlockState())
                 .server("plant the herbs, ripe in front and half grown behind", sc -> {
                     var level = sc.player().level();
-                    LogosMod.JarHerb[] herbs = LogosMod.JarHerb.values();
+                    JarHerb[] herbs = JarHerb.values();
                     for (int i = 0; i < herbs.length; i++) {
                         for (int row = 0; row < 2; row++) {
                             BlockPos pos = ORIGIN.offset(i * 2, 1, row * 2);
@@ -67,7 +68,7 @@ public class BuffPotionsScenario implements UIScenario {
                     var inv = sc.player().getInventory();
                     inv.clearContent();
                     int slot = 9;
-                    for (LogosMod.JarHerb herb : LogosMod.JarHerb.values()) {
+                    for (JarHerb herb : JarHerb.values()) {
                         inv.setItem(slot++, new ItemStack(herb.seed.get()));
                         inv.setItem(slot++, new ItemStack(herb.harvest.get()));
                     }

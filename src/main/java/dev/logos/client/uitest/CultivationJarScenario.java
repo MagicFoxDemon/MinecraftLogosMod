@@ -9,6 +9,7 @@ import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 
 import dev.logos.LogosMod;
 import dev.logos.block.CultivationJarBlockEntity;
+import dev.logos.block.JarMetal;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -50,8 +51,8 @@ public class CultivationJarScenario implements UIScenario {
                             {new ItemStack(Items.CARROT), 7, new ItemStack(LogosMod.SOLAR_AMALGAM.get()), 0},
                             {new ItemStack(LogosMod.NITER_SPROUT.get()), 3, ItemStack.EMPTY, 0},
                             {new ItemStack(LogosMod.MANDRAKE_SEED.get()), 3, ItemStack.EMPTY, 0},
-                            {new ItemStack(LogosMod.JarMetal.COPPER.seed.get()), 3, ItemStack.EMPTY, 2},
-                            {new ItemStack(LogosMod.JarMetal.GOLD.seed.get()), 2, ItemStack.EMPTY, 2},
+                            {new ItemStack(JarMetal.COPPER.seed.get()), 3, ItemStack.EMPTY, 2},
+                            {new ItemStack(JarMetal.GOLD.seed.get()), 2, ItemStack.EMPTY, 2},
                             {new ItemStack(LogosMod.MERCURY_SPORE.get()), 3, ItemStack.EMPTY, 2},
                             {new ItemStack(LogosMod.STARLIGHT_MOSS_SPORE.get()), 3, ItemStack.EMPTY, 2}};
                     for (int i = 0; i < jars.length; i++) {
@@ -75,7 +76,7 @@ public class CultivationJarScenario implements UIScenario {
                     }
                     level.setBlock(IRON, LogosMod.CULTIVATION_JAR.get().defaultBlockState(), 3);
                     if (level.getBlockEntity(IRON) instanceof CultivationJarBlockEntity jar) {
-                        jar.plant(new ItemStack(LogosMod.JarMetal.IRON.seed.get()));
+                        jar.plant(new ItemStack(JarMetal.IRON.seed.get()));
                         jar.receiveMana(25);
                         jar.grow();
                         jar.grow();

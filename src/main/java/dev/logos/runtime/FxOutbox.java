@@ -122,7 +122,7 @@ final class FxOutbox {
         inTick = true;
     }
 
-    /** Last of the tick's end: the spells themselves run in this event ({@code LogosMod.onServerTick}). */
+    /** Last of the tick's end: the spells themselves run in this event ({@code SpellRuntime.onServerTick}). */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     static void onTickEnd(ServerTickEvent.Post event) {
         inTick = false;

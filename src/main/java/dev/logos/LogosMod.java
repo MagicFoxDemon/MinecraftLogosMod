@@ -11,41 +11,29 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.Codec;
 
+import dev.logos.block.JarHerb;
+import dev.logos.block.JarMetal;
 import dev.logos.command.LogosCommands;
 import dev.logos.item.PageTier;
 import dev.logos.item.WandItem;
 import net.minecraft.world.item.Rarity;
 import dev.logos.lang.LogosError;
-import dev.logos.runtime.Casting;
-import dev.logos.runtime.Effects;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellRuntime;
 import dev.logos.runtime.StatusData;
-import dev.logos.runtime.Targeting;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.event.server.ServerStoppedEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -386,7 +374,7 @@ public class LogosMod {
 
     // What grows in a cultivation jar: seeds fermented on the alchemy table, and the plants the jar draws.
     /** A plant grown in a cultivation jar by default; add-ons can opt into ground substrates through its block tag. */
-    private static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name) {
+    public static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name) {
         return BLOCKS.registerBlock(name, dev.logos.block.JarCropBlock::new,
                 p -> p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollision().instabreak()
                         .sound(net.minecraft.world.level.block.SoundType.CROP));
@@ -399,64 +387,9 @@ public class LogosMod {
     public static final DeferredItem<net.minecraft.world.item.Item> GERMINAL_ESSENCE = ITEMS.registerSimpleItem("germinal_essence",
             p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
 
-    /** The metals that grow in a jar: each has an embryo (settled from its ingot), a seed, a plant and the pod it bears. */
-    public enum JarMetal {
-        COPPER(net.minecraft.world.item.Rarity.COMMON), IRON(net.minecraft.world.item.Rarity.COMMON),
-        GOLD(net.minecraft.world.item.Rarity.UNCOMMON), NETHERITE(net.minecraft.world.item.Rarity.RARE);
-
-        public final String id;
-        /** 铜之胚…: the metal settled into a germ that will take root. */
-        public final DeferredItem<net.minecraft.world.item.Item> embryo;
-        /** 铜之种…: the germ quickened; planted in a jar it bears pods slowly, on mana, harvest after harvest. */
-        public final DeferredItem<net.minecraft.world.item.Item> seed;
-        /** 铜荚…: the living metal a plant bears; calcined, it becomes the ingot. */
-        public final DeferredItem<net.minecraft.world.item.Item> pod;
-        public final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> crop;
-
-        JarMetal(net.minecraft.world.item.Rarity rarity) {
-            id = name().toLowerCase(java.util.Locale.ROOT);
-            embryo = ITEMS.registerSimpleItem(id + "_embryo", p -> p.rarity(rarity));
-            seed = ITEMS.registerSimpleItem(id + "_seed", p -> p.rarity(rarity));
-            pod = ITEMS.registerSimpleItem(id + "_pod", p -> p.rarity(rarity));
-            crop = jarCrop(id + "_pod_crop");
-        }
-    }
-
     static {
         // Registers the metals' items and plants with the rest.
         JarMetal.values();
-    }
-
-    /**
-     * The herbs of the element potions (dev.logos.alchemy.BuffPotions): seeds fermented with germinal
-     * essence, grown in a jar and harvested again and again for what brews their potions.
-     */
-    public enum JarHerb {
-        /** 赤脉根: beetroot quickened on bone meal, red-veined; the root is itself the harvest. */
-        REDVEIN("redvein_root", null, net.minecraft.world.item.Rarity.COMMON),
-        /** 烛焰花: a poppy that drank blaze powder; its stamens burn like wicks. */
-        CANDLEFLAME("candleflame", "candleflame_stamen", net.minecraft.world.item.Rarity.COMMON),
-        /** 霜铃花: lily of the valley grown in powder snow; its petals ring with cold. */
-        FROSTBELL("frostbell", "frostbell_petal", net.minecraft.world.item.Rarity.COMMON),
-        /** 鸣雷蓟: a dead bush on copper and echo; its down crackles. */
-        THUNDER_THISTLE("thunder_thistle", "thunder_thistle_down", net.minecraft.world.item.Rarity.UNCOMMON),
-        /** 隙影花: chorus fruit on echo and dragon's breath, a flower half in the void; its pollen is shadow. */
-        RIFTSHADE("riftshade", "riftshade_pollen", net.minecraft.world.item.Rarity.UNCOMMON);
-
-        /** The seed fermented on the alchemy table and planted in the jar. */
-        public final DeferredItem<net.minecraft.world.item.Item> seed;
-        /** The herb itself, separate from its seed and any harvested brewing ingredient. */
-        public final DeferredItem<net.minecraft.world.item.Item> plant;
-        /** What it gives, again and again: the brewing ingredient of its potion (the plant itself for redvein root). */
-        public final DeferredItem<net.minecraft.world.item.Item> harvest;
-        public final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> crop;
-
-        JarHerb(String plant, @org.jspecify.annotations.Nullable String harvest, net.minecraft.world.item.Rarity rarity) {
-            this.seed = ITEMS.registerSimpleItem(plant + "_seed", p -> p.rarity(rarity));
-            this.plant = ITEMS.registerSimpleItem(plant, p -> p.rarity(rarity));
-            this.harvest = harvest == null ? this.plant : ITEMS.registerSimpleItem(harvest, p -> p.rarity(rarity));
-            crop = jarCrop(plant + "_crop");
-        }
     }
 
     static {
@@ -927,9 +860,6 @@ public class LogosMod {
     public static final Supplier<net.minecraft.core.particles.SimpleParticleType> MANA_MOTE =
             PARTICLE_TYPES.register("mana_mote", () -> new net.minecraft.core.particles.SimpleParticleType(false));
 
-    /** Passive spells triggered inside damage events run on the next tick, outside the event. */
-    private static final List<Runnable> DEFERRED = new ArrayList<>();
-
     public LogosMod(IEventBus modBus, ModContainer container) {
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, LogosConfig.SPEC);
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, LogosConfig.CLIENT_SPEC);
@@ -954,7 +884,7 @@ public class LogosMod {
         dev.logos.alchemy.BuffPotions.init();
         MOB_EFFECTS.register(modBus);
         dev.logos.alchemy.BuffPotions.POTIONS.register(modBus);
-        modBus.addListener(this::registerPayloads);
+        modBus.addListener(dev.logos.net.Net::registerPayloads);
         modBus.addListener((net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent e) -> e.register(dev.logos.runtime.Possession.TICKETS));
         modBus.addListener((BuildCreativeModeTabContentsEvent e) -> {
             if (e.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
@@ -1032,181 +962,12 @@ public class LogosMod {
         modBus.addListener((net.neoforged.fml.event.config.ModConfigEvent.Reloading e) -> dev.logos.runtime.Casting.invalidate());
         // Clients draw what is not learned garbled only while the server's runeUnlocks binds them.
         modBus.addListener((net.neoforged.fml.event.config.ModConfigEvent.Reloading e) -> dev.logos.runtime.RuneKnowledge.resyncAll());
-        NeoForge.EVENT_BUS.register(this);
-    }
-
-    private void registerPayloads(net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1");
-        registrar.playToServer(dev.logos.net.InscribePayload.TYPE, dev.logos.net.InscribePayload.CODEC, dev.logos.net.InscribePayload::handle);
-        registrar.playToServer(dev.logos.net.EmitterEditPayload.TYPE, dev.logos.net.EmitterEditPayload.CODEC, dev.logos.net.EmitterEditPayload::handle);
-        registrar.playToClient(dev.logos.net.FxPayload.Batch.TYPE, dev.logos.net.FxPayload.Batch.CODEC);
-        registrar.playToClient(dev.logos.net.LifeformCorePayload.TYPE, dev.logos.net.LifeformCorePayload.CODEC);
-        registrar.playToServer(dev.logos.net.SelectSpellPayload.TYPE, dev.logos.net.SelectSpellPayload.CODEC, dev.logos.net.SelectSpellPayload::handle);
-        registrar.playToServer(dev.logos.net.StaffFillPayload.TYPE, dev.logos.net.StaffFillPayload.CODEC, dev.logos.net.StaffFillPayload::handle);
-        registrar.playToServer(dev.logos.net.WrapSwingPayload.TYPE, dev.logos.net.WrapSwingPayload.CODEC, dev.logos.net.WrapSwingPayload::handle);
-        registrar.playToServer(dev.logos.net.VoiceCastPayload.TYPE, dev.logos.net.VoiceCastPayload.CODEC, dev.logos.net.VoiceCastPayload::handle);
-        registrar.playToServer(dev.logos.net.ColossusControlPayload.TYPE, dev.logos.net.ColossusControlPayload.CODEC, dev.logos.net.ColossusControlPayload::handle);
-        registrar.playToServer(dev.logos.net.DragonControlPayload.TYPE, dev.logos.net.DragonControlPayload.CODEC, dev.logos.net.DragonControlPayload::handle);
-        registrar.playToServer(dev.logos.net.PossessControlPayload.TYPE, dev.logos.net.PossessControlPayload.CODEC, dev.logos.net.PossessControlPayload::handle);
-        registrar.playToServer(dev.logos.net.RevertPayload.TYPE, dev.logos.net.RevertPayload.CODEC, dev.logos.net.RevertPayload::handle);
-        registrar.playToServer(dev.logos.net.FormSkillPayload.TYPE, dev.logos.net.FormSkillPayload.CODEC, dev.logos.net.FormSkillPayload::handle);
-        registrar.playToClient(dev.logos.net.AnchorsPayload.TYPE, dev.logos.net.AnchorsPayload.CODEC);
-        registrar.playToClient(dev.logos.net.ChargePayload.TYPE, dev.logos.net.ChargePayload.CODEC);
-        registrar.playToClient(dev.logos.net.ManaHudPayload.TYPE, dev.logos.net.ManaHudPayload.CODEC);
-        registrar.playToClient(dev.logos.net.AreaWeatherPayload.TYPE, dev.logos.net.AreaWeatherPayload.CODEC);
-        registrar.playToClient(dev.logos.net.AreaWeatherPayload.Moved.TYPE, dev.logos.net.AreaWeatherPayload.Moved.CODEC);
-        registrar.playToClient(dev.logos.net.ManaFieldPayload.TYPE, dev.logos.net.ManaFieldPayload.CODEC);
-        registrar.playToClient(dev.logos.net.PillarBurstPayload.TYPE, dev.logos.net.PillarBurstPayload.CODEC);
-        registrar.playToClient(dev.logos.net.ManaTornadoPayload.TYPE, dev.logos.net.ManaTornadoPayload.CODEC);
-        registrar.playToClient(dev.logos.net.CastPosePayload.TYPE, dev.logos.net.CastPosePayload.CODEC);
-        registrar.playToServer(dev.logos.net.AnchorEditPayload.TYPE, dev.logos.net.AnchorEditPayload.CODEC, dev.logos.net.AnchorEditPayload::handle);
-        registrar.playToServer(dev.logos.net.AlchemyCardPayload.TYPE, dev.logos.net.AlchemyCardPayload.CODEC, dev.logos.net.AlchemyCardPayload::handle);
-        registrar.playToServer(dev.logos.net.SageAskPayload.TYPE, dev.logos.net.SageAskPayload.CODEC, dev.logos.net.SageAskPayload::handle);
-        registrar.playToServer(dev.logos.net.SageCancelPayload.TYPE, dev.logos.net.SageCancelPayload.CODEC, dev.logos.net.SageCancelPayload::handle);
-        registrar.playToServer(dev.logos.net.SageAdminPayload.TYPE, dev.logos.net.SageAdminPayload.CODEC, dev.logos.net.SageAdminPayload::handle);
-        registrar.playToClient(dev.logos.net.SageReplyPayload.TYPE, dev.logos.net.SageReplyPayload.CODEC);
-        registrar.playToClient(dev.logos.net.SageStatusPayload.TYPE, dev.logos.net.SageStatusPayload.CODEC);
-        registrar.playToClient(dev.logos.net.SageAdminStatePayload.TYPE, dev.logos.net.SageAdminStatePayload.CODEC);
-    }
-
-    /** The client keeps a copy of its anchors (editor list, markers); resend whenever the player is (re)created. */
-    @SubscribeEvent
-    public void onLogin(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) {
-            dev.logos.runtime.Anchors.sync(sp);
-            dev.logos.runtime.Attunement.record(sp);
-            dev.logos.runtime.RuneKnowledge.sync(sp);
-            dev.logos.item.GuideBookItem.welcome(sp);
-        }
-    }
-
-    @SubscribeEvent
-    public void onRespawn(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) {
-            dev.logos.runtime.Anchors.sync(sp);
-            dev.logos.runtime.RuneKnowledge.sync(sp);
-        }
-    }
-
-    @SubscribeEvent
-    public void onChangeDimension(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) {
-            dev.logos.runtime.Anchors.sync(sp);
-            dev.logos.runtime.Attunement.record(sp);
-            dev.logos.runtime.Charging.interrupt(sp);
-        }
-    }
-
-    @SubscribeEvent
-    public void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) {
-            dev.logos.runtime.Charging.interrupt(sp);
-            dev.logos.runtime.StaffCharging.stop(sp);
-        }
-    }
-
-    @SubscribeEvent
-    public void onCommands(RegisterCommandsEvent event) {
-        LogosCommands.register(event.getDispatcher());
-    }
-
-    /** A water bottle and starter culture brew into raw mash; raw and vital mash brew the Logos potions. */
-    @SubscribeEvent
-    public void onBrewing(net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent event) {
-        dev.logos.alchemy.BuffPotions.brewing(event.getBuilder());
-        event.getBuilder().addRecipe(new net.neoforged.neoforge.common.brewing.IBrewingRecipe() {
-            @Override
-            public boolean isInput(ItemStack input) {
-                return input.is(net.minecraft.world.item.Items.POTION) && input.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
-                        net.minecraft.world.item.alchemy.PotionContents.EMPTY).is(net.minecraft.world.item.alchemy.Potions.WATER);
-            }
-
-            @Override
-            public boolean isIngredient(ItemStack ingredient) {
-                return ingredient.is(STARTER_CULTURE.get());
-            }
-
-            @Override
-            public ItemStack getOutput(ItemStack input, ItemStack ingredient) {
-                return isInput(input) && isIngredient(ingredient) ? new ItemStack(RAW_MASH.get()) : ItemStack.EMPTY;
-            }
-        });
-    }
-
-    @SubscribeEvent
-    public void onServerStarted(ServerStartedEvent event) {
-        LogosCommands.exportExamples();
-    }
-
-    /** Runs {@code r} after this server tick's events, outside whatever event is being handled now. */
-    public static void defer(Runnable r) {
-        DEFERRED.add(r);
-    }
-
-    /** Spells end before players leave and the world is saved and closed, while what their ends touch is still there. */
-    @SubscribeEvent
-    public void onServerStopping(net.neoforged.neoforge.event.server.ServerStoppingEvent event) {
-        SpellRuntime.clear();
-    }
-
-    /** Again, as a crash stops the server without the event above. */
-    @SubscribeEvent
-    public void onServerStopped(ServerStoppedEvent event) {
-        SpellRuntime.clear();
-        dev.logos.runtime.AreaWeather.clearServer();
-        DEFERRED.clear();
-    }
-
-    @SubscribeEvent
-    public void onServerTick(ServerTickEvent.Post event) {
-        List<Runnable> run = new ArrayList<>(DEFERRED);
-        DEFERRED.clear();
-        // One failing task costs neither the others nor the running spells their tick.
-        for (Runnable r : run) {
-            try {
-                r.run();
-            } catch (StackOverflowError | RuntimeException e) {
-                SpellRuntime.report("Deferred task", e);
-            }
-        }
-        SpellRuntime.tick();
-    }
-
-    @SubscribeEvent
-    public void onPlayerTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer sp)) return;
-        PlayerMagic m = PlayerMagic.of(sp);
-        dev.logos.item.TieredCharmItem.apply(sp);
-        dev.logos.item.WandItem.applyCarried(sp);
-        dev.logos.runtime.ManaGrowth.tick(sp);
-        dev.logos.runtime.StaffCharging.tick(sp);
-        if (sp.level().getGameTime() % dev.logos.runtime.ManaHud.INTERVAL == 0) dev.logos.runtime.ManaHud.sync(sp);
-    }
-
-    @SubscribeEvent
-    public void onDamage(LivingIncomingDamageEvent event) {
-        LivingEntity victim = event.getEntity();
-        if (Effects.inSpell() || victim.level().isClientSide()) return;
-        Entity attacker = event.getSource().getEntity();
-        if (victim instanceof ServerPlayer p) {
-            DEFERRED.add(() -> Casting.firePassives(p, "hurt", attacker, p.getEyePosition()));
-        }
-        if (attacker instanceof ServerPlayer p && attacker != victim) {
-            DEFERRED.add(() -> Casting.firePassives(p, "attack", victim, Targeting.center(victim)));
-        }
-    }
-
-    @SubscribeEvent
-    public void onDeath(LivingDeathEvent event) {
-        LivingEntity dead = event.getEntity();
-        if (dead instanceof ServerPlayer sp) {
-            dev.logos.runtime.Charging.interrupt(sp);
-            dev.logos.runtime.StaffCharging.stop(sp);
-        }
-        if (Effects.inSpell() || dead.level().isClientSide()) return;
-        if (event.getSource().getEntity() instanceof ServerPlayer p && p != dead) {
-            var at = Targeting.center(dead);
-            DEFERRED.add(() -> Casting.firePassives(p, "kill", dead, at));
-        }
+        // These listeners were this class's own methods and are still added from here, not by @EventBusSubscriber:
+        // listeners of one event and priority run in the order they were added, and the annotated classes' are added
+        // only after this constructor. So these stay ahead of the rest of the mod's, as they always ran.
+        NeoForge.EVENT_BUS.register(dev.logos.runtime.PlayerEvents.class);
+        NeoForge.EVENT_BUS.register(SpellRuntime.class);
+        NeoForge.EVENT_BUS.register(LogosCommands.class);
+        NeoForge.EVENT_BUS.register(dev.logos.alchemy.BuffPotions.class);
     }
 }

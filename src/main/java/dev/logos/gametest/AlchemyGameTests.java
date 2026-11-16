@@ -9,6 +9,8 @@ import dev.logos.alchemy.Process;
 import dev.logos.alchemy.ProcessCard;
 import dev.logos.block.AlchemyTableBlock;
 import dev.logos.block.AlchemyTableBlockEntity;
+import dev.logos.block.JarHerb;
+import dev.logos.block.JarMetal;
 import dev.logos.runtime.FreeManaEntity;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.core.BlockPos;
@@ -891,7 +893,7 @@ final class AlchemyGameTests {
     static void cultivationJarGrowsMetal(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
         dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
-        LogosMod.JarMetal iron = LogosMod.JarMetal.IRON;
+        JarMetal iron = JarMetal.IRON;
         h.assertTrue(jar.plant(new ItemStack(iron.seed.get())), "an iron seed would not go in");
         h.assertTrue(jar.plant() != null && jar.plant().is(iron.crop.get()), "the jar draws " + jar.plant());
         h.assertFalse(jar.grow(), "it grew without mana");
@@ -1302,7 +1304,7 @@ final class AlchemyGameTests {
         AlchemyTableBlockEntity table = placeTable(h);
         table.setMana(10);
         ProcessCard card = table.addCard(Process.DISSOLVE);
-        put(card.inputs(), new ItemStack(LogosMod.JarHerb.CANDLEFLAME.harvest.get()));
+        put(card.inputs(), new ItemStack(JarHerb.CANDLEFLAME.harvest.get()));
         put(card.inputs(), new ItemStack(LogosMod.RAW_MASH.get(), 3));
         h.succeedWhen(() -> h.assertTrue(countPotion(card.outputs(), BuffPotions.ElementBuff.FIRE.potion) == 3,
                 "dissolving made " + countPotion(card.outputs(), BuffPotions.ElementBuff.FIRE.potion) + " of 3 fire potions"));
@@ -1359,9 +1361,9 @@ final class AlchemyGameTests {
     /** Each herb ferments as seeds and shares ground loot with jars, which reserve one seed to replant. */
     static void herbsGrowInJars(GameTestHelper h) {
         var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
-        LogosMod.JarHerb[] herbs = LogosMod.JarHerb.values();
+        JarHerb[] herbs = JarHerb.values();
         for (int i = 0; i < herbs.length; i++) {
-            LogosMod.JarHerb herb = herbs[i];
+            JarHerb herb = herbs[i];
             h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == Process.FERMENT && r.value().results().getFirst().create().is(herb.seed.get())
                     && r.value().ingredients().stream().anyMatch(n -> n.ingredient().test(new ItemStack(LogosMod.GERMINAL_ESSENCE.get())))),
                     "no fermenting of " + herb + " with germinal essence");
