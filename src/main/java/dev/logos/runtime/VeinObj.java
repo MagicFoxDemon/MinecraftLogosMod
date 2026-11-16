@@ -74,8 +74,6 @@ public final class VeinObj extends SpellObject {
     private record Laid(AABB box, int until, Vec3 dir, Direction face, double y) {}
     private double travelled;
     private final Set<UUID> struck = new HashSet<>();
-    /** Whether its hits only heal or ward, so it may land on its own side. */
-    private final boolean helps = Targeting.helpsOnHit(node);
     /** What one on-hit deals, so a construct that stops it takes as much (and a void one may pass it). */
     private final double hitDamage = Constructs.hitDamage(node);
 
@@ -314,7 +312,7 @@ public final class VeinObj extends SpellObject {
         if (trail.isEmpty()) return true;
         AABB all = trail.peekFirst().box();
         for (Laid l : trail) all = all.minmax(l.box());
-        for (Entity e : level.getEntities(inst.caster, all, e -> !struck.contains(e.getUUID()) && Targeting.mayHit(inst, e, helps))) {
+        for (Entity e : level.getEntities(inst.caster, all, e -> !struck.contains(e.getUUID()) && Targeting.strikes(inst, e))) {
             AABB body = e.getBoundingBox();
             for (Laid l : trail) {
                 if (!l.box().intersects(body)) continue;
@@ -543,7 +541,7 @@ public final class VeinObj extends SpellObject {
         Vec3 n = normal(h.face);
         AABB box = new AABB(a, b).inflate(n.x == 0 ? half : 0, n.y == 0 ? half : 0, n.z == 0 ? half : 0).expandTowards(n.scale(height));
         if (lingerTicks > 0 && !a.equals(b)) trail.addLast(new Laid(box, age + lingerTicks, h.dir, h.face, b.y));
-        List<Entity> found = level.getEntities(inst.caster, box, e -> !struck.contains(e.getUUID()) && Targeting.mayHit(inst, e, helps));
+        List<Entity> found = level.getEntities(inst.caster, box, e -> !struck.contains(e.getUUID()) && Targeting.strikes(inst, e));
         found.sort(Comparator.comparingDouble(e -> e.distanceToSqr(a)));
         for (Entity e : found) {
             struck.add(e.getUUID());

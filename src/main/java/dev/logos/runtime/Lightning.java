@@ -20,8 +20,8 @@ import net.neoforged.neoforge.event.entity.EntityStruckByLightningEvent;
 
 /**
  * 落雷: a real vanilla lightning bolt called down by a spell, so it burns, charges creepers and
- * scrubs copper as any bolt does; only its blow spares the spell's own side (the caster, players
- * it may not touch, their familiars and pets).
+ * scrubs copper as any bolt does, and strikes whoever stands under it, its caster and their own
+ * side too; only players the spell may not touch ({@link Targeting#mayAffect}) are spared its blow.
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class Lightning {
@@ -56,6 +56,6 @@ public final class Lightning {
     @SubscribeEvent
     static void onStruck(EntityStruckByLightningEvent event) {
         SpellInstance inst = CALLED.get(event.getLightning());
-        if (inst != null && event.getEntity() instanceof LivingEntity e && !Targeting.isEnemy(inst, e)) event.setCanceled(true);
+        if (inst != null && event.getEntity() instanceof LivingEntity e && !Targeting.mayAffect(inst, e)) event.setCanceled(true);
     }
 }

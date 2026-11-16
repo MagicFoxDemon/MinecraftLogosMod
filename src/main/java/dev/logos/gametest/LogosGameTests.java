@@ -49,7 +49,7 @@ public final class LogosGameTests {
             "server_ui_alchemy_table", "server_ui_devices", "server_ui_held_items", "server_ui_panels",
             "world_wand_casts_selected_page", "world_wood_wands_craft", "world_crystal_page_needs_adhesive", "world_echo_page_upgrade_keeps_spell", "world_sage_page_upgrade_keeps_spell", "world_transmuted_page_upgrade_keeps_spell", "world_chalk_page_upgrade_keeps_spell", "world_firmament_page_upgrade_keeps_spell",
             "lifecycle_possess_ticket", "lifecycle_logout_ends_spells", "lifecycle_removed_caster_ends_spells", "lifecycle_respawn_keeps_spells", "lifecycle_emitter_outlives_owner",
-            "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "staff_fills_then_casts", "staff_fill_needs_main_hand", "chant_repeats_wand_charge", "chant_repeats_staff_cast", "voice_casts_at_once_and_refunds", "voice_charges_on_to_the_named_spell", "voice_let_go_frees_what_was_gathered", "voice_needs_voice_pages_and_the_charm", "voice_staff_casts_the_named_spell", "voice_chant_repeats_the_named_spell", "voice_written_page_keeps_its_name", "world_table_inscribes", "beam_follows_gaze", "cast_pose_beam_holds", "cast_pose_split_beams_hold", "cast_pose_later_beam_holds_nothing", "cast_pose_gesture_by_lead", "field_heals_caster", "infuse_gives_mana", "field_spares_caster_without_players", "field_shields_caster_on_enter", "world_filter_kinds",
+            "wand_charges_then_casts", "wand_early_release_refunds", "wand_refuses_what_it_cannot_fill", "wand_switching_spell_cancels", "wand_page_caps_charge", "wand_charge_looks", "staff_fills_then_casts", "staff_fill_needs_main_hand", "chant_repeats_wand_charge", "chant_repeats_staff_cast", "voice_casts_at_once_and_refunds", "voice_charges_on_to_the_named_spell", "voice_let_go_frees_what_was_gathered", "voice_needs_voice_pages_and_the_charm", "voice_staff_casts_the_named_spell", "voice_chant_repeats_the_named_spell", "voice_written_page_keeps_its_name", "world_table_inscribes", "beam_follows_gaze", "cast_pose_beam_holds", "cast_pose_split_beams_hold", "cast_pose_later_beam_holds_nothing", "cast_pose_gesture_by_lead", "field_heals_caster", "infuse_gives_mana", "field_not_caster_filter_spares_caster", "field_shields_caster_on_enter", "field_tells_sides_apart", "form_strikes_own_side_not_caster", "world_filter_kinds",
             "construct_stops_movement", "construct_sigil", "construct_one_way_arrows", "construct_shields_explosion", "construct_platform_stands", "construct_stops_other_spells", "construct_wears_down_and_breaks", "construct_void_pierces_weak_wall", "construct_ward_stops_spells",
             "construct_pass_ignites_copies", "construct_fire_wall", "construct_carries_rider", "construct_follow_turns", "world_anchors",
             "edit_access_closed_interface_refused", "edit_access_protected_place_refused", "edit_access_open_then_edit", "edit_access_stopped_right_click_refused", "edit_access_editor_follows_the_block",
@@ -72,7 +72,7 @@ public final class LogosGameTests {
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
             "construct_index_skips_far_entities", "construct_collision_skips_projectiles", "construct_shapes_cached", "construct_index_follows_moved", "construct_index_follows_caster", "construct_index_forgets_removed",
-            "lifeform_hovers", "lifeform_combo", "lifeform_charges_its_cast", "lifeform_charge_returns_when_target_gone", "lifeform_heals_master", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_unaimed_beam_heals_master", "lifeform_unaimed_beam_strikes_foe", "lifeform_declared_heal_spares_master", "lifeform_forages", "lifeform_role",
+            "lifeform_hovers", "lifeform_combo", "lifeform_charges_its_cast", "lifeform_charge_returns_when_target_gone", "lifeform_heals_master", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_unaimed_beam_heals_master", "lifeform_unaimed_beam_strikes_foe", "lifeform_spell_strikes_master", "lifeform_forages", "lifeform_role",
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
             "colossus_armour", "colossus_void_ignores_armour", "colossus_execute_as_kill", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
             "mana_hud_off_action_bar", "mana_hud_sends_on_change", "mana_hud_rate_capped", "mana_hud_hides_without_wand", "mana_hud_pool_without_wand", "mana_hud_wording",
@@ -120,8 +120,10 @@ public final class LogosGameTests {
         FUNCTIONS.register("cast_pose_gesture_by_lead", () -> CastPoseGameTests::gestureByLead);
         FUNCTIONS.register("field_heals_caster", () -> LogosGameTests::fieldHealsCaster);
         FUNCTIONS.register("infuse_gives_mana", () -> LogosGameTests::infuseGivesMana);
-        FUNCTIONS.register("field_spares_caster_without_players", () -> LogosGameTests::fieldSparesCasterWithoutPlayers);
+        FUNCTIONS.register("field_not_caster_filter_spares_caster", () -> LogosGameTests::fieldNotCasterFilterSparesCaster);
         FUNCTIONS.register("field_shields_caster_on_enter", () -> LogosGameTests::fieldShieldsCasterOnEnter);
+        FUNCTIONS.register("field_tells_sides_apart", () -> LogosGameTests::fieldTellsSidesApart);
+        FUNCTIONS.register("form_strikes_own_side_not_caster", () -> LogosGameTests::formStrikesOwnSideNotCaster);
         FUNCTIONS.register("chain_lightning_bounces", () -> LogosGameTests::chainLightning);
         FUNCTIONS.register("execute_with_proof_is_cheap", () -> LogosGameTests::executeProof);
         FUNCTIONS.register("execute_without_proof_starves", () -> LogosGameTests::executeBrute);
@@ -249,7 +251,7 @@ public final class LogosGameTests {
         FUNCTIONS.register("lifeform_heal_beam_hits_master", () -> LifeformGameTests::healBeamHitsMaster);
         FUNCTIONS.register("lifeform_unaimed_beam_heals_master", () -> LifeformGameTests::unaimedBeamHealsMaster);
         FUNCTIONS.register("lifeform_unaimed_beam_strikes_foe", () -> LifeformGameTests::unaimedBeamStrikesFoe);
-        FUNCTIONS.register("lifeform_declared_heal_spares_master", () -> LifeformGameTests::declaredHealStillSparesMaster);
+        FUNCTIONS.register("lifeform_spell_strikes_master", () -> LifeformGameTests::spellStrikesMaster);
         FUNCTIONS.register("lifeform_forages", () -> LifeformGameTests::foragesFreeMana);
         FUNCTIONS.register("lifeform_role", () -> LifeformGameTests::roleByStance);
         FUNCTIONS.register("leech_hunts_richest", () -> LeechGameTests::huntsRichest);
@@ -651,12 +653,12 @@ public final class LogosGameTests {
         });
     }
 
-    /** A field written to affect players heals its own caster when its selector takes players in. */
+    /** A field's selector counts its caster like anyone else in reach: (entities) heals them, with no :players asked. */
     private static void fieldHealsCaster(GameTestHelper h) {
         ServerPlayer p = caster(h);
         p.getFoodData().setFoodLevel(10); // too hungry to regenerate on its own
         p.setHealth(6);
-        cast(h, p, "(spell :players true :mana 200 (field :life 2 :every 0.25 (on-tick (heal (entities :filter (kind players)) 2))))");
+        cast(h, p, "(spell :mana 200 (field :life 2 :every 0.25 (on-tick (heal (entities) 2))))");
         h.succeedWhen(() -> h.assertTrue(p.getHealth() >= 10, "the field should heal its caster: " + p.getHealth()));
     }
 
@@ -672,23 +674,64 @@ public final class LogosGameTests {
         h.succeed();
     }
 
-    /** Without :players, a field's selectors still leave its caster out. */
-    private static void fieldSparesCasterWithoutPlayers(GameTestHelper h) {
+    /** A filter that leaves the caster out keeps a field's selectors off them: not-caster, and players, who are the other ones. */
+    private static void fieldNotCasterFilterSparesCaster(GameTestHelper h) {
         ServerPlayer p = caster(h);
         p.getFoodData().setFoodLevel(10);
         p.setHealth(6);
-        SpellInstance inst = cast(h, p, "(spell :mana 200 (field :life 1 :every 0.25 (on-tick (heal (entities) 2))))");
+        SpellInstance inst = cast(h, p, "(spell :players true :mana 200 (field :life 1 :every 0.25 (on-tick"
+                + " (heal (entities :filter (kind not-caster)) 2) (heal (entities :filter (kind players)) 2) (heal (players) 2))))");
         h.succeedWhen(() -> {
             h.assertTrue(inst.finished(), "spell still running");
-            h.assertTrue(p.getHealth() == 6, "the field should not touch its caster without :players: " + p.getHealth());
+            h.assertTrue(p.getHealth() == 6, "filters that leave the caster out should keep the field off them: " + p.getHealth());
         });
     }
 
-    /** A warding field greets its caster on entry when the spell affects players. */
+    /** A field counts its caster as entered, whether or not the spell affects players. */
     private static void fieldShieldsCasterOnEnter(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        cast(h, p, "(spell :players true :mana 200 (field :life 1 (on-enter (shield target 4))))");
+        cast(h, p, "(spell :mana 200 (field :life 1 (on-enter (shield target 4))))");
         h.succeedWhen(() -> h.assertTrue(p.getAbsorptionAmount() >= 4, "the field should shield its caster: " + p.getAbsorptionAmount()));
+    }
+
+    /**
+     * A field's on-enter fires for friend and foe alike, and what each gets is the handler's to say: one handler
+     * holding both a blow and a ward strikes the husk and wards the caster and their wolf.
+     */
+    private static void fieldTellsSidesApart(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Mob husk = mob(h, EntityType.HUSK, 5.5, 2.5);
+        var wolf = mob(h, EntityType.WOLF, 3.5, 2.5);
+        wolf.tame(p);
+        cast(h, p, "(spell :mana 300 (field :radius 3 :life 1 (on-enter (if (is target (kind hostile)) (damage target 4) (shield target 4)))))");
+        h.succeedWhen(() -> {
+            h.assertTrue(husk.getHealth() < husk.getMaxHealth() && husk.getAbsorptionAmount() <= 0, "the husk should be struck, not warded: health " + husk.getHealth());
+            h.assertTrue(p.getAbsorptionAmount() >= 4, "the caster should be warded: " + p.getAbsorptionAmount());
+            h.assertTrue(wolf.getAbsorptionAmount() >= 4 && wolf.getHealth() == wolf.getMaxHealth(), "their wolf should be warded, not struck: " + wolf.getAbsorptionAmount());
+        });
+    }
+
+    /**
+     * A form strikes whatever stands in its way, its caster's own familiar too, and stops there; it never strikes
+     * the caster who sent it out, though a beam starts inside them.
+     */
+    private static void formStrikesOwnSideNotCaster(GameTestHelper h) {
+        ServerPlayer p = caster(h);
+        Mob ours = mob(h, EntityType.HUSK, 4.5, 4.5);
+        dev.logos.runtime.Familiars.bindForTest(ours, p);
+        Mob wild = mob(h, EntityType.HUSK, 4.5, 7.5);
+        var struck = new dev.logos.lang.Status("#struck");
+        var lit = new dev.logos.lang.Status("#lit");
+        cast(h, p, "(spell :mana 100 (ray (on-hit (mark target #struck))) (projectile (on-hit (mark target #struck)))"
+                + " (beam :life 0.5 (on-enter (mark target #lit))))");
+        h.assertTrue(dev.logos.runtime.StatusData.stacks(ours, struck) == 1 && dev.logos.runtime.StatusData.stacks(wild, struck) == 0,
+                "the ray should stop at the caster's own familiar");
+        h.succeedWhen(() -> {
+            h.assertTrue(dev.logos.runtime.StatusData.stacks(ours, struck) == 2, "the projectile should strike the familiar too");
+            h.assertTrue(dev.logos.runtime.StatusData.stacks(ours, lit) == 1, "the beam should light the familiar");
+            h.assertTrue(dev.logos.runtime.StatusData.stacks(wild, struck) == 0, "nothing should pass through to the husk behind");
+            h.assertTrue(dev.logos.runtime.StatusData.stacks(p, struck) == 0 && dev.logos.runtime.StatusData.stacks(p, lit) == 0, "a form never strikes its own caster");
+        });
     }
 
     private static void chainLightning(GameTestHelper h) {

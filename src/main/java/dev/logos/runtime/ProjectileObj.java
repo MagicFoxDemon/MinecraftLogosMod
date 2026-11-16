@@ -31,8 +31,6 @@ public final class ProjectileObj extends SpellObject {
     private double orbitAngle;
     private boolean impactEnd;
     private final Map<UUID, Integer> hits = new HashMap<>();
-    /** Whether its hits only heal or ward, so it may land on its own side. */
-    private final boolean helps = Targeting.helpsOnHit(node);
     /** What one on-hit deals, so a construct that stops it takes as much (and a void one may pass it). */
     private final double hitDamage = Constructs.hitDamage(node);
 
@@ -147,7 +145,7 @@ public final class ProjectileObj extends SpellObject {
         Vec3 segEnd = blockHit != null ? blockHit : next;
 
         List<Entity> candidates = level.getEntities(inst.caster, new AABB(prev, segEnd).inflate(size + 1),
-                e -> Targeting.mayHit(inst, e, helps) && canHit(e));
+                e -> Targeting.strikes(inst, e) && canHit(e));
         candidates.sort(Comparator.comparingDouble(e -> e.distanceToSqr(prev)));
         for (Entity e : candidates) {
             AABB box = e.getBoundingBox().inflate(size);

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-import dev.logos.lang.Node;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -40,7 +39,9 @@ public final class Targeting {
 
     /**
      * Living, not the caster, not an ally, pet, familiar or armor stand. Other players only when the spell
-     * was written to affect players ({@code :players true} on the invocation).
+     * was written to affect players ({@code :players true} on the invocation). Only what a spell asks for by
+     * that name goes by this (the enemy selectors, {@code (kind enemies)}, a homing form's seeking); what a
+     * form touches does not, see {@link #touches}.
      */
     public static boolean isEnemy(SpellInstance inst, Entity e) {
         if (!(e instanceof LivingEntity le) || !le.isAlive() || e == inst.caster || e.isSpectator()) return false;
@@ -68,19 +69,20 @@ public final class Targeting {
     }
 
     /**
-     * What a projectile, ray or beam strikes: enemies, and, when its hit handlers only heal or ward
-     * ({@code helps}), also anyone the spell may help — so a lifeform's healing bolt lands on its master
-     * instead of passing through them.
+     * What a field takes in: every creature standing in it that the spell may affect, its own caster included.
+     * A form asks nothing about sides, nor about what its handlers do; whom the spell helps or harms is for
+     * the spell to say, with {@code (is target (kind …))}.
      */
-    public static boolean mayHit(SpellInstance inst, Entity e, boolean helps) {
-        if (isEnemy(inst, e)) return true;
-        return helps && e instanceof LivingEntity le && le.isAlive() && e != inst.caster && !e.isSpectator()
-                && !(e instanceof ArmorStand) && mayAffect(inst, e);
+    public static boolean touches(SpellInstance inst, Entity e) {
+        return e instanceof LivingEntity le && le.isAlive() && !e.isSpectator() && !(e instanceof ArmorStand) && mayAffect(inst, e);
     }
 
-    /** Whether {@code form}'s hit handlers only heal or ward, as worked out when it was compiled ({@link Node#helpsOnHit}). */
-    public static boolean helpsOnHit(Node form) {
-        return form.helpsOnHit;
+    /**
+     * What a projectile, ray, beam or vein strikes: as {@link #touches}, but never the one who sent it out,
+     * nor what they ride or who rides with them, as an arrow does not hit its archer's horse on the way out.
+     */
+    public static boolean strikes(SpellInstance inst, Entity e) {
+        return e != inst.caster && !inst.caster.isPassengerOfSameVehicle(e) && touches(inst, e);
     }
 
     public static List<LivingEntity> enemiesNear(SpellInstance inst, ServerLevel level, Vec3 at, double radius, boolean fresh) {
@@ -97,14 +99,12 @@ public final class Targeting {
     }
 
     /**
-     * {@code found} with the caster added in its place by distance, when a field set this off, the spell was
-     * written to affect players and {@code admits} takes them in: a healing or warding field covers its caster.
-     * Selectors elsewhere never pick the caster.
+     * {@code found} with the caster added in its place by distance, when they are in reach and {@code admits}
+     * takes them in: {@link #near} leaves the caster out, while a field and the {@code entities} selector
+     * count them like anyone else.
      */
-    public static <E extends Entity> List<E> withCaster(Ctx c, List<E> found, Place at, double radius, Predicate<Entity> admits) {
-        SpellInstance inst = c.inst();
+    public static <E extends Entity> List<E> withCaster(SpellInstance inst, List<E> found, Place at, double radius, Predicate<Entity> admits) {
         Entity self = inst.caster;
-        if (!c.vars().containsKey(Ctx.IN_FIELD) || !inst.spell.affectsPlayers()) return found;
         if (!self.isAlive() || self.isSpectator() || self.level() != at.level() || found.contains(self)) return found;
         double r = Math.max(0, Math.min(radius, MAX_RADIUS));
         if (center(self).distanceTo(at.pos()) > r + self.getBbWidth() / 2 || !admits.test(self)) return found;

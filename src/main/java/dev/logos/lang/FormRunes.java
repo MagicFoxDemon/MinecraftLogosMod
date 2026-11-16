@@ -145,7 +145,7 @@ final class FormRunes {
 
         def("field", FORM, ACTION).yields(Type.FORM)
                 .kw("at", POS, "here").kw("radius", NUM, "3").kw("life", NUM, "4").kw("every", NUM, "0.5").flag("follow")
-                .on("on-tick", false, "每次脉动").on("on-enter", true, "敌人进入时（只治疗或护盾时己方进入也算，开启 :players 时含施法者自己）").on("on-expire", false, "消散时")
+                .on("on-tick", false, "每次脉动").on("on-enter", true, "生物进入时（包括施法者自己）").on("on-expire", false, "消散时")
                 .stab(5).doc("领域：持续存在的区域。展开 6 魔力，每次脉动维持 0.5。:follow 让它跟随施法者")
                 .exec((n, c) -> {
                     if (!c.inst().spend(6, "field")) return null;
@@ -280,8 +280,7 @@ final class FormRunes {
             }
             Vec3 a = from, b = end;
             int pierce = (int) clamp(num(kw(n, "pierce"), c), 0, 99);
-            boolean helps = Targeting.helpsOnHit(n);
-            List<Entity> along = level.getEntities(inst.caster, new AABB(a, b).inflate(1), e -> Targeting.mayHit(inst, e, helps)
+            List<Entity> along = level.getEntities(inst.caster, new AABB(a, b).inflate(1), e -> Targeting.strikes(inst, e)
                     && e.getBoundingBox().inflate(0.3).clip(a, b).isPresent());
             along.sort((x, y) -> Double.compare(x.distanceToSqr(a), y.distanceToSqr(a)));
             for (Entity e : along) {

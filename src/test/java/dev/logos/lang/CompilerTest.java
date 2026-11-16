@@ -765,22 +765,6 @@ class CompilerTest {
     }
 
     @Test
-    void formsKnowFromCompilingWhetherTheirHitsOnlyHelp() {
-        assertTrue(form("(projectile (on-hit (heal target 2)))").helpsOnHit);
-        assertTrue(form("(beam (on-enter (shield target 2)))").helpsOnHit);
-        assertTrue(form("(field (on-enter (heal target 2)) (on-tick (damage (nearest) 2 fire)))").helpsOnHit, "only on-hit and on-enter decide");
-        assertFalse(form("(projectile (on-hit (damage target 2)))").helpsOnHit);
-        assertFalse(form("(projectile (on-hit (heal target 2) (damage target 2)))").helpsOnHit);
-        assertFalse(form("(projectile)").helpsOnHit, "no hit handlers help nobody");
-        assertFalse(form("(ray (on-hit (damage target 2)))").helpsOnHit);
-        assertFalse(Compiler.compile("(spell :mana 50 :intent heal (projectile (on-hit (damage target 2))))").body().getFirst().helpsOnHit, "what it does decides, not what it declares");
-        // A form inside another's handlers knows for itself.
-        Node outer = form("(projectile (on-hit (heal target 2) (projectile (on-hit (damage target 2)))))");
-        assertFalse(outer.helpsOnHit);
-        assertFalse(outer.events.get("on-hit").getLast().helpsOnHit);
-    }
-
-    @Test
     void formsKnowFromCompilingWhatOneHitDeals() {
         assertEquals(5, form("(projectile (on-hit (damage target 3 fire) (drain target 2)))").hitDamage);
         assertEquals(3, form("(projectile (on-hit (damage-all (enemies) 3)))").hitDamage);
