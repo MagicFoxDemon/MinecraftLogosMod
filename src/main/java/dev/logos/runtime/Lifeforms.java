@@ -207,7 +207,7 @@ public final class Lifeforms {
         }
         List<ItemStack> pages = Familiars.pickedUp(lf);
         Vec3 at = lf.position();
-        if (lf.level() instanceof ServerLevel level) LogosMod.defer(() -> {
+        if (lf.level() instanceof ServerLevel level) SpellRuntime.defer(() -> {
             for (ItemStack s : pages) level.addFreshEntity(new ItemEntity(level, at.x, at.y + 0.5, at.z, s));
         });
     }
@@ -298,10 +298,10 @@ public final class Lifeforms {
         }
         if (Effects.inSpell() || victim.level().isClientSide()) return;
         Entity attacker = event.getSource().getEntity();
-        if (victim instanceof ManaLifeform lf && !lf.isDormant()) LogosMod.defer(() -> lf.firePassives("hurt", attacker));
+        if (victim instanceof ManaLifeform lf && !lf.isDormant()) SpellRuntime.defer(() -> lf.firePassives("hurt", attacker));
         if (attacker instanceof ServerPlayer master && attacker != victim && !Familiars.friendly(master.getUUID(), victim)) {
             for (Mob m : Familiars.of(master)) {
-                if (m instanceof ManaLifeform lf && !lf.isDormant()) LogosMod.defer(() -> lf.firePassives("attack", victim));
+                if (m instanceof ManaLifeform lf && !lf.isDormant()) SpellRuntime.defer(() -> lf.firePassives("attack", victim));
             }
         }
     }
@@ -312,7 +312,7 @@ public final class Lifeforms {
         LivingEntity dead = event.getEntity();
         if (dead.level().isClientSide()) return;
         for (Mob m : List.copyOf(Familiars.live())) {
-            if (m instanceof ManaLifeform lf && !lf.isDormant() && Familiars.orderedTarget(lf) == dead) LogosMod.defer(() -> lf.firePassives("kill", dead));
+            if (m instanceof ManaLifeform lf && !lf.isDormant() && Familiars.orderedTarget(lf) == dead) SpellRuntime.defer(() -> lf.firePassives("kill", dead));
         }
     }
 }

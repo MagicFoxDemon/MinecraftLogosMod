@@ -21,6 +21,7 @@ import dev.logos.runtime.Casting;
 import dev.logos.runtime.CreatureMana;
 import dev.logos.runtime.Limits;
 import dev.logos.runtime.Lifeforms;
+import dev.logos.runtime.SpellRuntime;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -92,11 +93,11 @@ final class MaidEvents {
         LivingEntity victim = event.getEntity();
         Entity attacker = event.getSource().getEntity();
         if (!(victim.level() instanceof ServerLevel level)) return;
-        if (victim instanceof EntityMaid maid && attacker != maid) LogosMod.defer(() -> firePassives(maid, "hurt", attacker));
+        if (victim instanceof EntityMaid maid && attacker != maid) SpellRuntime.defer(() -> firePassives(maid, "hurt", attacker));
         // Her owner strikes something not on their side: their maids' attack passives join in, as a lifeform's do.
         if (attacker instanceof ServerPlayer owner && victim != owner && !(victim instanceof EntityMaid m && m.isOwnedBy(owner))) {
             for (EntityMaid maid : level.getEntitiesOfClass(EntityMaid.class, owner.getBoundingBox().inflate(32), m -> m.isOwnedBy(owner) && casting(m))) {
-                LogosMod.defer(() -> firePassives(maid, "attack", victim));
+                SpellRuntime.defer(() -> firePassives(maid, "attack", victim));
             }
         }
     }
@@ -108,7 +109,7 @@ final class MaidEvents {
         if (!(dead.level() instanceof ServerLevel level)) return;
         for (EntityMaid maid : level.getEntitiesOfClass(EntityMaid.class, dead.getBoundingBox().inflate(32),
                 m -> casting(m) && m.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null) == dead)) {
-            LogosMod.defer(() -> firePassives(maid, "kill", dead));
+            SpellRuntime.defer(() -> firePassives(maid, "kill", dead));
         }
     }
 

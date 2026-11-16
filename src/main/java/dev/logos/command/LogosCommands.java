@@ -55,11 +55,28 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
-/** {@code /logos …}: the developer console for playtesting the spell language. */
+/**
+ * {@code /logos …}: the developer console for playtesting the spell language.
+ * <p>
+ * Its listeners are registered by {@link LogosMod}'s constructor, not by {@code @EventBusSubscriber}.
+ */
 public final class LogosCommands {
     private LogosCommands() {}
+
+    @SubscribeEvent
+    static void onCommands(RegisterCommandsEvent event) {
+        register(event.getDispatcher());
+    }
+
+    @SubscribeEvent
+    static void onServerStarted(ServerStartedEvent event) {
+        exportExamples();
+    }
 
     public static Path spellDir() {
         return FMLPaths.GAMEDIR.get().resolve("logos_spells");

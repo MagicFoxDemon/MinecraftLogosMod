@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import dev.logos.LogosMod;
+import dev.logos.block.JarHerb;
 import dev.logos.lang.Element;
 import dev.logos.runtime.SpellModifiers;
 import net.minecraft.core.Holder;
@@ -21,7 +22,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.brewing.IBrewingRecipe;
+import net.neoforged.neoforge.event.brewing.RegisterBrewingRecipesEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -37,6 +41,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * raised with vital mash, +50% for 5 minutes.
  * </ul>
  * The alchemy table's dissolving mirrors the brewing stand, so it makes all of them too.
+ * <p>
+ * Its listener is registered by {@link LogosMod}'s constructor, not by {@code @EventBusSubscriber}.
  */
 public final class BuffPotions {
     public static final DeferredRegister<Potion> POTIONS = DeferredRegister.create(Registries.POTION, LogosMod.MODID);
@@ -78,11 +84,11 @@ public final class BuffPotions {
 
     /** An element potion: its effect, its two potions, and what brews it from mash. */
     public enum ElementBuff {
-        PHYSICAL(Element.PHYSICAL, LogosMod.JarHerb.REDVEIN.harvest),
-        FIRE(Element.FIRE, LogosMod.JarHerb.CANDLEFLAME.harvest),
-        FROST(Element.FROST, LogosMod.JarHerb.FROSTBELL.harvest),
-        LIGHTNING(Element.LIGHTNING, LogosMod.JarHerb.THUNDER_THISTLE.harvest),
-        VOID(Element.VOID, LogosMod.JarHerb.RIFTSHADE.harvest),
+        PHYSICAL(Element.PHYSICAL, JarHerb.REDVEIN.harvest),
+        FIRE(Element.FIRE, JarHerb.CANDLEFLAME.harvest),
+        FROST(Element.FROST, JarHerb.FROSTBELL.harvest),
+        LIGHTNING(Element.LIGHTNING, JarHerb.THUNDER_THISTLE.harvest),
+        VOID(Element.VOID, JarHerb.RIFTSHADE.harvest),
         ARCANE(Element.ARCANE, LogosMod.STARLIGHT_MOSS),
         LIFE(Element.LIFE, LogosMod.MANDRAKE_ROOT);
 
@@ -148,6 +154,29 @@ public final class BuffPotions {
             builder.addRecipe(new FromMash(LogosMod.VITAL_MASH, e.ingredient, e.strong));
             builder.addMix(e.potion, LogosMod.VITAL_MASH.get(), e.strong);
         }
+    }
+
+    /** A water bottle and starter culture brew into raw mash; raw and vital mash brew the Logos potions. */
+    @SubscribeEvent
+    static void onBrewing(RegisterBrewingRecipesEvent event) {
+        brewing(event.getBuilder());
+        event.getBuilder().addRecipe(new IBrewingRecipe() {
+            @Override
+            public boolean isInput(ItemStack input) {
+                return input.is(Items.POTION) && input.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS,
+                        PotionContents.EMPTY).is(Potions.WATER);
+            }
+
+            @Override
+            public boolean isIngredient(ItemStack ingredient) {
+                return ingredient.is(LogosMod.STARTER_CULTURE.get());
+            }
+
+            @Override
+            public ItemStack getOutput(ItemStack input, ItemStack ingredient) {
+                return isInput(input) && isIngredient(ingredient) ? new ItemStack(LogosMod.RAW_MASH.get()) : ItemStack.EMPTY;
+            }
+        });
     }
 
     /** A bottle of {@code base} (raw or vital mash, items of their own rather than potions) and {@code ingredient} brew {@code result}. */

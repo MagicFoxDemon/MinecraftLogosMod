@@ -161,7 +161,7 @@ public record ManaWrap(Element element, double amount, long until) {
 
     /** After the blow has finished landing, not inside it: its plain damage, then the spell's events. */
     private static void land(LivingEntity a, LivingEntity t, @Nullable ManaWrap plain, @Nullable WrapObj spell, boolean swing, Vec3 here, Vec3 aim) {
-        LogosMod.defer(() -> {
+        SpellRuntime.defer(() -> {
             if (plain != null) Effects.followUp(a, t, plain.amount, plain.element);
             if (spell == null) return;
             // A mob is not heard swinging; its blow is its swing.

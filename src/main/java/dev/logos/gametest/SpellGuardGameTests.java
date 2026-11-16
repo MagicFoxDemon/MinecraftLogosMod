@@ -122,7 +122,7 @@ final class SpellGuardGameTests {
         h.assertTrue(WrapObj.on(holder) != null, "the husk's hand should be wrapped");
         boolean[] next = {false};
         holder.doHurtTarget(h.getLevel(), victim);
-        LogosMod.defer(() -> next[0] = true);
+        SpellRuntime.defer(() -> next[0] = true);
         h.succeedWhen(() -> {
             h.assertTrue(next[0], "the task deferred after the crash should still run");
             assertCrashed(h, inst, name, reason);
@@ -186,13 +186,13 @@ final class SpellGuardGameTests {
         arm();
         long before = SpellRuntime.now();
         boolean[] next = {false};
-        LogosMod.defer(() -> {
+        SpellRuntime.defer(() -> {
             throw new IllegalStateException(CRASH);
         });
-        LogosMod.defer(() -> {
+        SpellRuntime.defer(() -> {
             throw new StackOverflowError(CRASH);
         });
-        LogosMod.defer(() -> next[0] = true);
+        SpellRuntime.defer(() -> next[0] = true);
         h.succeedWhen(() -> {
             h.assertTrue(next[0], "the task deferred after the failures should still run");
             h.assertTrue(SpellRuntime.now() > before, "the scheduler should still tick");
