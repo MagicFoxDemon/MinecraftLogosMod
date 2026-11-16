@@ -62,24 +62,24 @@ final class BindingRunes {
                             .stream().filter(e -> f.test(c.inst(), e)).toList());
                 });
         def("players", BINDING, ENTITIES).kw("at", POS, "here").kw("radius", NUM, "8")
-                .stab(1).doc("范围内的其他玩家（不含施法者；在领域里时也包括施法者自己）。只有在启式中开启 :players 的术式才能使用。1 魔力")
+                .stab(1).doc("范围内的其他玩家（不含施法者）。只有在启式中开启 :players 的术式才能使用。1 魔力")
                 .exec((n, c) -> {
                     if (!c.inst().spend(1, "players")) return List.of();
                     Place at = place(kw(n, "at"), c);
                     double r = groupRadius(n, c);
-                    return new Group(r, Targeting.withCaster(c, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
-                            e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()), at, r, e -> e instanceof Player));
+                    return new Group(r, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
+                            e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()));
                 });
         def("nearest-player", BINDING, ENTITY).kw("at", POS, "here").kw("radius", NUM, "10").flag("fresh")
-                .stab(1).doc("最近的其他玩家（可能为空；不含施法者，在领域里时也包括施法者自己）。启式没有开启 :players 时总是空，也不花魔力。"
+                .stab(1).doc("最近的其他玩家（可能为空；不含施法者）。启式没有开启 :players 时总是空，也不花魔力。"
                         + ":fresh 跳过本法术已经影响过的玩家。1 魔力")
                 .exec((n, c) -> {
                     if (!c.inst().spell.affectsPlayers()) return null;
                     if (!c.inst().spend(1, "nearest-player")) return null;
                     Place at = place(kw(n, "at"), c);
                     double r = num(kw(n, "radius"), c);
-                    var l = Targeting.withCaster(c, Targeting.near(c.inst(), at.level(), at.pos(), r, n.flags.contains("fresh"),
-                            e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator()), at, r, e -> e instanceof Player);
+                    var l = Targeting.near(c.inst(), at.level(), at.pos(), r, n.flags.contains("fresh"),
+                            e -> e instanceof Player && e != c.inst().caster && e.isAlive() && !e.isSpectator());
                     return l.isEmpty() ? null : l.getFirst();
                 });
         def("master", BINDING, ENTITY)
@@ -97,16 +97,16 @@ final class BindingRunes {
                 .exec((n, c) -> c.inst().caster instanceof net.minecraft.world.entity.player.Player p
                         ? dev.logos.runtime.Familiars.latest(p, text(n.arg(0), c)) : null);
         def("entities", BINDING, ENTITIES).kw("at", POS, "here").kw("radius", NUM, "6").kw("filter", FILTER, "(kind all)")
-                .stab(1).doc("范围内符合筛选的任意实体（不含施法者），如 :filter (kind projectiles) 选出飞行中的箭矢。"
-                        + "其他玩家仍然需要 :players true；开启 :players 的术式在领域里时，筛选包括施法者的话也选上施法者自己。2 魔力")
+                .stab(1).doc("范围内符合筛选的任意实体（含施法者），如 :filter (kind projectiles) 选出飞行中的箭矢。"
+                        + "其他玩家仍然需要 :players true。2 魔力")
                 .exec((n, c) -> {
                     if (!c.inst().spend(2, "entities")) return List.of();
                     Place at = place(kw(n, "at"), c);
                     Filter f = filter(kw(n, "filter"), c);
                     double r = groupRadius(n, c);
-                    return new Group(r, Targeting.withCaster(c, Targeting.near(c.inst(), at.level(), at.pos(), r, false,
+                    return new Group(r, Targeting.withCaster(c.inst(), Targeting.near(c.inst(), at.level(), at.pos(), r, false,
                             e -> e.isAlive() && !e.isSpectator() && Targeting.mayAffect(c.inst(), e) && f.test(c.inst(), e)),
-                            at, r, e -> f.testSelf(c.inst(), e)));
+                            at, r, e -> f.test(c.inst(), e)));
                 });
         def("species", BINDING, KIND).p("entity", ENTITY)
                 .doc("族属：读取实体的生物注册 ID，输出种类。接入种类筛选后只匹配相同 ID 的实体，也支持其他模组的生物；不判断阵营。实体为空时不匹配任何对象。免费")

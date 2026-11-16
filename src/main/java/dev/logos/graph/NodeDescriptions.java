@@ -172,7 +172,7 @@ public final class NodeDescriptions {
             Map.entry("construct/param/on-tick", "按脉动间隔执行；此处为结构中心。"),
             Map.entry("construct/param/on-expire", "结构消散时执行；此处为最后的中心位置。术式整体熄灭时不会执行此事件。"),
             Map.entry("construct/param/yield", "这一个炼成体（形体本身，不是它的结构实体）。接给这个形体之后的行动，指的就是这一次造出的这个形体，例如交给形之寿；在它自己的事件里请改用上下文「此形」。"),
-            Map.entry("field/intro", "在一定范围内维持领域，侦知敌人进入并周期性执行行动。领域本身不造成伤害。"),
+            Map.entry("field/intro", "在一定范围内维持领域，侦知生物进入并周期性执行行动。领域本身不造成伤害。"),
             Map.entry("field/note", "初始消耗 6 魔力，每次脉动另消耗 0.5 魔力。"),
             Map.entry("field/param/at", "领域初始中心；未连接时取此处。"),
             Map.entry("field/param/radius", "领域的作用半径，范围 0.5～16 格，默认 3 格。"),
@@ -180,7 +180,7 @@ public final class NodeDescriptions {
             Map.entry("field/param/every", "两次脉动之间的时间，范围 0.05～10 秒，默认 0.5 秒。"),
             Map.entry("field/param/follow", "开启后中心持续跟随施法者身体上方约 1 格的位置。"),
             Map.entry("field/param/on-tick", "每次脉动执行一次；此处为领域中心。若需影响域内实体，可在这里连接范围搜寻。"),
-            Map.entry("field/param/on-enter", "敌人进入领域时执行；目标为进入者，此处为其中心。离开后重新进入可以再次触发。"),
+            Map.entry("field/param/on-enter", "生物进入领域时执行，包括施法者自己；目标为进入者，此处为其中心。离开后重新进入可以再次触发。"),
             Map.entry("field/param/on-expire", "领域消散时执行；此处为最后的领域中心。术式整体熄灭时不会执行此事件。"),
             Map.entry("field/param/yield", "这一片领域。接给这个形体之后的行动，指的就是这一次造出的这个形体，例如交给形之寿；在它自己的事件里请改用上下文「此形」。"),
             Map.entry("ray/intro", "瞬间投出一条射线，在同一次执行中处理沿途命中和终点事件。适合立即触发的远距术式。"),
@@ -224,7 +224,7 @@ public final class NodeDescriptions {
             Map.entry("nearest-player/param/at", "本次搜寻的中心；未连接时取此处。"),
             Map.entry("nearest-player/param/radius", "从中心向外搜寻的范围，默认 10 格。"),
             Map.entry("nearest-player/param/fresh", "开启后排除本次术式已经施加过效果的玩家，适合避免连锁术式反复作用于同一目标。"),
-            Map.entry("entities/intro", "寻找范围内符合条件的实体，包含生物、弹射物和掉落物等，不包含施法者。"),
+            Map.entry("entities/intro", "寻找范围内符合条件的实体，包含生物、弹射物和掉落物等，也包含施法者自己。"),
             Map.entry("entities/result", "合格实体组成的实体群，并保留搜寻半径。"),
             Map.entry("entities/note", "每次求值消耗 2 魔力，即使没有找到对象也会消耗。"),
             Map.entry("entities/param/at", "本次搜寻的中心；未连接时取此处。"),
@@ -550,7 +550,7 @@ public final class NodeDescriptions {
             Map.entry("weather/intro", "在以某处为中心的圆柱区域内改变天气，区域外照旧，与世界本身的天气互不干扰。区域内雨天的效果都会生效：火被浇灭、耕地湿润、炼药锅接水，雷电伤害也更强。"
                     + "靠近区域时天空、雾气和雨声随之变化，离开后恢复。"),
             Map.entry("weather/note", "展开消耗 10 魔力，之后每秒维持 0.02 × 半径² 魔力，雷暴加倍（半径 8 约每秒 1.3，半径 16 约每秒 5.1），魔力耗尽即消散。"
-                    + "雪和雨在区域内积累得比自然天气快。雷暴会在区域内随机落雷，但不会落在施法者、受保护的玩家和自己的使魔、宠物附近。"
+                    + "雪和雨在区域内积累得比自然天气快。雷暴会在区域内随机落雷。"
                     + "在下界、末地等没有天气的维度施放会被拒绝，不消耗魔力。多个区域重叠时，后施放的生效。"),
             Map.entry("weather/param/weather", "区域内的天气：晴（区域内不下雨，即使世界在下雨）、雨（寒冷的群系里是雪）、雷暴（下雨并落雷）、雪（任何群系都下雪，地面积雪、水面结冰）。"),
             Map.entry("weather/param/at", "区域中心；未连接时取此处。区域是以此为中心的竖直圆柱，上下不限高度。"),
@@ -566,7 +566,7 @@ public final class NodeDescriptions {
             Map.entry("break-block/param/block", "需要破坏的方块位置；也可连接方块群。不可破坏的方块不会被破坏。"),
             Map.entry("lightning/intro", "在指定位置召下一道闪电。它就是自然的雷电：会点燃附近的方块、伤害周围约 3 格内的生物，也会把苦力怕变成闪电苦力怕、让铜块褪去氧化。"),
             Map.entry("lightning/note", "每道消耗 50 魔力；落点正在下雨时只要 40，处于雷暴中只要 20，可以先用区域天气招来雷暴再落雷。"
-                    + "落点有区域天气覆盖时按区域天气判断（雪和晴不算），否则按世界天气在落点这一列的露天处判断。施法者、受保护的玩家和自己的使魔、宠物不会被它击中，其他生物照常受伤；点火仍按原版规则进行。没有编辑权限的位置不落雷，也不消耗魔力。"),
+                    + "落点有区域天气覆盖时按区域天气判断（雪和晴不算），否则按世界天气在落点这一列的露天处判断。没开启影响玩家时，其他玩家不会被它击中；点火仍按原版规则进行。没有编辑权限的位置不落雷，也不消耗魔力。"),
             Map.entry("lightning/param/at", "落雷的位置；也可连接方块群，每处各落一道、分别付费。"),
             Map.entry("set-fire/intro", "在指定位置放置火焰。"),
             Map.entry("set-fire/note", "每次成功点火消耗 2 魔力；需要满足火焰放置条件与编辑权限。"),

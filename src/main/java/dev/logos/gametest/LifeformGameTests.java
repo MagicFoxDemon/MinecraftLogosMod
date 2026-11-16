@@ -279,19 +279,20 @@ final class LifeformGameTests {
         h.succeedWhen(() -> h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "the beam should strike the husk: " + husk.getHealth()));
     }
 
-    /** A damaging projectile declared a heal still passes through its master: what it does on hit decides, not :intent. */
-    static void declaredHealStillSparesMaster(GameTestHelper h) {
+    /** A damaging projectile it sends at its master strikes and hurts them: a spell does what its page says to whatever it hits, whoever cast it. */
+    static void spellStrikesMaster(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
         FamiliarGameTests.forceAround(h, 1);
         ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
         lf.setNoAi(true);
         lf.snapTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0);
-        lf.core.setItem(0, page("(spell :name \"伪愈\" :intent heal :players true :mana 30 (projectile :dir (toward here (pos-of (master))) (on-hit (mark target #struck) (damage target 2))))"));
+        // Void damage is the same at every difficulty, so the test does not depend on the server's.
+        lf.core.setItem(0, page("(spell :name \"灼\" :mana 30 (projectile :dir (toward here (pos-of (master))) (on-hit (mark target #struck) (damage target 2 void))))"));
+        float before = p.getHealth();
         h.assertTrue(lf.castSlot(0, p), "it should cast the page");
-        // The projectile lives 3 seconds; by then it has long flown past.
-        h.runAfterDelay(70, () -> {
-            h.assertFalse(StatusData.has(p, Status.parse("#struck")), "a damaging page declared a heal should not strike its master");
-            h.succeed();
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.has(p, Status.parse("#struck")), "its projectile should strike its master");
+            h.assertTrue(p.getHealth() < before, "and its damage should hurt them, health " + p.getHealth());
         });
     }
 

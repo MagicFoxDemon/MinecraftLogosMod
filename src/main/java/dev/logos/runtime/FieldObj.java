@@ -23,13 +23,11 @@ public final class FieldObj extends SpellObject {
     private Vec3 dest;
     private double glide;
     private final Set<UUID> inside = new HashSet<>();
-    /** Whether its on-enter only heals or wards, so it may greet its own side. */
-    private final boolean helps = Targeting.helpsOnHit(node);
     /** How often clients are reminded the field is there; a client that stops hearing of it lets it go. */
     private static final int HOLD_EVERY = 4;
 
     public FieldObj(Node node, Ctx ctx, Vec3 center, double radius, int life, int every, boolean follow) {
-        super(node, ctx.withVar(Ctx.IN_FIELD, true), center, life);
+        super(node, ctx, center, life);
         this.radius = radius;
         this.every = Math.max(1, every);
         this.follow = follow;
@@ -68,11 +66,9 @@ public final class FieldObj extends SpellObject {
         if (age == 1 || age % HOLD_EVERY == 0) hold();
 
         if (node.events.containsKey("on-enter")) {
-            // A field that only heals or wards on entry greets its own side too, its caster as well if the spell affects players.
-            List<Entity> now = helps
-                    ? Targeting.withCaster(ctx, Targeting.near(inst, level, pos, radius, false, e -> Targeting.mayHit(inst, e, true)),
-                            new Place(level, pos), radius, e -> true)
-                    : Targeting.near(inst, level, pos, radius, false, e -> Targeting.isEnemy(inst, e));
+            // Whoever stands in it has entered, its caster and their own side too: the handler says who gets what.
+            List<Entity> now = Targeting.withCaster(inst, Targeting.near(inst, level, pos, radius, false, e -> Targeting.touches(inst, e)),
+                    new Place(level, pos), radius, e -> Targeting.touches(inst, e));
             Set<UUID> ids = new HashSet<>();
             for (Entity e : now) {
                 ids.add(e.getUUID());

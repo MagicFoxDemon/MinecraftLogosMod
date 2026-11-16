@@ -556,7 +556,6 @@ public final class Compiler {
         }
         if (n.rune.category == Category.FORM) {
             n.element = inferElement(n);
-            n.helpsOnHit = helpsOnHit(n);
             n.hitDamage = hitDamage(n);
         }
     }
@@ -606,18 +605,6 @@ public final class Compiler {
     }
 
     // ---- What a form's hits do ---------------------------------------------------------------
-
-    /**
-     * Whether {@code form}'s hit handlers (on-hit, on-enter) only heal or ward. Read from what they do,
-     * not the page's declared {@code :intent}, so a damaging page filed under HEAL still spares its own side.
-     */
-    private static boolean helpsOnHit(Node form) {
-        List<Node> handlers = new ArrayList<>();
-        for (String event : List.of("on-hit", "on-enter")) handlers.addAll(form.events.getOrDefault(event, List.of()));
-        if (handlers.isEmpty()) return false;
-        for (Intent i : SpellProfile.of(handlers, List.of()).intents()) if (i != Intent.HEAL && i != Intent.WARD) return false;
-        return true;
-    }
 
     /**
      * The damage a spell body's {@code on-hit} deals to one target: the written amounts of its

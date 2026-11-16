@@ -4,19 +4,13 @@ import dev.logos.lang.Node;
 import dev.logos.lang.Weather;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LightningBolt;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * 区域天气: one zone of {@link AreaWeather}, alive as long as its spell pays. Upkeep is by area, per
  * second; a storm costs twice. It snows and wets the ground faster than vanilla weather does, and a
- * storm throws lightning about, never close to the caster or anyone the spell must spare.
+ * storm throws lightning about, wherever it falls: its caster is no safer under it than anyone else.
  */
 public final class AreaWeatherObj extends SpellObject {
     public static final double SETUP = 10;
@@ -89,13 +83,7 @@ public final class AreaWeatherObj extends SpellObject {
         if (!level.isLoaded(column)) return;
         BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, column);
         if (!level.isRainingAt(top)) return; // snowing (cold) or roofed over
-        AABB reach = new AABB(top).inflate(4, 8, 4);
-        if (!level.getEntitiesOfClass(LivingEntity.class, reach, e -> e.isAlive() && !Targeting.isEnemy(inst, e)).isEmpty()) return;
-        LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.TRIGGERED);
-        if (bolt == null) return;
-        bolt.snapTo(Vec3.atBottomCenterOf(top));
-        if (inst.caster instanceof ServerPlayer p) bolt.setCause(p);
-        level.addFreshEntity(bolt);
+        Lightning.strike(inst, level, Vec3.atBottomCenterOf(top));
     }
 
     @Override

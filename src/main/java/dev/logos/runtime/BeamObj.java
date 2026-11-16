@@ -32,8 +32,6 @@ public final class BeamObj extends SpellObject {
     private final @Nullable Node dirNode;
     private final int trail;
     private final Set<UUID> inside = new HashSet<>();
-    /** Whether its hits only heal or ward, so it may touch its own side. */
-    private final boolean helps = Targeting.helpsOnHit(node);
     /** What one on-hit deals, so a construct that stops it takes as much (and a void one may pass it). */
     private final double hitDamage = Constructs.hitDamage(node);
     private Vec3 dir;
@@ -154,7 +152,7 @@ public final class BeamObj extends SpellObject {
         pos = end;
         Vec3 a = from, b = end;
         List<Entity> touching = new ArrayList<>(level.getEntities(inst.caster, new AABB(a, b).inflate(radius + 1), e -> {
-            if (!Targeting.mayHit(inst, e, helps)) return false;
+            if (!Targeting.strikes(inst, e)) return false;
             AABB box = e.getBoundingBox().inflate(radius);
             return box.contains(a) || box.clip(a, b).isPresent();
         }));

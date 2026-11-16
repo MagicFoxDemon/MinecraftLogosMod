@@ -70,8 +70,9 @@ final class HealingExampleGameTests {
                 "both same-species NPCs within 16 blocks of the caster must receive 6 healing");
         h.assertTrue(outside.getHealth() == 4, "same-species NPC outside the radius must not be healed");
         h.assertTrue(stranger.getHealth() == 4 && enemy.getHealth() == 4, "other species, including enemies, must not be healed");
-        h.assertTrue(bystander.getHealth() == 4 && caster.getHealth() == 4, "the selector must still exclude players and the caster");
-        h.assertTrue(Math.abs(inst.mana - 80) < 1e-6, "only selection and two heals should spend mana: " + inst.mana);
+        h.assertTrue(bystander.getHealth() == 4, "the selector must still exclude players");
+        h.assertTrue(caster.getHealth() == 10, "the caster is of its own species and in range: healed like the rest, has " + caster.getHealth());
+        h.assertTrue(Math.abs(inst.mana - 71) < 1e-6, "only selection and three heals should spend mana: " + inst.mana);
         h.succeed();
     }
 

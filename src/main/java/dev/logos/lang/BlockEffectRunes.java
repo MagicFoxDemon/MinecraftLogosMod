@@ -214,7 +214,7 @@ final class BlockEffectRunes {
                 });
         def("weather", EFFECT, ACTION).p("weather", WEATHER).kw("at", POS, "here").kw("radius", NUM, "8").kw("life", NUM, "30").flag("follow").stab(4)
                 .doc("区域天气：在以某处为中心的圆柱区域内改变天气，区域外照旧。雨在寒冷的群系里是雪；雪在任何群系都下，地面积雪、水面结冰；"
-                        + "晴让区域内不下雨；雷暴在区域内落雷，但不落在施法者和友方附近。展开 10 魔力，之后每秒维持 0.02 × 半径² 魔力（雷暴加倍），"
+                        + "晴让区域内不下雨；雷暴在区域内落雷。展开 10 魔力，之后每秒维持 0.02 × 半径² 魔力（雷暴加倍），"
                         + "魔力耗尽即消散。半径 1～48（默认 8），持续 1～600 秒（默认 30）。:follow 让区域跟随施法者。没有天气的维度不能施放（不消耗魔力）")
                 .exec((n, c) -> {
                     Weather w = eval(n.arg(0), c) instanceof Weather x ? x : Weather.RAIN;
@@ -288,7 +288,7 @@ final class BlockEffectRunes {
                     return null;
                 });
         def("lightning", EFFECT, ACTION).eachBlock("at").stab(2)
-                .doc("落雷：在该位置召下一道闪电，和自然的雷电一样会点火、伤害周围生物，但不会伤到施法者和友方。"
+                .doc("落雷：在该位置召下一道闪电，和自然的雷电一样会点火、伤害周围生物。"
                         + "可以连接方块群，每处各落一道。每道 50 魔力；落点在下雨时 40，在雷暴中只要 20（区域天气覆盖时按区域天气，否则按世界天气）。"
                         + "没有编辑权限的位置不落雷，也不消耗魔力")
                 .exec((n, c) -> {

@@ -517,7 +517,7 @@ public final class Examples {
                                 :size 0.15
                                 (on-expire
                                   (damage-all
-                                    (entities :radius 2)
+                                    (entities :radius 2 :filter (kind not-caster))
                                     8
                                     arcane)))))))
                 """);

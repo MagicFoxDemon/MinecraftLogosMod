@@ -485,8 +485,9 @@ final class WorldGameTests {
     }
 
     /**
-     * lightning brings a real bolt down: the cow under it is struck, the caster beside it is spared. It costs
-     * 50 under a dry sky, 40 in rain, 20 in a storm; area zones set each sky, whatever the world's weather.
+     * lightning brings a real bolt down: the cow under it is struck, and so is the caster beside it; another player
+     * as near is spared, the spell not being written to affect players. It costs 50 under a dry sky, 40 in rain,
+     * 20 in a storm; area zones set each sky, whatever the world's weather.
      */
     static void lightningStrike(GameTestHelper h) {
         ServerPlayer p = caster(h);
@@ -495,6 +496,12 @@ final class WorldGameTests {
         FamiliarGameTests.forceAround(h, 1);
         Vec3 beside = h.absoluteVec(new Vec3(3.0, 2, 5.5)); // inside the bolt's reach, clear of the fire it lights
         p.snapTo(beside.x, beside.y, beside.z, 0, 0);
+        @SuppressWarnings("removal")
+        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        other.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
+        other.connection.markClientLoaded();
+        Vec3 across = h.absoluteVec(new Vec3(5.5, 2, 3.0)); // as near the bolt as the caster
+        other.snapTo(across.x, across.y, across.z, 0, 0);
         var cow = h.spawn(EntityType.COW, new Vec3(5.5, 2, 5.5));
         cow.setNoAi(true);
         float full = p.getHealth();
@@ -509,7 +516,8 @@ final class WorldGameTests {
         h.assertTrue(inRain == 40 && inStorm == 20, "a bolt should cost 40 in rain and 20 in a storm, costs " + inRain + " and " + inStorm);
         h.succeedWhen(() -> {
             h.assertTrue(cow.getHealth() < cow.getMaxHealth() || !cow.isAlive(), "the cow under the bolt should be struck");
-            h.assertTrue(p.getHealth() == full && !p.isOnFire(), "the caster beside it should be spared, health " + p.getHealth());
+            h.assertTrue(p.getHealth() < full, "the caster beside it should be struck too, health " + p.getHealth());
+            h.assertTrue(other.getHealth() == full && !other.isOnFire(), "a player the spell may not affect should be spared, health " + other.getHealth());
         });
     }
 
