@@ -252,6 +252,9 @@ final class SpellModifierGameTests {
         Cow lost = h.spawn(EntityType.COW, new Vec3(1.5, 2, 3.5));
         lost.setNoAi(true);
         lost.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+        // Killed by a player, a mob drops what it holds 8.5% of the time and its hand is left empty, which would read as a
+        // spent totem. Kept in hand, the totem shows whether it was used.
+        lost.setDropChance(EquipmentSlot.MAINHAND, 0);
         LogosConfig.VOID_IGNORES_TOTEM.set(true);
         try {
             Effects.damage(p, lost, 100, Element.VOID);
