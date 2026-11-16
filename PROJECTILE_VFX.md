@@ -21,7 +21,7 @@
 - 自身新增的专属实现辅助文件，以对应英文元素名开头；不放公共逻辑。
 - 自身专属测试，例如 `client/uitest/LightningProjectileScenario.java`、`src/test/java/dev/logos/client/LightningProjectileVisualTest.java`。新元素不要编辑 FrostProjectileScenario 来复用测试入口，而应新建自己的场景并使用不同注册名。
 
-共享文件在元素任务中保持只读：`LogosFx.java`、`ProjectileVisual.java`、`ProjectileParticles.java`、`LegacyProjectileVisual.java`、`ProjectileMotion.java`、`ProjectilePath.java`、`Element.java`、网络包、符文定义、公共调色板、构建和版本配置。共享功能的修改单独回到协调分支完成，再让各任务同步。
+共享文件在元素任务中保持只读：`LogosFx.java`（含 `FxLive.java`、`FxRender.java`、`FxLayers.java`）、`ProjectileVisual.java`、`ProjectileParticles.java`、`LegacyProjectileVisual.java`、`ProjectileMotion.java`、`ProjectilePath.java`、`Element.java`、网络包、符文定义、公共调色板、构建和版本配置。共享功能的修改单独回到协调分支完成，再让各任务同步。
 
 所有七个元素已经在 ProjectileVisual.create 中注册。雷、虚空、物理、奥秘、生命暂时继承 LegacyProjectileVisual，效果与原版一致。升级某个元素时可以只在自身文件里改为实现 ProjectileVisual，保持 `(Vec3 position, double now)` 构造器即可，不需要改注册表或 LogosFx。
 

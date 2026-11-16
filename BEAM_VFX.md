@@ -5,9 +5,9 @@
 ## 公共入口
 
 - 服务端每刻发送 `BEAM_HOLD`（from、to、半径、锚定实体），结束时发送 `BEAM_END`；超过 10 刻没有报告也视为结束。这部分没有改动，判定不变。
-- 五个伤害元素各有 `<Element>BeamVisual`（`FireBeamVisual`、`FrostBeamVisual`、`LightningBeamVisual`、`VoidBeamVisual`、`PhysicalBeamVisual`，以及新注册的 `ArcaneBeamVisual`、`LifeBeamVisual`），由 `LogosFx.submitBeam` 每帧调用 `submit(level, from, to, radius, camera, pose, out)`，结束时调用 `end()`。`out` 已经过 `ShaderPackOverlay`。奥秘和生命的 `legacy()` 目前返回 true，`LogosFx` 继续画信标式的通用管子；它们的分支把 `legacy()` 改为 false 并实现绘制。
-- **伸出（公共，所有元素自动生效）**：光束出现时，终点从施法点以 `LogosFx.BEAM_REACH`（每刻 4 格，64 格约 0.8 秒）的速度向前伸到全长，之后保持。只改画面，服务端的判定与伤害不变。各元素的 `submit` 收到的 `to` 就是伸出中的终点，命中处的效果应跟着终点走，未到达全长前不要在真正的终点画命中。
-- **余迹（各元素自己做）**：光束结束（`BEAM_END` 或超时）时，`LogosFx` 调用 `BeamWake.create(元素)` 得到 `<Element>BeamWake`，以最后画出的那条线调用 `start(level, from, to, RayEnd.OPEN)`，之后按射线的生命周期每刻 `tick`、每帧 `submit`、最长 200 刻（见 RAY_VFX.md）。`<Element>BeamWake` 是一个 `RayVisual`，默认 `legacy()` 为 true，表示不留余迹、和以前一样直接消失。带 `:trail` 粒子的光束不留余迹。
+- 五个伤害元素各有 `<Element>BeamVisual`（`FireBeamVisual`、`FrostBeamVisual`、`LightningBeamVisual`、`VoidBeamVisual`、`PhysicalBeamVisual`，以及新注册的 `ArcaneBeamVisual`、`LifeBeamVisual`），由 `FxRender.submitBeam` 每帧调用 `submit(level, from, to, radius, camera, pose, out)`，结束时调用 `end()`。`out` 已经过 `ShaderPackOverlay`。奥秘和生命的 `legacy()` 目前返回 true，`FxRender` 继续画信标式的通用管子；它们的分支把 `legacy()` 改为 false 并实现绘制。
+- **伸出（公共，所有元素自动生效）**：光束出现时，终点从施法点以 `FxLive.BEAM_REACH`（每刻 4 格，64 格约 0.8 秒）的速度向前伸到全长，之后保持。只改画面，服务端的判定与伤害不变。各元素的 `submit` 收到的 `to` 就是伸出中的终点，命中处的效果应跟着终点走，未到达全长前不要在真正的终点画命中。
+- **余迹（各元素自己做）**：光束结束（`BEAM_END` 或超时）时，`FxLive.leaveWake` 调用 `BeamWake.create(元素)` 得到 `<Element>BeamWake`，以最后画出的那条线调用 `start(level, from, to, RayEnd.OPEN)`，之后按射线的生命周期每刻 `tick`、每帧 `submit`、最长 200 刻（见 RAY_VFX.md）。`<Element>BeamWake` 是一个 `RayVisual`，默认 `legacy()` 为 true，表示不留余迹、和以前一样直接消失。带 `:trail` 粒子的光束不留余迹。
 - `LogosFx.clearRays()` 结束所有正在显示的射线与余迹，供客户端场景每次重新采样；`LogosFx.drawnBeamLengths()` 返回每条光束当前画出的长度。
 
 ## 每个元素可修改的文件
@@ -17,7 +17,7 @@
 - 自身专属客户端场景（已有的 `<Element>BeamScenario`、`<Element>BeamCasterScenario` 等，或新建 `<Element>BeamWakeScenario`），注册名以 `logos_<element>_beam` 开头。
 - 余迹可以复用本元素射线的效果：允许为此修改本元素的 `<Element>RayVisual`（例如抽出只画余迹的模式），但射线本身的外观和时长不能改变。
 
-共享文件在元素分支保持只读：`LogosFx`、`BeamWake`、`RayVisual`、`Vfx`、`Runes`、`BeamObj`、网络包、`ShaderPackOverlay`、其它元素的实现。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
+共享文件在元素分支保持只读：`LogosFx`（含 `FxLive`、`FxRender`、`FxLayers`）、`BeamWake`、`RayVisual`、`Vfx`、`Runes`、`BeamObj`、网络包、`ShaderPackOverlay`、其它元素的实现。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
 
 ## 参考与要求
 

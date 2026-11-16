@@ -17,7 +17,7 @@
 - 自身 `assets/logos/textures/vfx/<element>_impact/` 和 `shaders/core/<element>_impact_*.fsh/.vsh`。飞行贴图只读，避免覆盖已验收资产。
 - 自身专属客户端场景，例如 `FireProjectileImpactScenario.java`。
 
-共享入口 `LogosFx`、`ProjectileImpactVisual`、网络包、`Vfx`、`ProjectileObj`、公共测试注册、飞行实现及其它元素在后续元素分支保持只读。公共调整单独集中处理。仅分支聊天而使用同一个工作目录不能隔离修改；必须使用独立工作树。
+共享入口 `LogosFx`（含 `FxLive`、`FxRender`、`FxLayers`）、`ProjectileImpactVisual`、网络包、`Vfx`、`ProjectileObj`、公共测试注册、飞行实现及其它元素在后续元素分支保持只读。公共调整单独集中处理。仅分支聊天而使用同一个工作目录不能隔离修改；必须使用独立工作树。
 
 ## 验收
 
