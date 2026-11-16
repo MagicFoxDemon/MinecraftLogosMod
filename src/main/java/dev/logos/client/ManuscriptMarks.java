@@ -22,6 +22,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.PortModel;
 import dev.logos.graph.LTypes;
 import dev.logos.lang.Type;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
+import dev.logos.ui.Manuscript;
 import net.minecraft.network.chat.Component;
 
 /**

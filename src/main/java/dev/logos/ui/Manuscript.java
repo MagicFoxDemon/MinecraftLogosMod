@@ -1,4 +1,4 @@
-package dev.logos.client;
+package dev.logos.ui;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,10 +13,10 @@ import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
  */
 public final class Manuscript {
     /** Iron-gall ink, fresh and faded. */
-    static final int INK = 0xFF3B2614;
-    static final int INK_FADED = 0xFF7A5A3A;
+    public static final int INK = 0xFF3B2614;
+    public static final int INK_FADED = 0xFF7A5A3A;
     /** Leonardo's red chalk, used for marks the reader should notice, such as a selection. */
-    static final int SANGUINE = 0xFFA4432A;
+    public static final int SANGUINE = 0xFFA4432A;
 
     private Manuscript() {}
 
@@ -42,16 +42,16 @@ public final class Manuscript {
     private record Mark(float x, float y, float w, float h, int color) {}
 
     /** A drawing kept as solid marks so it can be replayed cheaply at any canvas offset. */
-    static final class Plan {
+    public static final class Plan {
         private final List<Mark> marks = new ArrayList<>();
         private int seed;
 
-        Plan(int seed) {
+        public Plan(int seed) {
             this.seed = seed;
         }
 
         /** A repeatable pseudo-random number in [0, bound) for the n-th decision of this plan. */
-        int roll(int n, int bound) {
+        public int roll(int n, int bound) {
             int h = seed * 0x9E3779B1 + n * 0x85EBCA6B;
             h ^= h >>> 15;
             h *= 0x2C1B3C6D;
@@ -59,7 +59,7 @@ public final class Manuscript {
             return Math.floorMod(h, bound);
         }
 
-        void rect(float x, float y, float w, float h, int color) {
+        public void rect(float x, float y, float w, float h, int color) {
             if (w > 0 && h > 0) marks.add(new Mark(x, y, w, h, color));
         }
 
@@ -67,7 +67,7 @@ public final class Manuscript {
          * A quill stroke from x0 to x1: short segments that now and then lift a pixel off the line
          * (towards {@code out}, so the wobble never eats into the text) and darken where the pen lands.
          */
-        void hStroke(float x0, float x1, float y, int out, int color, int salt) {
+        public void hStroke(float x0, float x1, float y, int out, int color, int salt) {
             float x = x0;
             int n = 0;
             while (x < x1) {
@@ -81,7 +81,7 @@ public final class Manuscript {
             rect(x0, y + out, 1, 1, color);
         }
 
-        void vStroke(float x, float y0, float y1, int out, int color, int salt) {
+        public void vStroke(float x, float y0, float y1, int out, int color, int salt) {
             float y = y0;
             int n = 0;
             while (y < y1) {
@@ -96,19 +96,19 @@ public final class Manuscript {
         }
 
         /** A diagonal hatch line running down to the right, the way a left hand shades. */
-        void hatch(float x, float y, int length, int color) {
+        public void hatch(float x, float y, int length, int color) {
             for (int i = 0; i < length; i++) rect(x + i, y + i, 1, 1, color);
         }
 
         /** A pixel ring, as drawn with dividers. */
-        void ring(float cx, float cy, int r, int color) {
+        public void ring(float cx, float cy, int r, int color) {
             arc(cx, cy, r, color, TOP_RIGHT | TOP_LEFT | BOTTOM_LEFT | BOTTOM_RIGHT);
         }
 
-        static final int TOP_RIGHT = 1, TOP_LEFT = 2, BOTTOM_LEFT = 4, BOTTOM_RIGHT = 8;
+        public static final int TOP_RIGHT = 1, TOP_LEFT = 2, BOTTOM_LEFT = 4, BOTTOM_RIGHT = 8;
 
         /** The quarters of a pixel ring named by {@code quarters}. */
-        void arc(float cx, float cy, int r, int color, int quarters) {
+        public void arc(float cx, float cy, int r, int color, int quarters) {
             int x = r, y = 0, err = 1 - r;
             while (x >= y) {
                 if ((quarters & BOTTOM_RIGHT) != 0) {
@@ -138,7 +138,7 @@ public final class Manuscript {
         }
 
         /** A filled triangle, pixel by pixel, one mark per row. */
-        void triangle(float ax, float ay, float bx, float by, float cx, float cy, int color) {
+        public void triangle(float ax, float ay, float bx, float by, float cx, float cy, int color) {
             int y0 = (int) Math.floor(Math.min(ay, Math.min(by, cy))), y1 = (int) Math.ceil(Math.max(ay, Math.max(by, cy)));
             int x0 = (int) Math.floor(Math.min(ax, Math.min(bx, cx))), x1 = (int) Math.ceil(Math.max(ax, Math.max(bx, cx)));
             for (int y = y0; y <= y1; y++) {
@@ -158,7 +158,7 @@ public final class Manuscript {
         }
 
         /** A filled pixel disc. */
-        void disc(float cx, float cy, int r, int color) {
+        public void disc(float cx, float cy, int r, int color) {
             for (int dy = -r; dy < r; dy++) {
                 float half = (float) Math.floor(Math.sqrt(r * r - (dy + 0.5) * (dy + 0.5)) + 0.5);
                 rect(cx - half, cy + dy, half * 2, 1, color);
@@ -166,7 +166,7 @@ public final class Manuscript {
         }
 
         /** The upper half of a filled disc, standing on the row {@code baseY}. */
-        void dome(float cx, float baseY, int r, int color) {
+        public void dome(float cx, float baseY, int r, int color) {
             for (int dy = -r; dy < 0; dy++) {
                 float half = (float) Math.floor(Math.sqrt(r * r - (dy + 0.5) * (dy + 0.5)) + 0.5);
                 rect(cx - half, baseY + dy, half * 2, 1, color);
@@ -177,7 +177,7 @@ public final class Manuscript {
          * A small pixel picture: {@code #} in ink, {@code +} in the accent, anything else left bare.
          * Rows are read top to bottom, so the picture can be written out as it looks.
          */
-        void picture(float x, float y, String[] rows, int ink, int accent) {
+        public void picture(float x, float y, String[] rows, int ink, int accent) {
             for (int row = 0; row < rows.length; row++) {
                 String line = rows[row];
                 for (int col = 0; col < line.length(); col++) {
@@ -188,13 +188,13 @@ public final class Manuscript {
             }
         }
 
-        void draw(GUIContext context, float x, float y) {
+        public void draw(GUIContext context, float x, float y) {
             count(context, marks.size());
             for (Mark m : marks) DrawerHelperClient.drawSolidRect(context, x + m.x, y + m.y, m.w, m.h, m.color);
         }
 
         /** Replays the drawing on the game's own HUD, for a layer drawn outside any screen. */
-        void draw(net.minecraft.client.gui.GuiGraphicsExtractor g, int x, int y) {
+        public void draw(net.minecraft.client.gui.GuiGraphicsExtractor g, int x, int y) {
             for (Mark m : marks) {
                 int x0 = x + Math.round(m.x), y0 = y + Math.round(m.y);
                 g.fill(x0, y0, x0 + Math.round(m.w), y0 + Math.round(m.h), m.color);
@@ -202,7 +202,7 @@ public final class Manuscript {
         }
 
         /** Replays the drawing in one colour, for strokes whose ink depends on state (hover, selection). */
-        void draw(GUIContext context, float x, float y, int color) {
+        public void draw(GUIContext context, float x, float y, int color) {
             count(context, marks.size());
             for (Mark m : marks) DrawerHelperClient.drawSolidRect(context, x + m.x, y + m.y, m.w, m.h, color);
         }
@@ -212,14 +212,14 @@ public final class Manuscript {
      * Lays pixels along a route with a square nib, joining neighbours on a row into one mark, and
      * lifting the pen in a dash pattern if one is given ({@code on} = 0 for a solid line).
      */
-    static final class Pen {
+    public static final class Pen {
         private final Plan plan;
         private final int nib, on, off;
         private int grid = 1;
         private float travelled;
         private int runY = Integer.MIN_VALUE, runX0, runX1, lastX = Integer.MIN_VALUE, lastY = Integer.MIN_VALUE;
 
-        Pen(Plan plan, int nib, int on, int off) {
+        public Pen(Plan plan, int nib, int on, int off) {
             this.plan = plan;
             this.nib = nib;
             this.on = on;
@@ -227,13 +227,13 @@ public final class Manuscript {
         }
 
         /** Snaps the nib to a coarser grid: fewer, larger marks, for routes seen from far away. */
-        Pen grid(int cells) {
+        public Pen grid(int cells) {
             grid = cells;
             return this;
         }
 
         /** Follows {@code points} from the start, stopping {@code trimEnd} short of the last point. */
-        void trace(java.util.List<org.joml.Vector2f> points, float trimEnd) {
+        public void trace(java.util.List<org.joml.Vector2f> points, float trimEnd) {
             float total = 0;
             for (int i = 1; i < points.size(); i++) total += points.get(i - 1).distance(points.get(i));
             float limit = total - trimEnd, walked = 0;
@@ -248,7 +248,7 @@ public final class Manuscript {
             flush();
         }
 
-        void segment(float x0, float y0, float x1, float y1) {
+        public void segment(float x0, float y0, float x1, float y1) {
             float len = (float) Math.hypot(x1 - x0, y1 - y0);
             for (float t = 0; t <= len; t += 0.5f) dot(x0 + (x1 - x0) * t / Math.max(len, 1e-3f), y0 + (y1 - y0) * t / Math.max(len, 1e-3f), 0.5f);
             flush();

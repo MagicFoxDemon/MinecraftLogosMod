@@ -1,4 +1,4 @@
-package dev.logos.client;
+package dev.logos.ui;
 
 import java.util.function.BooleanSupplier;
 
@@ -28,9 +28,9 @@ import net.neoforged.fml.util.thread.EffectiveSide;
  * ruled in ink, the context menu is a card laid on the page, and writing the spell into its page
  * is sealed in red wax. Behaviour stays the toolkit's; only the drawing changes.
  */
-final class ManuscriptControls {
+public final class ManuscriptControls {
     /** Marks a control's text for the manuscript stylesheet (ink, no shadow). */
-    static final String INKED = "manuscript-control";
+    public static final String INKED = "manuscript-control";
 
     private static final int PAPER = 0xFFF3E3BD, PAPER_LIT = 0xFFF8ECCF, PAPER_PRESSED = 0xFFE6D0A0;
     private static final int GOLD = 0xFF8A6418, GOLD_LIT = 0xFFC8902A;
@@ -75,14 +75,14 @@ final class ManuscriptControls {
         return p;
     }
 
-    static void paper(Button button) {
+    public static void paper(Button button) {
         button.addClass(INKED);
         Style.importantPipeline(button.getButtonStyle(), s -> s.baseTexture(new Paper(Slip.REST))
                 .hoverTexture(new Paper(Slip.HOVER)).pressedTexture(new Paper(Slip.PRESSED)));
     }
 
     /** A selector: a paper slip, and its open list a card whose entries are chosen in red chalk. */
-    static void paper(Selector<?> selector) {
+    public static void paper(Selector<?> selector) {
         selector.addClass(INKED);
         Style.importantPipeline(selector.getStyle(), s -> s.background(new Paper(Slip.REST)));
         Style.importantPipeline(selector.dialog.getStyle(), s -> s.background(CARD));
@@ -91,7 +91,7 @@ final class ManuscriptControls {
     }
 
     /** A selector builds its entries when its list opens; they are inked as they appear. */
-    static void dressList(Selector<?> selector) {
+    public static void dressList(Selector<?> selector) {
         if (selector.dialog.isDisplayed()) dressEntries(selector.scrollerView);
     }
 
@@ -112,7 +112,7 @@ final class ManuscriptControls {
     }
 
     /** A text field written on a paper slip. */
-    static void blank(TextField field) {
+    public static void blank(TextField field) {
         field.addClass(INKED);
         Style.importantPipeline(field.getStyle(), s -> s.background(new Paper(Slip.REST)));
     }
@@ -121,7 +121,7 @@ final class ManuscriptControls {
      * A bookmark ribbon standing out of the page's edge: red chalk while its page is open, plain
      * paper while it is shut. Its label is written down the ribbon, one character under another.
      */
-    static UIElement ribbon(String key, BooleanSupplier open, Runnable onClick) {
+    public static UIElement ribbon(String key, BooleanSupplier open, Runnable onClick) {
         UIElement tab = new UIElement().layout(l -> l.width(16).paddingVertical(5).alignItems(AlignItems.CENTER).gapAll(1));
         tab.addClass(INKED);
         Manuscript.Plan[] cache = new Manuscript.Plan[2];
@@ -206,7 +206,7 @@ final class ManuscriptControls {
      * and hides the breadcrumb. The toolkit rebuilds parts of the toolbar with each graph, so this
      * runs every frame and only touches controls not yet dressed.
      */
-    static void dressToolbar(UIElement header) {
+    public static void dressToolbar(UIElement header) {
         for (UIElement child : header.getChildren()) dressToolbarPart(child);
     }
 
@@ -276,7 +276,7 @@ final class ManuscriptControls {
      * The toolkit builds these on the fly with its own colours set inline, so they are found and
      * redrawn before their first frame rather than styled by the stylesheet.
      */
-    static void dressMenus(UIElement root) {
+    public static void dressMenus(UIElement root) {
         for (UIElement child : root.getChildren()) {
             if (child instanceof Menu<?, ?> menu) dressMenu(menu);
         }
@@ -302,19 +302,19 @@ final class ManuscriptControls {
      * seal at its head, pressed when clicked. While the drawing does not hold, the wax is grey;
      * after a successful click the seal rings outward for a moment.
      */
-    static final class Seal {
+    public static final class Seal {
         private final BooleanSupplier holds;
         private long stampedAt = Long.MIN_VALUE;
 
-        Seal(BooleanSupplier holds) {
+        public Seal(BooleanSupplier holds) {
             this.holds = holds;
         }
 
-        void stamp() {
+        public void stamp() {
             stampedAt = System.currentTimeMillis();
         }
 
-        void apply(Button button) {
+        public void apply(Button button) {
             button.addClass(INKED);
             button.addClass("manuscript-seal");
             Style.importantPipeline(button.getButtonStyle(), s -> s.baseTexture(texture(Slip.REST))

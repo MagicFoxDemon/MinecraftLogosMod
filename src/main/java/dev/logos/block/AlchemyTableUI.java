@@ -125,7 +125,7 @@ public final class AlchemyTableUI {
         view.viewPort(v -> v.style(s -> s.background(IGuiTexture.EMPTY)));
         view.addScrollViewChild(canvas);
         canvas.pansIn(view);
-        productsNode.style(s -> s.background(dev.logos.client.AlchemyArt.crate(ctx -> canvas.cratePipes(ctx, view))));
+        productsNode.style(s -> s.background(dev.logos.ui.AlchemyArt.crate(ctx -> canvas.cratePipes(ctx, view))));
         UIElement work = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).flex(1).minHeight(0).gapAll(10).alignItems(AlignItems.CENTER).widthPercent(100));
         work.addChildren(view, productsNode);
         UIElement hotbar = hotbar(player);
@@ -135,7 +135,7 @@ public final class AlchemyTableUI {
         Button zoom = new Button().setText(Component.translatable("logos.alchemy_table.overview"));
         zoom.setId("zoom_toggle");
         zoom.setOnClick(e -> canvas.setOverview(!canvas.overview()));
-        dev.logos.client.AlchemyArt.paper(zoom);
+        dev.logos.ui.AlchemyArt.paper(zoom);
         canvas.onOverview(on -> zoom.setText(Component.translatable(on ? "logos.alchemy_table.detail" : "logos.alchemy_table.overview")));
         view.addEventListener(UIEvents.MOUSE_WHEEL, e -> {
             if (!e.isCtrlDown()) return;
@@ -157,12 +157,12 @@ public final class AlchemyTableUI {
         UIElement storagePage = new UIElement();
         storagePage.setId("storage_page");
         storagePage.layout(l -> l.width(STORAGE_W).heightPercent(100).paddingAll(4).paddingTop(8).flexShrink(0));
-        storagePage.style(s -> s.background(dev.logos.client.AlchemyArt.ledger()));
+        storagePage.style(s -> s.background(dev.logos.ui.AlchemyArt.ledger()));
         storagePage.addChild(ledger);
-        dev.logos.client.AlchemyArt.inked(storagePage);
+        dev.logos.ui.AlchemyArt.inked(storagePage);
         boolean[] storageOpen = {true};
         hotbar.setDisplay(false);
-        UIElement storageTab = dev.logos.client.AlchemyArt.ribbon("logos.alchemy_table.tab_storage", () -> storageOpen[0], () -> {
+        UIElement storageTab = dev.logos.ui.AlchemyArt.ribbon("logos.alchemy_table.tab_storage", () -> storageOpen[0], () -> {
             storageOpen[0] = !storageOpen[0];
             storagePage.setDisplay(storageOpen[0]);
             hotbar.setDisplay(!storageOpen[0]);
@@ -172,7 +172,7 @@ public final class AlchemyTableUI {
         ribbons.addChild(storageTab);
 
         UIElement root = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).widthPercent(100).heightPercent(100).paddingAll(14).gapAll(8));
-        root.style(s -> s.background(dev.logos.client.AlchemyArt.bench()));
+        root.style(s -> s.background(dev.logos.ui.AlchemyArt.bench()));
         root.addChildren(processPage, storagePage, ribbons);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)), player);
@@ -194,7 +194,7 @@ public final class AlchemyTableUI {
         UIElement node = new UIElement();
         node.setId("products_node");
         node.layout(l -> l.width(NODE_W).height(NODE_H).paddingAll(2).alignItems(AlignItems.CENTER).justifyContent(AlignContent.CENTER));
-        node.style(s -> s.background(dev.logos.client.AlchemyArt.crate()));
+        node.style(s -> s.background(dev.logos.ui.AlchemyArt.crate()));
         Label name = new Label();
         name.setText(Component.translatable("logos.alchemy_table.products_node"));
         name.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
@@ -237,7 +237,7 @@ public final class AlchemyTableUI {
         }).build());
         Button clear = new Button().setText(Component.translatable("logos.alchemy_table.clear_tank"));
         clear.setOnServerClick(e -> table.clearTank());
-        dev.logos.client.AlchemyArt.paper(clear);
+        dev.logos.ui.AlchemyArt.paper(clear);
         ProgressBar fluidGauge = gauge(() -> (float) table.fluid().getAmount(), AlchemyTableBlockEntity.TANK_CAPACITY, 9 * 18 - 66, FLUID_COLOUR);
         fluidGauge.setId("fluid_gauge");
         UIElement tankRow = row(tank, column(fluidText, row(fluidGauge, clear)));
@@ -246,7 +246,7 @@ public final class AlchemyTableUI {
         Button power = new Button().setText(Component.translatable("logos.alchemy_table.toggle"));
         power.setId("run_switch");
         power.setOnServerClick(e -> table.setEnabled(!table.enabled()));
-        dev.logos.client.AlchemyArt.paper(power);
+        dev.logos.ui.AlchemyArt.paper(power);
         Label running = new Label();
         running.setId("run_state");
         running.bind(DataBindingBuilder.componentS2C(() -> Component.translatable(!table.enabled() ? "logos.alchemy_table.stopped"
@@ -283,10 +283,10 @@ public final class AlchemyTableUI {
             // A brass plate, as on the table's front, with the process's alchemical sign and name.
             UIElement chip = new UIElement().layout(l -> l.height(16).paddingAll(3).paddingLeft(5).paddingRight(5));
             chip.setId("palette_" + p.getSerializedName());
-            chip.style(s -> s.background(dev.logos.client.AlchemyArt.plate(p)));
+            chip.style(s -> s.background(dev.logos.ui.AlchemyArt.plate(p)));
             Label name = new Label();
             name.setText(Component.literal(p.symbol + " ").append(p.displayName()));
-            name.textStyle(s -> s.textColor(dev.logos.client.AlchemyArt.ENGRAVED).textShadow(false).adaptiveWidth(true));
+            name.textStyle(s -> s.textColor(dev.logos.ui.AlchemyArt.ENGRAVED).textShadow(false).adaptiveWidth(true));
             name.setAllowHitTest(false);
             chip.addChild(name);
             chip.addEventListener(UIEvents.MOUSE_DOWN, e -> {
@@ -335,7 +335,7 @@ public final class AlchemyTableUI {
             this.productsNode = productsNode;
             setId("canvas");
             layout(l -> l.width(CANVAS_W).height(CANVAS_H));
-            style(s -> s.background(dev.logos.client.AlchemyArt.benchTop()));
+            style(s -> s.background(dev.logos.ui.AlchemyArt.benchTop()));
 
             hint.setText(Component.translatable("logos.alchemy_table.card_hint"));
             hint.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
@@ -430,8 +430,8 @@ public final class AlchemyTableUI {
             pipes(ctx, false);
             if (drawing != null && drawing.card < panels.size()) {
                 UIElement port = panels.get(drawing.card).port(drawing.product);
-                if (port != null) dev.logos.client.AlchemyArt.pipe(ctx, port.getPositionX() + port.getSizeWidth(), port.getPositionY() + port.getSizeHeight() / 2,
-                        mouseX, mouseY, dev.logos.client.AlchemyArt.Pipe.LAYING, 0, -1);
+                if (port != null) dev.logos.ui.AlchemyArt.pipe(ctx, port.getPositionX() + port.getSizeWidth(), port.getPositionY() + port.getSizeHeight() / 2,
+                        mouseX, mouseY, dev.logos.ui.AlchemyArt.Pipe.LAYING, 0, -1);
             }
         }
 
@@ -442,7 +442,7 @@ public final class AlchemyTableUI {
         void cratePipes(IGUIContext ctx, UIElement view) {
             float left = view instanceof ScrollerView scroller && scroller.verticalScroller.isDisplayed()
                     ? scroller.verticalScroller.getPositionX() : view.getPositionX() + view.getSizeWidth();
-            dev.logos.client.AlchemyArt.clipped(ctx, left, view.getPositionY(), productsNode.getPositionX() - left, view.getSizeHeight(),
+            dev.logos.ui.AlchemyArt.clipped(ctx, left, view.getPositionY(), productsNode.getPositionX() - left, view.getSizeHeight(),
                     c -> pipes(c, true));
         }
 
@@ -458,14 +458,14 @@ public final class AlchemyTableUI {
                     if (port == null || target == ProcessCard.KEEP) continue;
                     float sx = port.getPositionX() + port.getSizeWidth(), sy = port.getPositionY() + port.getSizeHeight() / 2;
                     // Products run to the crate through brass, and between apparatus through glass, coloured by what the source works.
-                    int carried = dev.logos.client.AlchemyArt.liquid(card.process);
+                    int carried = dev.logos.ui.AlchemyArt.liquid(card.process);
                     if (target == ProcessCard.PRODUCTS) {
-                        dev.logos.client.AlchemyArt.pipe(ctx, sx, sy, productsNode.getPositionX() - 5, productsNode.getPositionY() + NODE_H / 2f,
-                                dev.logos.client.AlchemyArt.Pipe.BRASS, carried, now);
+                        dev.logos.ui.AlchemyArt.pipe(ctx, sx, sy, productsNode.getPositionX() - 5, productsNode.getPositionY() + NODE_H / 2f,
+                                dev.logos.ui.AlchemyArt.Pipe.BRASS, carried, now);
                     } else if (!crateOnly && target >= 0 && target < table.cards().size() && target != i) {
                         CardPanel to = panels.get(target);
-                        dev.logos.client.AlchemyArt.pipe(ctx, sx, sy, to.getPositionX(), to.getPositionY() + 10,
-                                dev.logos.client.AlchemyArt.Pipe.GLASS, carried, now);
+                        dev.logos.ui.AlchemyArt.pipe(ctx, sx, sy, to.getPositionX(), to.getPositionY() + 10,
+                                dev.logos.ui.AlchemyArt.Pipe.GLASS, carried, now);
                     }
                 }
             }
@@ -525,7 +525,7 @@ public final class AlchemyTableUI {
             // Title bar, engraved on the apparatus's brass nameplate: drag it to move the card; × takes the card off.
             title.setId("card" + index + "_title");
             title.layout(l -> l.flex(1).marginLeft(2));
-            title.textStyle(s -> s.textColor(dev.logos.client.AlchemyArt.ENGRAVED).textShadow(false));
+            title.textStyle(s -> s.textColor(dev.logos.ui.AlchemyArt.ENGRAVED).textShadow(false));
             title.addEventListener(UIEvents.MOUSE_DOWN, e -> {
                 float dx = e.x - getPositionX(), dy = e.y - getPositionY();
                 title.startDrag(new MovedCard(index, dx, dy), new ColorRectTexture(0x40FFFFFF));
@@ -533,7 +533,7 @@ public final class AlchemyTableUI {
             Button remove = new Button().setText("×");
             remove.setId("card" + index + "_remove");
             remove.setOnClick(e -> send(AlchemyCardPayload.remove(pos, index)));
-            dev.logos.client.AlchemyArt.paper(remove);
+            dev.logos.ui.AlchemyArt.paper(remove);
             progress.label(l -> l.setText(Component.empty()));
             progress.bind(DataBindingBuilder.floatValS2C(() -> {
                 ProcessCard c = card();
@@ -564,10 +564,10 @@ public final class AlchemyTableUI {
             designate.setOnValueChanged(what -> {
                 if (what != null) send(AlchemyCardPayload.designate(pos, index, what));
             });
-            dev.logos.client.AlchemyArt.paper(designate);
+            dev.logos.ui.AlchemyArt.paper(designate);
             Button clear = new Button().setText(Component.translatable("logos.alchemy_table.clear_designations"));
             clear.setOnClick(e -> send(AlchemyCardPayload.clear(pos, index)));
-            dev.logos.client.AlchemyArt.paper(clear);
+            dev.logos.ui.AlchemyArt.paper(clear);
             UIElement designateRow = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER));
             designateRow.addChildren(designate, clear);
 
@@ -621,12 +621,12 @@ public final class AlchemyTableUI {
             layout(l -> l.left(card.x() * scale).top(card.y() * scale));
             if (card.process != drawnAs) {
                 drawnAs = card.process;
-                IGuiTexture apparatus = dev.logos.client.AlchemyArt.vessel(card.process, progress::getNormalizedValue, TITLE_H);
+                IGuiTexture apparatus = dev.logos.ui.AlchemyArt.vessel(card.process, progress::getNormalizedValue, TITLE_H);
                 style(s -> s.background(apparatus));
-                int liquid = dev.logos.client.AlchemyArt.liquid(card.process);
+                int liquid = dev.logos.ui.AlchemyArt.liquid(card.process);
                 progress.bar(b -> b.style(s -> s.background(new ColorRectTexture(liquid))));
             }
-            dev.logos.client.AlchemyArt.dressList(designate);
+            dev.logos.ui.AlchemyArt.dressList(designate);
             title.setText(Component.literal(card.process.symbol + " ").append(card.process.displayName()));
             status.setText(card.status());
             boolean idle = !card.status().getString().isEmpty();
@@ -689,7 +689,7 @@ public final class AlchemyTableUI {
             for (ItemResource product : made) {
                 UIElement icon = token(product, waiting.getOrDefault(product, 0), false);
                 UIElement port = new UIElement().layout(l -> l.width(5).height(5));
-                port.style(st -> st.background(dev.logos.client.AlchemyArt.valve()));
+                port.style(st -> st.background(dev.logos.ui.AlchemyArt.valve()));
                 port.setAllowHitTest(false);
                 miniPorts.put(product, port);
                 UIElement piece = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).alignItems(AlignItems.CENTER).gapAll(1));
@@ -743,7 +743,7 @@ public final class AlchemyTableUI {
                 where.layout(l -> l.flex(1));
                 where.setAllowHitTest(false);
                 UIElement port = new UIElement().layout(l -> l.width(6).height(6));
-                port.style(s -> s.background(dev.logos.client.AlchemyArt.valve()));
+                port.style(s -> s.background(dev.logos.ui.AlchemyArt.valve()));
                 port.setAllowHitTest(false);
                 ports.put(product, port);
                 UIElement row = new UIElement().layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(3).alignItems(AlignItems.CENTER).widthPercent(100));

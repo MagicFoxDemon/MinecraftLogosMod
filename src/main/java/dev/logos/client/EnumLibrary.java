@@ -24,6 +24,8 @@ import dev.logos.graph.EnumValues.Kind;
 import dev.logos.graph.Sealed;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
+import dev.logos.ui.Manuscript;
+import dev.logos.ui.ManuscriptControls;
 import net.minecraft.network.chat.Component;
 
 /** The third manuscript bookmark: bounded pages of localized registry cards, using the canvas's undoable placement. */

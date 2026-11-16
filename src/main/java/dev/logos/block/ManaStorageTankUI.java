@@ -35,7 +35,7 @@ final class ManaStorageTankUI {
         Button mode = new Button().setText(Component.translatable("logos.mana_storage_tank.switch"));
         mode.setId("tank_mode");
         mode.setOnServerClick(e -> tank.setMode(tank.mode().next()));
-        dev.logos.client.AlchemyArt.paper(mode);
+        dev.logos.ui.AlchemyArt.paper(mode);
         Label modeText = ManaDeviceUI.line("tank_mode_text", () -> Component.translatable("logos.mana_storage_tank.mode", tank.mode().displayName()));
 
         ItemSlot input = ManaDeviceUI.slot(tank.input(), 0, "tank_input");

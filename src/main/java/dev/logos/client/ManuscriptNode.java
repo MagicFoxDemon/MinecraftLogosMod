@@ -32,6 +32,7 @@ import dev.logos.graph.Sealed;
 import dev.logos.lang.Category;
 import dev.logos.lang.Element;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
+import dev.logos.ui.Manuscript;
 import net.minecraft.network.chat.Component;
 
 /**

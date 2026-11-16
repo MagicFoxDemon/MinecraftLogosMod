@@ -1,5 +1,7 @@
 package dev.logos.client;
 
+import dev.logos.ui.Manuscript;
+
 /**
  * The mana HUD's pieces, drawn in whole GUI pixels with no texture, in the brass and iron of the copy and
  * alchemy tables: a mana crystal, a brass-framed glass bar of ten cells, and the thin iron gauge of what a
