@@ -2,7 +2,6 @@ package dev.logos.runtime;
 
 import org.jspecify.annotations.Nullable;
 
-import dev.logos.block.AlchemyTableBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -43,6 +42,6 @@ public final class ManaInfusion {
     public static @Nullable ManaVessel vesselAt(Level level, BlockPos pos) {
         if (level.getBlockEntity(pos) instanceof ManaVessel v) return v;
         BlockState state = level.getBlockState(pos);
-        return AlchemyTableBlock.table(level, pos, state);
+        return state.getBlock() instanceof ManaVessel.OfBlock block ? block.vessel(level, pos, state) : null;
     }
 }

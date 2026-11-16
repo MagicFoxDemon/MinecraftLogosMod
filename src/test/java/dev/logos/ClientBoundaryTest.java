@@ -1,16 +1,9 @@
 package dev.logos;
 
+import static dev.logos.CompiledClasses.MOD;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.MethodTypeEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.PoolEntry;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -18,8 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -38,9 +29,7 @@ import com.google.gson.JsonParser;
  * class. Each such place must be known here, with the reason it is safe.
  */
 class ClientBoundaryTest {
-    private static final Path CLASSES = Path.of("build/classes/java/main");
     private static final Path RESOURCES = Path.of("src/main/resources");
-    private static final String MOD = "dev/logos/";
 
     /** Classes of other mods and the game that only a client has. */
     private static final List<String> CLIENT_LIBRARIES = List.of(
@@ -74,24 +63,17 @@ class ClientBoundaryTest {
             // The width of a word in the client's font, asked only after EffectiveSide says this is not a server.
             "dev/logos/ui/ManuscriptControls", Set.of("net/minecraft/client/Minecraft", "net/minecraft/client/gui/Font"));
 
-    private static final Pattern IN_DESCRIPTOR = Pattern.compile("L([^;<]+)[;<]");
-
     @Test
     void serverSideCodeNamesNoClientClass() throws IOException {
-        Path project = project();
-        Set<String> clientMixins = clientMixins(project.resolve(RESOURCES));
+        Set<String> clientMixins = clientMixins(CompiledClasses.project().resolve(RESOURCES));
         Map<String, Set<String>> found = new TreeMap<>();
-        try (Stream<Path> files = Files.walk(project.resolve(CLASSES).resolve(MOD))) {
-            for (Path file : files.filter(f -> f.toString().endsWith(".class")).toList()) {
-                ClassModel model = ClassFile.of().parse(file);
-                String from = outer(model.thisClass().asInternalName());
-                if (from.startsWith(DEV_ONLY) || clientOnly(from, clientMixins)) continue;
-                for (String to : named(model)) {
-                    if (to.equals(GATE) || !clientOnly(to, clientMixins) && CLIENT_LIBRARIES.stream().noneMatch(to::startsWith)) continue;
-                    found.computeIfAbsent(from, k -> new TreeSet<>()).add(to);
-                }
+        CompiledClasses.references().forEach((from, named) -> {
+            if (from.startsWith(DEV_ONLY) || clientOnly(from, clientMixins)) return;
+            for (String to : named) {
+                if (to.equals(GATE) || !clientOnly(to, clientMixins) && CLIENT_LIBRARIES.stream().noneMatch(to::startsWith)) continue;
+                found.computeIfAbsent(from, k -> new TreeSet<>()).add(to);
             }
-        }
+        });
         Map<String, Set<String>> known = new TreeMap<>();
         KNOWN.forEach((from, to) -> known.put(from, new TreeSet<>(to)));
         assertEquals(describe(known), describe(found), """
@@ -112,36 +94,6 @@ class ClientBoundaryTest {
         return name.startsWith(MOD + "client/") || clientMixins.contains(name) || CLIENT_ONLY.stream().anyMatch(name::startsWith);
     }
 
-    /** Every class this one names: in its code, and in the types of its fields and methods. Nested classes count as their outer class. */
-    private static Set<String> named(ClassModel model) {
-        Set<String> out = new TreeSet<>();
-        for (PoolEntry entry : model.constantPool()) {
-            switch (entry) {
-                case ClassEntry c -> {
-                    String name = c.asInternalName();
-                    if (name.startsWith("[")) inDescriptor(out, name);
-                    else out.add(outer(name));
-                }
-                case NameAndTypeEntry n -> inDescriptor(out, n.type().stringValue());
-                case MethodTypeEntry m -> inDescriptor(out, m.descriptor().stringValue());
-                default -> {}
-            }
-        }
-        for (FieldModel field : model.fields()) inDescriptor(out, field.fieldType().stringValue());
-        for (MethodModel method : model.methods()) inDescriptor(out, method.methodType().stringValue());
-        return out;
-    }
-
-    private static void inDescriptor(Set<String> out, String descriptor) {
-        Matcher m = IN_DESCRIPTOR.matcher(descriptor);
-        while (m.find()) out.add(outer(m.group(1)));
-    }
-
-    private static String outer(String name) {
-        int nested = name.indexOf('$');
-        return nested < 0 ? name : name.substring(0, nested);
-    }
-
     /** The mixins that the mixin configs apply on a client only. */
     private static Set<String> clientMixins(Path resources) throws IOException {
         Set<String> out = new TreeSet<>();
@@ -155,13 +107,5 @@ class ClientBoundaryTest {
             }
         }
         return out;
-    }
-
-    /** The project directory, found upwards: unit tests run somewhere under the build directory. */
-    private static Path project() {
-        for (Path dir = Path.of("").toAbsolutePath(); dir != null; dir = dir.getParent()) {
-            if (Files.isDirectory(dir.resolve(CLASSES).resolve(MOD)) && Files.isDirectory(dir.resolve(RESOURCES))) return dir;
-        }
-        throw new IllegalStateException("no " + CLASSES + " above " + Path.of("").toAbsolutePath() + "; compile the mod first");
     }
 }

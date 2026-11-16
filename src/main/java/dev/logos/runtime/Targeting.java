@@ -13,6 +13,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -22,6 +23,7 @@ import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -58,6 +60,11 @@ public final class Targeting {
     public static boolean mayAffect(SpellInstance inst, Entity e) {
         // A lifeform's (or a maid's) spells may always touch its master, as a player's may touch themselves: that is how it heals and wards them.
         return e == inst.caster || !(e instanceof Player) || inst.spell.affectsPlayers() || e.getUUID().equals(Familiars.sideOf(inst.caster));
+    }
+
+    /** Whether {@code player} may change this block (spawn protection, claims, adventure mode…): asked of a spell's caster, and of whoever edits a block from a screen. */
+    public static boolean mayEdit(ServerPlayer player, Level level, BlockPos pos) {
+        return level.mayInteract(player, pos) && !player.blockActionRestricted(level, pos, player.gameMode.getGameModeForPlayer());
     }
 
     /**
