@@ -149,7 +149,7 @@
 - **画在哪**：
   - 拿着东西：`SurfaceAuras.resolved` 看物品的持有者有没有缠绕、这只手是不是主手，记在渲染状态上，和物品表面特效走同一条路（同一个物品可以两种都有，各自发射）。
   - 空手：`WrapFists`。第三人称给所有用人形模型的生物（玩家、僵尸、骷髅、猪灵、露出手臂的盔甲架）加一层渲染层，取手臂方块末端 5 像素当拳头（`ItemSurface.box`）；第一人称在 `RenderArmEvent` 里照 `AvatarRenderer.renderHand` 的姿态画自己的手。没有手臂的生物只加伤害，不画。
-- **每个元素一个类**：`WrapVisual.of(元素)` 按元素取 `PhysicalWrapVisual`、`FireWrapVisual`、`FrostWrapVisual`、`LightningWrapVisual`、`VoidWrapVisual`、`ArcaneWrapVisual`、`LifeWrapVisual`。`TintedWrapVisual` 是起点：上面「缠着魔力」的样式换成元素的两种颜色（取自 `LogosFx` 的元素色板）；做好外观的元素直接继承 `WrapVisual`。每个类自己管：
+- **每个元素一个类**：`WrapVisual.of(元素)` 按元素取 `PhysicalWrapVisual`、`FireWrapVisual`、`FrostWrapVisual`、`LightningWrapVisual`、`VoidWrapVisual`、`ArcaneWrapVisual`、`LifeWrapVisual`。`TintedWrapVisual` 是起点：上面「缠着魔力」的样式换成元素的两种颜色（取自 `FxLayers` 的元素色板）；做好外观的元素直接继承 `WrapVisual`。每个类自己管：
   - `local`：贴着物品或拳头的部分，在模型空间画（0–1 是一格），参数和 `SurfaceAuraVisual.local` 一样；
   - `emit` / `tick` / `world`：自己的粒子，存在自己的实例里，`world` 用 `layers.apply(n)` 固定先后；
   - `particles` / `clear`：粒子数（和物品表面特效共用 1200 的上限）、清空。

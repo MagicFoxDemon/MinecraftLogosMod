@@ -15,7 +15,7 @@
 
 - 客户端 `RayVisual.create(元素)` 为每种元素返回 `<Element>RayVisual`。生命周期：
   - `start(level, from, to, end)`：射线到达时调用一次。`from` 已经是施法点。
-  - `tick(level)`：之后每个客户端刻调用，返回 false 时丢弃。上限 200 刻（`LogosFx.RAY_CAP`），超时也会丢弃并调用 `end()`。
+  - `tick(level)`：之后每个客户端刻调用，返回 false 时丢弃。上限 200 刻（`FxLive.RAY_CAP`），超时也会丢弃并调用 `end()`。
   - `submit(level, camera, partialTick, pose, out)`：每帧调用。`out` 已经过 `ShaderPackOverlay`，自定义几何直接 `out.submitCustomGeometry(...)`。
   - `end()`：提前丢弃（离开世界、超时）时释放仍在播放的 Photon 运行时。
 - `legacy()` 默认为 true：未升级的元素继续画旧的珠串（每格 5 颗、最多 80 个 Photon 运行时）。升级时在自己的类里返回 false 并实现上面的方法。
@@ -28,7 +28,7 @@
 - 自身资源 `assets/logos/textures/vfx/<element>_ray/` 和 `shaders/core/<element>_ray_*`。
 - 自身专属客户端场景 `client/uitest/<Element>RayScenario.java`，注册名 `logos_<element>_ray`，用 `@LDLRegisterClient` 自动注册。
 
-共享文件在元素分支保持只读：`RayVisual`、`LogosFx`、`Vfx`、`Runes`、网络包、`ShaderPackOverlay`、其它元素的射线、光束、魔弹和 BURST 实现。可以参照已验收的同元素光束（`<Element>BeamVisual`）与魔弹的写法和调色，但不要修改它们，也不要引用它们的私有资源；需要同样的贴图时复制到自己的目录。公共入口不足时记录下来交回协调聊天。仅分支聊天而使用同一个工作目录不能隔离修改；必须使用独立工作树。
+共享文件在元素分支保持只读：`RayVisual`、`LogosFx`（含 `FxLive`、`FxRender`、`FxLayers`）、`Vfx`、`Runes`、网络包、`ShaderPackOverlay`、其它元素的射线、光束、魔弹和 BURST 实现。可以参照已验收的同元素光束（`<Element>BeamVisual`）与魔弹的写法和调色，但不要修改它们，也不要引用它们的私有资源；需要同样的贴图时复制到自己的目录。公共入口不足时记录下来交回协调聊天。仅分支聊天而使用同一个工作目录不能隔离修改；必须使用独立工作树。
 
 ## 参考与要求
 

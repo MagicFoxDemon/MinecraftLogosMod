@@ -132,7 +132,7 @@
 - 自身专属客户端场景 `client/uitest/<Element>ChargeScenario.java`（继承 `ChargeTour`），注册名 `logos_<element>_charge`。
 - 巨型光环：几个元素共用一个参考系统时（物理、寒霜、雷霆与虚空共用 EvokeEnergy），共用的实现放在以 `ChargeAura<系统名>` 开头的辅助类与 `shaders/core/charge_aura_<系统名>_*`；`textures/vfx/charge_aura/` 只放从 `art/charge/gather/out` 原样复制的贴图。
 
-共享文件在元素分支保持只读：`ChargeVisual`、`ChargeVisuals`、`LiveCharge`、`ClientCharges`、`ChargeEffects`、`ChargeRing`、`ChargePreview`、`ChargeTour`、公共核心（`ChargeCore`、`ChargeHead`、`ChargeBody`、`ChargeStyle`、`ChargeParts`、`ChargeAuraMesh` 及其资源 `textures/vfx/charge/`、`vfx_meshes/charge_aura/`）、`LogosFx`、网络包、`ShaderPackOverlay`、其它元素的实现。已有的贴图（如 `heal/ring`、`heal/glow`、各元素射线和光束的贴图）直接按路径引用，不要复制出重复的美术资源。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
+共享文件在元素分支保持只读：`ChargeVisual`、`ChargeVisuals`、`LiveCharge`、`ClientCharges`、`ChargeEffects`、`ChargeRing`、`ChargePreview`、`ChargeTour`、公共核心（`ChargeCore`、`ChargeHead`、`ChargeBody`、`ChargeStyle`、`ChargeParts`、`ChargeAuraMesh` 及其资源 `textures/vfx/charge/`、`vfx_meshes/charge_aura/`）、`LogosFx`（含 `FxLive`、`FxRender`、`FxLayers`）、网络包、`ShaderPackOverlay`、其它元素的实现。已有的贴图（如 `heal/ring`、`heal/glow`、各元素射线和光束的贴图）直接按路径引用，不要复制出重复的美术资源。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
 
 ## 验收
 

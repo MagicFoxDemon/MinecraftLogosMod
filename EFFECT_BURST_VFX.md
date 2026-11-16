@@ -47,7 +47,7 @@ shield 产生的护盾存在期间，目标身上保持一个球。服务端用 
 | 推拉与缴械 | `ForceBurstVisual` 及 `ForceBurst*` | `force/`、`force_*` | `ForceBurstScenario`，`logos_force_burst` |
 | 药水 | `PotionBurstVisual` 及 `PotionBurst*` | `potion/`、`potion_*` | `PotionBurstScenario`，`logos_potion_burst` |
 
-共享文件在各分支保持只读：`DamageBurstCore`、`textures/vfx/damage/`、`EffectBurstVisual`、`WardSpheres`、`LogosFx`、`Vfx`、网络包、`Effects`、`Runes`、其它分支的实现。公共入口不足时记录下来交回协调聊天。仅分支聊天而使用同一个工作目录不能隔离修改；必须使用独立工作树。
+共享文件在各分支保持只读：`DamageBurstCore`、`textures/vfx/damage/`、`EffectBurstVisual`、`WardSpheres`、`LogosFx`（含 `FxLive`、`FxRender`、`FxLayers`）、`Vfx`、网络包、`Effects`、`Runes`、其它分支的实现。公共入口不足时记录下来交回协调聊天。仅分支聊天而使用同一个工作目录不能隔离修改；必须使用独立工作树。
 
 ## 参考
 

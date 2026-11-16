@@ -16,7 +16,7 @@ Iris + Sodium 几乎是玩家必装的模组。本模组的特效在不开光影
 
 ## 现在的做法：合成后叠加（#106）
 
-- `LogosFx.submit` 每帧先调用 `ShaderPackOverlay.begin()`，再把 `ShaderPackOverlay.collector(event.getSubmitNodeCollector())` 交给魔弹飞行外观。
+- `FxRender.submit`（由 `LogosFx.submit` 转入）每帧先调用 `ShaderPackOverlay.begin()`，再把 `ShaderPackOverlay.collector(event.getSubmitNodeCollector())` 交给魔弹飞行外观。
 - 没有 Iris、或装了 Iris 但没开光影时，`collector` 原样返回真正的收集器，什么都不变。
 - 开了光影时，它返回一个只把 `submitCustomGeometry` 记下来的收集器。`IrisRenderingPipelineMixin`（`@Pseudo`，目标 `IrisRenderingPipeline.finalizeLevelRendering` 的末尾）在光影合成完、原版为手持物清除深度之前调用 `ShaderPackOverlay.draw()`，用我们自己的 `RenderType` 画上去。
 - 叠加收集器的 `order(n)` 返回它自己：分层按提交顺序画，不会漏回光影的通道。

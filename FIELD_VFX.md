@@ -115,7 +115,7 @@
 共享文件在元素分支保持只读，包括：
 - 入口：`FieldVisual`、`FieldVisuals`、`LiveField`、`FieldPreview`、`FieldTour`；
 - 公共核心及其资源；
-- `LogosFx`、`Vfx`、`FieldObj`、网络包、`ShaderPackOverlay`；
+- `LogosFx`（含 `FxLive`、`FxRender`、`FxLayers`）、`Vfx`、`FieldObj`、网络包、`ShaderPackOverlay`；
 - 蓄力相关类，以及其它元素的实现。
 
 已有的贴图直接按路径引用，不要复制出重复的美术资源。公共入口不足时记录下来交回协调聊天。必须使用独立工作树。
