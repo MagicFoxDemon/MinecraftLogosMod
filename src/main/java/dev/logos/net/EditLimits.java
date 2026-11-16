@@ -12,6 +12,7 @@ import com.google.common.io.CountingOutputStream;
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
 
+import dev.logos.runtime.Targeting;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -19,7 +20,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
@@ -52,11 +52,6 @@ public final class EditLimits {
 
     private EditLimits() {}
 
-    /** Whether {@code player} may change this block (spawn protection, claims, adventure mode…). */
-    public static boolean mayEdit(ServerPlayer player, Level level, BlockPos pos) {
-        return level.mayInteract(player, pos) && !player.blockActionRestricted(level, pos, player.gameMode.getGameModeForPlayer());
-    }
-
     /**
      * Records that a right-click opened a client-only editor on {@code block}. Called from the block's
      * use method on the server, which claim mods can stop, so an edit without it never asked them.
@@ -70,7 +65,7 @@ public final class EditLimits {
     /** Whether an edit to the block at {@code pos} goes ahead; if not, {@code player} is told why. */
     public static boolean admit(ServerPlayer player, BlockPos pos) {
         // Reach first: everything after it reads the block, which would load a far chunk.
-        if (inReach(player, pos) && interfaceOpen(player, pos) && mayEdit(player, player.level(), pos)) return true;
+        if (inReach(player, pos) && interfaceOpen(player, pos) && Targeting.mayEdit(player, player.level(), pos)) return true;
         player.sendOverlayMessage(Component.translatable("logos.editor.edit_refused").withStyle(ChatFormatting.YELLOW));
         return false;
     }

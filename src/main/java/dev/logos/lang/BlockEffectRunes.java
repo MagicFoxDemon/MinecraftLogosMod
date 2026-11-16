@@ -53,7 +53,7 @@ final class BlockEffectRunes {
 
     /** Whether the caster may change this block (spawn protection, claims, adventure mode…). */
     private static boolean mayEdit(Ctx c, Place p) {
-        return !(c.inst().caster instanceof ServerPlayer sp) || dev.logos.net.EditLimits.mayEdit(sp, p.level(), p.block());
+        return !(c.inst().caster instanceof ServerPlayer sp) || Targeting.mayEdit(sp, p.level(), p.block());
     }
 
     private static IntegerProperty ageOf(BlockState state) {

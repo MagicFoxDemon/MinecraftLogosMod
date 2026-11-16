@@ -10,6 +10,7 @@ import com.mojang.serialization.MapCodec;
 
 import dev.logos.LogosMod;
 import dev.logos.item.WandItem;
+import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -61,7 +62,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  * table's contents ({@link AlchemyTableBlockEntity}) and draws the model; both halves answer hoppers
  * and pipes, and open the same table.
  */
-public class AlchemyTableBlock extends HorizontalDirectionalBlock implements EntityBlock, BlockUIMenuType.BlockUI {
+public class AlchemyTableBlock extends HorizontalDirectionalBlock implements EntityBlock, BlockUIMenuType.BlockUI, ManaVessel.OfBlock {
     public static final MapCodec<AlchemyTableBlock> CODEC = simpleCodec(AlchemyTableBlock::new);
 
     public enum Part implements StringRepresentable {
@@ -108,6 +109,12 @@ public class AlchemyTableBlock extends HorizontalDirectionalBlock implements Ent
     /** The table that the half at {@code pos} belongs to, if it is loaded. */
     public static @Nullable AlchemyTableBlockEntity table(Level level, BlockPos pos, BlockState state) {
         return state.getBlock() instanceof AlchemyTableBlock && level.getBlockEntity(mainHalf(pos, state)) instanceof AlchemyTableBlockEntity t ? t : null;
+    }
+
+    /** Mana poured at either half goes to the table. */
+    @Override
+    public @Nullable ManaVessel vessel(Level level, BlockPos pos, BlockState state) {
+        return table(level, pos, state);
     }
 
     @Override

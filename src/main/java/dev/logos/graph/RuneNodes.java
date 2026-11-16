@@ -8,7 +8,11 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.api.node.NodeAttribute;
 
 /**
  * One node class per rune (the toolkit discovers node types by annotated class). Each is a
- * one-liner: the ports come from the rune's declaration in {@link dev.logos.lang.Runes}.
+ * one-liner: the ports come from the rune's declaration, in the rune files beside {@link dev.logos.lang.Runes}.
+ * <p>
+ * Long as it is, this file must stay whole, and no class in it may be renamed or moved: a saved drawing records
+ * each node by its Java class name ({@code dev.logos.graph.RuneNodes$Projectile}), and one the toolkit cannot
+ * find by that name is dropped when the drawing is read. Wands and pages in players' worlds hold such drawings.
  */
 public final class RuneNodes {
     public static final String FORM = "🜔 盐·形";

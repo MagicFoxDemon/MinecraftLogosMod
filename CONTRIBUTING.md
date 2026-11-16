@@ -114,7 +114,7 @@ gh pr create --fill                # 或在网页上开 PR
   - 持续施法姿势：服务端 `CastPose.hold(施法者, 姿势 id)` 开始保持一个姿势，返回的 `Hold.release()` 结束（施法者消失或死亡时自动结束）；客户端在 `client/CastPoses.register` 登记每个姿势 id 怎么画，物品在自己的 `getArmPose` / `applyForgeHandTransform` 里调用 `CastPoses.armPose` / `handInView`（Logos 的法杖与长杖在 `WandPose` 里接好了）。附属包可以用同一套接口加自己的姿势。术式以光柱开头（启式后的第一条语句，`split` 会往里看一层）时，施法者举杖保持到光柱结束（`client/BeamPose`）。
   - 一次性施法动作：`CastPose.play(施法者, 姿势 id)` 播放一次，不用释放；时长由客户端的姿势自己给（`Pose.duration()`，0 表示持续姿势），画法方法带 `age`（已播放的刻数）。每次施放（`:trigger cast`）按启式后的第一条语句选动作（`CastPose.gesture`）：魔弹、射线、领域、炼成体、游脉、缠绕各有一个，其他开头用普通施法，光柱开头不播（改为持姿）。动作在 `client/CastGestures`，侧面/正面截图场景 `logos_cast_gestures`，第一人称 `logos_cast_gestures_view`。
   - 法术拦截：魔弹、光柱、游脉、巨像的掌心炮每走一步都问 `Constructs.stopSpell`，由离得最近、愿意拦的那个付费拦下。除了炼成体，附属包可以用 `Constructs.addWards` 登记自己的 `SpellWard`（比如能挡法术的武器）。格挡事件里要分辨这一下是什么元素时用 `Effects.dealing()`：除物理、火、虚空以外的元素伤害都是原版 `indirect_magic`，光看伤害类型分不出来。
-- `graph/`：LDLib2 节点编辑器。`RuneNodes` 每个符文一个节点类，`GraphCompiler` 图 → 源码，`GraphBuilder` 源码 → 图。
+- `graph/`：LDLib2 节点编辑器。`RuneNodes` 每个符文一个节点类，`GraphCompiler` 图 → 源码，`GraphBuilder` 源码 → 图。`RuneNodes` 这个文件不能拆，里面的类也不能改名或挪走：玩家保存的节点图按 Java 类名记每个节点（如 `dev.logos.graph.RuneNodes$Projectile`），类名一变，旧图里的那些节点就读不出来了。
   - 源码注释画进图里（`lang/SourceNotes`）：紧贴在一个形式前面、以 `;;` 开头的几行是一个注释块。
     - 第一行是区域框的标题，其余行是框内顶部便利贴的正文；只有一行时只画框。
     - 写在 `(spell …)` 前面的注释块，画成根节点上方的总览便利贴。
@@ -142,6 +142,32 @@ gh pr create --fill                # 或在网页上开 PR
   - `runtime/UtilityMind<T>`：两者共用的效用 AI 基类（感知、打分、选最高分、`/logos mind` 的输出），以后的同类生物继承它。
   - `runtime/LifeformAugment`：炼金道具接口（道具还没做），两者共用。
   - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`。
+
+### 包之间的依赖方向
+
+一个包只能用下表里列给它的包。单元测试 `PackageRulesTest` 读编译好的类来检查：出现表里没有的方向，测试失败；表里的方向不再存在，测试也失败，这时把它从表里删掉。改这张表时，测试里的 `MAY_USE` 要一起改。
+
+| 包 | 可以用 |
+| --- | --- |
+| `guide` | 不用别的包 |
+| `lang` | `runtime`、`block`（只有符文文件可以，见下） |
+| `graph` | `lang` |
+| `sage` | `lang`、`net`、`runtime` |
+| `runtime` | `lang`、`item`、`net`、`mixin` |
+| `item` | `lang`、`runtime` |
+| `alchemy` | `lang`、`runtime`、`item`、`block`、`mixin` |
+| `block` | `lang`、`graph`、`runtime`、`item`、`alchemy`、`net`、`ui` |
+| `net` | `lang`、`graph`、`runtime`、`item`、`block`、`alchemy`、`sage` |
+| `command` | `lang`、`runtime`、`item` |
+| `mixin` | `lang`、`runtime` |
+| `ui` | `runtime`、`alchemy` |
+
+- 大方向：`lang`（语言）在最下面，`graph` 只依赖语言，玩法的几个包（`runtime`、`item`、`block`、`alchemy`、`net`）在它们上面，界面和客户端在最上面。
+- 不在表里的包：
+  - `dev.logos` 本身（`LogosMod` 登记所有东西，`LogosConfig` 是配置）：谁都可以用，它也可以用任何包。
+  - `client`、`compat`、`gametest` 在最上面，可以用任何包。反过来，谁可以用 `client` 见上面「客户端类的边界」；`gametest` 不能被主代码引用（`TestCodeStaysOutTest`）；`compat` 不能被表里的任何包引用。
+- `lang` 里只有这些文件可以用别的包：符文文件（`Rune`、`Runes`、各个 `…Runes`），因为符文的声明和它的执行代码写在一起；估算魔力消耗的 `SpellProfile`、`ExecuteCost`。解析、编译、类型这些语言本身的代码不能用别的包，由同一个测试的 `languageCoreStandsAlone` 检查。
+- 玩法的几个包之间有互相引用（`runtime` 和 `item`、`runtime` 和 `net`、`block` 和 `alchemy`、`block` 和 `net` 等），表里照实记着。这是现状，不是目标：新代码不要再加新的方向。要用上层包的东西时，先看能不能把那段代码挪到该管它的包，或者在下层包里定义接口、由上层实现。`runtime/ManaVessel.OfBlock` 就是后一种：`runtime` 靠它找到炼金术桌的魔力，而不必认识 `block` 包。
 
 ### 常见改动要碰的地方
 
