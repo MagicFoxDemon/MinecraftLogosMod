@@ -26,7 +26,7 @@ Logos 是一个 Minecraft 模组原型：**魔法是一门受限制、事件驱�
    - LDLib2、Photon、KilaGraph：来自 `maven.firstdark.dev`；
    - GeckoLib 5：来自 Modrinth 的 Maven，坐标 `maven.modrinth:geckolib:<版本 id>`，版本 id 在 `gradle.properties` 的 `geckolib_version`。
 
-玩法与设计的详细说明目前是维护者本地的工作笔记，不在仓库里；面向玩家的 README 会在发布时写。想了解某个机制，先读对应代码的类注释和 `Runes` 里每个符文的 `doc(...)`，还不清楚就在 issue 或 PR 里问。
+玩法与设计的详细说明目前是维护者本地的工作笔记，不在仓库里；面向玩家的 README 会在发布时写。想了解某个机制，先读对应代码的类注释和各符文文件（`lang/` 下的 `FormRunes`、`EffectRunes` 等，见第 4 节）里每个符文的 `doc(...)`，还不清楚就在 issue 或 PR 里问。
 
 ---
 
@@ -44,7 +44,7 @@ Logos 是一个 Minecraft 模组原型：**魔法是一门受限制、事件驱�
 - **一个 PR 只改一个点**：一个功能、一个修复、一次重构，或一份文档。顺手发现的其他问题，另开 issue 或另一个 PR。
 - **最小化修改**：只动完成这件事必需的行。不要顺手格式化、重排 import、改名、"整理"无关代码，也不要改动别人正在做的文件。
 - PR 越小越好审、越不容易冲突。一个改动需要分几步时，就开几个依次合并的 PR。
-- 例外：一件事天然需要的配套改动属于同一个点，例如新符文要同时改 `Runes`、`RuneNodes`、语言文件、`SpellProfile` 和测试。
+- 例外：一件事天然需要的配套改动属于同一个点，例如新符文要同时改它所属家族的符文文件（如 `EffectRunes`）、`RuneNodes`、语言文件、`SpellProfile` 和测试。
 
 ### 2.3 每次开工的步骤
 
@@ -106,7 +106,9 @@ gh pr create --fill                # 或在网页上开 PR
 
 ## 4. 代码地图（`src/main/java/dev/logos`）
 
-- `lang/`：语言本身。`Type` 类型、`Compiler` 解析与类型检查、`Runes` 全部符文定义、`Examples` 示例术式。
+- `lang/`：语言本身。`Type` 类型、`Compiler` 解析与类型检查、`Runes` 符文表、`Examples` 示例术式。
+  - 符文定义按家族分在六个文件里：`FormRunes` 盐·形、`BindingRunes` 汞·指向、`EffectRunes` 硫·变、`BlockEffectRunes` 硫·变里改动方块与世界的那些（方块、生长与腐败、天气、时间）、`LogicRunes` 律式、`ValueRunes` 数·量。`Runes` 只留符文表（`get`、`all`）、登记入口 `def(...)` 和几个家族共用的辅助方法；只有一个家族用的辅助方法放在那个家族的文件里。
+  - 符文表保持登记的顺序，`/logos` 的列表、`Unlocks` 的键、书灵的提示词都按它排：`Runes` 的静态块依次调用各文件的登记方法，`BlockEffectRunes` 的符文由 `EffectRunes.effects()` 在中途登记（排在 `blink` 之后、`summon` 之前）。
   - `SpellProfile` 是术式的「意图档案」：从语法树读出意图（`Intent`）、作用距离和一次施放的魔力估算，不需要运行术式。编辑器侧栏的总览和魔力生命体的心智都用它。
 - `runtime/`：法术执行。`Interp` 求值，`Casting` 施放与载页上限、焚式，`SpellInstance` 魔力池与游离魔力，`Familiars` / `FamiliarEvents` / `DragonFamiliar` / `FamiliarRiding` 使魔，`Construct*` 炼成体，`Anchors` 锚点，`Filter` ⊙ 筛选。
   - 持续施法姿势：服务端 `CastPose.hold(施法者, 姿势 id)` 开始保持一个姿势，返回的 `Hold.release()` 结束（施法者消失或死亡时自动结束）；客户端在 `client/CastPoses.register` 登记每个姿势 id 怎么画，物品在自己的 `getArmPose` / `applyForgeHandTransform` 里调用 `CastPoses.armPose` / `handInView`（Logos 的法杖与长杖在 `WandPose` 里接好了）。附属包可以用同一套接口加自己的姿势。术式以光柱开头（启式后的第一条语句，`split` 会往里看一层）时，施法者举杖保持到光柱结束（`client/BeamPose`）。
@@ -143,7 +145,7 @@ gh pr create --fill                # 或在网页上开 PR
 
 ### 常见改动要碰的地方
 
-- **新符文**：`Runes` 里 `def(...)`（写清 `doc`，含魔力价格）→ `RuneNodes` 加节点类并在 `BY_RUNE` 登记 → 语言文件加 `logos.rune.<名字>` → 会花魔力的符文在 `SpellProfile.Reader.cost` 补上价格和意图（否则总览按 0 估算）→ 单元测试 + 世界内测试。新符文默认要领悟才能写（见下文「符文解锁」）。
+- **新符文**：在所属家族的文件（`FormRunes`、`BindingRunes`、`EffectRunes`、`BlockEffectRunes`、`LogicRunes`、`ValueRunes`）里 `def(...)`（写清 `doc`，含魔力价格）→ `RuneNodes` 加节点类并在 `BY_RUNE` 登记 → 语言文件加 `logos.rune.<名字>` → 会花魔力的符文在 `SpellProfile.Reader.cost` 补上价格和意图（否则总览按 0 估算）→ 单元测试 + 世界内测试。新符文默认要领悟才能写（见下文「符文解锁」）。
 - **新的字面量类型**（如 ⚗ 药水效果）：`Type` → `Compiler`（解析与注册表检查，检查函数在 `LogosMod` 构造器里接上真实注册表）→ `Node` 打印 → `graph/` 下 `RuneNode`、`GraphCompiler`、`GraphBuilder`、`LTypes` 四处。
 - **新物品 / 方块**：在 `LogosMod` 注册，`assets/logos/{items,models,textures}` 放资源，语言文件加名字，需要时加 `data/logos/{recipe,loot_table}`。
 - **新法杖**：同新物品，另外按下文「法杖数值」定好档位、槽数、注入流量和汇集加速；模型要带 `wand_tip` 特效挂点（见 6.3）。
