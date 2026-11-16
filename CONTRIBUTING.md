@@ -93,6 +93,7 @@ gh pr create --fill                # 或在网页上开 PR
 | `./gradlew build` | 打包，jar 在 `build/libs/logos-<版本>.jar` |
 | `./gradlew runGameTestServer -Ptlm` | 装上车万女仆跑世界内测试，多出 `maid_*` 几个测试 |
 
+- 每个 PR 和推到 `main` 的提交，GitHub Actions（`.github/workflows/tests.yml`）都会在 Linux 上自动跑 `./gradlew test` 和 `./gradlew runGameTestServer`。失败时，运行页的 `test-logs` 里有测试报告和游戏日志。CI 里没有车万女仆的 jar，也不跑客户端 UI 场景，这两项仍要在本地跑。
 - 车万女仆 26.1 还没发布到任何 Maven：兼容代码对着本地 jar 编译，放在 `libs/touhoulittlemaid.jar`（已忽略，不进仓库）或用 `-Ptlm_jar=<路径>` 指定。找不到 jar 时构建会跳过 `compat/tlm` 和它的测试并在日志里提示一行，这样打出的 jar 没有女仆兼容；发布前确认 jar 在。
 - 改了行为就要有测试：语言、编译器的改动加单元测试（`src/test/.../CompilerTest.java`），运行时行为加世界内测试（`src/main/java/dev/logos/gametest/`）。
 - 新的世界内测试要同时在 `gametest/LogosGameTests.java` 的名单 `TESTS` 和 `FUNCTIONS.register` 里登记。
