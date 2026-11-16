@@ -50,7 +50,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -144,21 +143,13 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private static final EntityDataAccessor<Boolean> DRIVEN = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> ACT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ACT_SEQ = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> GRIP = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> SEAT_LEFT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> SEAT_RIGHT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
+    static final EntityDataAccessor<Integer> GRIP = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
+    static final EntityDataAccessor<Integer> SEAT_LEFT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
+    static final EntityDataAccessor<Integer> SEAT_RIGHT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
     /** What its cannon arm points at, relative to its feet; zero while it is not aiming. */
-    private static final EntityDataAccessor<Vector3fc> AIM = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.VECTOR3);
+    static final EntityDataAccessor<Vector3fc> AIM = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.VECTOR3);
     /** What its hand reaches for (an entity id: to grab, or to strike), or -1. */
-    private static final EntityDataAccessor<Integer> REACH = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
-
-    /**
-     * Its cannon arm, in its own frame (right, up, forward), as the model draws it while firing: the
-     * shoulder it turns at, and the palm with the arm held straight ahead.
-     */
-    static final Vec3 SHOULDER = new Vec3(-0.76, 2.69, 0.04), PALM = new Vec3(-0.86, 2.76, 1.83);
-    /** How far the arm may turn from straight ahead toward its aim, sideways and up or down. */
-    static final float AIM_YAW = 30 * Mth.DEG_TO_RAD, AIM_PITCH = 45 * Mth.DEG_TO_RAD;
+    static final EntityDataAccessor<Integer> REACH = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.alchemical_colossus.idle");
     private static final RawAnimation WALK = RawAnimation.begin().thenPlay("animation.alchemical_colossus.walk_start").thenLoop("animation.alchemical_colossus.walk");
@@ -172,6 +163,10 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
 
     private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
     public final SimpleContainer devices = new DeviceSlots();
+    /** Who rides its shoulders and what its hand holds; where its arms are guided; its footfalls (client). */
+    private final ColossusHolds holds = new ColossusHolds(this);
+    private final ColossusArms arms = new ColossusArms(this);
+    private final ColossusFootfalls steps = new ColossusFootfalls(this);
     /** Its true mana; the synced value is what its master is shown. */
     private double mana;
     private int actTicks;
@@ -186,17 +181,9 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     private Act lastAct = Act.NONE;
     private RawAnimation lastLoco = IDLE;
     /** Client only: how fast the run cycle plays, so its planted feet keep pace with the ground. */
-    private float runPace = 1;
-    /** Client only: how its cannon arm is turned toward its aim (radians), and how far that turn has blended in. */
-    private float armYaw, armPitch, armWeight, armYawO, armPitchO, armWeightO;
-    /** Client only: what its hand reaches for, and how fully the reach is drawn (rising as it reaches, easing off after). */
-    private @Nullable Vec3 reachGoal;
-    private float reachWeight, reachWeightO;
+    float runPace = 1;
     /** Client only: when the current act began, in its own ticks. */
-    private int actStartedAt;
-    /** Client only: whether each foot (left, right) is lifted, to hear it come down; and the beat of unseen steps. */
-    private final boolean[] footUp = new boolean[2];
-    private int stepClock, footfalls;
+    int actStartedAt;
 
     public AlchemicalColossus(EntityType<? extends AlchemicalColossus> type, Level level) {
         super(type, level);
@@ -505,33 +492,9 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         if (level().isClientSide()) {
             double moved = Math.sqrt(Mth.square(getX() - xo) + Mth.square(getZ() - zo));
             runPace = (float) Mth.lerp(0.3, runPace, Mth.clamp(moved / RUN_STRIDE, 0.5, 2.0));
-            // The arm eases onto its aim as the cannon is raised, follows it smoothly, and eases off after.
-            armYawO = armYaw;
-            armPitchO = armPitch;
-            armWeightO = armWeight;
-            Vec3 aim = aimPoint();
-            if (aim != null) {
-                float[] turn = armTurn(aim);
-                armYaw = Mth.lerp(0.35f, armYaw, turn[0]);
-                armPitch = Mth.lerp(0.35f, armPitch, turn[1]);
-            }
-            armWeight = Mth.approach(armWeight, aim != null ? 1 : 0, 0.1f);
-            stepSounds();
-            reachWeightO = reachWeight;
-            Act a = act();
-            Vec3 reaching = a == Act.GRAB_REACH || a == Act.PUNCH ? reachPoint() : null;
-            if (reaching != null) {
-                reachGoal = reaching;
-                float progress = (tickCount - actStartedAt) / (float) a.ticks;
-                reachWeight = a == Act.GRAB_REACH
-                        // The hand follows the animation down at first, and is drawn onto the point as the reach goes on.
-                        ? smooth((progress - 0.15f) / 0.5f)
-                        // The wind-up is the animation's own; the thrust is drawn onto the foe, and the recovery is its own again.
-                        : Math.min(smooth((progress - 0.33f) / 0.15f), 1 - smooth((progress - 0.6f) / 0.2f));
-            } else {
-                // Caught (or given up): the arm eases back to the animation over half a second.
-                reachWeight = Math.max(0, reachWeight - 0.1f);
-            }
+            arms.easeAim();
+            steps.stepSounds();
+            arms.easeReach();
         }
         if (level() instanceof ServerLevel level) {
             // Driven, vanilla leaves its movement to the rider's client and skips its AI on the server
@@ -597,58 +560,26 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     // ---- riders and the hand ----------------------------------------------------------------------
 
     public @Nullable Hold holdOf(Entity e) {
-        int id = e.getId();
-        if (entityData.get(SEAT_LEFT) == id) return Hold.SEAT_LEFT;
-        if (entityData.get(SEAT_RIGHT) == id) return Hold.SEAT_RIGHT;
-        if (entityData.get(GRIP) == id) return Hold.GRIP;
-        return null;
+        return holds.holdOf(e);
     }
 
     public @Nullable Entity held(Hold h) {
-        int id = entityData.get(switch (h) {
-            case SEAT_LEFT -> SEAT_LEFT;
-            case SEAT_RIGHT -> SEAT_RIGHT;
-            case GRIP -> GRIP;
-        });
-        return id < 0 ? null : level().getEntity(id);
+        return holds.held(h);
     }
 
     /** Puts {@code e} at {@code h} (riding it), or clears {@code h} when {@code e} is null. */
     void setHold(Hold h, @Nullable Entity e) {
-        EntityDataAccessor<Integer> key = switch (h) {
-            case SEAT_LEFT -> SEAT_LEFT;
-            case SEAT_RIGHT -> SEAT_RIGHT;
-            case GRIP -> GRIP;
-        };
-        // An entity is in one place at a time.
-        if (e != null) for (Hold other : Hold.values()) if (other != h && held(other) == e) setHold(other, null);
-        entityData.set(key, e == null ? -1 : e.getId());
-        if (e != null && e.getVehicle() != this) {
-            e.stopRiding();
-            e.startRiding(this, true, false);
-        }
+        holds.setHold(h, e);
     }
 
     /** Lets go of {@code e} wherever it is, placing it at {@code at} if given. */
     void release(Entity e, @Nullable Vec3 at) {
-        Hold h = holdOf(e);
-        if (h != null) entityData.set(switch (h) {
-            case SEAT_LEFT -> SEAT_LEFT;
-            case SEAT_RIGHT -> SEAT_RIGHT;
-            case GRIP -> GRIP;
-        }, -1);
-        Colossi.letGo(e);
-        if (e.getVehicle() == this) e.stopRiding();
-        if (at != null) e.teleportTo(at.x, at.y, at.z);
-        Colossi.stopHolding(e);
+        holds.release(e, at);
     }
 
     /** Throws off everyone it carries or holds. */
     void releaseAll() {
-        for (Entity p : getPassengers().toArray(Entity[]::new)) release(p, null);
-        entityData.set(GRIP, -1);
-        entityData.set(SEAT_LEFT, -1);
-        entityData.set(SEAT_RIGHT, -1);
+        holds.releaseAll();
     }
 
     @Override
@@ -688,56 +619,12 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
 
     // ---- footfalls ----------------------------------------------------------------------------------
 
-    /** A planted foot's ankle sits about 0.27 above its feet; lifted in a step it rises past this, and it lands below the next. */
-    private static final double FOOT_LIFTED = 0.32, FOOT_DOWN = 0.29;
-
-    /**
-     * Client: a heavy footfall each time a foot comes down, heard as the model's foot lands (from the
-     * drawn foot bones). Not drawn (behind the camera), it is heard on the gait's beat instead: every
-     * half run cycle, or every half walk cycle.
-     */
-    private void stepSounds() {
-        boolean seen = false;
-        String[] feet = {"left_foot", "right_foot"};
-        for (int i = 0; i < 2; i++) {
-            Vec3 foot = drawnBone(feet[i]);
-            if (foot == null) continue;
-            seen = true;
-            double h = foot.y - getY();
-            if (h > FOOT_LIFTED) footUp[i] = true;
-            else if (h < FOOT_DOWN && footUp[i]) {
-                footUp[i] = false;
-                footfall(foot);
-            }
-        }
-        if (seen || isDormant() || Math.hypot(getX() - xo, getZ() - zo) < 0.01) {
-            stepClock = 0;
-            return;
-        }
-        int every = isRunning() || isDriven() ? Math.max(4, Math.round(11 / runPace)) : 30;
-        if (++stepClock >= every) {
-            stepClock = 0;
-            footfall(position());
-        }
-    }
-
-    /** One heavy step: a deep metal thud and the ground's own step, low. */
-    private void footfall(Vec3 at) {
-        footfalls++;
-        level().playLocalSound(at.x, getY(), at.z, SoundEvents.IRON_GOLEM_STEP, getSoundSource(), 1.3f, 0.45f + random.nextFloat() * 0.1f, false);
-        BlockState ground = level().getBlockState(BlockPos.containing(at.x, getY() - 0.2, at.z));
-        if (!ground.isAir()) {
-            SoundType type = ground.getSoundType();
-            level().playLocalSound(at.x, getY(), at.z, type.getStepSound(), getSoundSource(), type.getVolume(), type.getPitch() * 0.55f, false);
-        }
-    }
-
     /** Client: how many footfalls it has made (for checks). */
     public int footfalls() {
-        return footfalls;
+        return steps.footfalls();
     }
 
-    /** Its steps are its own (see {@link #footfall}), not the block's light step. */
+    /** Its steps are its own (see {@link ColossusFootfalls}), not the block's light step. */
     @Override
     protected void playStepSound(BlockPos pos, BlockState state) {}
 
@@ -746,15 +633,9 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
 
     // ---- reaching with its hand ---------------------------------------------------------------------
 
-    private static float smooth(float t) {
-        t = Mth.clamp(t, 0, 1);
-        return t * t * (3 - 2 * t);
-    }
-
     /** Its hand reaches for {@code e} — to grab it, or its fist to strike it (null: for nothing). */
     void reachFor(@Nullable Entity e) {
-        int id = e == null ? -1 : e.getId();
-        if (entityData.get(REACH) != id) entityData.set(REACH, id);
+        arms.reachFor(e);
     }
 
     /**
@@ -763,21 +644,17 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
      * top. Null when it reaches for nothing.
      */
     public @Nullable Vec3 reachPoint() {
-        int id = entityData.get(REACH);
-        Entity e = id < 0 ? null : level().getEntity(id);
-        if (e == null) return null;
-        Vec3 mid = e.getBoundingBox().getCenter();
-        return act() == Act.PUNCH || e.getBbHeight() >= 1 ? mid : new Vec3(mid.x, e.getBoundingBox().maxY - 0.15, mid.z);
+        return arms.reachPoint();
     }
 
     /** Client: what its hand is reaching for (held a moment after the catch, while the arm eases back), or null. */
     public @Nullable Vec3 reachGoal() {
-        return reachWeight > 0 ? reachGoal : null;
+        return arms.reachGoal();
     }
 
     /** Client: how fully the reach is drawn over the animation, 0 to 1. */
     public float reachWeight(float partialTick) {
-        return Mth.lerp(partialTick, reachWeightO, reachWeight);
+        return arms.reachWeight(partialTick);
     }
 
     /**
@@ -802,49 +679,32 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
 
     /** Points its cannon arm at {@code p}, or lets it go back to the animation's own pose (null). */
     void aimAt(@Nullable Vec3 p) {
-        Vector3f rel = p == null ? new Vector3f() : p.subtract(position()).toVector3f();
-        if (!rel.equals(entityData.get(AIM))) entityData.set(AIM, rel);
+        arms.aimAt(p);
     }
 
     /** What its cannon arm points at, or null. */
     public @Nullable Vec3 aimPoint() {
-        Vector3fc rel = entityData.get(AIM);
-        return rel.lengthSquared() == 0 ? null : position().add(rel.x(), rel.y(), rel.z());
+        return arms.aimPoint();
     }
 
     /** How its cannon arm turns from straight ahead to point its palm at {@code p}: {to its right, upward}, in radians, within its reach. */
     public float[] armTurn(Vec3 p) {
-        float yaw = yBodyRot * Mth.DEG_TO_RAD;
-        Vec3 f = new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw));
-        Vec3 r = new Vec3(-f.z, 0, f.x);
-        Vec3 d = p.subtract(local(SHOULDER.x, SHOULDER.y, SHOULDER.z));
-        double right = d.dot(r), ahead = d.dot(f);
-        Vec3 arm = PALM.subtract(SHOULDER);
-        double turnYaw = Math.atan2(right, ahead) - Math.atan2(arm.x, arm.z);
-        double turnPitch = Math.atan2(d.y, Math.hypot(right, ahead)) - Math.atan2(arm.y, Math.hypot(arm.x, arm.z));
-        return new float[] {Mth.clamp((float) Mth.wrapDegrees(turnYaw * Mth.RAD_TO_DEG) * Mth.DEG_TO_RAD, -AIM_YAW, AIM_YAW),
-                Mth.clamp((float) turnPitch, -AIM_PITCH, AIM_PITCH)};
+        return arms.armTurn(p);
     }
 
     /** Where its palm is with its cannon arm turned toward its aim (straight ahead when it has none). */
     public Vec3 palm() {
-        Vec3 aim = aimPoint();
-        return aim == null ? local(PALM.x, PALM.y, PALM.z) : palmToward(aim);
+        return arms.palm();
     }
 
     /** Where its palm would be with its cannon arm turned toward {@code p}. */
     public Vec3 palmToward(Vec3 p) {
-        float[] turn = armTurn(p);
-        Vec3 arm = PALM.subtract(SHOULDER);
-        double len = arm.length();
-        double yaw = Math.atan2(arm.x, arm.z) + turn[0], pitch = Math.atan2(arm.y, Math.hypot(arm.x, arm.z)) + turn[1];
-        return local(SHOULDER.x + len * Math.cos(pitch) * Math.sin(yaw), SHOULDER.y + len * Math.sin(pitch), SHOULDER.z + len * Math.cos(pitch) * Math.cos(yaw));
+        return arms.palmToward(p);
     }
 
     /** Client: the cannon arm's turn to draw this frame, {to its right, upward}, already scaled by how far it has blended in. */
     public float[] drawnArmTurn(float partialTick) {
-        float w = Mth.lerp(partialTick, armWeightO, armWeight);
-        return new float[] {Mth.lerp(partialTick, armYawO, armYaw) * w, Mth.lerp(partialTick, armPitchO, armPitch) * w};
+        return arms.drawnArmTurn(partialTick);
     }
 
     /** A point given in its own frame: {@code right} to its right, {@code up}, {@code forward} ahead. */
@@ -858,7 +718,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     @Override
     protected void positionRider(Entity passenger, MoveFunction move) {
         Hold h = holdOf(passenger);
-        Vec3 at = ColossusMind.holdPoint(this, h == null ? Hold.GRIP : h, passenger);
+        Vec3 at = holds.holdPoint(h == null ? Hold.GRIP : h, passenger);
         move.accept(passenger, at.x, at.y, at.z);
     }
 

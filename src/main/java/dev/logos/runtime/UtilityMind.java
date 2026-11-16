@@ -16,7 +16,8 @@ import net.minecraft.world.entity.ai.goal.Goal;
  * The mind of a creature that chooses for itself, a small utility AI: every half second it senses its
  * surroundings, scores each behaviour it knows (0 = pointless, about 1 = pressing) and does the best
  * one; the one it is already doing gets a little extra, so it does not flicker between two. A new
- * behaviour is one inner class of the mind plus an entry in the list its constructor fills.
+ * behaviour is one class (an inner class of the mind, or a nested class beside it as in
+ * {@link ColossusBehavior}) plus an entry in the list the mind's constructor fills.
  */
 public abstract class UtilityMind<T extends Mob> extends Goal {
     static final int THINK_EVERY = 10;

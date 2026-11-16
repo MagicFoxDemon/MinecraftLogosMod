@@ -138,7 +138,7 @@ gh pr create --fill                # 或在网页上开 PR
 - 客户端类的边界：专用服务器没有 `net.minecraft.client` 这些客户端类。`client/` 以外的代码提到它们，开发环境的服务器不会出错（它带着客户端类），玩家的服务器却会在执行到那里时崩溃。所以 `client/` 以外的代码要用客户端的东西时，把那部分写进 `client/`，通过 `client/ClientHooks` 调用，调用前先判断是不是客户端（`level.isClientSide()`）。单元测试 `ClientBoundaryTest` 读编译好的类，找出 `client/` 以外所有提到客户端类的地方：新出现的会让测试失败；确认安全的，连同理由登记在测试的 `KNOWN` 里。
 - `KeptFamiliar` 接口：魔力生命体和巨像这类「造出来的使魔」，随世界保存、有自己的心智，使魔系统只负责传达命令。
   - 魔力生命体：`runtime/ManaLifeform`（实体、心核槽位、连携、动画控制器）、`runtime/LifeformMind`（效用 AI，每个行为一个内部类，加新行为只需加一个类并放进构造器的列表；`/logos mind` 显示各行为分数）、`runtime/Lifeforms`（召唤规则、存档登记、心核界面）、`client/ManaLifeformRenderer`。
-  - 炼金术巨像：`runtime/AlchemicalColossus`（实体、魔力、暴走与平息、座位、动作同步）、`runtime/ColossusMind`（效用 AI 与按动画计时的动作序列、乘客位置 `holdPoint`）、`runtime/ColossusCannon`（掌心炮）、`runtime/Colossi`（召唤、驾驶、进度、道具面板）、`client/ColossusRenderer`、`client/ColossusInput`。
+  - 炼金术巨像：`runtime/AlchemicalColossus`（实体、魔力、暴走与平息、动作同步；座位、手臂、脚步声的方法转给下面三个辅助类）、`runtime/ColossusHolds`（两肩座位和手里抓着的东西、乘客位置 `holdPoint`）、`runtime/ColossusArms`（伸手和炮臂瞄准：服务端定目标，客户端缓动）、`runtime/ColossusFootfalls`（客户端脚步声）、`runtime/ColossusMind`（效用 AI：感知、移动、战斗决策、外来请求）、`runtime/ColossusBehavior`（它的各个行为，每个行为一个嵌套类，加新行为要加一个类并放进 `ColossusMind` 构造器的列表）、`runtime/ColossusSequence`（按动画计时的动作序列，每个序列一个嵌套类）、`runtime/ColossusCannon`（掌心炮）、`runtime/Colossi`（召唤、驾驶、进度、道具面板）、`client/ColossusRenderer`、`client/ColossusInput`。
   - `runtime/UtilityMind<T>`：两者共用的效用 AI 基类（感知、打分、选最高分、`/logos mind` 的输出），以后的同类生物继承它。
   - `runtime/LifeformAugment`：炼金道具接口（道具还没做），两者共用。
   - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`。
@@ -281,7 +281,7 @@ gh pr create --fill                # 或在网页上开 PR
   - Windows PowerShell 5.1 读不带 BOM 的脚本会把中文当成乱码；含中文的 `.ps1` 要存成 UTF-8 with BOM。
 - GeckoLib 5：
   - 骨骼位置回调的参数顺序是（世界坐标，模型坐标，相对实体的坐标）。
-  - 想让乘客正好待在某块骨骼上：渲染器每帧上报骨骼的世界坐标，客户端摆放乘客时用它；服务端用按动作进度估算的位置（见 `ColossusMind.holdPoint`）。
+  - 想让乘客正好待在某块骨骼上：渲染器每帧上报骨骼的世界坐标，客户端摆放乘客时用它；服务端用按动作进度估算的位置（见 `ColossusHolds.holdPoint`）。
   - 触发式动画（`triggerAnim`）播完后不会自己把控制器交还给状态处理器，必须调用 `stopTriggeredAnim`，否则停机、苏醒这类状态动画永远不会播放。
 - 原版会把「第一个是生物的乘客」当作坐骑的控制者（骷髅骑蜘蛛就是这样），这会关掉坐骑自己的移动目标。会抱着生物的实体（巨像）要重写 `getControllingPassenger`。
 
