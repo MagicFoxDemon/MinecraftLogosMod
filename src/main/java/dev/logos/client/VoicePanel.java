@@ -17,6 +17,7 @@ import dev.logos.client.voice.VoiceClient;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
+import dev.logos.ui.ManuscriptControls;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 

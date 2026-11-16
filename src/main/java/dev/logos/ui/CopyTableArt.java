@@ -1,4 +1,4 @@
-package dev.logos.client;
+package dev.logos.ui;
 
 import java.util.function.BooleanSupplier;
 

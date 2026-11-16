@@ -15,6 +15,7 @@ import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 
 import dev.logos.graph.EnumValues.Kind;
+import dev.logos.ui.Manuscript;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.RenderPipelines;

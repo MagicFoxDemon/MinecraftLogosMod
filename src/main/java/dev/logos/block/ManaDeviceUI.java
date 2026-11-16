@@ -15,13 +15,13 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.ProgressBar;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 
-import dev.logos.client.AlchemyArt;
-import dev.logos.client.ManaScreens;
 import dev.logos.runtime.ManaField;
 import dev.logos.runtime.ManaVessel;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import dev.vfyjxf.taffy.style.AlignContent;
+import dev.logos.ui.AlchemyArt;
+import dev.logos.ui.ManaScreens;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.Tag;

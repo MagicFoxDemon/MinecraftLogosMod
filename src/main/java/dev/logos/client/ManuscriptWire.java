@@ -12,6 +12,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.PortModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wire.WireModel;
 
 import dev.logos.graph.LTypes;
+import dev.logos.ui.Manuscript;
 
 /**
  * A wire drawn as a notebook draws its arrows. The spell's order of events is a bold quill arrow

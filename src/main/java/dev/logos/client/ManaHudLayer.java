@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.net.ManaHudPayload;
+import dev.logos.ui.Manuscript;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

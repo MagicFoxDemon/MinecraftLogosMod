@@ -15,10 +15,10 @@ import com.lowdragmc.lowdraglib2.uitest.TestContext;
 import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 
 import dev.logos.client.ClientHooks;
-import dev.logos.client.Manuscript;
 import dev.logos.graph.LogosNode;
 import dev.logos.item.SpellPages;
 import dev.logos.lang.Examples;
+import dev.logos.ui.Manuscript;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 

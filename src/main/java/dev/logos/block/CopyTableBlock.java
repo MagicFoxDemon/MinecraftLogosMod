@@ -158,13 +158,13 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
 
         // Drawn like the table: the original on the copy stand and the empty paper on the blotter, the
         // copy on the gilt-framed navy panel under the inkwell, a golden thread joining them while a copy is ready.
-        original.style(s -> s.background(dev.logos.client.CopyTableArt.socket(true)));
-        blank.style(s -> s.background(dev.logos.client.CopyTableArt.socket(true)));
-        copy.style(s -> s.background(dev.logos.client.CopyTableArt.socket(false)));
-        UIElement originalTray = tray(original, dev.logos.client.CopyTableArt.originalTray(() -> original.getSlot().hasItem()));
-        UIElement blankTray = tray(blank, dev.logos.client.CopyTableArt.blankTray(() -> blank.getSlot().hasItem()));
+        original.style(s -> s.background(dev.logos.ui.CopyTableArt.socket(true)));
+        blank.style(s -> s.background(dev.logos.ui.CopyTableArt.socket(true)));
+        copy.style(s -> s.background(dev.logos.ui.CopyTableArt.socket(false)));
+        UIElement originalTray = tray(original, dev.logos.ui.CopyTableArt.originalTray(() -> original.getSlot().hasItem()));
+        UIElement blankTray = tray(blank, dev.logos.ui.CopyTableArt.blankTray(() -> blank.getSlot().hasItem()));
         UIElement panel = new UIElement().layout(l -> l.width(26).height(TRAY_H - 24).alignItems(AlignItems.CENTER).paddingTop(4));
-        panel.style(s -> s.background(dev.logos.client.CopyTableArt.copyPanel()));
+        panel.style(s -> s.background(dev.logos.ui.CopyTableArt.copyPanel()));
         panel.addChild(copy);
         UIElement middle = new UIElement().layout(l -> l.alignItems(AlignItems.CENTER).justifyContent(AlignContent.FLEX_END).height(TRAY_H));
         middle.addChild(panel);
@@ -177,17 +177,17 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
         captions.addChildren(caption("logos.copy_table.original", TRAY_W), caption("logos.copy_table.copy", 40),
                 caption("logos.copy_table.blank", TRAY_W));
         UIElement desk = new UIElement().layout(l -> l.width(WIDTH));
-        desk.style(s -> s.background(dev.logos.client.CopyTableArt.top()));
+        desk.style(s -> s.background(dev.logos.ui.CopyTableArt.top()));
         desk.addChildren(trays, captions);
-        trays.style(s -> s.overlay(dev.logos.client.CopyTableArt.thread(originalTray, blankTray, copy, () -> copy.getSlot().hasItem())));
+        trays.style(s -> s.overlay(dev.logos.ui.CopyTableArt.thread(originalTray, blankTray, copy, () -> copy.getSlot().hasItem())));
 
         Label hint = new Label();
         hint.setText(Component.translatable("logos.copy_table.hint"));
         hint.textStyle(s -> s.textWrap(TextWrap.WRAP).adaptiveHeight(true));
         hint.layout(l -> l.width(9 * 18));
         UIElement page = new UIElement().layout(l -> l.width(WIDTH).paddingAll(5).paddingTop(7).gapAll(5).alignItems(AlignItems.CENTER));
-        page.style(s -> s.background(dev.logos.client.CopyTableArt.ledger()));
-        dev.logos.client.CopyTableArt.inked(page);
+        page.style(s -> s.background(dev.logos.ui.CopyTableArt.ledger()));
+        dev.logos.ui.CopyTableArt.inked(page);
         InventorySlots inventory = new InventorySlots();
         paperSlots(inventory);
         page.addChildren(hint, inventory);
@@ -196,11 +196,11 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
         title.setText(Component.translatable("block.logos.copy_table"));
         title.textStyle(s -> s.textColor(0xFF2A1A08).textShadow(false).adaptiveWidth(true));
         UIElement plate = new UIElement().layout(l -> l.paddingHorizontal(9).paddingVertical(3));
-        plate.style(s -> s.background(dev.logos.client.CopyTableArt.plate()));
+        plate.style(s -> s.background(dev.logos.ui.CopyTableArt.plate()));
         plate.addChild(title);
 
         UIElement root = new UIElement().layout(l -> l.paddingAll(9).gapAll(6).alignItems(AlignItems.CENTER));
-        root.style(s -> s.background(dev.logos.client.CopyTableArt.box()));
+        root.style(s -> s.background(dev.logos.ui.CopyTableArt.box()));
         root.addChildren(plate, desk, page);
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP),
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)), player);
@@ -226,7 +226,7 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
     /** The player's slots drawn as shallow squares inked on the parchment, like the trays' own. */
     private static void paperSlots(UIElement element) {
         for (UIElement child : element.getChildren()) {
-            if (child instanceof ItemSlot slot) slot.style(s -> s.background(dev.logos.client.CopyTableArt.socket(true)));
+            if (child instanceof ItemSlot slot) slot.style(s -> s.background(dev.logos.ui.CopyTableArt.socket(true)));
             else paperSlots(child);
         }
     }
@@ -234,7 +234,7 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
     private static Label caption(String key, int width) {
         Label label = new Label();
         label.setText(Component.translatable(key));
-        label.textStyle(s -> s.textColor(dev.logos.client.CopyTableArt.ON_WOOD).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));
+        label.textStyle(s -> s.textColor(dev.logos.ui.CopyTableArt.ON_WOOD).textAlignHorizontal(com.lowdragmc.lowdraglib2.gui.ui.data.Horizontal.CENTER));
         label.layout(l -> l.width(width));
         return label;
     }

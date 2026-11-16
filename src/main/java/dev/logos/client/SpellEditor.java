@@ -61,6 +61,7 @@ import dev.logos.net.InscribePayload;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
 import dev.vfyjxf.taffy.style.TaffyPosition;
+import dev.logos.ui.ManuscriptControls;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.client.resources.language.I18n;

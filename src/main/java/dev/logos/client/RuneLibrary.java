@@ -29,6 +29,8 @@ import dev.logos.lang.Category;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
+import dev.logos.ui.Manuscript;
+import dev.logos.ui.ManuscriptControls;
 import net.minecraft.network.chat.Component;
 
 /**

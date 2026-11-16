@@ -26,6 +26,8 @@ import dev.logos.graph.Sealed;
 import dev.logos.guide.GuideBook;
 import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
+import dev.logos.ui.Manuscript;
+import dev.logos.ui.ManuscriptControls;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
