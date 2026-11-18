@@ -2,6 +2,7 @@ package dev.logos.runtime;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -260,32 +261,66 @@ public final class Familiars {
     }
 
     /**
-     * Binds a {@link LastingCompanion} to {@code owner} for good: no time limit, and one per player, so the master's
-     * previous companion, if any, is sent home first. The companion's mod adds it to the world.
+     * Binds a {@link LastingCompanion} to {@code owner} for good: no time limit. Each character is out at most once per
+     * player, so the master's companion of the same type, if any, is sent home first. Different companions may be out
+     * together, up to {@link #companionRoom()}; the one out longest goes home to make room. The companion's mod adds it
+     * to the world.
      */
     public static void bindCompanion(Mob m, ServerPlayer owner) {
         if (!(m instanceof LastingCompanion)) throw new IllegalArgumentException(m + " is not a LastingCompanion");
-        Mob old = companionOf(owner.getUUID(), m);
-        if (old != null) ((LastingCompanion) old).sendHome();
+        List<Mob> others = new ArrayList<>();
+        for (Mob old : companionsOf(owner.getUUID(), m)) {
+            if (old.getType() == m.getType()) sendCompanionHome(old);
+            else others.add(old);
+        }
+        others.sort(Comparator.comparingLong(Familiars::seq));
+        for (int i = 0; i <= others.size() - companionRoom(); i++) sendCompanionHome(others.get(i));
         bind(m, owner, Long.MAX_VALUE);
     }
 
-    /** {@code owner}'s lasting companion in the world (in any dimension), or null. */
+    /** How many lasting companions one player may have out at once: the familiar limit, at least one. */
+    public static int companionRoom() {
+        return Math.max(1, LogosConfig.maxFamiliars());
+    }
+
+    /** Sends a companion home through its mod; it stops answering to its master at once, even if it takes a while to go. */
+    private static void sendCompanionHome(Mob m) {
+        LIVE.remove(m);
+        ((LastingCompanion) m).sendHome();
+    }
+
+    /** {@code owner}'s most recently bound lasting companion in the world (in any dimension), or null. */
     public static @Nullable Mob companionOf(Player owner) {
-        return companionOf(owner.getUUID(), null);
+        Mob latest = null;
+        for (Mob m : companionsOf(owner.getUUID(), null)) if (latest == null || seq(m) > seq(latest)) latest = m;
+        return latest;
     }
 
-    private static @Nullable Mob companionOf(UUID owner, @Nullable Mob except) {
+    /** All of {@code owner}'s lasting companions in the world (in any dimension), oldest first. */
+    public static List<Mob> companionsOf(Player owner) {
+        List<Mob> out = companionsOf(owner.getUUID(), null);
+        out.sort(Comparator.comparingLong(Familiars::seq));
+        return out;
+    }
+
+    private static List<Mob> companionsOf(UUID owner, @Nullable Mob except) {
+        List<Mob> out = new ArrayList<>();
         for (Mob m : LIVE) {
-            if (m != except && m instanceof LastingCompanion && m.isAlive() && owner.equals(masterOf(m))) return m;
+            if (m != except && m instanceof LastingCompanion && m.isAlive() && owner.equals(masterOf(m))) out.add(m);
         }
-        return null;
+        return out;
     }
 
-    /** A companion loaded again with its chunk answers to its master again, unless they already have another one out. */
+    /**
+     * A companion loaded again with its chunk answers to its master again, unless the same character is out by now or
+     * the master already has as many companions out as allowed.
+     */
     static boolean rebindCompanion(Mob m) {
         Bond b = bondOf(m);
-        if (b == null || companionOf(b.owner(), m) != null) return false;
+        if (b == null) return false;
+        List<Mob> out = companionsOf(b.owner(), m);
+        if (out.size() >= companionRoom()) return false;
+        for (Mob o : out) if (o.getType() == m.getType()) return false;
         rebind(m);
         return true;
     }

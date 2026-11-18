@@ -66,7 +66,7 @@ public final class LogosGameTests {
             "staff_fill_no_item_sync", "staff_fill_switching_staffs", "staff_fill_spends_only_its_own", "staff_fill_thrown", "staff_fill_moved_as_copy", "staff_fill_death", "staff_fill_logout", "staff_fill_saved_midway",
             "spell_modifier_node_cost", "spell_modifier_channel_speed", "spell_modifier_mana_regeneration", "mana_growth_terms", "mana_growth_lifetime_xp", "mana_growth_overflow_drains", "mana_growth_attribute", "mana_elixir_drink", "mana_elixir_brewing", "mana_elixir_chest_loot", "wand_mana_bonus", "wand_cap_kept_when_switching", "tiered_charms_best_grade", "rune_unlocks_inscribe", "rune_unlocks_emitter", "rune_unlocks_book", "rune_unlocks_knowledge", "rune_book_teaches_one", "rune_book_element", "rune_book_never_life", "rune_book_chest_loot", "warlock_job_site", "warlock_trades", "guide_given_once", "guide_not_given_when_off", "guide_recipe", "spell_modifier_heal_power", "spell_modifier_vulnerability", "spell_modifier_void_out_of_world_option", "spell_modifier_void_true_damage", "spell_modifier_void_on_players", "spell_modifier_void_absorption_option", "spell_modifier_void_totem_option", "spell_modifier_void_creature_cuts", "spell_modifier_execute_is_void",
             "buff_potions_brew", "buff_potions_dissolve", "buff_potions_effects", "element_effects_every_element", "herbs_grow_in_jars",
-            "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts", "companion_one_per_master", "companion_keeps_its_own_mind", "creature_caster_tamed_side", "creature_caster_looked_up_pool",
+            "familiar_ride_ground", "familiar_dragon_two_seats", "familiar_age_frozen", "familiar_names_dismiss", "familiar_gather", "familiar_warden_fights", "familiar_warden_vs_warden", "familiar_sic", "familiar_stance_hunts", "companion_one_per_kind", "companion_kinds_together", "companion_cap_at_familiar_limit", "companion_keeps_its_own_mind", "creature_caster_tamed_side", "creature_caster_looked_up_pool",
             "mana_count_follows_blocks", "mana_work_skips_insulation", "mana_small_moves_stay_unsaved", "mana_reload_keeps_count_and_value", "mana_devices_take_turns",
             "spell_chunks_block_runes", "spell_chunks_projectile", "spell_chunks_option_keeps_flying", "spell_chunks_beam_ray_look", "spell_chunks_vein", "spell_chunks_blink_lands",
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
@@ -221,7 +221,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("familiar_warden_vs_warden", () -> FamiliarGameTests::wardenFightsWildWarden);
         FUNCTIONS.register("familiar_sic", () -> FamiliarGameTests::sicOrdersAttack);
         FUNCTIONS.register("familiar_stance_hunts", () -> FamiliarGameTests::stanceHunts);
-        FUNCTIONS.register("companion_one_per_master", () -> CompanionGameTests::onePerMasterNoTimeLimit);
+        FUNCTIONS.register("companion_one_per_kind", () -> CompanionGameTests::onePerKindNoTimeLimit);
+        FUNCTIONS.register("companion_kinds_together", () -> CompanionGameTests::differentKindsTogether);
+        FUNCTIONS.register("companion_cap_at_familiar_limit", () -> CompanionGameTests::capAtFamiliarLimit);
         FUNCTIONS.register("companion_keeps_its_own_mind", () -> CompanionGameTests::keepsItsOwnMind);
         FUNCTIONS.register("creature_caster_tamed_side", () -> CreatureCasterGameTests::tamedCasterOnOwnerSide);
         FUNCTIONS.register("creature_caster_looked_up_pool", () -> CreatureCasterGameTests::lookedUpPoolTakesMana);
