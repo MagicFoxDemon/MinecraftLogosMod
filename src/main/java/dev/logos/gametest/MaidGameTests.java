@@ -113,7 +113,7 @@ final class MaidGameTests {
         h.assertTrue(pool != null, "a tamed maid should hold mana");
         pool.setMana(0);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.LAPIS_LAZULI, 3));
-        p.interactOn(m, InteractionHand.MAIN_HAND, m.position());
+        p.interactOn(m, InteractionHand.MAIN_HAND);
         h.assertTrue(Math.abs(pool.mana() - 50) < 1e-6, "lapis should give her 50 mana: " + pool.mana());
         h.assertTrue(p.getMainHandItem().getCount() == 2, "one lapis should be used");
         h.succeed();
@@ -125,11 +125,11 @@ final class MaidGameTests {
         EntityMaid summoned = maid(h, new Vec3(3.5, 2, 3.5));
         Familiars.bindForTest(summoned, p);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CAKE, 2));
-        p.interactOn(summoned, InteractionHand.MAIN_HAND, summoned.position());
+        p.interactOn(summoned, InteractionHand.MAIN_HAND);
         h.assertFalse(summoned.isTame(), "a summoned maid should not be tamed");
         h.assertTrue(p.getMainHandItem().getCount() == 2, "the cake should not be eaten");
         EntityMaid wild = maid(h, new Vec3(6.5, 2, 6.5));
-        p.interactOn(wild, InteractionHand.MAIN_HAND, wild.position());
+        p.interactOn(wild, InteractionHand.MAIN_HAND);
         h.assertTrue(wild.isTame() && wild.isOwnedBy(p), "a wild maid that is not a familiar should still be tamed by cake");
         h.succeed();
     }

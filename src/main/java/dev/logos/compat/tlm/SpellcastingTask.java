@@ -47,10 +47,10 @@ final class SpellcastingTask implements IRangedAttackTask {
     @Override
     public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createBrainTasks(EntityMaid maid) {
         BehaviorControl<EntityMaid> startAttacking = StartAttacking.create(
-                (level, e) -> canFight(e),
-                (level, e) -> IRangedAttackTask.findFirstValidAttackTarget(e));
+                e -> canFight(e),
+                e -> IRangedAttackTask.findFirstValidAttackTarget(e));
         BehaviorControl<EntityMaid> stopAttacking = StopAttackingIfTargetInvalid.create(
-                (level, target) -> !canFight(maid) || farAway(target, maid));
+                target -> !canFight(maid) || farAway(target, maid));
         return Lists.newArrayList(
                 Pair.of(5, startAttacking),
                 Pair.of(5, stopAttacking),
@@ -62,10 +62,10 @@ final class SpellcastingTask implements IRangedAttackTask {
     @Override
     public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createRideBrainTasks(EntityMaid maid) {
         BehaviorControl<EntityMaid> startAttacking = StartAttacking.create(
-                (level, e) -> canFight(e),
-                (level, e) -> IRangedAttackTask.findFirstValidAttackTarget(e));
+                e -> canFight(e),
+                e -> IRangedAttackTask.findFirstValidAttackTarget(e));
         BehaviorControl<EntityMaid> stopAttacking = StopAttackingIfTargetInvalid.create(
-                (level, target) -> !canFight(maid) || farAway(target, maid));
+                target -> !canFight(maid) || farAway(target, maid));
         return Lists.newArrayList(
                 Pair.of(5, startAttacking),
                 Pair.of(5, stopAttacking),
@@ -84,7 +84,7 @@ final class SpellcastingTask implements IRangedAttackTask {
 
     @Override
     public float searchRadius(EntityMaid maid) {
-        return Math.max(maid.getHomeRadius(), (float) CastSpells.REACH);
+        return Math.max(maid.getRestrictRadius(), (float) CastSpells.REACH);
     }
 
     /** Not used: her casts are charged in {@link CastSpells}, not shot by the maid mod's bow behaviours. */

@@ -28,7 +28,7 @@ final class MaidMana {
 
     /** Her pool, or null for a wild maid: only one who serves someone holds mana. A new pool starts full. */
     static @Nullable CreatureMana of(EntityMaid maid) {
-        if (maid.getOwnerReference() == null) return null;
+        if (maid.getOwnerUUID() == null) return null;
         if (!maid.hasData(LogosMod.CREATURE_MANA)) {
             CreatureMana pool = new CreatureMana();
             pool.setMax(cap(maid, 0));
@@ -46,10 +46,10 @@ final class MaidMana {
 
     /** Her owner, wherever they are on the server; null if they are offline. */
     static @Nullable ServerPlayer owner(EntityMaid maid) {
-        var ref = maid.getOwnerReference();
+        var ref = maid.getOwnerUUID();
         if (ref == null || !(maid.level() instanceof ServerLevel level)) return null;
         if (maid.getOwner() instanceof ServerPlayer near) return near;
-        return level.getServer().getPlayerList().getPlayer(ref.getUUID());
+        return level.getServer().getPlayerList().getPlayer(ref);
     }
 
     /** Her owner's cap with her favorability's share on top; {@code fallback} while her owner is away. */

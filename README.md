@@ -5,7 +5,7 @@ Logos 中没有「火球术」或「连锁闪电」这样写死的法术按钮�
 > 移植仍在进行中：单元测试和世界内测试已基本通过，尚未进游戏完整试玩，暂未发布。移植说明见 [`docs/PORT_1.21.1.md`](docs/PORT_1.21.1.md)。
 
 - **适用版本**：Minecraft `1.21.1` · NeoForge `21.1.267+` · Java `21`
-- **前置模组**：LDLib2 `2.2.45+` · Photon `2.2.11+` · GeckoLib `4.9.3+`；可选：车万女仆
+- **前置模组**：LDLib2 `2.2.45+` · Photon `2.2.11+` · GeckoLib `4.9.3+`；可选：车万女仆 `1.5.3+`
 - **Mod ID**：`logos`
 - **官方维度附属**：[维度-咒械原（Logos: Spellwrought Expanse）](https://github.com/wushuowei1145/Logos-Spellwrought-Expanse)（目前只支持 26.1.2）
 ---

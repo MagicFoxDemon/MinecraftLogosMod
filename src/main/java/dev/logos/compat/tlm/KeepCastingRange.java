@@ -46,7 +46,7 @@ final class KeepCastingRange extends net.minecraft.world.entity.ai.behavior.Beha
         List<MaidSpells.Page> attacks = MaidSpells.attacks(MaidSpells.active(maid));
         double range = MaidSpells.attackRange(attacks);
         double d = maid.distanceTo(foe);
-        boolean leashed = !maid.hasHome() && maid.getOwner() instanceof Player owner && foe.distanceTo(owner) >= maid.getHomeRadius();
+        boolean leashed = !maid.hasRestriction() && maid.getOwner() instanceof Player owner && foe.distanceTo(owner) >= maid.getRestrictRadius();
         if ((d > range || !maid.hasLineOfSight(foe)) && !leashed) {
             stopBacking(maid);
             maid.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(foe, 0.6f, (int) Math.max(1, range * 0.6)));
