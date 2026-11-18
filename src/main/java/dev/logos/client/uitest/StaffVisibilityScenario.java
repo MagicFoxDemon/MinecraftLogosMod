@@ -7,11 +7,8 @@ import com.lowdragmc.lowdraglib2.uitest.ScenarioOptions;
 import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 
 import dev.logos.LogosMod;
-import dev.logos.mixin.ItemStackRenderStateAccessor;
-import dev.logos.mixin.LayerRenderStateAccessor;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
@@ -78,14 +75,13 @@ public final class StaffVisibilityScenario implements UIScenario {
                         for (var display : new ItemDisplayContext[] {ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
                                 ItemDisplayContext.GROUND, ItemDisplayContext.FIXED, ItemDisplayContext.GUI,
                                 ItemDisplayContext.FIRST_PERSON_RIGHT_HAND}) {
-                            var state = new ItemStackRenderState();
-                            mc.getItemModelResolver().updateForTopItem(state, new ItemStack(staff.get()), display, mc.level, mc.player, 0);
-                            var access = (ItemStackRenderStateAccessor) state;
+                            // 1.21.1 resolves one model for every display; its passes are what is checked.
+                            var passes = ItemPasses.of(new ItemStack(staff.get()), mc.player).passes();
                             int solid = 0;
-                            for (int i = 0; i < access.logos$activeLayerCount(); i++) {
-                                var quads = ((LayerRenderStateAccessor) access.logos$layers()[i]).logos$quads();
-                                boolean opaque = quads.stream().anyMatch(q -> !q.materialInfo().itemRenderType().hasBlending());
-                                boolean blended = quads.stream().anyMatch(q -> q.materialInfo().itemRenderType().hasBlending());
+                            for (int i = 0; i < passes.size(); i++) {
+                                var quads = passes.get(i).quads();
+                                boolean opaque = passes.get(i).opaque();
+                                boolean blended = passes.get(i).blended();
                                 if (!blended) solid += quads.size();
                                 ctx.check(staff.getId() + " " + display + " layer " + i + " has one transparency class", !(opaque && blended));
                             }

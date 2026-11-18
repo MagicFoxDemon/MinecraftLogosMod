@@ -29,7 +29,7 @@ final class ManaElixirGameTests {
 
     private static ServerPlayer player(GameTestHelper h) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(GameType.SURVIVAL);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 200;
@@ -60,7 +60,7 @@ final class ManaElixirGameTests {
         }
         h.assertTrue(brewed.drunk(p) == ManaElixirItem.LIMIT, "three drunk, counted " + brewed.drunk(p));
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(brewed));
-        h.assertTrue(brewed.use(p.level(), p, InteractionHand.MAIN_HAND) == InteractionResult.FAIL, "a fourth bottle should be refused");
+        h.assertTrue(brewed.use(p.level(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.FAIL, "a fourth bottle should be refused");
         ItemStack kept = drink(p, brewed);
         h.assertTrue(kept.is(brewed) && m.baseMaxMana == 260, "a fourth bottle must be kept and add nothing: " + kept + ", " + m.baseMaxMana);
         drink(p, ancient);

@@ -42,7 +42,7 @@ public class CreativeTabsScenario implements UIScenario {
             var potions = LogosMod.POTIONS_TAB.get().getDisplayItems();
             if (potions.isEmpty() || !potions.stream().allMatch(dev.logos.alchemy.BuffPotions::isLogosPotion))
                 throw new AssertionError("the potions tab should hold Logos potions only");
-            var food = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.getValueOrThrow(net.minecraft.world.item.CreativeModeTabs.FOOD_AND_DRINKS)
+            var food = net.minecraft.core.registries.BuiltInRegistries.CREATIVE_MODE_TAB.getOrThrow(net.minecraft.world.item.CreativeModeTabs.FOOD_AND_DRINKS)
                     .getDisplayItems();
             if (food.stream().anyMatch(dev.logos.alchemy.BuffPotions::isLogosPotion) || food.stream().noneMatch(st -> st.is(net.minecraft.world.item.Items.POTION)))
                 throw new AssertionError("food and drinks should keep vanilla potions and lose Logos ones");

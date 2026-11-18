@@ -43,8 +43,8 @@ abstract class EnderDragonMixin {
         DragonFamiliar.spare((EnderDragon) (Object) this, entities);
     }
 
-    @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Ljava/util/List;)V", at = @At("HEAD"))
-    private void logos$spareMasterFromHead(ServerLevel level, List<Entity> entities, CallbackInfo ci) {
+    @Inject(method = "hurt(Ljava/util/List;)V", at = @At("HEAD"))
+    private void logos$spareMasterFromHead(List<Entity> entities, CallbackInfo ci) {
         DragonFamiliar.spare((EnderDragon) (Object) this, entities);
     }
 

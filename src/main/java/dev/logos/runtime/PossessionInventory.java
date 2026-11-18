@@ -222,6 +222,11 @@ public final class PossessionInventory {
         @Override
         public void setItem(int index, ItemStack stack) {
             mob.setItemSlot(slot, stack);
+            // As 26.1's Mob slot access does: what a player puts on it is kept, and so is the creature.
+            if (!stack.isEmpty()) {
+                mob.setGuaranteedDrop(slot);
+                mob.setPersistenceRequired();
+            }
         }
 
         @Override

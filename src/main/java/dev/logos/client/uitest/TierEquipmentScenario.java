@@ -21,7 +21,6 @@ import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.CreativeModeTab;
@@ -71,8 +70,9 @@ abstract class TierEquipmentScenario implements UIScenario {
                     for (int i = 0; i < equipment.size(); i++) {
                         var item = equipment.get(i);
                         var id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);
-                        var model = mc.getModelManager().getItemModel(id);
-                        String expectedModel = staff && i > 0 ? "CompositeModel" : "CuboidItemModelWrapper";
+                        var model = mc.getModelManager().getModel(net.minecraft.client.resources.model.ModelResourceLocation.inventory(id));
+                        // 1.21.1's baked models: NeoForge's composite for the orbiting staffs, a plain one otherwise.
+                        String expectedModel = staff && i > 0 ? "Baked" : "SimpleBakedModel";
                         ctx.check(id + " model baked", model.getClass().getSimpleName().equals(expectedModel));
                         var tip = WandTips.tip(item);
                         double expectedY = staff ? 20.75 : i == 6 ? 15.64 : 15.5;
@@ -81,8 +81,8 @@ abstract class TierEquipmentScenario implements UIScenario {
                     if (staff) {
                         for (String key : List.of("echo", "transmuted", "chalk", "firmament", "sage", "principle")) {
                             var id = ResourceLocation.fromNamespaceAndPath("logos", "block/staff/" + key + "_orbit");
-                            var sprite = mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(id);
-                            ctx.check(key + " animated orbit", sprite.contents().isAnimated() && sprite.contents().getUniqueFrames().size() == 32);
+                            var sprite = mc.getModelManager().getAtlas(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS).getSprite(id);
+                            ctx.check(key + " animated orbit", sprite.contents().getUniqueFrames().count() == 32);
                         }
                     }
                 })

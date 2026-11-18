@@ -24,7 +24,7 @@ final class OffsetGameTests {
 
     private static SpellEmitterBlockEntity emitter(GameTestHelper h, BlockPos at, Direction facing) {
         h.setBlock(at, LogosMod.SPELL_EMITTER.get().defaultBlockState().setValue(SpellEmitterBlock.FACING, facing));
-        return (SpellEmitterBlockEntity) h.getBlockEntity(at, SpellEmitterBlockEntity.class);
+        return (SpellEmitterBlockEntity) h.getBlockEntity(at);
     }
 
     /** An emitter facing {@code facing} that gives 10 mana to {@code (offset f u r)} as soon as it is charged. */
@@ -36,7 +36,7 @@ final class OffsetGameTests {
     }
 
     private static double mana(GameTestHelper h, BlockPos at) {
-        return ((SpellEmitterBlockEntity) h.getBlockEntity(at, SpellEmitterBlockEntity.class)).mana();
+        return ((SpellEmitterBlockEntity) h.getBlockEntity(at)).mana();
     }
 
     /**

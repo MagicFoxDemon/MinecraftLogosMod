@@ -4,7 +4,8 @@ import dev.logos.LogosMod;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import dev.logos.client.port.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
@@ -48,7 +49,7 @@ public final class SageToast {
 
     @SubscribeEvent
     static void onScreen(ScreenEvent.Render.Post event) {
-        draw(event.getGuiGraphics());
+        draw(new dev.logos.client.port.GuiGraphicsExtractor(event.getGuiGraphics()));
     }
 
     private static void draw(GuiGraphicsExtractor g) {
@@ -75,7 +76,8 @@ public final class SageToast {
 
         @SubscribeEvent
         static void onRegisterLayers(RegisterGuiLayersEvent event) {
-            event.registerAboveAll(ID, (g, delta) -> {
+            event.registerAboveAll(ID, (graphics, delta) -> {
+                GuiGraphicsExtractor g = new GuiGraphicsExtractor(graphics);
                 if (Minecraft.getInstance().screen == null) draw(g);
             });
         }

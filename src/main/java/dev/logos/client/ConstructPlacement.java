@@ -42,6 +42,6 @@ final class ConstructPlacement {
         BlockHitResult click = new BlockHitResult(best.getLocation(), best.getDirection(), target, false);
         InteractionResult result = mc.gameMode.useItemOn(mc.player, event.getHand(), click);
         event.setCanceled(true);
-        event.setSwingHand(result instanceof InteractionResult.Success s && s.swingSource() == InteractionResult.SwingSource.CLIENT);
+        event.setSwingHand(result.shouldSwing());
     }
 }

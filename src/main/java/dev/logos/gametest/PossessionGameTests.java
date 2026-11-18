@@ -15,7 +15,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.ShulkerBullet;
 import net.minecraft.world.entity.projectile.LargeFireball;
@@ -39,9 +38,9 @@ final class PossessionGameTests {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         FamiliarGameTests.forceAround(h, 1);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(GameType.SURVIVAL);
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         Vec3 pos = h.absoluteVec(new Vec3(0.5, 2, 0.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
@@ -50,8 +49,8 @@ final class PossessionGameTests {
         return p;
     }
 
-    private static Mannequin bodyNear(GameTestHelper h, Vec3 at) {
-        var bodies = h.getLevel().getEntitiesOfClass(Mannequin.class, new AABB(at, at).inflate(1));
+    private static dev.logos.runtime.PossessionBody bodyNear(GameTestHelper h, Vec3 at) {
+        var bodies = h.getLevel().getEntitiesOfClass(dev.logos.runtime.PossessionBody.class, new AABB(at, at).inflate(1));
         h.assertTrue(bodies.size() == 1, "one body should stand where the player stood, found " + bodies.size());
         return bodies.getFirst();
     }
@@ -73,7 +72,7 @@ final class PossessionGameTests {
         // 5 / 5 × √4 = 2, and 1 for nearest.
         h.assertTrue(Math.abs(inst.injected - inst.mana - 3) < 1e-6, "possessing should cost 3 with the selector, cost " + (inst.injected - inst.mana));
         h.assertTrue(p.getVehicle() == pig && Possession.possessing(p) && Possession.possessor(pig) == p, "the player should be inside the pig");
-        Mannequin body = bodyNear(h, start);
+        dev.logos.runtime.PossessionBody body = bodyNear(h, start);
 
         float health = p.getHealth();
         p.hurt(level.damageSources().generic(), 4);
@@ -106,8 +105,8 @@ final class PossessionGameTests {
         Vec3 start = p.position();
         var pig = h.spawn(EntityType.PIG, new BlockPos(6, 2, 6));
         h.assertTrue(Possession.start(p, pig, 30), "the possession should start");
-        Mannequin body = bodyNear(h, start);
-        pig.kill(level);
+        dev.logos.runtime.PossessionBody body = bodyNear(h, start);
+        pig.kill();
         h.assertTrue(!Possession.possessing(p) && body.isRemoved(), "the pig's death should end the possession");
         h.assertTrue(p.position().distanceTo(start) < 0.01, "the player should be back in their body, at " + p.position());
         float expected = p.getMaxHealth() * (1 - Possession.BACKLASH);
@@ -132,7 +131,7 @@ final class PossessionGameTests {
         wither.setPos(start.add(4, 0, 4));
         h.assertTrue(!Possession.canStart(p, wither), "a boss should not be possessable");
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         h.assertTrue(!Possession.canStart(p, other), "a player should not be possessable");
 
         h.assertTrue(Possession.start(p, pig, 0.5), "the possession should start");
@@ -167,7 +166,7 @@ final class PossessionGameTests {
         h.assertTrue(hand.mayPlace(new ItemStack(Items.WHEAT)), "a hand should take anything");
         hand.set(new ItemStack(Items.IRON_SWORD));
         h.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD), "what is put in the hand slot should be in its hand");
-        h.assertTrue(villager.getDropChances().isPreserved(EquipmentSlot.MAINHAND), "what is put on it should be kept on its death");
+        h.assertTrue(villager.getEquipmentDropChance(EquipmentSlot.MAINHAND) > 1, "what is put on it should be kept on its death");
         Possession.end(p, false);
         h.assertTrue(!menu.stillValid(p), "the menu should close once the possession ends");
 

@@ -35,7 +35,7 @@ final class WandTierGameTests {
 
     @SuppressWarnings("removal")
     private static ServerPlayer player(GameTestHelper h) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         var pos = h.absoluteVec(new net.minecraft.world.phys.Vec3(4.5, 2, 4.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         var m = PlayerMagic.of(p);
@@ -76,7 +76,7 @@ final class WandTierGameTests {
             p.setItemInHand(InteractionHand.MAIN_HAND, stack);
             near(h, channel(stack, LogosMod.CHANNEL_FLOW), FLOW[i], "tier " + (i + 2) + " flow");
             near(h, channel(stack, LogosMod.CHANNEL_SURGE), SURGE[i], "tier " + (i + 2) + " surge");
-            h.assertTrue(item.use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.CONSUME, "tier " + (i + 2) + " refused its page");
+            h.assertTrue(item.use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.CONSUME, "tier " + (i + 2) + " refused its page");
             var charge = Charging.of(p);
             h.assertTrue(charge != null, "the new wand did not start charging");
             int expected = Charging.ticks(tier.capacity(), FLOW[i], SURGE[i] * (1 + 1000 / LogosConfig.chargeManaScale()));
@@ -109,7 +109,7 @@ final class WandTierGameTests {
             double threeCharges = 3 * Charging.seconds(tier.capacity(), FLOW[i], SURGE[i]);
             h.assertTrue(Math.abs(fillSeconds - threeCharges) < 0.05, "staff fill should match three separate wand charges: " + fillSeconds + " vs " + threeCharges);
             p.setItemInHand(InteractionHand.MAIN_HAND, stack);
-            h.assertTrue(item.use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.FAIL, "an empty staff cast");
+            h.assertTrue(item.use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.FAIL, "an empty staff cast");
             StaffCharging.start(p);
             for (int tick = 0; tick < 400 && StaffCharging.held(p, stack) < item.capacity(); tick++) StaffCharging.tick(p);
             StaffCharging.stop(p);
@@ -117,7 +117,7 @@ final class WandTierGameTests {
             h.assertTrue(item.isBarVisible(stack) && item.getBarWidth(stack) == 13, "full staff must show a full mana bar");
             double paid = PlayerMagic.of(p).mana;
             near(h, paid, 100000 - item.capacity(), "filling pays exactly the stored mana");
-            h.assertTrue(item.use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.CONSUME, "a full tier staff refused its page");
+            h.assertTrue(item.use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.CONSUME, "a full tier staff refused its page");
             near(h, StatusData.stacks(p, new Status("#tier_staff")), 1, "staff casts immediately");
             near(h, StaffItem.stored(stack), item.capacity() - tier.capacity(), "staff supplies the injection");
             near(h, PlayerMagic.of(p).mana, paid, "casting does not take from the player's pool again");

@@ -8,13 +8,11 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.FreeManaEntity;
-import dev.logos.client.port.SubmitNodeCollector;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.RenderType;
-import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import dev.logos.client.port.LightCoordsUtil;
@@ -24,7 +22,7 @@ import net.minecraft.util.Mth;
  * Free mana as a swarm of glowing motes circling a common centre, each on its own tilted orbit.
  * More mana means more motes and a wider swarm. It fades in over its first moments.
  */
-final class FreeManaRenderer extends EntityRenderer<FreeManaEntity, FreeManaRenderer.State> {
+final class FreeManaRenderer extends EntityRenderer<FreeManaEntity> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/free_mana.png");
     private static final RenderType RENDER_TYPE = RenderType.eyes(TEXTURE);
     private static final int MAX_MOTES = 28;
@@ -33,60 +31,52 @@ final class FreeManaRenderer extends EntityRenderer<FreeManaEntity, FreeManaRend
     /** Ticks to fade from invisible to fully visible after it appears (1.5 seconds). */
     private static final float FADE_IN_TICKS = 30;
 
-    static final class State extends EntityRenderState {
-        float amount;
-        int seed;
-    }
-
     FreeManaRenderer(EntityRendererProvider.Context context) {
         super(context);
         shadowRadius = 0;
     }
 
     @Override
-    public State createRenderState() {
-        return new State();
+    public ResourceLocation getTextureLocation(FreeManaEntity entity) {
+        return TEXTURE;
     }
 
     @Override
-    public void extractRenderState(FreeManaEntity entity, State state, float partialTicks) {
-        super.extractRenderState(entity, state, partialTicks);
-        state.amount = (float) entity.amount();
-        state.seed = entity.getId();
-    }
-
-    @Override
-    public void submit(State state, PoseStack pose, SubmitNodeCollector out, CameraRenderState camera) {
-        int motes = Mth.clamp(4 + (int) Math.sqrt(state.amount) * 2, 4, MAX_MOTES);
-        float spread = Mth.clamp(0.18f + (float) Math.cbrt(state.amount) * 0.06f, 0.18f, 0.7f);
-        float t = state.ageInTicks;
+    public void render(FreeManaEntity entity, float yaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
+        float amount = (float) entity.amount();
+        int seed = entity.getId();
+        int motes = Mth.clamp(4 + (int) Math.sqrt(amount) * 2, 4, MAX_MOTES);
+        float spread = Mth.clamp(0.18f + (float) Math.cbrt(amount) * 0.06f, 0.18f, 0.7f);
+        float t = entity.tickCount + partialTick;
         float fade = Mth.clamp(t / FADE_IN_TICKS, 0, 1);
-        Quaternionf face = camera.orientation;
+        Quaternionf face = Minecraft.getInstance().gameRenderer.getMainCamera().rotation();
         Vector3f right = face.transform(new Vector3f(1, 0, 0));
         Vector3f up = face.transform(new Vector3f(0, 1, 0));
         pose.pushPose();
-        pose.translate(0, state.boundingBoxHeight / 2 + Mth.sin(t * 0.08f) * 0.05f, 0);
+        pose.translate(0, entity.getBbHeight() / 2 + Mth.sin(t * 0.08f) * 0.05f, 0);
         pose.scale(SCALE, SCALE, SCALE);
-        out.submitCustomGeometry(pose, RENDER_TYPE, (p, buf) -> {
+        PoseStack.Pose p = pose.last();
+        VertexConsumer buf = buffers.getBuffer(RENDER_TYPE);
+        {
             // The core: one larger, slowly pulsing mote at the centre.
             float core = 0.22f + spread * 0.25f + Mth.sin(t * 0.15f) * 0.03f;
             mote(p, buf, 0, 0, 0, core, right, up, (int) (255 * fade));
             for (int i = 0; i < motes; i++) {
-                float h1 = hash(state.seed, i, 1), h2 = hash(state.seed, i, 2), h3 = hash(state.seed, i, 3);
+                float h1 = hash(seed, i, 1), h2 = hash(seed, i, 2), h3 = hash(seed, i, 3);
                 float radius = spread * (0.45f + 0.55f * h1);
                 float speed = (0.05f + 0.07f * h2) * (h3 < 0.5f ? 1 : -1);
                 float angle = t * speed + h1 * Mth.TWO_PI;
                 // Each orbit is tilted differently, so the swarm reads as a ball, not a ring.
-                float tilt = (h2 - 0.5f) * 2.4f, yaw = h3 * Mth.TWO_PI;
+                float tilt = (h2 - 0.5f) * 2.4f, around = h3 * Mth.TWO_PI;
                 float ox = Mth.cos(angle) * radius, oy = Mth.sin(angle) * radius * Mth.sin(tilt), oz = Mth.sin(angle) * radius * Mth.cos(tilt);
-                float x = ox * Mth.cos(yaw) - oz * Mth.sin(yaw), z = ox * Mth.sin(yaw) + oz * Mth.cos(yaw);
+                float x = ox * Mth.cos(around) - oz * Mth.sin(around), z = ox * Mth.sin(around) + oz * Mth.cos(around);
                 float twinkle = 0.65f + 0.35f * Mth.sin(t * (0.2f + h1 * 0.3f) + i);
                 float size = (0.07f + 0.07f * h3) * (0.8f + 0.2f * twinkle);
                 mote(p, buf, x, oy, z, size, right, up, (int) (255 * twinkle * fade));
             }
-        });
+        }
         pose.popPose();
-        super.submit(state, pose, out, camera);
+        super.render(entity, yaw, partialTick, pose, buffers, light);
     }
 
     /** A camera-facing square of half-size {@code s} centred at (x, y, z). */

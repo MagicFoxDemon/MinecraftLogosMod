@@ -87,7 +87,7 @@ final class RuneUnlockGameTests {
     /** The spell emitter's page is held to the same: freeze is refused until learned. */
     static void emitterHeldToLearning(GameTestHelper h) {
         h.setBlock(EMITTER, LogosMod.SPELL_EMITTER.get().defaultBlockState().setValue(SpellEmitterBlock.FACING, Direction.EAST));
-        SpellEmitterBlockEntity emitter = (SpellEmitterBlockEntity) h.getBlockEntity(EMITTER, SpellEmitterBlockEntity.class);
+        SpellEmitterBlockEntity emitter = (SpellEmitterBlockEntity) h.getBlockEntity(EMITTER);
         emitter.setPage(SpellPages.inscribed(PageTier.CRYSTAL, "(spell :name \"旧\" :mana 5 (projectile (on-hit (damage target 1))))", null), null);
         ServerPlayer p = survivor(h);
         BlockPos pos = h.absolutePos(EMITTER);
@@ -109,7 +109,7 @@ final class RuneUnlockGameTests {
         ServerPlayer p = survivor(h);
         p.setItemInHand(InteractionHand.OFF_HAND, Books.create("冰", FREEZE));
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(LogosMod.SPELL_PAGE.get()));
-        InteractionResult refused = p.getMainHandItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND);
+        InteractionResult refused = p.getMainHandItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult();
         h.assertTrue(!SpellPages.isInscribed(p.getMainHandItem()) && refused == InteractionResult.FAIL, "the book's freeze was copied before it was learned");
         RuneKnowledge.learn(p, Unlocks.rune("freeze"));
         p.getMainHandItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND);

@@ -24,7 +24,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -126,7 +125,7 @@ public class BeamPoseScenario implements UIScenario {
                 // From the side, on a mannequin holding the pose (any caster may), with each item in hand.
                 .server("a mannequin holds the beam pose with a wand", sc -> {
                     var level = sc.player().level();
-                    Mannequin body = EntityType.MANNEQUIN.create(level);
+                    dev.logos.runtime.PossessionBody body = dev.logos.LogosMod.POSSESSION_BODY.get().create(level);
                     body.moveTo(0.5, 101, 4.5, -90, 0);
                     body.setYHeadRot(-90);
                     body.setYBodyRot(-90);
@@ -139,7 +138,7 @@ public class BeamPoseScenario implements UIScenario {
                 .ticks(8)
                 .screenshot("side_wand")
                 .server("and with a staff", sc -> {
-                    var bodies = sc.player().level().getEntitiesOfClass(Mannequin.class, new AABB(ORIGIN).inflate(8));
+                    var bodies = sc.player().level().getEntitiesOfClass(dev.logos.runtime.PossessionBody.class, new AABB(ORIGIN).inflate(8));
                     bodies.forEach(b -> b.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(LogosMod.WOOD_STAFFS.getFirst().get())));
                 })
                 .ticks(4)

@@ -41,7 +41,7 @@ public class AnchorScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() - 3.5, 0, 20)
                 .server("set three anchors and hand a nail", sc -> {
                     var p = sc.player();
-                    var level = p.level();
+                    var level = p.serverLevel();
                     Anchors.set(p, "家", level, Vec3.atBottomCenterOf(ORIGIN.offset(-3, 1, 4)));
                     Anchors.set(p, "矿洞", level, Vec3.atBottomCenterOf(ORIGIN.offset(0, 1, 7)));
                     Anchors.set(p, "二楼", level, Vec3.atBottomCenterOf(ORIGIN.offset(4, 1, 5)));

@@ -5,11 +5,11 @@ import dev.logos.net.AnchorEditPayload;
 import dev.logos.net.AnchorsPayload;
 import dev.logos.runtime.Anchors;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import dev.logos.client.port.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.client.resources.language.I18n;
@@ -81,24 +81,26 @@ final class AnchorScreens {
         }
 
         @Override
-        public boolean keyPressed(KeyEvent event) {
-            if (event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
+        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+            if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
                 confirm();
                 return true;
             }
-            return super.keyPressed(event);
+            return super.keyPressed(keyCode, scanCode, modifiers);
         }
 
         @Override
-        public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-            super.extractBackground(g, mouseX, mouseY, a);
+        public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float a) {
+        GuiGraphicsExtractor g = new GuiGraphicsExtractor(graphics);
+            super.renderBackground(graphics, mouseX, mouseY, a);
             int x = (width - W) / 2, y = height / 2 - 70;
             panel(g, x, y, W, 174);
         }
 
         @Override
-        public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-            super.extractRenderState(g, mouseX, mouseY, a);
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float a) {
+        GuiGraphicsExtractor g = new GuiGraphicsExtractor(graphics);
+            super.render(graphics, mouseX, mouseY, a);
             int x = (width - W) / 2, y = height / 2 - 70;
             g.blit(ICON, x + 8, y + 6, x + 24, y + 22, 0, 1, 0, 1);
             g.text(font, I18n.get("logos.anchor.screen.heading"), x + 28, y + 11, GOLD);
@@ -153,14 +155,16 @@ final class AnchorScreens {
         }
 
         @Override
-        public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-            super.extractBackground(g, mouseX, mouseY, a);
+        public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float a) {
+        GuiGraphicsExtractor g = new GuiGraphicsExtractor(graphics);
+            super.renderBackground(graphics, mouseX, mouseY, a);
             panel(g, (width - W) / 2, top(), W, ROWS * ROW + 40);
         }
 
         @Override
-        public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
-            super.extractRenderState(g, mouseX, mouseY, a);
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float a) {
+        GuiGraphicsExtractor g = new GuiGraphicsExtractor(graphics);
+            super.render(graphics, mouseX, mouseY, a);
             var all = ClientAnchors.all();
             int x = (width - W) / 2, y = top();
             g.blit(ICON, x + 8, y + 6, x + 24, y + 22, 0, 1, 0, 1);

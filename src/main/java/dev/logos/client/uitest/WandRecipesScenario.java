@@ -19,7 +19,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
-import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.inventory.SmithingMenu;
@@ -49,7 +48,7 @@ public final class WandRecipesScenario implements UIScenario {
 
     private static void takeResult(int slot) {
         var mc = Minecraft.getInstance();
-        mc.gameMode.handleContainerInput(mc.player.containerMenu.containerId, slot, 0, ContainerInput.PICKUP, mc.player);
+        mc.gameMode.handleInventoryMouseClick(mc.player.containerMenu.containerId, slot, 0, net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
     }
 
     @Override
@@ -71,7 +70,7 @@ public final class WandRecipesScenario implements UIScenario {
                     var mc = Minecraft.getInstance();
                     ctx.check("one sage template", mc.player.containerMenu.getSlot(0).getItem().is(LogosMod.SAGE_UPGRADE_TEMPLATE.get())
                             && mc.player.containerMenu.getSlot(0).getItem().getCount() == 1);
-                    ctx.check("template model baked", mc.getModelManager().getItemModel(LogosMod.SAGE_UPGRADE_TEMPLATE.getId())
+                    ctx.check("template model baked", mc.getModelManager().getModel(net.minecraft.client.resources.model.ModelResourceLocation.inventory(LogosMod.SAGE_UPGRADE_TEMPLATE.getId()))
                             .getClass().getSimpleName().equals("CuboidItemModelWrapper"));
                 }).screenshot("sage_template_crafting")
                 .step("take the crafted template", ctx -> takeResult(0)).ticks(5)

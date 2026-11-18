@@ -21,7 +21,7 @@ final class ValueGameTests {
     private record Values(GameTestHelper h, ServerPlayer caster) {
         @SuppressWarnings("removal")
         Values(GameTestHelper h) {
-            this(h, h.makeMockServerPlayerInLevel());
+            this(h, MockPlayers.inLevel(h));
         }
 
         Object value(String expr) {
@@ -164,7 +164,7 @@ final class ValueGameTests {
             h.assertTrue(under.y >= 0 && under.length() <= 3 + 1e-6, "a dome's inside is the room under it, got " + under);
         }
         @SuppressWarnings("removal")
-        var player = h.makeMockServerPlayerInLevel();
+        var player = MockPlayers.inLevel(h);
         var spell = Casting.compile("(field :radius 3)");
         var inst = new SpellInstance(spell, player, h.getLevel(), 1000, 1);
         var field = new dev.logos.runtime.FieldObj(spell.body().getFirst(), new Ctx(inst, h.getLevel(), c, new Vec3(0, 0, 1), null, Map.of(), 0, 0),

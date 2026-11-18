@@ -42,7 +42,7 @@ final class PageGameTests {
     private static ServerPlayer caster(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
@@ -170,7 +170,7 @@ final class PageGameTests {
     static void copyTableCopies(GameTestHelper h) {
         BlockPos at = new BlockPos(1, 2, 1);
         h.setBlock(at, LogosMod.COPY_TABLE.get());
-        CopyTableBlockEntity table = h.getBlockEntity(at, CopyTableBlockEntity.class);
+        CopyTableBlockEntity table = h.getBlockEntity(at);
         String src = "(spell :name \"抄\" :mana 10 (mark caster #c))";
         table.inputs().setItem(CopyTableBlockEntity.ORIGINAL, SpellPages.burn(SpellPages.inscribed(src, null)));
         table.inputs().setItem(CopyTableBlockEntity.BLANK, new ItemStack(PageTier.CRYSTAL.blank(), 3));
@@ -203,7 +203,7 @@ final class PageGameTests {
         var input = net.minecraft.world.item.crafting.CraftingInput.of(2, 2,
                 List.of(page.copy(), page.copy(), new ItemStack(net.minecraft.world.item.Items.LECTERN), ItemStack.EMPTY));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
-                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(LogosMod.COPY_TABLE_ITEM.get()) && out.getCount() == 1, "two pages over a lectern made " + out);
         h.succeed();
     }

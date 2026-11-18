@@ -44,7 +44,7 @@ final class WarlockGameTests {
     private static List<MerchantOffer> offers(GameTestHelper h, int level) {
         Villager v = new Villager(EntityType.VILLAGER, h.getLevel());
         var profession = h.getLevel().registryAccess().lookupOrThrow(Registries.VILLAGER_PROFESSION).getOrThrow(LogosMod.WARLOCK.getKey());
-        v.setVillagerData(v.getVillagerData().withProfession(profession).withLevel(level));
+        v.setVillagerData(v.getVillagerData().setProfession(profession.value()).setLevel(level));
         return new ArrayList<>(v.getOffers());
     }
 

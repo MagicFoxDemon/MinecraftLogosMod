@@ -19,7 +19,6 @@ import dev.logos.client.port.SubmitNodeCollector;
 import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Level;
@@ -131,7 +130,9 @@ final class AreaWeatherSky {
 
     private static void draw(Level level, Sky sky, View view, double now, PoseStack pose, SubmitNodeCollector out) {
         Vec3 ground = new Vec3(sky.x, level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(sky.x), Mth.floor(sky.z)), sky.z);
-        double clouds = level.environmentAttributes().getValue(EnvironmentAttributes.CLOUD_HEIGHT, ground);
+        // 1.21.1 keeps the cloud height on the dimension's effects; none (NaN) where it has no clouds.
+        float cloudHeight = level instanceof net.minecraft.client.multiplayer.ClientLevel client ? client.effects().getCloudHeight() : Float.NaN;
+        double clouds = Float.isNaN(cloudHeight) ? 192.33 : cloudHeight;
         Vec3 c = new Vec3(sky.x, height(ground.y, clouds, sky.radius), sky.z);
         if (view.cam().distanceTo(c) > REACH + sky.radius) return;
         float age = (float) (now - sky.born), end = sky.ended < 0 ? 0 : (float) (now - sky.ended);

@@ -46,7 +46,7 @@ final class RuneGameTests {
     private static ServerPlayer caster(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
@@ -173,7 +173,7 @@ final class RuneGameTests {
         int equipped = (zombie.getMainHandItem().is(Items.STONE) ? 1 : 0) + (husk.getMainHandItem().is(Items.STONE) ? 1 : 0);
         h.assertTrue(equipped == 1 && group.mana == 90 && p.getInventory().getItem(10).isEmpty(), "one material equips exactly one group member; selector costs two, equip eight");
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         other.getInventory().clearContent();
         p.getInventory().setItem(10, new ItemStack(Items.STONE));
         var protectedPlayer = equip(p, other, "minecraft:stone", 20, false);
@@ -307,7 +307,7 @@ final class RuneGameTests {
     static void timeStopPlayer(GameTestHelper h) {
         ServerPlayer p = caster(h);
         p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         FamiliarGameTests.forceAround(h, 1);
         var husk = mob(h, EntityType.HUSK);
         double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED);

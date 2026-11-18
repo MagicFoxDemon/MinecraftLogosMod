@@ -7,7 +7,6 @@ import javax.annotation.Nullable;
 import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.Style;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import com.lowdragmc.lowdraglib2.gui.ui.UIElementRendererRegistry;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.GraphViewLod;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextElement;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
@@ -379,7 +378,7 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
     /** Selection is circled in red chalk, the way a reader marks a figure; hovering only traces it faintly. */
     @Override
     public void drawBackgroundOverlay(GUIContext context) {
-        UIElementRendererRegistry.defaultRenderer().drawBackgroundOverlay(this, context);
+        super.drawBackgroundOverlay(context);
         if (circling == null) return;
         if (isSelected()) {
             circling.draw(context, getPositionX(), getPositionY());

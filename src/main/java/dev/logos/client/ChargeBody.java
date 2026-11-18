@@ -79,7 +79,7 @@ final class ChargeBody {
         BlockPos at = BlockPos.containing(feet.x + Math.cos(angle) * radius * scale, feet.y - .5, feet.z + Math.sin(angle) * radius * scale);
         BlockState ground = level.getBlockState(at);
         if (ground.isAir() || ground.getRenderShape() != RenderShape.MODEL) return;
-        TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getBlockStateModelSet().getParticleMaterial(ground).sprite();
+        TextureAtlasSprite sprite = Minecraft.getInstance().getBlockRenderer().getBlockModelShaper().getParticleIcon(ground);
         if (!sprite.atlasLocation().getPath().contains("blocks")) return;
         Quaternionf spin = new Quaternionf().rotateXYZ(r.nextFloat() * .08f, r.nextFloat() * .08f, r.nextFloat() * .08f);
         Quaternionf turn = new Quaternionf().rotateXYZ(r.nextFloat() * 6.3f, r.nextFloat() * 6.3f, r.nextFloat() * 6.3f);

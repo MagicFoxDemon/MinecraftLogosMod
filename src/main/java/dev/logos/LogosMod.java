@@ -913,6 +913,7 @@ public class LogosMod {
             e.register(CULTIVATION_MEDIUM);
         });
         dev.logos.port.Capabilities.register(modBus);
+        dev.logos.port.PortParticles.register(modBus);
         dev.logos.port.DataTrades.register();
         dev.logos.port.DataTrades.function("logos:random_family_book", dev.logos.item.RandomFamilyBook::pick);
         // Either half of an alchemy table answers hoppers, pipes and tanks for the whole table.

@@ -77,8 +77,10 @@ final class FxRender {
             // Item sprites point up-right (+x +y); turn that diagonal onto the heading.
             pose.mulPose(Axis.ZP.rotation(l.angle + turned - (float) (Math.PI / 4)));
             pose.scale(l.scale, l.scale, l.scale);
-            mc.getItemModelResolver().updateForTopItem(l.state, l.stack, ItemDisplayContext.NONE, level, null, e.getKey());
-            l.state.submit(pose, event.getSubmitNodeCollector(), LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
+            var stack = l.stack;
+            int seed = e.getKey();
+            event.getSubmitNodeCollector().submitDrawing(pose, (at, buffers) -> mc.getItemRenderer().renderStatic(stack, ItemDisplayContext.NONE,
+                    LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, at, buffers, level, seed));
             pose.popPose();
         }
     }
@@ -94,8 +96,6 @@ final class FxRender {
         m.setYRot(yaw);
         m.yRotO = yaw;
         if (m instanceof net.minecraft.world.entity.LivingEntity le) le.yBodyRot = le.yBodyRotO = le.yHeadRot = le.yHeadRotO = yaw;
-        var state = mc.getEntityRenderDispatcher().extractEntity(m, pt);
-        state.lightCoords = LightCoordsUtil.FULL_BRIGHT;
         float s = l.scale / Math.max(0.25f, Math.max(m.getBbHeight(), m.getBbWidth()));
         Vec3 side = new Vec3(l.heading.z, 0, -l.heading.x);
         side = side.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : side.normalize();
@@ -104,7 +104,8 @@ final class FxRender {
         pose.mulPose(new Quaternionf().rotateAxis(turned, (float) side.x, 0, (float) side.z));
         pose.scale(s, s, s);
         pose.translate(0, -m.getBbHeight() / 2, 0);
-        mc.getEntityRenderDispatcher().submit(state, cam, 0, 0, 0, pose, out);
+        // Its renderer alone: no shadow or fire for a stand-in that is not in the world.
+        out.submitDrawing(pose, (at, buffers) -> mc.getEntityRenderDispatcher().getRenderer(m).render(m, yaw, pt, at, buffers, LightCoordsUtil.FULL_BRIGHT));
         pose.popPose();
     }
 

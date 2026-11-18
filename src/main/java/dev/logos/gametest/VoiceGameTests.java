@@ -53,7 +53,7 @@ final class VoiceGameTests {
     private static ServerPlayer caster(GameTestHelper h, ItemStack holder, ItemStack... extra) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
@@ -200,7 +200,7 @@ final class VoiceGameTests {
     /** A page written with 言出法随 keeps the name it is called by, shimmers, and copies keep it. */
     static void writtenPageKeepsItsName(GameTestHelper h) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         BlockPos rel = new BlockPos(1, 2, 1);
         h.setBlock(rel, LogosMod.INSCRIPTION_TABLE.get());
         BlockPos pos = h.absolutePos(rel);

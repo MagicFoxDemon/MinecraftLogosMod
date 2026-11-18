@@ -4,7 +4,6 @@ import dev.logos.block.ManaCollectorBlock;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
-import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.RandomSource;
@@ -14,11 +13,12 @@ import net.minecraft.util.RandomSource;
  * itself. Given no motion it wanders slowly about (the air of a chunk holding mana, a spreader's
  * lid); given one, it keeps it to the end, as a mote drawn in to a collector does.
  */
-public class ManaMote extends SingleQuadParticle {
+public class ManaMote extends net.minecraft.client.particle.TextureSheetParticle {
     private static final float R = 0.45f, G = 0.9f, B = 0.86f, PEAK = 0.9f;
 
     ManaMote(ClientLevel level, double x, double y, double z, double xd, double yd, double zd, SpriteSet sprites, RandomSource random) {
-        super(level, x, y, z, sprites.get(random));
+        super(level, x, y, z);
+        setSprite(sprites.get(random));
         hasPhysics = false;
         quadSize = 0.05f + random.nextFloat() * 0.03f;
         setColor(R, G, B);
@@ -40,8 +40,8 @@ public class ManaMote extends SingleQuadParticle {
     }
 
     @Override
-    protected Layer getLayer() {
-        return Layer.TRANSLUCENT;
+    public net.minecraft.client.particle.ParticleRenderType getRenderType() {
+        return net.minecraft.client.particle.ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 
     /** Fades in over its first quarter and out over its last. */
@@ -54,7 +54,7 @@ public class ManaMote extends SingleQuadParticle {
 
     /** Lit by itself, as faint as it is. */
     @Override
-    protected int getLightCoords(float partialTick) {
+    public int getLightColor(float partialTick) {
         return 0xF000F0;
     }
 
@@ -67,8 +67,8 @@ public class ManaMote extends SingleQuadParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType options, ClientLevel level, double x, double y, double z,
-                double xd, double yd, double zd, RandomSource random) {
-            return new ManaMote(level, x, y, z, xd, yd, zd, sprites, random);
+                double xd, double yd, double zd) {
+            return new ManaMote(level, x, y, z, xd, yd, zd, sprites, level.getRandom());
         }
     }
 }

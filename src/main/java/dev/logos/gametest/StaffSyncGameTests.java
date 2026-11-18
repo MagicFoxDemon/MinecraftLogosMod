@@ -73,6 +73,7 @@ final class StaffSyncGameTests {
         ServerPlayer player = new ServerPlayer(h.getLevel().getServer(), h.getLevel(), cookie.gameProfile(), cookie.clientInformation());
         Connection connection = new Connection(PacketFlow.SERVERBOUND);
         EmbeddedChannel channel = new EmbeddedChannel(connection);
+        net.neoforged.neoforge.network.registration.NetworkRegistry.configureMockConnection(connection);
         h.getLevel().getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
         // What the player joined with (a new player's guide book) goes out now, before anything is counted.
         player.containerMenu.broadcastChanges();

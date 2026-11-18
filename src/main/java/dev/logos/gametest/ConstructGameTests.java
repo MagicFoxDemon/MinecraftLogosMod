@@ -33,7 +33,7 @@ final class ConstructGameTests {
     static ServerPlayer caster(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 16; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0); // yaw 0 faces +Z
         p.setYHeadRot(0);

@@ -3,16 +3,14 @@
   "minVersion": "0.8",
   "package": "dev.logos.mixin",
   "plugin": "dev.logos.compat.CosmeticMixinPlugin",
-  "mixins": [
-    "EnvironmentAttributeSystemMixin"
-  ],
+  "mixins": [],
   "client": [
+    "EnvironmentAttributeSystemMixin",
     "ItemInHandLayerMixin",
     "EntityRenderDispatcherMixin",
     "LevelRendererMixin",
     "ItemInHandRendererMixin",
-    "ItemStackRenderStateMixin",
-    "ItemModelResolverMixin",
+    "ItemRendererMixin",
     "CloudRendererMixin",
     "WeatherEffectRendererMixin",
     "SkyWeatherMixin",

@@ -17,12 +17,9 @@ import com.mojang.serialization.JsonOps;
 
 import dev.logos.LogosMod;
 import dev.logos.alchemy.BuffPotions;
-import dev.logos.mixin.ItemStackRenderStateAccessor;
-import dev.logos.mixin.LayerRenderStateAccessor;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -148,7 +145,7 @@ public class PotionLookScenario implements UIScenario {
             look(ctx, "no contents", new ItemStack(Items.POTION), BOTTLE);
             // The definition matches whole contents, so a Logos potion given its own colour has always been a plain bottle.
             ItemStack coloured = new ItemStack(Items.POTION);
-            coloured.set(DataComponents.POTION_CONTENTS, new PotionContents(Optional.<Holder<Potion>>of(BuffPotions.MANA_FLOW_POTION), Optional.of(0xFF0000), List.of(), Optional.empty()));
+            coloured.set(DataComponents.POTION_CONTENTS, new PotionContents(Optional.<Holder<Potion>>of(BuffPotions.MANA_FLOW_POTION), Optional.of(0xFF0000), List.of()));
             look(ctx, "a Logos potion with its own colour", coloured, BOTTLE);
             // Only the drunk bottles have a look of their own; thrown ones have always been vanilla's.
             ctx.check("a Logos splash potion is vanilla's", textures(PotionContents.createItemStack(Items.SPLASH_POTION, BuffPotions.ElementBuff.FIRE.potion))
@@ -178,13 +175,9 @@ public class PotionLookScenario implements UIScenario {
     /** The textures {@code stack} resolves to, as anything that draws it would resolve it. */
     static Set<String> textures(ItemStack stack) {
         var mc = Minecraft.getInstance();
-        var state = new ItemStackRenderState();
-        mc.getItemModelResolver().updateForTopItem(state, stack, ItemDisplayContext.GUI, mc.level, null, 0);
-        var access = (ItemStackRenderStateAccessor) state;
         Set<String> names = new TreeSet<>();
-        for (int i = 0; i < access.logos$activeLayerCount(); i++) {
-            for (var quad : ((LayerRenderStateAccessor) access.logos$layers()[i]).logos$quads())
-                names.add(quad.materialInfo().sprite().contents().name().toString());
+        for (var pass : ItemPasses.of(stack, null).passes()) {
+            for (var quad : pass.quads()) names.add(quad.getSprite().contents().name().toString());
         }
         return names;
     }

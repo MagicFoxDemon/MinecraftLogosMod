@@ -22,7 +22,20 @@ import org.joml.Matrix4f;
  * collector can be filled during a frame and drawn at its end, as 26.1 draws what is submitted.
  */
 public final class BufferSubmitNodeCollector implements SubmitNodeCollector {
-    private record Submission(int order, RenderType type, PoseStack.Pose pose, CustomGeometryRenderer renderer) {}
+    private record Submission(int order, PoseStack.Pose pose, @Nullable RenderType type, @Nullable CustomGeometryRenderer renderer,
+            @Nullable Drawing drawing) {
+        void draw(MultiBufferSource buffers) {
+            if (drawing != null) drawing.draw(at(pose), buffers);
+            else renderer.render(pose, buffers.getBuffer(type));
+        }
+    }
+
+    private static PoseStack at(PoseStack.Pose pose) {
+        PoseStack stack = new PoseStack();
+        stack.last().pose().set(pose.pose());
+        stack.last().normal().set(pose.normal());
+        return stack;
+    }
 
     private final List<Submission> submissions = new ArrayList<>();
     private final List<Runnable> nameTags = new ArrayList<>();
@@ -33,7 +46,12 @@ public final class BufferSubmitNodeCollector implements SubmitNodeCollector {
         return new OrderedSubmitNodeCollector() {
             @Override
             public void submitCustomGeometry(PoseStack poseStack, RenderType type, CustomGeometryRenderer renderer) {
-                submissions.add(new Submission(order, type, poseStack.last().copy(), renderer));
+                submissions.add(new Submission(order, poseStack.last().copy(), type, renderer, null));
+            }
+
+            @Override
+            public void submitDrawing(PoseStack poseStack, Drawing drawing) {
+                submissions.add(new Submission(order, poseStack.last().copy(), null, null, drawing));
             }
 
             @Override
@@ -46,7 +64,12 @@ public final class BufferSubmitNodeCollector implements SubmitNodeCollector {
 
     @Override
     public void submitCustomGeometry(PoseStack poseStack, RenderType type, CustomGeometryRenderer renderer) {
-        submissions.add(new Submission(0, type, poseStack.last().copy(), renderer));
+        submissions.add(new Submission(0, poseStack.last().copy(), type, renderer, null));
+    }
+
+    @Override
+    public void submitDrawing(PoseStack poseStack, Drawing drawing) {
+        submissions.add(new Submission(0, poseStack.last().copy(), null, null, drawing));
     }
 
     /** A name tag over {@code attachment}, facing the camera, as an entity's is drawn. */
@@ -71,6 +94,37 @@ public final class BufferSubmitNodeCollector implements SubmitNodeCollector {
         });
     }
 
+    /**
+     * A collector that draws each submission into {@code buffers} as it comes, for code that 1.21.1 hands a buffer
+     * source (entity layers, first-person arms): what 26.1 submits there is drawn with that entity anyway.
+     */
+    public static SubmitNodeCollector immediate(MultiBufferSource buffers) {
+        return new SubmitNodeCollector() {
+            @Override
+            public OrderedSubmitNodeCollector order(int order) {
+                return this;
+            }
+
+            @Override
+            public void submitCustomGeometry(PoseStack poseStack, RenderType type, CustomGeometryRenderer renderer) {
+                renderer.render(poseStack.last(), buffers.getBuffer(type));
+            }
+
+            @Override
+            public void submitDrawing(PoseStack poseStack, Drawing drawing) {
+                drawing.draw(at(poseStack.last()), buffers);
+            }
+
+            @Override
+            public void submitNameTag(PoseStack poseStack, @Nullable Vec3 attachment, int offset, Component name, boolean seeThrough,
+                    int light, double distanceSq, CameraRenderState camera) {
+                BufferSubmitNodeCollector tags = new BufferSubmitNodeCollector();
+                tags.submitNameTag(poseStack, attachment, offset, name, seeThrough, light, distanceSq, camera);
+                tags.flush(buffers);
+            }
+        };
+    }
+
     public boolean isEmpty() {
         return submissions.isEmpty() && nameTags.isEmpty();
     }
@@ -78,7 +132,7 @@ public final class BufferSubmitNodeCollector implements SubmitNodeCollector {
     /** Draws what was submitted into {@code buffers}, then forgets it. The caller ends the batches. */
     public void flush(MultiBufferSource buffers) {
         submissions.sort(Comparator.comparingInt(Submission::order));
-        for (Submission s : submissions) s.renderer().render(s.pose(), buffers.getBuffer(s.type()));
+        for (Submission s : submissions) s.draw(buffers);
         submissions.clear();
         nameTagBuffers = buffers;
         for (Runnable tag : nameTags) tag.run();

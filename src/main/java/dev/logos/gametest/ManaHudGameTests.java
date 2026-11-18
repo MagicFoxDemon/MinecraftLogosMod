@@ -48,7 +48,7 @@ final class ManaHudGameTests {
     /** A player with 1000 of 1000 mana holding {@code held}. Mock players only tick when told to: see {@link #ticking}. */
     private static ServerPlayer holder(GameTestHelper h, ItemStack held) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1000;
         m.trace = false;

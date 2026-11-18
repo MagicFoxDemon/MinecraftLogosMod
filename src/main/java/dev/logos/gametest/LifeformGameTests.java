@@ -96,9 +96,9 @@ final class LifeformGameTests {
             if (!fed[0]) {
                 h.assertTrue(lf.isDormant(), "out of mana it should go dormant");
                 h.assertTrue(!lf.isNoGravity(), "and fall");
-                lf.interact(p, InteractionHand.MAIN_HAND, lf.position());
+                lf.interact(p, InteractionHand.MAIN_HAND);
                 h.assertTrue(lf.isDormant(), "25 mana is below its minimum of 50: still dormant");
-                lf.interact(p, InteractionHand.MAIN_HAND, lf.position());
+                lf.interact(p, InteractionHand.MAIN_HAND);
                 h.assertTrue(!lf.isDormant() && lf.isNoGravity(), "fed to 50 it should wake and rise");
                 h.assertTrue(p.getMainHandItem().getCount() == 1, "each feeding uses one shard");
                 fed[0] = true;

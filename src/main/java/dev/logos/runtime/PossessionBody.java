@@ -25,6 +25,8 @@ import net.minecraft.world.level.Level;
 public final class PossessionBody extends LivingEntity {
     private static final EntityDataAccessor<Optional<UUID>> OWNER = SynchedEntityData.defineId(PossessionBody.class, EntityDataSerializers.OPTIONAL_UUID);
     private final NonNullList<ItemStack> armour = NonNullList.withSize(4, ItemStack.EMPTY);
+    /** What is put in its hands, as 26.1's mannequin holds it (and drawn posed, see PossessionBodyRenderer). */
+    private final NonNullList<ItemStack> hands = NonNullList.withSize(2, ItemStack.EMPTY);
 
     public PossessionBody(EntityType<? extends PossessionBody> type, Level level) {
         super(type, level);
@@ -52,12 +54,17 @@ public final class PossessionBody extends LivingEntity {
 
     @Override
     public ItemStack getItemBySlot(EquipmentSlot slot) {
-        return slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR ? armour.get(slot.getIndex()) : ItemStack.EMPTY;
+        return switch (slot.getType()) {
+            case HUMANOID_ARMOR -> armour.get(slot.getIndex());
+            case HAND -> hands.get(slot.getIndex());
+            default -> ItemStack.EMPTY;
+        };
     }
 
     @Override
     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
         if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) armour.set(slot.getIndex(), stack);
+        else if (slot.getType() == EquipmentSlot.Type.HAND) hands.set(slot.getIndex(), stack);
     }
 
     @Override

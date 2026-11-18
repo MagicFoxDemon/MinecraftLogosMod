@@ -7,7 +7,6 @@ import java.util.Map;
 import org.joml.Vector3f;
 import javax.annotation.Nullable;
 
-import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -132,29 +131,44 @@ final class ItemSurface {
         return s;
     }
 
+    /** 1.21.1 bakes a quad as four vertices of the block format, eight ints each: the position first, the texture uv at 4. */
+    private static Vector3f position(int[] vertices, int i) {
+        int o = i * 8;
+        return new Vector3f(Float.intBitsToFloat(vertices[o]), Float.intBitsToFloat(vertices[o + 1]), Float.intBitsToFloat(vertices[o + 2]));
+    }
+
+    private static float u(int[] vertices, int i) {
+        return Float.intBitsToFloat(vertices[i * 8 + 4]);
+    }
+
+    private static float v(int[] vertices, int i) {
+        return Float.intBitsToFloat(vertices[i * 8 + 5]);
+    }
+
     private static @Nullable ItemSurface build(List<BakedQuad> quads) {
         FloatList all = new FloatList(), edge = new FloatList();
         float total = 0, edgeTotal = 0;
         Vector3f e1 = new Vector3f(), e2 = new Vector3f(), n = new Vector3f(), p0 = new Vector3f();
         for (BakedQuad q : quads) {
-            p0.set(q.position0());
-            new Vector3f(q.position1()).sub(p0, e1);
-            new Vector3f(q.position3()).sub(p0, e2);
+            int[] vs = q.getVertices();
+            p0.set(position(vs, 0));
+            position(vs, 1).sub(p0, e1);
+            position(vs, 3).sub(p0, e2);
             e1.cross(e2, n);
             float area = n.length();
             if (area < 1e-8f) continue;
             n.div(area);
             // Normals point outwards, the way the quad was baked to face.
-            var dir = new Vector3f(q.direction().getStepX(), q.direction().getStepY(), q.direction().getStepZ());
+            var dir = new Vector3f(q.getDirection().getStepX(), q.getDirection().getStepY(), q.getDirection().getStepZ());
             if (n.dot(dir) < 0) n.negate();
-            TextureAtlasSprite sprite = q.materialInfo().sprite();
+            TextureAtlasSprite sprite = q.getSprite();
             SpriteContents contents = sprite.contents();
-            float su0 = texel(UVPair.unpackU(q.packedUV0()), sprite.getU0(), sprite.getU1(), contents.width());
-            float sv0 = texel(UVPair.unpackV(q.packedUV0()), sprite.getV0(), sprite.getV1(), contents.height());
-            float su1 = texel(UVPair.unpackU(q.packedUV1()), sprite.getU0(), sprite.getU1(), contents.width());
-            float sv1 = texel(UVPair.unpackV(q.packedUV1()), sprite.getV0(), sprite.getV1(), contents.height());
-            float su3 = texel(UVPair.unpackU(q.packedUV3()), sprite.getU0(), sprite.getU1(), contents.width());
-            float sv3 = texel(UVPair.unpackV(q.packedUV3()), sprite.getV0(), sprite.getV1(), contents.height());
+            float su0 = texel(u(vs, 0), sprite.getU0(), sprite.getU1(), contents.width());
+            float sv0 = texel(v(vs, 0), sprite.getV0(), sprite.getV1(), contents.height());
+            float su1 = texel(u(vs, 1), sprite.getU0(), sprite.getU1(), contents.width());
+            float sv1 = texel(v(vs, 1), sprite.getV0(), sprite.getV1(), contents.height());
+            float su3 = texel(u(vs, 3), sprite.getU0(), sprite.getU1(), contents.width());
+            float sv3 = texel(v(vs, 3), sprite.getV0(), sprite.getV1(), contents.height());
             int ns = Mth.clamp(Math.round(Math.max(Math.abs(su1 - su0), Math.abs(sv1 - sv0))), 1, MAX_CELLS);
             int nt = Mth.clamp(Math.round(Math.max(Math.abs(su3 - su0), Math.abs(sv3 - sv0))), 1, MAX_CELLS);
             boolean isEdge = Math.abs(n.z) < .5f;

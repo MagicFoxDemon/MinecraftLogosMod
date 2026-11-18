@@ -98,13 +98,13 @@ public class ManaHudScenario implements UIScenario {
                 .step("let it move again", ctx -> ManaHudLayer.holdSlide(null))
                 .step("top left, with the recipe and tutorial toasts cleared from the top right", ctx -> {
                     corner(LogosConfig.Corner.TOP_LEFT, 0, 0);
-                    Minecraft.getInstance().getToastManager().clear();
+                    Minecraft.getInstance().getToasts().clear();
                 })
                 .ticks(2)
                 .screenshot("corner_top_left")
                 .step("top right", ctx -> {
                     corner(LogosConfig.Corner.TOP_RIGHT, 0, 0);
-                    Minecraft.getInstance().getToastManager().clear();
+                    Minecraft.getInstance().getToasts().clear();
                 })
                 .ticks(2)
                 .screenshot("corner_top_right")

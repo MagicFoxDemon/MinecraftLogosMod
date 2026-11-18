@@ -18,7 +18,7 @@ final class ProjectileImpactGameTests {
 
     @SuppressWarnings("removal")
     private static Flight flight(GameTestHelper h, double x, double speed, int life, int pierce) {
-        var player = h.makeMockServerPlayerInLevel();
+        var player = MockPlayers.inLevel(h);
         var spell = Casting.compile("(projectile (on-hit (damage target 1 fire)))");
         var inst = new SpellInstance(spell, player, h.getLevel(), 1000, 1);
         inst.objects = 1;

@@ -23,7 +23,7 @@ final class GuideGameTests {
     /** Joining hands the guide over, in the hotbar's last slot rather than the hand; joining again, even without it, does not. */
     static void givenOnce(GameTestHelper h) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         h.assertTrue(books(p) == 1, "a player joining for the first time holds " + books(p) + " guides");
         h.assertTrue(p.getData(LogosMod.GUIDE_GIVEN.get()), "the player is not marked as handed the guide");
         h.assertTrue(p.getInventory().getItem(8).is(LogosMod.GUIDE_BOOK.get()), "the guide is not in the hotbar's last slot");
@@ -42,7 +42,7 @@ final class GuideGameTests {
         LogosConfig.GIVE_GUIDE_ON_FIRST_JOIN.set(false);
         try {
             @SuppressWarnings("removal")
-            ServerPlayer joined = h.makeMockServerPlayerInLevel();
+            ServerPlayer joined = MockPlayers.inLevel(h);
             p = joined;
             h.assertTrue(books(p) == 0 && !p.getData(LogosMod.GUIDE_GIVEN.get()), "the guide was handed over with the gift turned off");
         } finally {
@@ -57,7 +57,7 @@ final class GuideGameTests {
     static void recipe(GameTestHelper h) {
         CraftingInput input = CraftingInput.of(2, 1, List.of(new ItemStack(Items.BOOK), new ItemStack(Items.LAPIS_LAZULI)));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
-                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(LogosMod.GUIDE_BOOK.get()), "a book and lapis made " + out);
         h.succeed();
     }

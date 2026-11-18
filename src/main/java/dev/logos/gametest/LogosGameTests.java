@@ -587,18 +587,19 @@ public final class LogosGameTests {
     /**
      * A test in {@code logos:empty}, an air-only structure: its size keeps neighbouring tests apart, as the padding
      * around each test does in later versions. 400 ticks: polled tests finish as soon as they pass; the headroom is for
-     * a loaded machine.
+     * a loaded machine. With sky access: a roof would cover the whole structure (26.1's tests stand on a one-block
+     * structure, whose roof covers nothing), and rain, sunlight and lightning need the sky.
      */
     private static TestFunction test(String batch, String name) {
         return new TestFunction(LogosMod.MODID + "_" + batch, LogosMod.MODID + "." + name, LogosMod.MODID + ":empty",
-                Rotation.NONE, 400, 0, true, false, 1, 1, false, FUNCTIONS.get(name));
+                Rotation.NONE, 400, 0, true, false, 1, 1, true, FUNCTIONS.get(name));
     }
 
     // ---- fixtures ----------------------------------------------------------------------------
 
     private static ServerPlayer caster(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 20; z++) h.setBlock(x, 1, z, Blocks.STONE);
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0); // yaw 0 faces +Z
         p.setYHeadRot(0);

@@ -7,7 +7,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
 /** What the form effect scenes (FORM_VFX.md: pillar burst, mana tornado, surface aura) share: the viewport, the ground they play on, moving the player. */
@@ -24,7 +23,7 @@ final class FormScenes {
         mc.options.hideGui = true;
         mc.options.setCameraType(CameraType.FIRST_PERSON);
         var w = mc.getWindow(); w.setWindowed(1280, 720); w.setWidth(1280); w.setHeight(720);
-        mc.getMainRenderTarget().resize(1280, 720); mc.gameRenderer.resize(1280, 720); mc.resizeGui();
+        mc.getMainRenderTarget().resize(1280, 720, Minecraft.ON_OSX); mc.gameRenderer.resize(1280, 720); mc.resizeDisplay();
         mc.options.fov().set(70); mc.options.renderDistance().set(8); mc.options.broadcastOptions();
         return hide;
     }
@@ -49,7 +48,7 @@ final class FormScenes {
     static void teleport(ServerPlayer player, Vec3 pos, float yaw, float pitch) {
         ServerLevel level = player.serverLevel();
         level.getChunk(BlockPos.containing(pos));
-        player.teleport(new TeleportTransition(level, pos, Vec3.ZERO, yaw, pitch, TeleportTransition.DO_NOTHING));
+        player.teleportTo(level, pos.x, pos.y, pos.z, yaw, pitch);
     }
 
     /** Puts the player at {@code from}, looking at {@code to}. */

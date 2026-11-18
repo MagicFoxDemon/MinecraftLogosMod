@@ -1,5 +1,5 @@
 {
-  "parent": "minecraft:block/block",
+  "parent": "minecraft:builtin/entity",
   "textures": {
     "particle": "minecraft:block/dark_oak_planks"
   },

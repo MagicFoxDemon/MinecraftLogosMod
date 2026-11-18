@@ -14,7 +14,7 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Husk;
-import net.minecraft.world.entity.player.Input;
+import dev.logos.port.PlayerInputs.Input;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -30,12 +30,12 @@ final class FamiliarGameTests {
     static ServerPlayer master(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(1.5, 2, 1.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         p.setGameMode(GameType.SURVIVAL);
         // A mock connection never reports a loaded client, and such players take no damage at all.
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         // Mods run alongside may hand a new player starter items (Touhou Little Maid: a soul slab, its guide): start empty-handed.
         p.getInventory().clearContent();
         PlayerMagic m = PlayerMagic.of(p);
@@ -242,8 +242,8 @@ final class FamiliarGameTests {
 
     @SuppressWarnings("removal")
     private static ServerPlayer stranger(GameTestHelper h) {
-        ServerPlayer o = h.makeMockServerPlayerInLevel();
-        o.connection.markClientLoaded();
+        ServerPlayer o = MockPlayers.inLevel(h);
+        MockPlayers.loaded(o);
         return o;
     }
 
@@ -257,9 +257,9 @@ final class FamiliarGameTests {
         ServerPlayer other = stranger(h);
         h.assertTrue(!dev.logos.runtime.FamiliarRiding.mayMount(v, other), "only its master may ride it");
         h.assertTrue(dev.logos.runtime.FamiliarRiding.mayMount(v, p), "its master may ride it");
-        h.assertTrue(p.startRiding(v, false, true), "mounting failed");
+        h.assertTrue(p.startRiding(v, false), "mounting failed");
         h.assertTrue(v.getControllingPassenger() == p, "its master should steer it, controller " + v.getControllingPassenger());
-        h.assertTrue(!other.startRiding(v, false, true), "a second rider must not fit");
+        h.assertTrue(!other.startRiding(v, false), "a second rider must not fit");
         p.stopRiding();
         h.succeed();
     }
@@ -272,9 +272,9 @@ final class FamiliarGameTests {
         var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
         ServerPlayer partner = stranger(h), third = stranger(h);
         h.assertTrue(!dev.logos.runtime.FamiliarRiding.mayMount(dragon, partner), "the companion may only board behind its master");
-        h.assertTrue(p.startRiding(dragon, false, true), "the master could not mount the dragon");
-        h.assertTrue(dev.logos.runtime.FamiliarRiding.mayMount(dragon, partner) && partner.startRiding(dragon, false, true), "the companion could not board");
-        h.assertTrue(!dev.logos.runtime.FamiliarRiding.mayMount(dragon, third) && !third.startRiding(dragon, false, true), "a third rider must not fit");
+        h.assertTrue(p.startRiding(dragon, false), "the master could not mount the dragon");
+        h.assertTrue(dev.logos.runtime.FamiliarRiding.mayMount(dragon, partner) && partner.startRiding(dragon, false), "the companion could not board");
+        h.assertTrue(!dev.logos.runtime.FamiliarRiding.mayMount(dragon, third) && !third.startRiding(dragon, false), "a third rider must not fit");
         dragon.positionRider(p);
         dragon.positionRider(partner);
         double apart = p.position().distanceTo(partner.position());
@@ -299,10 +299,10 @@ final class FamiliarGameTests {
         forceAround(h, 2);
         var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
         dragon.moveTo(p.getX(), p.getY() + 60, p.getZ(), 0, 0);
-        h.assertTrue(p.startRiding(dragon, false, true), "the master should mount the dragon");
+        h.assertTrue(p.startRiding(dragon, false), "the master should mount the dragon");
         dragon.positionRider(p);
         p.setXRot(60); // looking down must not defeat the climb key
-        p.setLastClientInput(new Input(forward, false, false, false, true, false, false));
+        dev.logos.port.PlayerInputs.set(p, new Input(forward, false, false, false, true, false, false));
         double[] startY = {dragon.getY()};
         boolean[] descending = {false};
         h.succeedWhen(() -> {
@@ -312,10 +312,10 @@ final class FamiliarGameTests {
                 startY[0] = dragon.getY();
                 descending[0] = true;
                 p.setXRot(-60); // looking up must not defeat the descend key
-                p.setLastClientInput(new Input(forward, false, false, false, false, false, true));
+                dev.logos.port.PlayerInputs.set(p, new Input(forward, false, false, false, false, false, true));
             }
             h.assertTrue(dragon.getY() < startY[0] - 2, "holding sprint should descend, forward=" + forward);
-            p.setLastClientInput(Input.EMPTY);
+            dev.logos.port.PlayerInputs.set(p, Input.EMPTY);
         });
     }
 
@@ -325,7 +325,7 @@ final class FamiliarGameTests {
         forceAround(h, 2);
         var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
         dragon.moveTo(p.getX(), p.getY() + 60, p.getZ(), 180, 0);
-        h.assertTrue(p.startRiding(dragon, false, true), "the master should mount the dragon");
+        h.assertTrue(p.startRiding(dragon, false), "the master should mount the dragon");
         dragon.positionRider(p);
         p.setYRot(0);
         p.setXRot(0);
@@ -354,14 +354,14 @@ final class FamiliarGameTests {
                 h.assertTrue(drift < 2, "ridden with no key held it drifted " + drift + " blocks in two seconds");
                 held[0] = dragon.position();
                 flying[0] = true;
-                p.setLastClientInput(new Input(true, false, false, false, false, false, false));
+                dev.logos.port.PlayerInputs.set(p, new Input(true, false, false, false, false, false, false));
             }
             // On the move it glides: not in a sitting phase (hovering is one), whose wings beat hard and fast.
             var flyingPhase = dragon.getPhaseManager().getCurrentPhase();
             h.assertTrue(!flyingPhase.isSitting(), "flying forward it should glide, not stay in " + flyingPhase.getPhase());
             Vec3 moved = dragon.position().subtract(held[0]);
             h.assertTrue(moved.z > 10 && Math.abs(moved.x) < 3, "holding forward it should fly where its rider looks (+z), moved " + moved);
-            p.setLastClientInput(Input.EMPTY);
+            dev.logos.port.PlayerInputs.set(p, Input.EMPTY);
             dragon.discard();
         });
     }

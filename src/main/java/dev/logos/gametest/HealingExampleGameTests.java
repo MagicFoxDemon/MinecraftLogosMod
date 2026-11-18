@@ -16,7 +16,7 @@ final class HealingExampleGameTests {
     private HealingExampleGameTests() {}
 
     private static ServerPlayer player(GameTestHelper h, double z) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 at = h.absoluteVec(new Vec3(4.5, 2, z));
         p.moveTo(at.x, at.y, at.z, 0, 0);
         p.setYHeadRot(0);

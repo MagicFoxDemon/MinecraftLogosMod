@@ -7,11 +7,10 @@ import java.util.List;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import javax.annotation.Nullable;
-import com.mojang.blaze3d.ProjectionType;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import dev.logos.LogosMod;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -36,14 +35,14 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 public final class ShaderPackOverlay {
     private record Submit(PoseStack.Pose pose, RenderType type, SubmitNodeCollector.CustomGeometryRenderer renderer) {}
     /** The projection and model-view Iris draws the first-person hand with, apart from the level's. */
-    private record HandView(GpuBufferSlice projection, ProjectionType type, Matrix4f modelView) {}
+    private record HandView(Matrix4f projection, VertexSorting sorting, Matrix4f modelView) {}
 
     private static final boolean IRIS = ModList.get().isLoaded("iris");
     private static final List<Submit> KEPT = new ArrayList<>();
     /** Kept apart from {@link #KEPT}: entities, and their items, are submitted before {@link #begin}. */
     private static final List<Submit> ITEMS = new ArrayList<>(), HAND = new ArrayList<>();
     private static @Nullable HandView hand;
-    /** Between the level's opaque blocks and the overlay; items drawn elsewhere (an inventory's player) are not kept. */
+    /** Between the start of the level (its sky) and the overlay; items drawn elsewhere (an inventory's player) are not kept. */
     private static boolean inLevel;
     private static MultiBufferSource.BufferSource buffers;
 
@@ -66,9 +65,7 @@ public final class ShaderPackOverlay {
     public static SubmitNodeCollector item(SubmitNodeCollector out, boolean firstPerson) {
         if (!IRIS || !inLevel || !Bridge.shaderPackInUse() || Bridge.shadowPass()) return out;
         if (!firstPerson) return keeping(out, ITEMS);
-        GpuBufferSlice projection = RenderSystem.getProjectionMatrixBuffer();
-        if (projection == null) return out;
-        hand = new HandView(projection, RenderSystem.getProjectionType(), new Matrix4f(RenderSystem.getModelViewMatrix()));
+        hand = new HandView(new Matrix4f(RenderSystem.getProjectionMatrix()), RenderSystem.getVertexSorting(), new Matrix4f(RenderSystem.getModelViewMatrix()));
         return keeping(out, HAND);
     }
 
@@ -91,7 +88,9 @@ public final class ShaderPackOverlay {
     }
 
     @SubscribeEvent
-    static void onOpaqueBlocks(RenderLevelStageEvent.AfterOpaqueBlocks event) {
+    static void onLevelStart(RenderLevelStageEvent event) {
+        // The first stage 1.21.1 posts with a shader pack on too: the sky, before the level's entities.
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
         ITEMS.clear();
         HAND.clear();
         inLevel = true;
@@ -106,12 +105,14 @@ public final class ShaderPackOverlay {
         render(KEPT);
         if (hand != null && !HAND.isEmpty()) {
             RenderSystem.backupProjectionMatrix();
-            RenderSystem.setProjectionMatrix(hand.projection(), hand.type());
+            RenderSystem.setProjectionMatrix(hand.projection(), hand.sorting());
             Matrix4fStack modelView = RenderSystem.getModelViewStack();
             modelView.pushMatrix();
             modelView.set(hand.modelView());
+            RenderSystem.applyModelViewMatrix();
             render(HAND);
             modelView.popMatrix();
+            RenderSystem.applyModelViewMatrix();
             RenderSystem.restoreProjectionMatrix();
         }
         KEPT.clear();

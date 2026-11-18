@@ -59,7 +59,7 @@ final class LifeformSpawnEggGameTests {
                 ItemStack eggs = new ItemStack(LogosMod.MANA_LIFEFORM_SPAWN_EGGS.get(level - 1).get(), 2);
                 eggs.set(DataComponents.CUSTOM_NAME, Component.literal("Lifeform " + level));
                 p.setItemInHand(InteractionHand.MAIN_HAND, eggs);
-                h.assertTrue(SpawnEggItem.spawnsEntity(eggs, LogosMod.MANA_LIFEFORM.get()), "native egg entity data expected");
+                h.assertTrue(((SpawnEggItem) eggs.getItem()).spawnsEntity(eggs, LogosMod.MANA_LIFEFORM.get()), "native egg entity data expected");
                 h.assertTrue(place(h, p) == InteractionResult.SUCCESS && eggs.getCount() == 1, "survival must spend one level " + level + " egg");
                 ManaLifeform lf = guardian(h, p);
                 full(h, lf, level);

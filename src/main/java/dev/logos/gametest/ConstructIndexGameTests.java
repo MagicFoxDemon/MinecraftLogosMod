@@ -22,7 +22,7 @@ import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -289,7 +289,7 @@ final class ConstructIndexGameTests {
         ServerLevel nether = level.getServer().getLevel(Level.NETHER);
         h.assertTrue(nether != null, "the test server has no Nether");
         ConstructEntity traveller = raise(h, p, WALL, spot);
-        var arrived = traveller.teleport(new TeleportTransition(nether, Vec3.atCenterOf(spot), Vec3.ZERO, 0, 0, TeleportTransition.DO_NOTHING));
+        var arrived = traveller.changeDimension(new DimensionTransition(nether, Vec3.atCenterOf(spot), Vec3.ZERO, 0, 0, DimensionTransition.DO_NOTHING));
         h.assertTrue(arrived instanceof ConstructEntity, "the wall did not change dimension: " + arrived);
         h.assertTrue(traveller.isRemoved(), "the old wall stayed behind");
         assertGone(h, level, on, "gone to another dimension");

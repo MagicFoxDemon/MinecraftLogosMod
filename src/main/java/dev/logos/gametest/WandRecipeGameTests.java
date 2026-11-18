@@ -39,7 +39,7 @@ final class WandRecipeGameTests {
     private static ItemStack craft(GameTestHelper h, List<ItemStack> stacks) {
         var input = grid(stacks);
         return h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
-                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
     }
 
     private static ItemStack equipped(GameTestHelper h, WandItem item) {
@@ -131,7 +131,7 @@ final class WandRecipeGameTests {
 
     @SuppressWarnings("removal")
     static void smithing(GameTestHelper h) {
-        var player = h.makeMockServerPlayerInLevel();
+        var player = MockPlayers.inLevel(h);
         for (boolean staff : new boolean[] {false, true}) {
             ItemStack base = equipped(h, staff ? LogosMod.FIRMAMENT_STAFF.get() : LogosMod.MASTER_WAND.get());
             var menu = new SmithingMenu(1, player.getInventory());
@@ -161,7 +161,7 @@ final class WandRecipeGameTests {
         h.assertTrue(craft(h, List.of(new ItemStack(LogosMod.ADEPT_WAND.get()), new ItemStack(Items.NETHER_STAR))).isEmpty(), "old recipe skips the chalk tier");
         h.assertTrue(craft(h, List.of(new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()), new ItemStack(LogosMod.ECHO_TINCTURE.get()), new ItemStack(Items.IRON_INGOT))).isEmpty(), "a wood wand skipped crystal");
         for (String id : List.of("principle_wand", "principle_staff")) {
-            h.assertTrue(h.getLevel().getRecipeManager().byKey(ResourceKey.create(Registries.RECIPE, ResourceLocation.fromNamespaceAndPath("logos", id))).isEmpty(), "creative tier has a survival recipe");
+            h.assertTrue(h.getLevel().getRecipeManager().byKey(ResourceLocation.fromNamespaceAndPath("logos", id)).isEmpty(), "creative tier has a survival recipe");
         }
         h.succeed();
     }

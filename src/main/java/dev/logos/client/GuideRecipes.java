@@ -3,38 +3,18 @@ package dev.logos.client;
 import java.util.ArrayList;
 import java.util.List;
 
-import dev.logos.LogosMod;
+import dev.logos.client.port.ContextMap;
+import dev.logos.client.port.RecipeDisplay;
+import dev.logos.client.port.SlotDisplayContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.crafting.RecipeMap;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.display.RecipeDisplay;
-import net.minecraft.world.item.crafting.display.SlotDisplayContext;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.RecipesReceivedEvent;
 
-/** The crafting and smithing recipes the server sent (1.21.1 sends them all), for 逻各斯手记 to draw. */
-@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
+/** The crafting and smithing recipes the client knows (1.21.1 sends them all), for 逻各斯手记 to draw. */
 public final class GuideRecipes {
-    private static RecipeMap recipes = RecipeMap.EMPTY;
-
     private GuideRecipes() {}
 
-    @SubscribeEvent
-    static void onReceived(RecipesReceivedEvent event) {
-        recipes = event.getRecipeMap();
-    }
-
-    @SubscribeEvent
-    static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
-        recipes = RecipeMap.EMPTY;
-    }
-
-    /** What the recipes are drawn with: the level's registries and fuels; null outside a world. */
+    /** What the recipes are drawn with: the level's registries; null outside a world. */
     static @javax.annotation.Nullable ContextMap context() {
         var level = Minecraft.getInstance().level;
         return level == null ? null : SlotDisplayContext.fromLevel(level);
@@ -42,11 +22,13 @@ public final class GuideRecipes {
 
     /** How every crafting and smithing recipe that makes {@code item} is shown, in the order the server sent them. */
     static List<RecipeDisplay> making(Item item) {
+        var level = Minecraft.getInstance().level;
         ContextMap context = context();
         List<RecipeDisplay> out = new ArrayList<>();
-        if (context == null) return out;
-        for (var holder : recipes.byType(RecipeType.CRAFTING)) keep(holder.value().display(), item, context, out);
-        for (var holder : recipes.byType(RecipeType.SMITHING)) keep(holder.value().display(), item, context, out);
+        if (level == null || context == null) return out;
+        var recipes = level.getRecipeManager();
+        for (var holder : recipes.getAllRecipesFor(RecipeType.CRAFTING)) keep(RecipeDisplay.of(holder.value(), context.registries()), item, context, out);
+        for (var holder : recipes.getAllRecipesFor(RecipeType.SMITHING)) keep(RecipeDisplay.of(holder.value(), context.registries()), item, context, out);
         return out;
     }
 

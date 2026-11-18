@@ -34,7 +34,7 @@ final class ManaFieldClient {
             ManaField.clientForgetBeyond(mc.level, mc.player.chunkPosition(), mc.options.getEffectiveRenderDistance() + 1);
         }
         RandomSource random = mc.level.getRandom();
-        var eye = mc.gameRenderer.getMainCamera().position();
+        var eye = mc.gameRenderer.getMainCamera().getPosition();
         for (int i = 0; i < TRIES; i++) {
             double x = eye.x + (random.nextDouble() * 2 - 1) * REACH;
             // Mostly about head height and above, where they are seen; little below the feet.

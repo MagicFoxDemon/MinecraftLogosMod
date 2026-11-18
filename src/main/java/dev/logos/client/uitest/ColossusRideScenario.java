@@ -50,7 +50,7 @@ public class ColossusRideScenario implements UIScenario {
                     for (var m : Familiars.of(p)) if (m instanceof AlchemicalColossus c) colossus = c;
                 })
                 .ticks(70)
-                .server("ask to be carried", sc -> colossus.interact(sc.player(), InteractionHand.MAIN_HAND, colossus.position()))
+                .server("ask to be carried", sc -> colossus.interact(sc.player(), InteractionHand.MAIN_HAND))
                 .ticks(50)
                 .step("watch from behind", ctx -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK))
                 .ticks(5)

@@ -27,9 +27,9 @@ final class PlayerRefusalGameTests {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         FamiliarGameTests.forceAround(h, 1);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(GameType.SURVIVAL);
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         Vec3 pos = h.absoluteVec(new Vec3(0.5, 2, 0.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         var pig = h.spawn(EntityType.PIG, new BlockPos(6, 2, 6));

@@ -10,7 +10,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.logos.client.WandTips;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
-import dev.logos.client.port.SubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -19,13 +19,14 @@ import net.minecraft.world.item.ItemStack;
 @Mixin(ItemInHandRenderer.class)
 abstract class ItemInHandRendererMixin {
     @Inject(method = "renderHandsWithItems", at = @At("HEAD"))
-    private void logos$handsBegin(float frameInterp, PoseStack poseStack, SubmitNodeCollector collector, LocalPlayer player, int light, CallbackInfo ci) {
+    private void logos$handsBegin(float frameInterp, PoseStack poseStack, MultiBufferSource.BufferSource buffers, LocalPlayer player, int light,
+            CallbackInfo ci) {
         WandTips.beginHands(poseStack.last().pose());
     }
 
     @Inject(method = "renderItem", at = @At("HEAD"))
-    private void logos$wandTip(LivingEntity mob, ItemStack stack, ItemDisplayContext type, PoseStack poseStack, SubmitNodeCollector collector, int light,
-            CallbackInfo ci) {
+    private void logos$wandTip(LivingEntity mob, ItemStack stack, ItemDisplayContext type, boolean leftHand, PoseStack poseStack,
+            MultiBufferSource buffers, int light, CallbackInfo ci) {
         if (type.firstPerson()) WandTips.captureFirstPerson(mob, stack, type, poseStack.last().pose());
     }
 }

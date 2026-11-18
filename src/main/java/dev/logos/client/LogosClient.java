@@ -20,53 +20,14 @@ import dev.logos.port.RegisterClientPayloadHandlersEvent;
 /** Client-side registrations: effect packets, the spell wheel key, dimension list for the editor. */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class LogosClient {
-    public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "logos"));
+    /** 1.21.1 names a key category by its translation key (26.1: an id, translated as key.category.logos.logos). */
+    public static final String CATEGORY = "key.category.logos.logos";
     public static final KeyMapping SPELL_WHEEL = new KeyMapping("key.logos.spell_wheel", InputConstants.KEY_R, CATEGORY);
 
     private LogosClient() {}
 
 
-    @SubscribeEvent
-    static void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
-        event.register(LogosMod.POSSESSED_INVENTORY.get(), com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen::new);
-    }
 
-    @SubscribeEvent
-    static void onRegisterParticles(net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent event) {
-        event.registerSpriteSet(LogosMod.MANA_MOTE.get(), ManaMote.Provider::new);
-    }
-
-
-
-    @SubscribeEvent
-    static void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
-        // Constructs are drawn with the other spell visuals (LogosFx), not by an entity renderer.
-        event.registerEntityRenderer(LogosMod.CONSTRUCT.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
-        event.registerEntityRenderer(LogosMod.FREE_MANA.get(), FreeManaRenderer::new);
-        event.registerEntityRenderer(LogosMod.MANA_LIFEFORM.get(), ManaLifeformRenderer::new);
-        event.registerEntityRenderer(LogosMod.ALCHEMICAL_COLOSSUS.get(), ColossusRenderer::new);
-        event.registerEntityRenderer(LogosMod.MANA_LEECH.get(), ManaLeechRenderer::new);
-        event.registerBlockEntityRenderer(LogosMod.ALCHEMY_TABLE_BE.get(), AlchemyTableRenderer::new);
-        event.registerBlockEntityRenderer(LogosMod.CULTIVATION_JAR_BE.get(), CultivationJarRenderer::new);
-        event.registerBlockEntityRenderer(LogosMod.MANA_STORAGE_TANK_BE.get(), ManaStorageTankRenderer::new);
-    }
-
-    /** A cultivation jar's medium layer (tint 0 of its model) takes the colour of the medium poured in it. */
-    @SubscribeEvent
-    static void onRegisterBlockTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.BlockTintSources event) {
-        event.register(java.util.List.of(new net.minecraft.client.color.block.BlockTintSource() {
-            @Override
-            public int color(net.minecraft.world.level.block.state.BlockState state) {
-                return -1;
-            }
-
-            @Override
-            public int colorInWorld(net.minecraft.world.level.block.state.BlockState state, net.minecraft.client.renderer.block.BlockAndTintGetter level,
-                    net.minecraft.core.BlockPos pos) {
-                return level.getBlockEntity(pos) instanceof dev.logos.block.CultivationJarBlockEntity jar ? jar.mediumColor() : -1;
-            }
-        }), LogosMod.CULTIVATION_JAR.get());
-    }
 
     @SubscribeEvent
     static void onUse(net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
@@ -120,6 +81,51 @@ public final class LogosClient {
     static final class ModBus {
         private ModBus() {}
 
+        /** The render pipelines are compiled again from the new resources (dev.logos.client.port.ShaderPrograms). */
+        @SubscribeEvent
+        static void onRegisterReloadListeners(net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) {
+            event.registerReloadListener(dev.logos.client.port.ShaderPrograms.reloadListener());
+            dev.logos.client.port.ItemTints.registerReloadListener(event);
+        }
+
+        @SubscribeEvent
+        static void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+            event.register(LogosMod.POSSESSED_INVENTORY.get(), com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerScreen::new);
+        }
+    
+        @SubscribeEvent
+        static void onRegisterParticles(net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent event) {
+            event.registerSpriteSet(dev.logos.port.PortParticles.TRAIL.get(), dev.logos.client.port.TrailParticle.Provider::new);
+            event.registerSpriteSet(LogosMod.MANA_MOTE.get(), ManaMote.Provider::new);
+        }
+    
+        @SubscribeEvent
+        static void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+            // Constructs are drawn with the other spell visuals (LogosFx), not by an entity renderer.
+            event.registerEntityRenderer(LogosMod.CONSTRUCT.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+            event.registerEntityRenderer(LogosMod.FREE_MANA.get(), FreeManaRenderer::new);
+            event.registerEntityRenderer(LogosMod.POSSESSION_BODY.get(), PossessionBodyRenderer::new);
+            event.registerEntityRenderer(LogosMod.MANA_LIFEFORM.get(), ManaLifeformRenderer::new);
+            event.registerEntityRenderer(LogosMod.ALCHEMICAL_COLOSSUS.get(), ColossusRenderer::new);
+            event.registerEntityRenderer(LogosMod.MANA_LEECH.get(), ManaLeechRenderer::new);
+            event.registerBlockEntityRenderer(LogosMod.ALCHEMY_TABLE_BE.get(), AlchemyTableRenderer::new);
+            event.registerBlockEntityRenderer(LogosMod.CULTIVATION_JAR_BE.get(), CultivationJarRenderer::new);
+            event.registerBlockEntityRenderer(LogosMod.MANA_STORAGE_TANK_BE.get(), ManaStorageTankRenderer::new);
+        }
+    
+        /** A cultivation jar's medium layer (tint 0 of its model) takes the colour of the medium poured in it. */
+        @SubscribeEvent
+        static void onRegisterBlockTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Block event) {
+            event.register((state, level, pos, tint) -> tint == 0 && level != null && pos != null
+                    && level.getBlockEntity(pos) instanceof dev.logos.block.CultivationJarBlockEntity jar ? jar.mediumColor() : -1, LogosMod.CULTIVATION_JAR.get());
+        }
+    
+        /** Item tints from the item definitions (dev.logos.client.port.ItemTints). */
+        @SubscribeEvent
+        static void onRegisterItemTints(net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item event) {
+            dev.logos.client.port.ItemTints.register(event);
+        }
+
         @SubscribeEvent
         static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
             event.register(FxPayload.Batch.TYPE, (payload, ctx) -> LogosFx.handle(payload));
@@ -139,7 +145,6 @@ public final class LogosClient {
 
         @SubscribeEvent
         static void onRegisterKeys(RegisterKeyMappingsEvent event) {
-            event.registerCategory(CATEGORY);
             event.register(SPELL_WHEEL);
             event.register(ColossusInput.MODE);
             event.register(PossessionInput.INSTINCT);

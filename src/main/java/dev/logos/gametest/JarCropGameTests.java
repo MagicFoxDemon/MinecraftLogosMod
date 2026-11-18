@@ -40,7 +40,7 @@ final class JarCropGameTests {
         h.assertTrue(!crops.isEmpty(), "no jar crops registered");
         for (JarCropBlock crop : crops) {
             h.assertTrue(tags.add(crop.plantableOn()), "jar crops share substrate tag " + crop.plantableOn());
-            var substrates = BuiltInRegistries.BLOCK.get(crop.plantableOn());
+            var substrates = BuiltInRegistries.BLOCK.getTag(crop.plantableOn());
             h.assertTrue(substrates.isPresent() && substrates.get().size() == 0, "substrate tag missing or nonempty: " + crop.plantableOn());
             for (Block soil : List.of(Blocks.DIRT, Blocks.FARMLAND, Blocks.STONE, Blocks.AIR)) {
                 h.setBlock(PLANT.below(), soil);
@@ -65,7 +65,7 @@ final class JarCropGameTests {
                 assertYield(h, crop, drops, ripe ? crop.seeds : 1, ripe ? crop.materials : 0, "ground age " + age);
             }
             h.setBlock(at, LogosMod.CULTIVATION_JAR.get());
-            var jar = (CultivationJarBlockEntity) h.getBlockEntity(at, CultivationJarBlockEntity.class);
+            var jar = (CultivationJarBlockEntity) h.getBlockEntity(at);
             h.assertTrue(jar.plant(new ItemStack(crop.seed)), crop.crop + " cannot be planted from its seed");
             h.assertTrue(jar.recipe().harvest().isEmpty(), crop.crop + " still uses a fixed recipe harvest");
             for (int harvest = 0; harvest < 2; harvest++) {
@@ -101,11 +101,11 @@ final class JarCropGameTests {
             h.assertTrue(h.getLevel().getRawBrightness(h.absolutePos(PLANT), 0) >= 9, "growth light is not ready");
             var registry = BuiltInRegistries.BLOCK;
             Map<TagKey<Block>, List<Holder<Block>>> original = new HashMap<>();
-            registry.getTags().forEach(tag -> original.put(tag.key(), tag.stream().toList()));
+            registry.getTags().forEach(tag -> original.put(tag.getFirst(), tag.getSecond().stream().toList()));
             Map<TagKey<Block>, List<Holder<Block>>> modified = new HashMap<>(original);
             for (CropYield crop : magicCrops()) modified.put(crop.crop.plantableOn(), List.of(Blocks.FARMLAND.builtInRegistryHolder()));
             try {
-                registry.prepareTagReload(new TagLoader.LoadResult<>(Registries.BLOCK, modified)).apply();
+                registry.bindTags(modified);
                 for (CropYield crop : magicCrops()) {
                     h.setBlock(PLANT, crop.crop);
                     var state = h.getBlockState(PLANT);
@@ -120,7 +120,7 @@ final class JarCropGameTests {
                 }
             } finally {
                 h.setBlock(PLANT, Blocks.AIR);
-                registry.prepareTagReload(new TagLoader.LoadResult<>(Registries.BLOCK, original)).apply();
+                registry.bindTags(original);
             }
         });
     }
@@ -151,7 +151,7 @@ final class JarCropGameTests {
     static void taggedSubstrates(GameTestHelper h) {
         var registry = BuiltInRegistries.BLOCK;
         Map<TagKey<Block>, List<Holder<Block>>> original = new HashMap<>();
-        registry.getTags().forEach(tag -> original.put(tag.key(), tag.stream().toList()));
+        registry.getTags().forEach(tag -> original.put(tag.getFirst(), tag.getSecond().stream().toList()));
         var mandrake = LogosMod.MANDRAKE_CROP.get();
         var mercury = LogosMod.MERCURY_MUSHROOM_CROP.get();
         var moss = LogosMod.STARLIGHT_MOSS_CROP.get();
@@ -163,7 +163,7 @@ final class JarCropGameTests {
         h.setBlock(PLANT.west(), Blocks.GLOWSTONE);
         // Keep the tag reload and assertions synchronous, restoring the registry before another test ticks.
         try {
-            registry.prepareTagReload(new TagLoader.LoadResult<>(Registries.BLOCK, modified)).apply();
+            registry.bindTags(modified);
             for (Block soil : List.of(Blocks.FARMLAND, Blocks.MYCELIUM, Blocks.STONE, Blocks.AIR)) {
                 h.setBlock(PLANT.below(), soil);
                 h.assertTrue(mandrake.defaultBlockState().canSurvive(h.getLevel(), h.absolutePos(PLANT)) == (soil == Blocks.FARMLAND),
@@ -174,7 +174,7 @@ final class JarCropGameTests {
                         "starlight moss inherited another crop's substrates");
             }
         } finally {
-            registry.prepareTagReload(new TagLoader.LoadResult<>(Registries.BLOCK, original)).apply();
+            registry.bindTags(original);
         }
         h.setBlock(PLANT.below(), Blocks.FARMLAND);
         h.assertFalse(mandrake.defaultBlockState().canSurvive(h.getLevel(), h.absolutePos(PLANT)),

@@ -1,14 +1,6 @@
 package dev.logos;
 
 import java.io.IOException;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.MethodTypeEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.PoolEntry;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -18,6 +10,12 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 /**
  * What the mod's compiled classes refer to, for the tests that hold the code to its boundaries. Read from the class
@@ -40,8 +38,8 @@ final class CompiledClasses {
         Map<String, Set<String>> out = new TreeMap<>();
         try (Stream<Path> files = Files.walk(project().resolve(CLASSES).resolve(MOD))) {
             for (Path file : files.filter(f -> f.toString().endsWith(".class")).toList()) {
-                ClassModel model = ClassFile.of().parse(file);
-                named(model, out.computeIfAbsent(outer(model.thisClass().asInternalName()), k -> new TreeSet<>()));
+                ClassReader reader = new ClassReader(Files.readAllBytes(file));
+                named(reader, out.computeIfAbsent(outer(reader.getClassName()), k -> new TreeSet<>()));
             }
         }
         return out;
@@ -62,21 +60,36 @@ final class CompiledClasses {
         throw new IllegalStateException("no " + CLASSES + " above " + Path.of("").toAbsolutePath() + "; compile the mod first");
     }
 
-    private static void named(ClassModel model, Set<String> out) {
-        for (PoolEntry entry : model.constantPool()) {
-            switch (entry) {
-                case ClassEntry c -> {
-                    String name = c.asInternalName();
+    /** Java 21 has no class-file API: the constant pool is read with ASM (classes, name-and-types, method types). */
+    private static void named(ClassReader reader, Set<String> out) {
+        char[] buffer = new char[reader.getMaxStringLength()];
+        for (int i = 1; i < reader.getItemCount(); i++) {
+            int offset = reader.getItem(i);
+            if (offset == 0) continue; // the second slot of a long or a double
+            switch (reader.readByte(offset - 1)) {
+                case 7 -> { // Class
+                    String name = reader.readUTF8(offset, buffer);
                     if (name.startsWith("[")) inDescriptor(out, name);
                     else out.add(outer(name));
                 }
-                case NameAndTypeEntry n -> inDescriptor(out, n.type().stringValue());
-                case MethodTypeEntry m -> inDescriptor(out, m.descriptor().stringValue());
+                case 12 -> inDescriptor(out, reader.readUTF8(offset + 2, buffer)); // NameAndType
+                case 16 -> inDescriptor(out, reader.readUTF8(offset, buffer)); // MethodType
                 default -> {}
             }
         }
-        for (FieldModel field : model.fields()) inDescriptor(out, field.fieldType().stringValue());
-        for (MethodModel method : model.methods()) inDescriptor(out, method.methodType().stringValue());
+        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
+                inDescriptor(out, descriptor);
+                return null;
+            }
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                inDescriptor(out, descriptor);
+                return null;
+            }
+        }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
     }
 
     private static void inDescriptor(Set<String> out, String descriptor) {

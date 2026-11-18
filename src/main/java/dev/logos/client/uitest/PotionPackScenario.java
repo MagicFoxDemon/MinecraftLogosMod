@@ -74,13 +74,14 @@ public class PotionPackScenario implements UIScenario {
 
     private static void writePack(Minecraft mc) {
         Path root = mc.getResourcePackDirectory().resolve(PACK);
-        int format = SharedConstants.getCurrentVersion().packVersion(PackType.CLIENT_RESOURCES).major();
+        int format = SharedConstants.getCurrentVersion().getPackVersion(PackType.CLIENT_RESOURCES);
         try {
-            Path definition = root.resolve("assets/minecraft/items/potion.json");
+            // 1.21.1 draws an item from its model file; a pack replaces that.
+            Path definition = root.resolve("assets/minecraft/models/item/potion.json");
             Files.createDirectories(definition.getParent());
             Files.writeString(root.resolve("pack.mcmeta"),
-                    "{\"pack\":{\"description\":\"Logos test pack\",\"min_format\":" + format + ",\"max_format\":" + format + "}}");
-            Files.writeString(definition, "{\"model\":{\"type\":\"minecraft:model\",\"model\":\"minecraft:item/apple\"}}");
+                    "{\"pack\":{\"description\":\"Logos test pack\",\"pack_format\":" + format + "}}");
+            Files.writeString(definition, "{\"parent\":\"minecraft:item/apple\"}");
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

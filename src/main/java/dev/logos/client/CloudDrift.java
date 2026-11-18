@@ -36,9 +36,9 @@ public final class CloudDrift {
             lastClock = -1;
             factor = 1;
         }
-        var clock = level == null ? null : level.dimensionType().defaultClock().orElse(null);
-        if (clock == null) return;
-        long now = level.clockManager().getTotalTicks(clock);
+        if (level == null) return;
+        // 1.21.1 has no world clock: the day time stands in for it (a time skip pushes it on every tick, see TimeSkipObj).
+        long now = level.getDayTime();
         long game = level.getGameTime();
         if (lastClock >= 0 && game > lastGame) {
             // One tick's worth of clock per game tick is normal; a jump (sleep, /time set) is not a rate and is capped away.

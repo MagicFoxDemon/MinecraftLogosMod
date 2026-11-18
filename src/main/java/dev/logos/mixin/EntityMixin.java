@@ -59,8 +59,4 @@ abstract class EntityMixin {
         return Constructs.withCollisions(original.call(level, source, area), level, source, area);
     }
 
-    @WrapOperation(method = "collectAllColliders", at = @At(value = "INVOKE", target = GET_ENTITY_COLLISIONS))
-    private static List<VoxelShape> logos$constructsOnCollect(Level level, Entity source, AABB area, Operation<List<VoxelShape>> original) {
-        return Constructs.withCollisions(original.call(level, source, area), level, source, area);
-    }
 }

@@ -19,10 +19,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.LogosMod;
 import dev.logos.item.WandItem;
-import dev.logos.mixin.ItemStackRenderStateAccessor;
-import dev.logos.mixin.LayerRenderStateAccessor;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -34,6 +32,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
 /**
@@ -42,7 +41,7 @@ import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
  * hand, the hand renderers report the pose they draw it with, and this turns the tip into a world
  * position, first person and third person alike; {@link CastPoints} starts charges, beams and rays there.
  */
-@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class WandTips {
     public static final String GROUP = "wand_tip";
     /** A pose reported this many client ticks ago or less still counts. */
@@ -56,9 +55,14 @@ public final class WandTips {
 
     private WandTips() {}
 
-    @SubscribeEvent
-    static void onReload(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener((ResourceManagerReloadListener) rm -> TIPS.clear());
+    @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    static final class ModBus {
+        private ModBus() {}
+
+        @SubscribeEvent
+        static void onReload(RegisterClientReloadListenersEvent event) {
+            event.registerReloadListener((ResourceManagerReloadListener) rm -> TIPS.clear());
+        }
     }
 
     /** Forgets wand heads not drawn for a while (their holders out of sight, or gone). */
@@ -91,38 +95,39 @@ public final class WandTips {
 
     /** First person: {@code pose} is the item's pose before its display transform, under {@link #beginHands}. */
     public static void captureFirstPerson(LivingEntity holder, ItemStack stack, ItemDisplayContext context, Matrix4fc pose) {
-        if (!(stack.getItem() instanceof WandItem) || context.leftHand() != (holder.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT)) return;
-        Minecraft mc = Minecraft.getInstance();
-        ItemStackRenderState state = new ItemStackRenderState();
-        mc.getItemModelResolver().updateForTopItem(state, stack, context, holder.level(), holder, 0);
-        capture(holder.getId(), stack, state, context.leftHand(), inView(pose), mc.gameRenderer.getMainCamera().rotation());
+        boolean leftHand = context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
+        if (!(stack.getItem() instanceof WandItem) || leftHand != (holder.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT)) return;
+        capture(holder, stack, context, leftHand, inView(pose), Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
     }
 
     /** Third person: {@code pose} is camera-relative world space, before the item's display transform; only a main hand counts. */
-    public static void captureThirdPerson(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, boolean mainHand, Matrix4fc pose) {
+    public static void captureThirdPerson(LivingEntity holder, ItemStack stack, ItemDisplayContext context, boolean leftHand, boolean mainHand,
+            Matrix4fc pose) {
         if (!(stack.getItem() instanceof WandItem) || !mainHand) return;
         // A shader-pack shadow pass must not replace the local first-person hand sample.
         Minecraft mc = Minecraft.getInstance();
-        if (mc.getCameraEntity() != null && entityId == mc.getCameraEntity().getId()
+        if (mc.getCameraEntity() != null && holder.getId() == mc.getCameraEntity().getId()
                 && mc.options.getCameraType().isFirstPerson()) return;
-        capture(entityId, stack, state, leftHand, pose, null);
+        capture(holder, stack, context, leftHand, pose, null);
     }
 
-    /** {@code viewToWorld}: turns {@code pose}'s space to world axes, or null if it already has them. */
-    private static void capture(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, Matrix4fc pose,
+    /**
+     * {@code viewToWorld}: turns {@code pose}'s space to world axes, or null if it already has them. The tip goes
+     * through the item model's display transform and the half-block shift, as ItemRenderer draws it.
+     */
+    private static void capture(LivingEntity holder, ItemStack stack, ItemDisplayContext context, boolean leftHand, Matrix4fc pose,
             @Nullable Quaternionfc viewToWorld) {
-        var access = (ItemStackRenderStateAccessor) state;
-        if (access.logos$activeLayerCount() <= 0) return;
-        var layer = (LayerRenderStateAccessor) access.logos$layers()[0];
-        PoseStack.Pose p = new PoseStack.Pose();
-        p.pose().set(pose);
-        layer.logos$itemTransform().apply(leftHand, p);
-        p.mulPose(layer.logos$localTransform());
+        Minecraft mc = Minecraft.getInstance();
+        BakedModel model = mc.getItemRenderer().getModel(stack, holder.level(), holder, holder.getId() + context.ordinal());
+        PoseStack p = new PoseStack();
+        p.last().pose().set(pose);
+        ClientHooks.handleCameraTransforms(p, model, context, leftHand);
+        p.translate(-0.5f, -0.5f, -0.5f);
         Vector3f at = new Vector3f(tip(stack.getItem())).div(16);
-        p.pose().transformPosition(at);
+        p.last().pose().transformPosition(at);
         if (viewToWorld != null) viewToWorld.transform(at);
-        Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().position();
-        SAMPLES.put(entityId, new Sample(camera.add(at.x, at.y, at.z), ClientCharges.ticks()));
+        Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
+        SAMPLES.put(holder.getId(), new Sample(camera.add(at.x, at.y, at.z), ClientCharges.ticks()));
     }
 
     static void forget(int entityId) {
@@ -151,27 +156,21 @@ public final class WandTips {
         return top != null ? top : new Vector3f(12, 14, 8);
     }
 
-    /** The base model drawn by an item definition; composite staffs keep their solid body first. */
+    /**
+     * The model an item is drawn with, {@code models/item/<id>.json}; for a composite staff ({@code neoforge:composite})
+     * its first child, the solid body.
+     */
     private static @Nullable ResourceLocation modelOf(ResourceLocation item) {
-        JsonObject def = read(ResourceLocation.fromNamespaceAndPath(item.getNamespace(), "items/" + item.getPath() + ".json"));
-        if (def == null || !def.has("model")) return null;
-        return firstModel(def.get("model"), 0);
-    }
-
-    private static @Nullable ResourceLocation firstModel(@Nullable JsonElement element, int depth) {
-        if (element == null || !element.isJsonObject() || depth >= 16) return null;
-        JsonObject model = element.getAsJsonObject();
-        if (model.has("model") && model.get("model").isJsonPrimitive()) {
-            return ResourceLocation.tryParse(model.get("model").getAsString());
-        }
-        if (model.has("type") && "minecraft:composite".equals(model.get("type").getAsString())
-                && model.has("models") && model.get("models").isJsonArray()) {
-            for (JsonElement child : model.getAsJsonArray("models")) {
-                ResourceLocation found = firstModel(child, depth + 1);
-                if (found != null) return found;
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(item.getNamespace(), "item/" + item.getPath());
+        JsonObject model = read(ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "models/" + id.getPath() + ".json"));
+        if (model != null && model.has("children") && model.get("children").isJsonObject()) {
+            for (var child : model.getAsJsonObject("children").entrySet()) {
+                if (child.getValue().isJsonObject() && child.getValue().getAsJsonObject().has("parent")) {
+                    return ResourceLocation.tryParse(child.getValue().getAsJsonObject().get("parent").getAsString());
+                }
             }
         }
-        return null;
+        return id;
     }
 
     private static @Nullable Vector3f findGroup(@Nullable JsonElement groups) {

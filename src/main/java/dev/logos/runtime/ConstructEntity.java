@@ -243,6 +243,16 @@ public final class ConstructEntity extends Entity {
         unfile();
     }
 
+    /**
+     * 1.21.1 moves an entity to another dimension by copying it into a new one and marking the old one removed
+     * ({@code setRemoved}, final there, so {@link #remove} never hears of it): the old one leaves its index here.
+     */
+    @Override
+    public void restoreFrom(net.minecraft.world.entity.Entity from) {
+        super.restoreFrom(from);
+        if (from instanceof ConstructEntity old && old != this) old.unfile();
+    }
+
     private void unfile() {
         if (filed != null) {
             filed.remove();

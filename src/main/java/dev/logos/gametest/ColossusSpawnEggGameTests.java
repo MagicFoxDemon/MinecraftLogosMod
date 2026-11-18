@@ -55,8 +55,8 @@ final class ColossusSpawnEggGameTests {
             ItemStack eggs = new ItemStack(LogosMod.ALCHEMICAL_COLOSSUS_SPAWN_EGG.get(), 2);
             eggs.set(DataComponents.CUSTOM_NAME, Component.literal("Copper Guardian"));
             p.setItemInHand(InteractionHand.MAIN_HAND, eggs);
-            h.assertTrue(SpawnEggItem.getType(eggs) == LogosMod.ALCHEMICAL_COLOSSUS.get(), "native egg entity data expected");
-            h.assertTrue(SpawnEggItem.byId(LogosMod.ALCHEMICAL_COLOSSUS.get()).orElseThrow().value() == eggs.getItem(), "native egg lookup expected");
+            h.assertTrue(((SpawnEggItem) eggs.getItem()).getType(eggs) == LogosMod.ALCHEMICAL_COLOSSUS.get(), "native egg entity data expected");
+            h.assertTrue(SpawnEggItem.byId(LogosMod.ALCHEMICAL_COLOSSUS.get()) == eggs.getItem(), "native egg lookup expected");
             h.assertTrue(place(h, p, 4) == InteractionResult.SUCCESS && eggs.getCount() == 1, "survival must spend one egg");
             AlchemicalColossus first = guardian(h, p);
             full(h, first);

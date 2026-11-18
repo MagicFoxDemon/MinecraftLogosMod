@@ -104,7 +104,7 @@ final class EditAccessGameTests {
 
     private static Editable emitter(GameTestHelper h) {
         h.setBlock(EMITTER, LogosMod.SPELL_EMITTER.get().defaultBlockState().setValue(SpellEmitterBlock.FACING, Direction.EAST));
-        SpellEmitterBlockEntity emitter = (SpellEmitterBlockEntity) h.getBlockEntity(EMITTER, SpellEmitterBlockEntity.class);
+        SpellEmitterBlockEntity emitter = (SpellEmitterBlockEntity) h.getBlockEntity(EMITTER);
         emitter.setPage(SpellPages.inscribed(PageTier.CRYSTAL, spell("旧"), drawing("旧")), null);
         BlockPos pos = h.absolutePos(EMITTER);
         return new Editable("the spell emitter", pos, EditAccessGameTests::rightClick,

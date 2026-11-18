@@ -213,7 +213,7 @@ public class SpellEditorScenario implements UIScenario {
                 .step("saved annotations keep their rendering", SpellEditorScenario::checkAnnotations)
                 .step("use a larger Minecraft GUI scale", ctx -> {
                     Minecraft.getInstance().options.guiScale().set(4);
-                    Minecraft.getInstance().resizeGui();
+                    Minecraft.getInstance().resizeDisplay();
                 })
                 .ticks(10)
                 .step("check layout at GUI scale four", ctx -> {
@@ -238,7 +238,7 @@ public class SpellEditorScenario implements UIScenario {
                 .screenshot("paper_note_closeup")
                 .step("restore GUI scale two", ctx -> {
                     Minecraft.getInstance().options.guiScale().set(2);
-                    Minecraft.getInstance().resizeGui();
+                    Minecraft.getInstance().resizeDisplay();
                 })
                 .ticks(10)
                 .step("pick the block-magic template", ctx -> selectTemplate(ctx, "harvest"))

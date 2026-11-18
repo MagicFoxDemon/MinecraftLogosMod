@@ -51,6 +51,11 @@ public final class PlayerInputs {
         return LAST.getOrDefault(player.getUUID(), Input.EMPTY);
     }
 
+    /** As if the player's client had just sent {@code input} (26.1's {@code ServerPlayer#setLastClientInput}); for tests. */
+    public static void set(Player player, Input input) {
+        LAST.put(player.getUUID(), input);
+    }
+
     public static void register(PayloadRegistrar registrar) {
         registrar.playToServer(Payload.TYPE, Payload.CODEC, PlayerInputs::handle);
     }

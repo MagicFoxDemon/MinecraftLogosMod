@@ -78,7 +78,7 @@ final class FireBeamWake implements RayVisual {
                 level.getMaxLocalRawBrightness(BlockPos.containing(from))) / 15f;
         if (length < .3) return;
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        boolean close = !camera.isDetached() && camera.position().distanceTo(from) < 3;
+        boolean close = !camera.isDetached() && camera.getPosition().distanceTo(from) < 3;
         double trim = Math.min(close ? 4 : .4, length * .5);
         int rounded = Mth.clamp((int) Math.round(length - trim), 1, 64);
         FX body = BODIES.computeIfAbsent(rounded * 2 + (close ? 1 : 0), key -> body(key / 2));

@@ -15,9 +15,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
-import net.minecraft.client.renderer.entity.state.AvatarRenderState;
-import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import dev.logos.client.port.ArmedEntityRenderState;
+import dev.logos.client.port.AvatarRenderState;
+import dev.logos.client.port.HumanoidRenderState;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -83,7 +83,7 @@ public final class CastPoses {
 
     /** The arm pose any posed hand is drawn with, added to {@link HumanoidModel.ArmPose} through META-INF/enumextensions.json. */
     public static final EnumProxy<HumanoidModel.ArmPose> HOLD = new EnumProxy<>(HumanoidModel.ArmPose.class,
-            false, false, (IArmPoseTransformer) CastPoses::poseArm);
+            false, (IArmPoseTransformer) (model, entity, arm) -> poseArm(model, HumanoidRenderState.of(entity, model), arm));
 
     private static final Map<ResourceLocation, Pose> POSES = new ConcurrentHashMap<>();
     /** Per entity id, its holds by hold id, in the order they began. */

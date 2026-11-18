@@ -2,30 +2,26 @@ package dev.logos.client;
 
 import org.joml.Vector3f;
 
-import software.bernie.geckolib.cache.object.GeoBone;
-import com.geckolib.cache.model.cuboid.CuboidGeoBone;
-import software.bernie.geckolib.cache.object.GeoCube;
-import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.constant.dataticket.DataTicket;
-import software.bernie.geckolib.model.DefaultedEntityGeoModel;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import com.geckolib.renderer.base.BoneSnapshots;
-import com.geckolib.renderer.base.GeoRenderState;
-import com.geckolib.renderer.base.RenderPassInfo;
-import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.AlchemicalColossus;
-import net.minecraft.client.Minecraft;
-import dev.logos.client.port.SubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.cache.object.GeoCube;
+import software.bernie.geckolib.model.DefaultedEntityGeoModel;
+import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
+import software.bernie.geckolib.util.RenderUtil;
 
 /**
  * The alchemical colossus (assets/logos/geckolib/…/alchemical_colossus). Its scorched shell — in a
@@ -36,17 +32,9 @@ import net.minecraft.world.phys.Vec3;
  * The three reservoir tubes on its back show how full its pool is: the glowing fill sinks as its mana
  * is spent, and the spent part of each tube is drawn again in the same material, blackened.
  */
-public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState> extends GeoEntityRenderer<AlchemicalColossus, R> {
+public class ColossusRenderer extends GeoEntityRenderer<AlchemicalColossus> {
     private static final ResourceLocation NORMAL = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/alchemical_colossus.png");
     private static final ResourceLocation SCORCHED = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/alchemical_colossus_berserk.png");
-    private static final DataTicket<Boolean> SCORCHED_SHELL = DataTicket.create("logos_colossus_scorched", Boolean.class);
-    private static final DataTicket<Integer> ENTITY = DataTicket.create("logos_colossus_id", Integer.class);
-    private static final DataTicket<Float> ARM_YAW = DataTicket.create("logos_colossus_arm_yaw", Float.class);
-    private static final DataTicket<Float> ARM_PITCH = DataTicket.create("logos_colossus_arm_pitch", Float.class);
-    private static final DataTicket<Float> FILL = DataTicket.create("logos_colossus_fill", Float.class);
-    /** What its grabbing hand reaches for (world), and how fully the reach is drawn. */
-    private static final DataTicket<Vec3> REACH_GOAL = DataTicket.create("logos_colossus_reach_goal", Vec3.class);
-    private static final DataTicket<Float> REACH_WEIGHT = DataTicket.create("logos_colossus_reach_weight", Float.class);
     /** The fill of its three reservoir tubes; each is pivoted at its foot, so it shrinks downward. */
     private static final String[] RESERVOIR = {"energy_fill_left", "energy_fill_center", "energy_fill_right"};
     /** The spent part of a tube: the same texture, darkened almost to black. */
@@ -56,110 +44,108 @@ public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState
     public ColossusRenderer(EntityRendererProvider.Context context) {
         super(context, new DefaultedEntityGeoModel<AlchemicalColossus>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "alchemical_colossus")) {
             @Override
-            public ResourceLocation getTextureResource(GeoRenderState state) {
-                return Boolean.TRUE.equals(state.getOrDefaultGeckolibData(SCORCHED_SHELL, false)) ? SCORCHED : NORMAL;
+            public ResourceLocation getTextureResource(AlchemicalColossus c) {
+                return c.isScorched() ? SCORCHED : NORMAL;
+            }
+
+            /** GeckoLib 4 calls this right after the animation has posed the bones. */
+            @Override
+            public void setCustomAnimations(AlchemicalColossus c, long instanceId, AnimationState<AlchemicalColossus> state) {
+                super.setCustomAnimations(c, instanceId, state);
+                adjustBones(this, c, state.getPartialTick());
             }
         });
         this.shadowRadius = 1.2f;
         // The smouldering cracks glow only on the scorched shell.
-        withRenderLayer(new AutoGlowingGeoLayer<>(this) {
+        addRenderLayer(new AutoGlowingGeoLayer<>(this) {
             @Override
-            public void submitRenderTask(RenderPassInfo<R> info, SubmitNodeCollector collector) {
-                if (Boolean.TRUE.equals(info.getOrDefaultGeckolibData(SCORCHED_SHELL, false))) super.submitRenderTask(info, collector);
+            public void render(PoseStack poseStack, AlchemicalColossus c, BakedGeoModel model, RenderType renderType, MultiBufferSource buffers,
+                    VertexConsumer buffer, float partialTick, int light, int overlay) {
+                if (c.isScorched()) super.render(poseStack, c, model, renderType, buffers, buffer, partialTick, light, overlay);
             }
         });
-    }
-
-    @Override
-    public void addRenderData(AlchemicalColossus c, Void unused, R state, float partialTick) {
-        super.addRenderData(c, unused, state, partialTick);
-        state.addGeckolibData(SCORCHED_SHELL, c.isScorched());
-        state.addGeckolibData(ENTITY, c.getId());
-        float[] turn = c.drawnArmTurn(partialTick);
-        state.addGeckolibData(ARM_YAW, turn[0]);
-        state.addGeckolibData(ARM_PITCH, turn[1]);
-        state.addGeckolibData(FILL, c.fill());
-        Vec3 goal = c.reachGoal();
-        if (goal != null) {
-            state.addGeckolibData(REACH_GOAL, goal);
-            state.addGeckolibData(REACH_WEIGHT, c.reachWeight(partialTick));
-        }
     }
 
     /**
-     * The aim offset: the raised arm turned toward its aim. In this model a negative turn about the
-     * bone's Y swings the raised arm toward the colossus's right, and a positive turn about X raises it
-     * (both checked against the drawn bones in the logos_colossus scenario).
+     * The tubes' fill, the reach and the aim offset: the raised arm turned toward its aim. In this model a negative turn
+     * about the bone's Y swings the raised arm toward the colossus's right, and a positive turn about X raises it (both
+     * checked against the drawn bones in the logos_colossus scenario).
      */
-    @Override
-    public void adjustModelBonesForRender(RenderPassInfo<R> info, BoneSnapshots snapshots) {
-        super.adjustModelBonesForRender(info, snapshots);
-        float fill = info.getOrDefaultGeckolibData(FILL, 1f);
-        if (fill < 1) {
-            for (String tube : RESERVOIR) snapshots.ifPresent(tube, s -> {
-                if (fill <= 0.001f) s.skipRender(true);
-                else s.setScaleY(s.getScaleY() * fill);
-            });
-        }
-        Vec3 goal = info.getGeckolibData(REACH_GOAL);
-        float weight = info.getOrDefaultGeckolibData(REACH_WEIGHT, 0f);
+    private static void adjustBones(GeoModel<AlchemicalColossus> model, AlchemicalColossus c, float partialTick) {
+        float fill = c.fill();
+        for (String tube : RESERVOIR) model.getBone(tube).ifPresent(b -> {
+            b.setHidden(fill <= 0.001f);
+            if (fill > 0.001f && fill < 1) b.setScaleY(b.getScaleY() * fill);
+        });
+        Vec3 goal = c.reachGoal();
+        float weight = goal == null ? 0 : c.reachWeight(partialTick);
         if (goal != null && weight > 0) {
             // The reach: its arm (and if need be its torso) posed onto the point, in the model's own space.
-            R s = info.renderState();
-            float yaw = info.getOrDefaultGeckolibData(DataTickets.ENTITY_BODY_YAW, 0f);
-            Vector3f local = new Vector3f((float) (goal.x - s.x), (float) (goal.y - s.y - 0.01), (float) (goal.z - s.z))
+            Vec3 at = c.getPosition(partialTick);
+            float yaw = Mth.rotLerp(partialTick, c.yBodyRotO, c.yBodyRot);
+            Vector3f local = new Vector3f((float) (goal.x - at.x), (float) (goal.y - at.y - 0.01), (float) (goal.z - at.z))
                     .rotateY(-(180 - yaw) * Mth.DEG_TO_RAD);
-            ColossusArmIk.solve(info.model(), snapshots, local, weight);
+            ColossusArmIk.solve(model.getBakedModel(model.getModelResource(c)), local, weight);
         }
-        float yaw = info.getOrDefaultGeckolibData(ARM_YAW, 0f), pitch = info.getOrDefaultGeckolibData(ARM_PITCH, 0f);
-        if (yaw == 0 && pitch == 0) return;
-        snapshots.ifPresent("right_upper_arm", arm -> {
-            arm.setRotY(arm.getRotY() - yaw);
-            arm.setRotX(arm.getRotX() + pitch);
+        float[] turn = c.drawnArmTurn(partialTick);
+        if (turn[0] == 0 && turn[1] == 0) return;
+        model.getBone("right_upper_arm").ifPresent(arm -> {
+            arm.setRotY(arm.getRotY() - turn[0]);
+            arm.setRotX(arm.getRotX() + turn[1]);
         });
+    }
+
+    /** GeckoLib 4 works out where a bone is drawn only for bones asked to. */
+    @Override
+    public void preRender(PoseStack poseStack, AlchemicalColossus c, BakedGeoModel model, MultiBufferSource buffers, VertexConsumer buffer,
+            boolean isReRender, float partialTick, int light, int overlay, int colour) {
+        for (String name : REPORTED) model.getBone(name).ifPresent(b -> b.setTrackingMatrices(true));
+        super.preRender(poseStack, c, model, buffers, buffer, isReRender, partialTick, light, overlay, colour);
+    }
+
+    /** Where each reported bone was drawn, from where the colossus is drawn this frame. */
+    @Override
+    public void renderFinal(PoseStack poseStack, AlchemicalColossus c, BakedGeoModel model, MultiBufferSource buffers, VertexConsumer buffer,
+            float partialTick, int light, int overlay, int colour) {
+        super.renderFinal(poseStack, c, model, buffers, buffer, partialTick, light, overlay, colour);
+        Vec3 at = c.getPosition(partialTick);
+        for (String name : REPORTED) model.getBone(name).ifPresent(b -> {
+            var local = b.getLocalPosition();
+            c.reportBone(name, at.add(local.x, local.y, local.z));
+        });
+    }
+
+    /** After the backpack, the spent part of its tubes. */
+    @Override
+    public void renderRecursively(PoseStack poseStack, AlchemicalColossus c, GeoBone bone, RenderType renderType, MultiBufferSource buffers,
+            VertexConsumer buffer, boolean isReRender, float partialTick, int light, int overlay, int colour) {
+        super.renderRecursively(poseStack, c, bone, renderType, buffers, buffer, isReRender, partialTick, light, overlay, colour);
+        float fill = c.fill();
+        if (!isReRender && fill < 0.999f && bone.getName().equals("backpack")) renderSpent(poseStack, c, bone, buffer, light, overlay, fill);
     }
 
     /** Above each tube's glowing fill, the spent part: the same tube again, blackened, from the fill's top to the tube's. */
-    private void submitSpent(RenderPassInfo<R> info, GeoBone pack, SubmitNodeCollector out, float fill) {
-        RenderType type = getRenderType(info.renderState(), getGeoModel().getTextureResource(info.renderState()));
-        int light = info.packedLight(), overlay = info.packedOverlay();
-        out.submitCustomGeometry(info.poseStack(), type, (pose, vertices) -> {
-            PoseStack ps = new PoseStack();
-            ps.last().set(pose);
-            pack.translateAwayFromPivotPoint(ps);
-            for (String name : RESERVOIR) {
-                if (!(info.model().getBone(name).orElse(null) instanceof CuboidGeoBone tube)) continue;
-                for (GeoCube cube : tube.cubes) {
-                    ps.pushPose();
-                    tube.translateToPivotPoint(ps);
-                    ps.translate(0, fill * cube.size().y / 16, 0);
-                    ps.scale(1, 1 - fill, 1);
-                    tube.translateAwayFromPivotPoint(ps);
-                    cube.render(ps, vertices, light, overlay, SPENT);
-                    ps.popPose();
-                }
+    private void renderSpent(PoseStack poseStack, AlchemicalColossus c, GeoBone pack, VertexConsumer vertices, int light, int overlay, float fill) {
+        poseStack.pushPose();
+        RenderUtil.prepMatrixForBone(poseStack, pack);
+        for (String name : RESERVOIR) {
+            GeoBone tube = getGeoModel().getBone(name).orElse(null);
+            if (tube == null) continue;
+            for (GeoCube cube : tube.getCubes()) {
+                poseStack.pushPose();
+                RenderUtil.translateToPivotPoint(poseStack, tube);
+                poseStack.translate(0, fill * cube.size().y / 16, 0);
+                poseStack.scale(1, 1 - fill, 1);
+                RenderUtil.translateAwayFromPivotPoint(poseStack, tube);
+                renderCube(poseStack, cube, vertices, light, overlay, SPENT);
+                poseStack.popPose();
             }
-        });
-    }
-
-    @Override
-    public void adjustRenderPose(RenderPassInfo<R> info) {
-        super.adjustRenderPose(info);
-        Integer id = info.getOrDefaultGeckolibData(ENTITY, -1);
-        var level = Minecraft.getInstance().level;
-        float fill = info.getOrDefaultGeckolibData(FILL, 1f);
-        if (fill < 0.999f) info.model().getBone("backpack").ifPresent(pack -> info.addPerBoneRender(pack, (pass, bone, out) -> submitSpent(pass, bone, out, fill)));
-        if (level == null || id < 0 || !(level.getEntity(id) instanceof AlchemicalColossus c)) return;
-        for (String bone : REPORTED) {
-            // GeckoLib hands over (world position, model-space position, position relative to the entity).
-            info.addBonePositionListener(bone, (world, model, relative) -> {
-                if (world != null) c.reportBone(bone, world);
-            });
         }
+        poseStack.popPose();
     }
 
     @Override
-    public RenderType getRenderType(R state, ResourceLocation texture) {
-        return RenderType.entityCutout(texture);
+    public RenderType getRenderType(AlchemicalColossus c, ResourceLocation texture, MultiBufferSource buffers, float partialTick) {
+        return RenderType.entityCutoutNoCull(texture); // 26.1's entityCutout draws both sides
     }
 }

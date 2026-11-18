@@ -130,7 +130,7 @@ final class ManaFieldHotPathGameTests {
                     assertCount(h, level, center, 1, "after a piston tried it");
                     level.setBlock(e, Blocks.AIR.defaultBlockState(), 3);
                     assertCount(h, level, center, 0, "with all of them gone");
-                    h.assertTrue(level.getData(LogosMod.CAPUT_MORTUUM_COUNTS).get(center.toLong()) == null, "an empty chunk keeps its entry");
+                    h.assertTrue(level.getData(LogosMod.CAPUT_MORTUUM_COUNTS).get(net.minecraft.world.level.ChunkPos.asLong(center)) == null, "an empty chunk keeps its entry");
                     free(level, center, 0);
                 })
                 .thenSucceed();
@@ -183,7 +183,7 @@ final class ManaFieldHotPathGameTests {
                     double start = 60;
                     ManaField.pour(end, center, start);
                     h.assertTrue(chunk.isUnsaved(), "pouring 60 did not mark the chunk for saving");
-                    chunk.tryMarkSaved();
+                    chunk.setUnsaved(false);
 
                     ManaField.work(end);
                     h.assertTrue(ManaField.spread(end, center) < start, "the chunk did not leak");
@@ -198,10 +198,10 @@ final class ManaFieldHotPathGameTests {
                     h.assertTrue(Math.abs(seconds - ManaField.SAVE_STEP / perSecond) < 5, "leaking took " + seconds + " seconds to mark the chunk, not about " + ManaField.SAVE_STEP / perSecond);
                     h.assertTrue(Math.abs(ManaField.spread(end, center) - (start - ManaField.SAVE_STEP)) < 0.1, "the chunk holds " + ManaField.spread(end, center) + " once it asks to be saved");
 
-                    chunk.tryMarkSaved();
+                    chunk.setUnsaved(false);
                     ManaField.pour(end, center, ManaField.SAVE_STEP * 2);
                     h.assertTrue(chunk.isUnsaved(), "a real move did not mark the chunk for saving");
-                    chunk.tryMarkSaved();
+                    chunk.setUnsaved(false);
 
                     CompoundTag old = new CompoundTag();
                     old.putDouble("mana", 42.5);
@@ -247,7 +247,7 @@ final class ManaFieldHotPathGameTests {
                     assertCount(h, end, center, 2, "after the first reload");
                     h.assertTrue(ManaField.insulation(back) == 2, "the reloaded chunk insulates as " + ManaField.insulation(back));
                     h.assertTrue(Math.abs(ManaField.spread(end, center) - live[0]) < 1e-9, "a chunk marked for saving came back with " + ManaField.spread(end, center) + ", not " + live[0]);
-                    back.tryMarkSaved();
+                    back.setUnsaved(false);
                     for (int i = 0; i < 50; i++) ManaField.work(end);
                     h.assertTrue(!back.isUnsaved(), "fifty seconds of leak marked the chunk for saving");
                     unload.run();

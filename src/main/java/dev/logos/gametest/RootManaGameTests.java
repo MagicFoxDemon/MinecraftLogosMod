@@ -13,7 +13,7 @@ final class RootManaGameTests {
     private RootManaGameTests() {}
 
     static void cap(GameTestHelper h) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(GameType.SURVIVAL);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 200;

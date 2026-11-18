@@ -26,9 +26,9 @@ final class IncarnationGameTests {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         FamiliarGameTests.forceAround(h, 1);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(GameType.SURVIVAL);
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
@@ -124,7 +124,7 @@ final class IncarnationGameTests {
         ServerPlayer p = caster(h);
         p.setGameMode(GameType.CREATIVE);
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         other.moveTo(p.getX() + 2, p.getY(), p.getZ(), 0, 0);
         other.setGameMode(GameType.CREATIVE);
         h.assertTrue(Incarnation.start(p, EntityType.ZOMBIE, 100) && Incarnation.start(other, EntityType.ZOMBIE, 100), "both should become zombies");
@@ -226,7 +226,7 @@ final class IncarnationGameTests {
         h.assertTrue(own.injected - own.mana < 1e-6, "undoing one's own form should be free, cost " + (own.injected - own.mana));
 
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         other.moveTo(p.getX() + 2, p.getY(), p.getZ(), 0, 0);
         other.setGameMode(GameType.CREATIVE);
         h.assertTrue(Incarnation.start(other, EntityType.IRON_GOLEM, 100), "the other player should become an iron golem");

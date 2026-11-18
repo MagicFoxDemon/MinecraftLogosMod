@@ -66,7 +66,8 @@ public class WandChargeScenario implements UIScenario {
                 .step("charging, not slowed", ctx -> {
                     var player = Minecraft.getInstance().player;
                     if (!player.isUsingItem()) throw new AssertionError("the client should be using the wand");
-                    if (player.getUseItem().getOrDefault(DataComponents.USE_EFFECTS, null).speedMultiplier() != 1f)
+                    // 1.21.1: a charging wand keeps the walking pace through LocalPlayerMixin (26.1: its use-effects component).
+                    if (!dev.logos.runtime.Charging.keepsPace(player.getUseItem()))
                         throw new AssertionError("charging must not slow the player");
                     var ring = ClientCharges.of(player);
                     if (ring == null || ring.full || ring.progress(0) <= 0 || ring.progress(0) >= 1)

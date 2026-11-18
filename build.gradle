@@ -185,6 +185,60 @@ sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
 
+// 1.21.1 draws an item with models/item/<id>.json; the item definitions in assets/logos/items/ (26.1's, kept the same
+// as on main) are read by this task: an item whose definition draws a model of another name gets a model with that one
+// as its parent, and a composite one a neoforge:composite model of its parts. Tints are read from the same files at
+// run time (client/port/ItemTints); the potion select is client/PotionBottles. Items with a model of their own name
+// (or a hand-written one in models/item) are left as they are.
+var generateItemModels = tasks.register("generateItemModels") {
+    var definitions = file("src/main/resources/assets/logos/items")
+    var models = file("src/main/resources/assets/logos/models/item")
+    var out = layout.buildDirectory.dir("generated/sources/itemModels")
+    inputs.dir definitions
+    inputs.dir models
+    outputs.dir out
+    doLast {
+        var target = out.get().dir("assets/logos/models/item").asFile
+        target.deleteDir()
+        target.mkdirs()
+        definitions.listFiles().findAll { it.name.endsWith(".json") }.sort().each { f ->
+            String id = f.name - ".json"
+            if (new File(models, f.name).exists()) return
+            var model = new groovy.json.JsonSlurper().parse(f).model
+            var json = null
+            if (model.type == "minecraft:model") {
+                if (model.model == "logos:item/" + id) return
+                json = [parent: model.model]
+            } else if (model.type == "minecraft:composite") {
+                var parts = model.models.collect { it.model }
+                var children = [:]
+                parts.eachWithIndex { String p, int i -> children["part_" + i] = [parent: p] }
+                json = [parent: parts[0], loader: "neoforge:composite", children: children]
+            }
+            if (json != null) new File(target, f.name).text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(json)) + "\n"
+        }
+    }
+}
+sourceSets.main.resources.srcDir generateItemModels
+neoForge.ideSyncTask generateItemModels
+
+// 1.21.1's NeoForge loads only the loot modifiers named in neoforge:loot_modifiers/global_loot_modifiers.json (26.1's
+// loads every file); the list is every file in data/logos/loot_modifiers, so main's files need no second place.
+var generateLootModifierList = tasks.register("generateLootModifierList") {
+    var modifiers = file("src/main/resources/data/logos/loot_modifiers")
+    var out = layout.buildDirectory.dir("generated/sources/lootModifiers")
+    inputs.dir modifiers
+    outputs.dir out
+    doLast {
+        var target = out.get().file("data/neoforge/loot_modifiers/global_loot_modifiers.json").asFile
+        target.parentFile.mkdirs()
+        var entries = modifiers.listFiles().findAll { it.name.endsWith(".json") }.collect { "logos:" + (it.name - ".json") }.sort()
+        target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([replace: false, entries: entries])) + "\n"
+    }
+}
+sourceSets.main.resources.srcDir generateLootModifierList
+neoForge.ideSyncTask generateLootModifierList
+
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
     publications {

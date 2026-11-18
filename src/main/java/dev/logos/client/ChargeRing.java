@@ -3,7 +3,8 @@ package dev.logos.client;
 import dev.logos.LogosMod;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import dev.logos.client.port.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
@@ -28,7 +29,7 @@ public final class ChargeRing {
 
     @SubscribeEvent
     static void onRegisterLayers(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.CROSSHAIR, ID, ChargeRing::render);
+        event.registerAbove(VanillaGuiLayers.CROSSHAIR, ID, (graphics, delta) -> ChargeRing.render(new GuiGraphicsExtractor(graphics), delta));
     }
 
     static void render(GuiGraphicsExtractor g, DeltaTracker delta) {

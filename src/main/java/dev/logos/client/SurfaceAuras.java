@@ -13,15 +13,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
-import dev.logos.mixin.ItemStackRenderStateAccessor;
-import dev.logos.mixin.LayerRenderStateAccessor;
 import dev.logos.runtime.ManaWrap;
 import dev.logos.runtime.SurfaceAura;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Sheets;
+import dev.logos.client.port.BufferSubmitNodeCollector;
 import dev.logos.client.port.SubmitNodeCollector;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.Direction;
 import net.minecraft.client.renderer.RenderType;
 import dev.logos.client.port.CameraRenderState;
 import net.minecraft.resources.ResourceLocation;
@@ -29,7 +30,6 @@ import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -54,16 +54,6 @@ import dev.logos.client.port.SubmitCustomGeometryEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class SurfaceAuras {
-    /** What an item's render state carries (added to {@link ItemStackRenderState} by a mixin). */
-    public interface Carrier {
-        void logos$aura(@Nullable SurfaceAura aura, @Nullable Element wrap, int owner);
-        @Nullable SurfaceAura logos$aura();
-        /** The element of the mana wrap on the hand holding the item, when it is the main hand. */
-        @Nullable Element logos$wrap();
-        int logos$owner();
-        ItemDisplayContext logos$context();
-    }
-
     /** At most this many particles in all. */
     private static final int CAP = 1200;
     /** Not drawn for this many ticks, an item is taken to be gone. */
@@ -89,48 +79,59 @@ public final class SurfaceAuras {
 
     // ---- from item rendering -------------------------------------------------------------------
 
+    /** Who the items drawn now belong to: the entity being drawn, or the one whose item is drawn in hand (innermost last). */
+    private static final List<Entity> OWNERS = new ArrayList<>();
+    private static final RandomSource QUADS = RandomSource.create();
+
     /**
-     * An item's model has been resolved: note whether it wears an aura, whether the main hand holding it wears a mana
-     * wrap, and who holds it. Inventory icons draw none.
+     * From the renderers (entities, held items): items drawn until {@link #doneDrawing} belong to {@code owner}; null
+     * (an item drawn for no one, as in a frame) keeps the one they belong to now.
      */
-    public static void resolved(ItemStackRenderState out, ItemStack stack, ItemDisplayContext context, @Nullable ItemOwner owner) {
-        // Not one if that mixin failed to apply (it is allowed to, see logos.cosmetic.mixins.json): then items wear nothing.
-        if (!(out instanceof Carrier carrier)) return;
-        boolean shown = !stack.isEmpty() && context != ItemDisplayContext.GUI;
-        SurfaceAura aura = shown ? SurfaceAura.of(stack) : null;
-        Element wrap = shown ? wrap(owner, context) : null;
-        carrier.logos$aura(aura, wrap, aura == null && wrap == null ? -1 : ownerId(owner));
+    public static void drawingFor(@Nullable Entity owner) {
+        OWNERS.add(owner != null || OWNERS.isEmpty() ? owner : OWNERS.getLast());
     }
 
-    private static int ownerId(@Nullable ItemOwner owner) {
-        if (owner instanceof ItemOwner.OffsetFromOwner offset) owner = offset.owner();
-        return owner instanceof Entity entity ? entity.getId() : -1;
+    public static void doneDrawing() {
+        if (!OWNERS.isEmpty()) OWNERS.removeLast();
+    }
+
+    /**
+     * ItemRenderer has just drawn an item's model, {@code poseStack} still in the model's space: if the item wears an
+     * aura, or the main hand holding it a mana wrap, note its pose and draw what clings to it. Inventory icons draw none.
+     */
+    public static void renderedItem(ItemStack stack, ItemDisplayContext context, BakedModel model, PoseStack poseStack, MultiBufferSource buffers) {
+        if (stack.isEmpty() || context == ItemDisplayContext.GUI || model.isCustomRenderer()) return;
+        Entity owner = OWNERS.isEmpty() ? null : OWNERS.getLast();
+        SurfaceAura aura = SurfaceAura.of(stack);
+        Element wrap = wrap(owner, context);
+        if (aura == null && wrap == null) return;
+        ItemSurface surface = ItemSurface.of(quads(model, stack));
+        if (surface == null) return;
+        // 1.21.1 keeps an item's vertices until the pass ends; drawn now, what clings to the item lands on it.
+        if (buffers == Minecraft.getInstance().renderBuffers().bufferSource()) flushItems();
+        draw(aura, wrap, surface, context, owner == null ? -1 : owner.getId(), poseStack, BufferSubmitNodeCollector.immediate(buffers));
+    }
+
+    /** The quads of the model's first pass (a composite staff's solid body), as ItemRenderer draws them. */
+    private static List<BakedQuad> quads(BakedModel model, ItemStack stack) {
+        List<BakedQuad> quads = new ArrayList<>();
+        BakedModel pass = model.getRenderPasses(stack, true).getFirst();
+        for (Direction d : Direction.values()) {
+            QUADS.setSeed(42);
+            quads.addAll(pass.getQuads(null, d, QUADS));
+        }
+        QUADS.setSeed(42);
+        quads.addAll(pass.getQuads(null, null, QUADS));
+        return quads;
     }
 
     /** The element of the mana wrap on the hand an item is drawn in, if that is its holder's main hand. */
-    private static @Nullable Element wrap(@Nullable ItemOwner owner, ItemDisplayContext context) {
-        if (owner instanceof ItemOwner.OffsetFromOwner offset) owner = offset.owner();
-        boolean hand = context == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND || context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
-                || context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
-        if (!hand || !(owner instanceof LivingEntity living) || context.leftHand() != (living.getMainArm() == HumanoidArm.LEFT)) return null;
+    private static @Nullable Element wrap(@Nullable Entity owner, ItemDisplayContext context) {
+        boolean left = context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+        boolean hand = left || context == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND || context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+        if (!hand || !(owner instanceof LivingEntity living) || left != (living.getMainArm() == HumanoidArm.LEFT)) return null;
         ManaWrap w = ManaWrap.of(living);
         return w == null ? null : w.element();
-    }
-
-    /** An item wearing an aura or a wrap is about to be drawn: note its pose and draw what clings to it. */
-    public static void submitItem(Carrier carrier, PoseStack poseStack, SubmitNodeCollector collector) {
-        var state = (ItemStackRenderStateAccessor) carrier;
-        if (state.logos$activeLayerCount() <= 0) return;
-        var layer = (LayerRenderStateAccessor) state.logos$layers()[0];
-        if (layer.logos$special() != null) return;
-        ItemSurface surface = ItemSurface.of(layer.logos$quads());
-        if (surface == null) return;
-        ItemDisplayContext context = carrier.logos$context();
-        poseStack.pushPose();
-        layer.logos$itemTransform().apply(context.leftHand(), poseStack.last());
-        poseStack.mulPose(layer.logos$localTransform());
-        draw(carrier.logos$aura(), carrier.logos$wrap(), surface, context, carrier.logos$owner(), poseStack, collector);
-        poseStack.popPose();
     }
 
     /** A bare fist wearing a mana wrap is about to be drawn, {@code poseStack} in the space its {@code fist} surface is in (see {@link WrapFists}). */
@@ -165,11 +166,11 @@ public final class SurfaceAuras {
         // Under a shader pack the layers are drawn over the finished frame, so over the item already.
         SubmitNodeCollector out = ShaderPackOverlay.item(collector, context.firstPerson());
         if (aura != null) {
-            if (owner >= 0) capture(owner, context, aura, null, surface, rel, camera.position());
+            if (owner >= 0) capture(owner, context, aura, null, surface, rel, camera.getPosition());
             SurfaceAuraVisual.local(aura, surface, view, t, seed, poseStack, out);
         }
         if (wrap != null) {
-            if (owner >= 0) capture(owner, context, null, wrap, surface, rel, camera.position());
+            if (owner >= 0) capture(owner, context, null, wrap, surface, rel, camera.getPosition());
             if (context.firstPerson() && out == collector) collector.order(0).submitCustomGeometry(poseStack, FLUSH, (p, buf) -> flushItems());
             WrapVisual.of(wrap).local(surface, view, t, seed, poseStack, out);
         }
@@ -178,8 +179,8 @@ public final class SurfaceAuras {
     /** Carries {@link #flushItems} into the feature pass; it writes no vertices of its own. */
     private static final RenderType FLUSH = VfxParts.add("surface/fire_loop");
     /** The item sheets and glints, which hold the vertices of every item drawn so far this pass. */
-    private static final RenderType[] ITEMS = {Sheets.cutoutBlockItemSheet(), Sheets.translucentBlockItemSheet(), Sheets.cutoutItemSheet(),
-            Sheets.translucentItemSheet(), RenderType.glint(), RenderType.glintTranslucent(), RenderType.entityGlint()};
+    private static final RenderType[] ITEMS = {Sheets.solidBlockSheet(), Sheets.cutoutBlockSheet(), Sheets.translucentCullBlockSheet(),
+            Sheets.translucentItemSheet(), RenderType.glint(), RenderType.glintTranslucent(), RenderType.entityGlint(), RenderType.entityGlintDirect()};
 
     /**
      * Draws the held items now, so a wrap's layers land on their item rather than under it. Items go into fixed
@@ -256,6 +257,7 @@ public final class SurfaceAuras {
     @SubscribeEvent
     static void onFrame(RenderFrameEvent.Pre event) {
         frame++;
+        OWNERS.clear();
     }
 
     static void tick() {

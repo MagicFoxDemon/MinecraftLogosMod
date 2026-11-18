@@ -8,10 +8,9 @@ import dev.logos.lang.Node;
 import dev.logos.lang.Spell;
 import dev.logos.net.SelectSpellPayload;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import dev.logos.client.port.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -66,7 +65,8 @@ public class SpellWheelScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float a) {
+        GuiGraphicsExtractor g = new GuiGraphicsExtractor(graphics);
         int cx = width / 2;
         int cy = height / 2;
         int n = onPage();
@@ -131,18 +131,18 @@ public class SpellWheelScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
         confirm();
         return true;
     }
 
     @Override
-    public boolean keyReleased(KeyEvent event) {
-        if (LogosClient.SPELL_WHEEL.matches(event)) {
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        if (LogosClient.SPELL_WHEEL.matches(keyCode, scanCode)) {
             confirm();
             return true;
         }
-        return super.keyReleased(event);
+        return super.keyReleased(keyCode, scanCode, modifiers);
     }
 
     private void confirm() {

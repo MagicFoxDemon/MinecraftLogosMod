@@ -19,7 +19,7 @@ final class PrismaticVolleyGameTests {
     static void budget(GameTestHelper h) {
         FamiliarGameTests.forceAround(h, 1);
         @SuppressWarnings("removal")
-        var caster = h.makeMockServerPlayerInLevel();
+        var caster = MockPlayers.inLevel(h);
         Vec3 at = h.absoluteVec(new Vec3(4.5, 4, 1.5));
         caster.moveTo(at.x, at.y, at.z, 0, 0);
         caster.setYHeadRot(0);

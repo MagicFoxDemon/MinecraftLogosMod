@@ -9,8 +9,6 @@ import dev.logos.runtime.ConstructEntity;
 import dev.logos.runtime.ConstructGeometry;
 import net.minecraft.client.Minecraft;
 import dev.logos.client.port.SubmitNodeCollector;
-import net.minecraft.client.renderer.block.BlockModelRenderState;
-import net.minecraft.client.renderer.entity.DisplayRenderer;
 import net.minecraft.client.renderer.RenderType;
 import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -29,7 +27,6 @@ import net.minecraft.world.phys.Vec3;
 final class ConstructRender {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/misc/construct.png");
     private static final int SEGMENTS = 24, RINGS = 8;
-    private static final BlockModelRenderState BLOCK = new BlockModelRenderState();
 
     private ConstructRender() {}
 
@@ -46,7 +43,7 @@ final class ConstructRender {
             Vec3 eye = cam.pos.subtract(lag);
             float fade = Math.min(1, (c.tickCount + pt) / 8f);
             if (c.look().isPresent()) {
-                mc.getBlockModelResolver().update(BLOCK, c.look().get(), DisplayRenderer.BLOCK_DISPLAY_CONTEXT);
+                var block = c.look().get();
                 // Cells grow into place as the construct forms.
                 float s = (float) g.cell * (0.4f + 0.6f * fade);
                 for (AABB cell : g.cells) {
@@ -54,7 +51,8 @@ final class ConstructRender {
                     pose.pushPose();
                     pose.translate(mid.x - eye.x - s / 2, mid.y - eye.y - s / 2, mid.z - eye.z - s / 2);
                     pose.scale(s, s, s);
-                    BLOCK.submit(pose, out, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 0);
+                    out.submitDrawing(pose, (at, buffers) -> mc.getBlockRenderer().renderSingleBlock(block, at, buffers,
+                            LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY));
                     pose.popPose();
                 }
                 continue;

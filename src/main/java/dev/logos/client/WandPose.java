@@ -9,8 +9,8 @@ import dev.logos.LogosMod;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.entity.state.AvatarRenderState;
-import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import dev.logos.client.port.AvatarRenderState;
+import dev.logos.client.port.HumanoidRenderState;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
@@ -36,7 +36,7 @@ public final class WandPose {
 
     /** The charging arm pose, added to {@link HumanoidModel.ArmPose} through META-INF/enumextensions.json. */
     public static final EnumProxy<HumanoidModel.ArmPose> CHARGE = new EnumProxy<>(HumanoidModel.ArmPose.class,
-            false, false, (IArmPoseTransformer) WandPose::poseArm);
+            false, (IArmPoseTransformer) (model, entity, arm) -> poseArm(model, HumanoidRenderState.of(entity, model), arm));
 
     private WandPose() {}
 

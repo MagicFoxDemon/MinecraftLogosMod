@@ -65,7 +65,7 @@ final class EditPayloadGameTests {
 
     @SuppressWarnings("removal")
     static ServerPlayer playerAt(GameTestHelper h, double x, double z) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic.of(p).trace = false;
@@ -145,7 +145,7 @@ final class EditPayloadGameTests {
             InscribePayload.handle(new InscribePayload(pos, source, drawing("近"), ""), from(near));
             h.assertTrue(compiled[0] > 0, "the watch on the compiler saw nothing, so the checks above prove nothing");
             h.assertTrue(SpellPages.isInscribed(table.page()) && "先查后编".equals(SpellPages.spell(table.page()).name()), "a proper inscribe did not write the page");
-            h.assertTrue(table.page().get(LogosMod.SPELL_GRAPH.get()).getStringOr("marker", "").equals("近"), "a proper inscribe did not keep the drawing");
+            h.assertTrue(table.page().get(LogosMod.SPELL_GRAPH.get()).getString("marker").equals("近"), "a proper inscribe did not keep the drawing");
         } finally {
             Compiler.effectExists = real;
         }
@@ -167,14 +167,14 @@ final class EditPayloadGameTests {
         for (CompoundTag tooLarge : new CompoundTag[] {bytes(EditLimits.MAX_GRAPH_BYTES + 1), nodes(EditLimits.MAX_GRAPH_NODES + 1)}) {
             InscribePayload.handle(new InscribePayload(pos, spell("新"), tooLarge, ""), from(p));
             h.assertTrue("旧".equals(SpellPages.spell(table.page()).name()), "an oversized drawing rewrote the spell");
-            h.assertTrue(table.page().get(LogosMod.SPELL_GRAPH.get()).getStringOr("marker", "").equals("旧"), "an oversized drawing replaced the old one");
+            h.assertTrue(table.page().get(LogosMod.SPELL_GRAPH.get()).getString("marker").equals("旧"), "an oversized drawing replaced the old one");
         }
         InscribePayload.handle(new InscribePayload(pos, spell("新"), nodes(EditLimits.MAX_GRAPH_NODES), ""), from(p));
         h.assertTrue("新".equals(SpellPages.spell(table.page()).name()), "a drawing right at the limit was refused");
 
         BlockPos at = new BlockPos(6, 2, 1);
         h.setBlock(at, LogosMod.SPELL_EMITTER.get().defaultBlockState().setValue(SpellEmitterBlock.FACING, Direction.EAST));
-        SpellEmitterBlockEntity emitter = (SpellEmitterBlockEntity) h.getBlockEntity(at, SpellEmitterBlockEntity.class);
+        SpellEmitterBlockEntity emitter = (SpellEmitterBlockEntity) h.getBlockEntity(at);
         emitter.setPage(SpellPages.inscribed(PageTier.CRYSTAL, spell("旧"), drawing("旧")), null);
         ServerPlayer q = playerAt(h, 4.5, 1.5);
         EditAccessGameTests.rightClick(q, h.absolutePos(at));

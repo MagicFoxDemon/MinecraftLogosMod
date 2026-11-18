@@ -16,7 +16,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -38,7 +37,7 @@ public class CastGestureScenario implements UIScenario {
 
     private static void hold(ScenarioBuilder s, ItemStack item) {
         s.server("hand the mannequin " + item.getItem(), sc -> sc.player().level()
-                .getEntitiesOfClass(Mannequin.class, new AABB(ORIGIN).inflate(8))
+                .getEntitiesOfClass(dev.logos.runtime.PossessionBody.class, new AABB(ORIGIN).inflate(8))
                 .forEach(b -> b.setItemSlot(EquipmentSlot.MAINHAND, item.copy())));
     }
 
@@ -47,7 +46,7 @@ public class CastGestureScenario implements UIScenario {
      * clock (a scenario tick is not a client tick), which stops for each screenshot.
      */
     private static void play(ScenarioBuilder s, String name, ResourceLocation gesture, int length, int... at) {
-        s.server("play " + name, sc -> sc.player().level().getEntitiesOfClass(Mannequin.class, new AABB(ORIGIN).inflate(8))
+        s.server("play " + name, sc -> sc.player().level().getEntitiesOfClass(dev.logos.runtime.PossessionBody.class, new AABB(ORIGIN).inflate(8))
                 .forEach(b -> CastPose.play(b, gesture)));
         for (int t : at) {
             s.waitUntil(name + " reaches " + t, ctx -> stopAt(gesture, t)).screenshot(name + "_" + t)
@@ -58,7 +57,7 @@ public class CastGestureScenario implements UIScenario {
 
     private static @javax.annotation.Nullable CastPoses.Active mannequinPose() {
         for (var e : Minecraft.getInstance().level.entitiesForRendering()) {
-            if (e instanceof Mannequin) return CastPoses.of(e, 0);
+            if (e instanceof dev.logos.runtime.PossessionBody) return CastPoses.of(e, 0);
         }
         return null;
     }
@@ -81,7 +80,7 @@ public class CastGestureScenario implements UIScenario {
                 .fill(ORIGIN.offset(-8, 0, -6), ORIGIN.offset(8, 0, 16), Blocks.SMOOTH_STONE.defaultBlockState())
                 .server("a mannequin facing east", sc -> {
                     var level = sc.player().level();
-                    Mannequin body = EntityType.MANNEQUIN.create(level);
+                    dev.logos.runtime.PossessionBody body = dev.logos.LogosMod.POSSESSION_BODY.get().create(level);
                     body.moveTo(0.5, 101, 4.5, -90, 0);
                     body.setYHeadRot(-90);
                     body.setYBodyRot(-90);

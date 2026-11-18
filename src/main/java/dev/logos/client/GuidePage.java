@@ -6,7 +6,6 @@ import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
-import com.lowdragmc.lowdraglib2.client.font.LDFonts;
 import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.ItemStackTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
@@ -28,7 +27,6 @@ import dev.vfyjxf.taffy.style.FlexWrap;
 import dev.logos.ui.Manuscript;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ActiveTextCollector;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -38,14 +36,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.context.ContextMap;
+import dev.logos.client.port.ContextMap;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.display.RecipeDisplay;
-import net.minecraft.world.item.crafting.display.ShapedCraftingRecipeDisplay;
-import net.minecraft.world.item.crafting.display.ShapelessCraftingRecipeDisplay;
-import net.minecraft.world.item.crafting.display.SlotDisplay;
-import net.minecraft.world.item.crafting.display.SmithingRecipeDisplay;
+import dev.logos.client.port.RecipeDisplay;
+import dev.logos.client.port.ShapedCraftingRecipeDisplay;
+import dev.logos.client.port.ShapelessCraftingRecipeDisplay;
+import dev.logos.client.port.SlotDisplay;
+import dev.logos.client.port.SmithingRecipeDisplay;
 
 /**
  * One page of 逻各斯手记 drawn in ink: its title, then each block of its Markdown as an element. Links in the text are
@@ -165,7 +163,8 @@ public final class GuidePage {
             Style style = Style.EMPTY.withBold(s.bold() ? true : null).withItalic(s.italic() ? true : null);
             if (s.code()) style = style.withColor(CODE);
             if (s.link() != null) {
-                style = style.withClickEvent(new ClickEvent.Custom(LINK, Optional.of(StringTag.valueOf(s.link()))));
+                // 1.21.1 has no custom click event: the link rides on a page change no screen of the game reads.
+                style = style.withClickEvent(new ClickEvent(ClickEvent.Action.CHANGE_PAGE, LINK + ":" + s.link()));
                 style = GuideBook.isItem(s.link()) ? style.withColor(GOLD) : style.withColor(Manuscript.SANGUINE).withUnderlined(true);
             }
             out.append(Component.literal(s.text()).withStyle(style));
@@ -201,24 +200,22 @@ public final class GuidePage {
         }
 
         public static @Nullable String link(@Nullable Style style) {
-            if (style != null && style.getClickEvent() instanceof ClickEvent.Custom custom && custom.id().equals(LINK)) {
-                return custom.payload().flatMap(tag -> tag.asString()).orElse(null);
-            }
+            ClickEvent click = style == null ? null : style.getClickEvent();
+            String prefix = LINK + ":";
+            if (click != null && click.getAction() == ClickEvent.Action.CHANGE_PAGE && click.getValue().startsWith(prefix)) return click.getValue().substring(prefix.length());
             return null;
         }
 
         /** The style of the text at the screen point {@code x, y}, or null off the text. */
         public @Nullable Style styleAt(float x, float y) {
-            Font font = LDFonts.font();
+            Font font = Minecraft.getInstance().font;
             float size = getTextStyle().fontSize();
             var lines = TextUtilities.computeFormattedLines(font, TextUtilities.withFont(getText(), getTextStyle().font()), size, getContentWidth());
             if (lines.isEmpty()) return null;
             int row = (int) Math.floor((y - getContentY()) / (size + getTextStyle().lineSpacing()));
             if (row < 0 || row >= lines.size()) return null;
             float scale = size / font.lineHeight;
-            var finder = new ActiveTextCollector.ClickableStyleFinder(font, (int) ((x - getContentX()) / scale), font.lineHeight / 2);
-            finder.accept(0, 0, lines.get(row).getA());
-            return finder.result();
+            return font.getSplitter().componentStyleAtWidth(lines.get(row).getA(), (int) ((x - getContentX()) / scale));
         }
     }
 
@@ -450,8 +447,8 @@ public final class GuidePage {
 
     static HoverTooltips tooltips(ItemStack stack) {
         Minecraft mc = Minecraft.getInstance();
-        return HoverTooltips.create(Screen.getTooltipFromItem(mc, stack).toArray())
-                .append(stack.getTooltipImage().orElse(null)).stack(stack);
+        return HoverTooltips.empty().append(Screen.getTooltipFromItem(mc, stack).toArray(Component[]::new))
+                .tooltipComponent(stack.getTooltipImage().orElse(null)).stack(stack);
     }
 
     /** The item named by {@code id}, or nothing when no item has that id. */

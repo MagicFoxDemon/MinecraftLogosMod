@@ -45,7 +45,8 @@ class PackageRulesTest {
             entry("block", Set.of("lang", "graph", "runtime", "item", "alchemy", "net", "ui")),
             entry("net", Set.of("lang", "graph", "runtime", "item", "block", "alchemy", "sage")),
             entry("command", Set.of("lang", "runtime", "item")),
-            entry("mixin", Set.of("lang", "runtime")),
+            // 1.21.1: no mixin names the language (26.1's weather-attribute mixin did).
+            entry("mixin", Set.of("runtime")),
             entry("ui", Set.of("runtime", "alchemy")));
 
     /**

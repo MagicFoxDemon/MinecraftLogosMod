@@ -20,7 +20,7 @@ final class ManaGrowthGameTests {
 
     private static ServerPlayer player(GameTestHelper h) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 200;
         m.trace = false;

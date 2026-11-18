@@ -23,6 +23,15 @@ abstract class LivingEntityMixin {
         return FamiliarRiding.controller((LivingEntity) (Object) this) == controller;
     }
 
+    /**
+     * A player inside a possessed creature cannot be aimed at or shot: blows and arrows find the creature. On 1.21.1 a
+     * player has no isPickable of its own, so it is LivingEntity's.
+     */
+    @Inject(method = "isPickable", at = @At("HEAD"), cancellable = true)
+    private void logos$possessing(CallbackInfoReturnable<Boolean> cir) {
+        if ((Object) this instanceof Player p && dev.logos.runtime.Possession.possessing(p)) cir.setReturnValue(false);
+    }
+
     @Inject(method = "getRiddenInput", at = @At("HEAD"), cancellable = true)
     private void logos$riddenInput(Player controller, Vec3 selfInput, CallbackInfoReturnable<Vec3> cir) {
         if (logos$riddenBy(controller)) cir.setReturnValue(FamiliarRiding.riddenInput((LivingEntity) (Object) this, controller));

@@ -18,7 +18,7 @@ final class AreaWeatherClient {
     static void onTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.isPaused()) return;
-        AreaWeather.clientTick(mc.level, mc.gameRenderer.getMainCamera().position());
+        AreaWeather.clientTick(mc.level, mc.gameRenderer.getMainCamera().getPosition());
         AreaWeatherSky.tick(mc.level);
     }
 

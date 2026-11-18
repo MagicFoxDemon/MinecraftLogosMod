@@ -39,7 +39,7 @@ final class WorldGameTests {
     private static ServerPlayer caster(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(0.5, 2, 0.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
@@ -294,7 +294,7 @@ final class WorldGameTests {
     static void playersFlag(GameTestHelper h) {
         ServerPlayer p = caster(h);
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         Vec3 near = h.absoluteVec(new Vec3(2.5, 2, 2.5));
         other.moveTo(near.x, near.y, near.z, 0, 0);
         Status mark = new Status("#seen");
@@ -311,9 +311,9 @@ final class WorldGameTests {
     static void nearestPlayer(GameTestHelper h) {
         ServerPlayer p = caster(h);
         @SuppressWarnings("removal")
-        ServerPlayer near = h.makeMockServerPlayerInLevel();
+        ServerPlayer near = MockPlayers.inLevel(h);
         @SuppressWarnings("removal")
-        ServerPlayer far = h.makeMockServerPlayerInLevel();
+        ServerPlayer far = MockPlayers.inLevel(h);
         Vec3 a = h.absoluteVec(new Vec3(2.5, 2, 0.5)), b = h.absoluteVec(new Vec3(6.5, 2, 0.5));
         near.moveTo(a.x, a.y, a.z, 0, 0);
         far.moveTo(b.x, b.y, b.z, 0, 0);
@@ -412,7 +412,7 @@ final class WorldGameTests {
         h.assertTrue(cow.position().distanceTo(corner) < 0.5 && pig.position().distanceTo(corner) < 0.5, "every member of the group should be moved");
 
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         Vec3 at = h.absoluteVec(new Vec3(4.5, 2, 2.5));
         other.moveTo(at.x, at.y, at.z, 0, 0);
         Vec3 far = Vec3.atCenterOf(h.absolutePos(new BlockPos(8, 2, 0)));
@@ -462,7 +462,8 @@ final class WorldGameTests {
     static void worldWeather(GameTestHelper h) {
         ServerPlayer p = caster(h);
         var server = h.getLevel().getServer();
-        var data = server.getWeatherData();
+        // 1.21.1 keeps the weather on the overworld's level data.
+        var data = (net.minecraft.world.level.storage.ServerLevelData) server.overworld().getLevelData();
         int clear = data.getClearWeatherTime(), rain = data.getRainTime(), thunder = data.getThunderTime();
         boolean raining = data.isRaining(), thundering = data.isThundering();
         try {
@@ -492,14 +493,14 @@ final class WorldGameTests {
     static void lightningStrike(GameTestHelper h) {
         ServerPlayer p = caster(h);
         p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         FamiliarGameTests.forceAround(h, 1);
         Vec3 beside = h.absoluteVec(new Vec3(3.0, 2, 5.5)); // inside the bolt's reach, clear of the fire it lights
         p.moveTo(beside.x, beside.y, beside.z, 0, 0);
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         other.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
-        other.connection.markClientLoaded();
+        MockPlayers.loaded(other);
         Vec3 across = h.absoluteVec(new Vec3(5.5, 2, 3.0)); // as near the bolt as the caster
         other.moveTo(across.x, across.y, across.z, 0, 0);
         var cow = h.spawn(EntityType.COW, new Vec3(5.5, 2, 5.5));
@@ -537,9 +538,9 @@ final class WorldGameTests {
         SpellInstance clear = castAt(h, p, "(spell :mana 100 (weather clear :radius 1.5 :life 2))", clearAt);
         SpellInstance snow = castAt(h, p, "(spell :mana 100 (weather snow :radius 1.5 :life 2))", snowAt);
         h.assertTrue(dev.logos.runtime.AreaWeather.at(level, rainCenter.x, rainCenter.z) == dev.logos.lang.Weather.RAIN, "the rain zone should stand over its center");
-        h.assertTrue(level.precipitationAt(h.absolutePos(rainAt)) != net.minecraft.world.level.biome.Biome.Precipitation.NONE, "it should rain (or snow, if cold) in the zone");
+        h.assertTrue(java.util.Objects.requireNonNullElse(dev.logos.runtime.AreaWeather.precipitationAt(level, h.absolutePos(rainAt)), net.minecraft.world.level.biome.Biome.Precipitation.NONE) != net.minecraft.world.level.biome.Biome.Precipitation.NONE, "it should rain (or snow, if cold) in the zone");
         h.assertTrue(dev.logos.runtime.AreaWeather.at(level, rainCenter.x + 30, rainCenter.z) == null, "30 blocks off no zone should stand");
-        h.assertTrue(level.precipitationAt(h.absolutePos(clearAt)) == net.minecraft.world.level.biome.Biome.Precipitation.NONE, "nothing should fall in the clear zone");
+        h.assertTrue(java.util.Objects.requireNonNullElse(dev.logos.runtime.AreaWeather.precipitationAt(level, h.absolutePos(clearAt)), net.minecraft.world.level.biome.Biome.Precipitation.NONE) == net.minecraft.world.level.biome.Biome.Precipitation.NONE, "nothing should fall in the clear zone");
         for (int i = 0; i < 4; i++) {
             level.tickPrecipitation(h.absolutePos(snowAt));
             level.tickPrecipitation(h.absolutePos(stone));
@@ -565,8 +566,7 @@ final class WorldGameTests {
     static void timeSkip(GameTestHelper h) {
         ServerPlayer p = caster(h);
         var server = h.getLevel().getServer();
-        var clock = h.getLevel().dimensionType().defaultClock().orElseThrow();
-        float rate = server.clockManager().getRate(clock);
+        // 1.21.1 has no clock rate: a skip pushes the day time itself (TimeSkipObj), so only how far it moved is checked.
         var nether = server.getLevel(Level.NETHER);
         SpellInstance dry = Casting.cast(p, Casting.compile("(spell :mana 10 (time-skip 60))"), null, null);
         SpellInstance[] run = new SpellInstance[2];
@@ -575,8 +575,7 @@ final class WorldGameTests {
                 .thenWaitUntil(() -> h.assertTrue(dry.finished(), "the dry skip is still running"))
                 .thenExecute(() -> {
                     h.assertTrue(dry.dead && "logos.spell.end.out_of_mana".equals(dry.endKey()), "it should stop when its mana runs dry, got " + dry.endReason());
-                    h.assertTrue(server.clockManager().getRate(clock) == rate, "a stopped skip should give the clock its rate back");
-                    before[0] = server.clockManager().getTotalTicks(clock);
+                    before[0] = h.getLevel().getDayTime();
                     run[0] = Casting.cast(p, Casting.compile("(spell :mana 100 (time-skip 10))"), null, null);
                     SpellInstance second = Casting.cast(p, Casting.compile("(spell :mana 100 (time-skip 10))"), null, null);
                     h.assertTrue(second.dead && "logos.spell.end.time_skip_running".equals(second.endKey()) && second.mana == second.injected,
@@ -587,19 +586,19 @@ final class WorldGameTests {
                 .thenExecute(() -> {
                     double spent = run[0].injected - run[0].mana;
                     h.assertTrue(!run[0].dead && Math.abs(spent - 40) < 1e-6, "10 seconds should cost 40, cost " + spent + " (" + run[0].endReason() + ")");
-                    long pushed = server.clockManager().getTotalTicks(clock) - before[0];
+                    long pushed = h.getLevel().getDayTime() - before[0];
                     h.assertTrue(pushed >= 200, "the clock should move at least 200 ticks, moved " + pushed);
-                    h.assertTrue(server.clockManager().getRate(clock) == rate, "the clock should get its rate back");
                     h.assertTrue(dev.logos.runtime.TimeSkipObj.randomTickSpeed(h.getLevel(), 3) == 3, "random ticks should be back to normal");
                     dev.logos.runtime.Attunement.visit(p, Level.NETHER);
                     Casting.cast(p, Casting.compile("(spell :mana 200 (blink (in-dimension @the_nether (pos-of caster))))"), null, null);
                     h.assertTrue(p.level() == nether, "the caster should be in the nether");
+                    before[0] = h.getLevel().getDayTime();
                     run[1] = Casting.cast(p, Casting.compile("(spell :mana 100 (time-skip 5))"), null, null);
                 })
                 .thenExecuteAfter(5, () -> {
                     h.assertTrue(dev.logos.runtime.TimeSkipObj.randomTickSpeed(nether, 3) > 3, "random ticks in the nether should speed up");
                     h.assertTrue(dev.logos.runtime.TimeSkipObj.randomTickSpeed(h.getLevel(), 3) == 3, "the overworld's random ticks should not");
-                    h.assertTrue(server.clockManager().getRate(clock) == rate, "a skip in the nether should leave the overworld clock alone");
+                    h.assertTrue(h.getLevel().getDayTime() - before[0] <= 10, "a skip in the nether should leave the overworld clock alone");
                 })
                 .thenWaitUntil(() -> h.assertTrue(run[1].finished() && !run[1].dead, "the nether skip should finish, " + run[1].endReason()))
                 .thenSucceed();
@@ -608,7 +607,7 @@ final class WorldGameTests {
     /** A wand charges and casts the selected page; a codex in the off hand extends the list. */
     static void wandCastsSelectedPage(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        var husk = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 4.5), MobSpawnType.COMMAND);
+        var husk = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 4.5));
         husk.setNoAi(true);
         ItemStack wand = new ItemStack(LogosMod.WAND.get());
         wand.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(
@@ -638,7 +637,7 @@ final class WorldGameTests {
                     ItemStack.EMPTY, new ItemStack(planks), ItemStack.EMPTY,
                     new ItemStack(log), ItemStack.EMPTY, ItemStack.EMPTY));
             ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
-                    .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+                    .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
             h.assertTrue(out.is(wand.get()), wood + " log and planks made " + out);
             h.assertTrue(wand.get().slots() == 3, wood + " wand holds " + wand.get().slots() + " pages");
         }
@@ -654,13 +653,13 @@ final class WorldGameTests {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(2, 2, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(Items.GOLD_NUGGET), new ItemStack(Items.AMETHYST_SHARD), new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
-                .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(blank, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.CRYSTAL.blank()), "paper, gold nugget, amethyst and adhesive made " + made);
         ItemStack basic = SpellPages.inscribed(dev.logos.item.PageTier.BASIC, "(spell :name \"晶辉\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.AMETHYST_SHARD), basic, new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
-                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(upgrade, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.CRYSTAL.inscribed()), "the written basic page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("晶辉"), "the crystal page should keep the spell");
         h.succeed();
@@ -671,14 +670,14 @@ final class WorldGameTests {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.ECHO_TINCTURE.get()), new ItemStack(LogosMod.ADHESIVE.get())));
         var recipe = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel());
-        ItemStack made = recipe.map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+        ItemStack made = recipe.map(r -> r.value().assemble(blank, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.ECHO.blank()), "paper, echo tincture and adhesive made " + made);
         h.assertTrue(recipe.get().value().getRemainingItems(blank).stream().anyMatch(st -> st.is(Items.GLASS_BOTTLE)), "the tincture's bottle was not given back");
         ItemStack crystal = SpellPages.inscribed(dev.logos.item.PageTier.CRYSTAL, "(spell :name \"回响\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.ADHESIVE.get()), crystal, new ItemStack(LogosMod.ECHO_TINCTURE.get())));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
-                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(upgrade, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.ECHO.inscribed()), "the written crystal page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("回响"), "the echo page should keep the spell");
         h.succeed();
@@ -689,14 +688,14 @@ final class WorldGameTests {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.RAVEN_HEAD.get()), new ItemStack(LogosMod.ADHESIVE.get())));
         var recipe = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel());
-        ItemStack made = recipe.map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+        ItemStack made = recipe.map(r -> r.value().assemble(blank, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.TRANSMUTED.blank()), "paper, raven's head and adhesive made " + made);
         h.assertTrue(recipe.get().value().getRemainingItems(blank).stream().anyMatch(st -> st.is(Items.GLASS_BOTTLE)), "the raven's head's bottle was not given back");
         ItemStack echo = SpellPages.inscribed(dev.logos.item.PageTier.ECHO, "(spell :name \"炼成\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.RAVEN_HEAD.get()), echo, new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
-                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(upgrade, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.TRANSMUTED.inscribed()), "the written echo page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("炼成"), "the transmuted page should keep the spell");
         h.succeed();
@@ -707,13 +706,13 @@ final class WorldGameTests {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.CHALK.get()), new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
-                .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(blank, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.CHALK.blank()), "paper, chalk and adhesive made " + made);
         ItemStack transmuted = SpellPages.inscribed(dev.logos.item.PageTier.TRANSMUTED, "(spell :name \"白垩\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.CHALK.get()), transmuted, new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
-                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(upgrade, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.CHALK.inscribed()), "the written transmuted page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("白垩"), "the chalk page should keep the spell");
         h.succeed();
@@ -724,13 +723,13 @@ final class WorldGameTests {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.FIRMAMENT_STONE.get()), new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
-                .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(blank, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.FIRMAMENT.blank()), "paper, the firmament stone and adhesive made " + made);
         ItemStack chalk = SpellPages.inscribed(dev.logos.item.PageTier.CHALK, "(spell :name \"天穹\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.FIRMAMENT_STONE.get()), chalk, new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
-                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(upgrade, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.FIRMAMENT.inscribed()), "the written chalk page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("天穹"), "the firmament page should keep the spell");
         h.succeed();
@@ -741,13 +740,13 @@ final class WorldGameTests {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.PHILOSOPHERS_STONE.get()), new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
-                .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(blank, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.SAGE.blank()), "paper, the philosophers' stone and adhesive made " + made);
         ItemStack firmament = SpellPages.inscribed(dev.logos.item.PageTier.FIRMAMENT, "(spell :name \"贤者\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.PHILOSOPHERS_STONE.get()), firmament, new ItemStack(LogosMod.ADHESIVE.get())));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
-                .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(upgrade, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.SAGE.inscribed()), "the written firmament page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("贤者"), "the sage page should keep the spell");
         h.succeed();

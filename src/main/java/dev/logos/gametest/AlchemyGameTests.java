@@ -66,7 +66,7 @@ final class AlchemyGameTests {
             CraftingInput input = CraftingInput.of(3, 1, List.of(new ItemStack(LogosMod.SALTPETER.get()), new ItemStack(fuel),
                     new ItemStack(LogosMod.SULFUR_POWDER.get())));
             ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
-                    .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+                    .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
             h.assertTrue(out.is(Items.GUNPOWDER) && out.getCount() == 3, "sulfur, " + fuel + " and saltpeter made " + out);
         }
         h.succeed();
@@ -77,7 +77,7 @@ final class AlchemyGameTests {
         CraftingInput input = CraftingInput.of(2, 2, List.of(new ItemStack(LogosMod.CAPUT_MORTUUM.get()), new ItemStack(Items.COPPER_INGOT),
                 new ItemStack(LogosMod.ADHESIVE.get()), new ItemStack(LogosMod.CAPUT_MORTUUM.get())));
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
-                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(LogosMod.MAINTENANCE_KIT.get()), "caput mortuum, adhesive and copper made " + out);
         h.succeed();
     }
@@ -90,7 +90,7 @@ final class AlchemyGameTests {
                 ItemStack.EMPTY, new ItemStack(Items.CRAFTING_TABLE), ItemStack.EMPTY);
         CraftingInput input = CraftingInput.of(3, 3, grid);
         ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
-                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(LogosMod.ALCHEMY_TABLE_ITEM.get()) && out.getCount() == 1, "the recipe made " + out);
         h.succeed();
     }
@@ -106,7 +106,7 @@ final class AlchemyGameTests {
         BlockState state = LogosMod.ALCHEMY_TABLE.get().defaultBlockState().setValue(AlchemyTableBlock.FACING, Direction.SOUTH);
         h.setBlock(MAIN, state);
         state.getBlock().setPlacedBy(h.getLevel(), h.absolutePos(MAIN), state, null, new ItemStack(LogosMod.ALCHEMY_TABLE_ITEM.get()));
-        return (AlchemyTableBlockEntity) h.getBlockEntity(MAIN, AlchemyTableBlockEntity.class);
+        return (AlchemyTableBlockEntity) h.getBlockEntity(MAIN);
     }
 
     private static List<ItemEntity> dropped(GameTestHelper h, net.minecraft.world.item.Item item) {
@@ -152,13 +152,13 @@ final class AlchemyGameTests {
         // A real hopper above feeds the raw area; one below empties the product area.
         table.items().set(AlchemyTableBlockEntity.RAW_SLOTS, ItemResource.of(Items.GUNPOWDER), 2);
         h.setBlock(SIDE.above(), Blocks.HOPPER.defaultBlockState().setValue(HopperBlock.FACING, Direction.DOWN));
-        ((HopperBlockEntity) h.getBlockEntity(SIDE.above(), HopperBlockEntity.class)).setItem(0, new ItemStack(Items.SUGAR, 2));
+        ((HopperBlockEntity) h.getBlockEntity(SIDE.above())).setItem(0, new ItemStack(Items.SUGAR, 2));
         h.setBlock(MAIN.below(), Blocks.HOPPER.defaultBlockState().setValue(HopperBlock.FACING, Direction.DOWN));
         h.succeedWhen(() -> {
             int sugar = 0;
             for (int i = 0; i < AlchemyTableBlockEntity.RAW_SLOTS; i++) if (table.items().getResource(i).is(Items.SUGAR)) sugar += table.items().getAmountAsInt(i);
             h.assertTrue(sugar == 2, "the hopper above has fed " + sugar + " of 2 sugar");
-            h.assertTrue(((HopperBlockEntity) h.getBlockEntity(MAIN.below(), HopperBlockEntity.class)).countItem(Items.GUNPOWDER) == 2,
+            h.assertTrue(((HopperBlockEntity) h.getBlockEntity(MAIN.below())).countItem(Items.GUNPOWDER) == 2,
                     "the hopper below has not emptied the products");
         });
     }
@@ -189,7 +189,7 @@ final class AlchemyGameTests {
         table.setMana(990);
         table.fuel().set(0, ItemResource.of(Items.AMETHYST_SHARD), 3);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         PlayerMagic.of(p).mana = 500;
         ItemStack wand = new ItemStack(LogosMod.WAND.get());
         p.setItemInHand(InteractionHand.MAIN_HAND, wand);
@@ -210,7 +210,7 @@ final class AlchemyGameTests {
     static void tableBottles(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(h.absolutePos(MAIN)), Direction.UP, h.absolutePos(MAIN), false);
         p.setItemInHand(InteractionHand.MAIN_HAND, PotionContents.createItemStack(Items.POTION, Potions.WATER));
@@ -230,7 +230,7 @@ final class AlchemyGameTests {
         CompoundTag tag = new CompoundTag();
         tag.putFloat("amount", 50);
         FreeManaEntity orb = new FreeManaEntity(LogosMod.FREE_MANA.get(), h.getLevel());
-        orb.load(TagValueInput.create(ProblemReporter.DISCARDING, h.getLevel().registryAccess(), tag));
+        orb.load(tag);
         Vec3 at = h.absoluteVec(Vec3.atBottomCenterOf(MAIN.above()));
         orb.setPos(at.x, at.y, at.z);
         orb.setNoGravity(true);
@@ -482,7 +482,7 @@ final class AlchemyGameTests {
             contents.getAllEffects().forEach(e -> effects.add(e.getEffect()));
             h.assertTrue(effects.size() == 3 && effects.contains(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED) && effects.contains(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST)
                     && effects.contains(net.minecraft.world.effect.MobEffects.NIGHT_VISION), "the potion holds " + effects);
-            h.assertTrue(contents.customName().equals(java.util.Optional.of(dev.logos.alchemy.SpecialRecipes.CONJUNCTION)), "the potion is not named a conjunction");
+            h.assertTrue(potion.get(DataComponents.ITEM_NAME) != null && potion.get(DataComponents.ITEM_NAME).getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t && t.getKey().endsWith(dev.logos.alchemy.SpecialRecipes.CONJUNCTION), "the potion is not named a conjunction");
             h.assertTrue(count(card.inputs(), LogosMod.PHILOSOPHERS_MERCURY.get()) + count(card.inputs(), LogosMod.POTION_POWDER.get()) == 0, "the materials were not used up");
             h.assertTrue(count(card.inputs(), Items.GLASS_BOTTLE) == 3 && table.fluid().getAmount() == 1000, "the powder-back recipe ran too");
             h.assertTrue(table.mana() == 5, "joining three powders left " + table.mana() + " mana, not 5");
@@ -515,7 +515,7 @@ final class AlchemyGameTests {
         table.tank().set(0, FluidResource.of(Fluids.WATER), 1000);
         ProcessCard card = table.addCard(Process.PURIFY);
         ItemStack helmet = new ItemStack(Items.LEATHER_HELMET);
-        helmet.set(DataComponents.DYED_COLOR, new net.minecraft.world.item.component.DyedItemColor(0xFF0000));
+        helmet.set(DataComponents.DYED_COLOR, new net.minecraft.world.item.component.DyedItemColor(0xFF0000, true));
         ItemStack banner = new ItemStack(Items.WHITE_BANNER);
         var stripe = h.getLevel().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BANNER_PATTERN)
                 .getOrThrow(net.minecraft.world.level.block.entity.BannerPatterns.STRIPE_TOP);
@@ -739,9 +739,9 @@ final class AlchemyGameTests {
     /** Wheat seeds planted in a cultivation jar ripen stage by stage; the harvest is wheat, and one seed stays planted. */
     static void cultivationJarGrowsCrops(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
-        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(h.absolutePos(MAIN)), Direction.UP, h.absolutePos(MAIN), false);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIRT));
@@ -767,9 +767,9 @@ final class AlchemyGameTests {
      */
     static void cultivationJarMedium(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
-        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(h.absolutePos(MAIN)), Direction.UP, h.absolutePos(MAIN), false);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.CARROT));
@@ -805,7 +805,7 @@ final class AlchemyGameTests {
      */
     static void cultivationJarGrowsFruitingPlants(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
-        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN);
         h.assertFalse(jar.plant(new ItemStack(Items.MELON_SEEDS)), "melon seeds went in");
         h.assertTrue(jar.plant(new ItemStack(Items.SWEET_BERRIES)), "sweet berries would not go in");
         h.assertTrue(jar.plant() != null && jar.plant().is(Blocks.SWEET_BERRY_BUSH), "the jar draws " + jar.plant());
@@ -833,9 +833,9 @@ final class AlchemyGameTests {
      */
     static void cultivationJarVitalMash(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
-        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
         h.assertTrue(jar.plant(new ItemStack(Items.WHEAT_SEEDS)), "wheat would not go in");
         h.assertTrue(jar.pour(new ItemStack(LogosMod.VITAL_MASH.get()), p), "vital mash would not pour");
@@ -892,7 +892,7 @@ final class AlchemyGameTests {
     /** An iron seed grows on the jar's mana; ripe, it gives a pod and reserves its only seed to replant. */
     static void cultivationJarGrowsMetal(GameTestHelper h) {
         h.setBlock(MAIN, LogosMod.CULTIVATION_JAR.get());
-        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN, dev.logos.block.CultivationJarBlockEntity.class);
+        dev.logos.block.CultivationJarBlockEntity jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(MAIN);
         JarMetal iron = JarMetal.IRON;
         h.assertTrue(jar.plant(new ItemStack(iron.seed.get())), "an iron seed would not go in");
         h.assertTrue(jar.plant() != null && jar.plant().is(iron.crop.get()), "the jar draws " + jar.plant());
@@ -914,7 +914,7 @@ final class AlchemyGameTests {
     static void infuseBlockFillsTable(GameTestHelper h) {
         AlchemyTableBlockEntity table = placeTable(h);
         table.setMana(AlchemyTableBlockEntity.MAX_MANA - 30);
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 10000;
         m.trace = false;
@@ -933,7 +933,7 @@ final class AlchemyGameTests {
 
     /** A bottle of mercury is poison: drinking it poisons and sickens, and leaves the glass bottle. */
     static void mercuryIsPoison(GameTestHelper h) {
-        var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new Vec3(1.5, 2, 1.5), net.minecraft.world.entity.MobSpawnType.COMMAND);
+        var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new Vec3(1.5, 2, 1.5));
         ItemStack left = new ItemStack(LogosMod.MERCURY_BOTTLE.get()).finishUsingItem(h.getLevel(), cow);
         h.assertTrue(cow.hasEffect(net.minecraft.world.effect.MobEffects.POISON) && cow.hasEffect(net.minecraft.world.effect.MobEffects.CONFUSION), "mercury did no harm");
         h.assertTrue(left.is(Items.GLASS_BOTTLE), "drinking mercury left " + left);
@@ -955,7 +955,7 @@ final class AlchemyGameTests {
             if (table.isWorking(Process.FERMENT)) {
                 sawWorking[0] = true;
                 h.assertTrue(!table.isWorking(Process.DISTILL), "an idle distilling card counts as working");
-                int sent = table.getUpdateTag(h.getLevel().registryAccess()).getIntOr("working", 0);
+                int sent = table.getUpdateTag(h.getLevel().registryAccess()).getInt("working");
                 h.assertTrue(sent == 1 << Process.FERMENT.ordinal(), "clients are told " + sent + " is working");
             }
             h.assertTrue(sawWorking[0], "the table never showed the card fermenting");
@@ -983,7 +983,7 @@ final class AlchemyGameTests {
 
         var registries = h.getLevel().registryAccess();
         AlchemyTableBlockEntity copy = new AlchemyTableBlockEntity(table.getBlockPos(), table.getBlockState());
-        copy.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, registries, table.saveCustomOnly(registries)));
+        copy.loadCustomOnly(table.saveCustomOnly(registries), registries);
         h.assertTrue(copy.cards().size() == 4 && copy.cards().get(3).process == Process.SETTLE, "the cards were not saved");
         h.assertTrue(copy.cards().get(0).route(Items.SUGAR) == 2 && copy.cards().get(0).defaultRoute() == 3, "the routes were not saved");
         h.assertTrue(copy.cards().get(1).designated(4).is(Items.CLAY_BALL), "the designation was not saved");
@@ -1045,7 +1045,7 @@ final class AlchemyGameTests {
                 new Drink(LogosMod.NITER_MOTHER_LIQUOR.get(), List.of(net.minecraft.world.effect.MobEffects.POISON)));
         for (Drink d : drinks) {
             @SuppressWarnings("removal")
-            ServerPlayer p = h.makeMockServerPlayerInLevel();
+            ServerPlayer p = MockPlayers.inLevel(h);
             p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
             ItemStack bottle = new ItemStack(d.item());
             h.assertTrue(bottle.getUseAnimation() == net.minecraft.world.item.UseAnim.DRINK, d.item() + " is not drunk");
@@ -1114,7 +1114,7 @@ final class AlchemyGameTests {
     /** A powder is eaten for its potion's effects. */
     static void powderIsEaten(GameTestHelper h) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
         ItemStack powder = dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(), new PotionContents(Potions.SWIFTNESS), 2);
         h.assertTrue(powder.getUseAnimation() == net.minecraft.world.item.UseAnim.EAT, "the powder is not eaten");
@@ -1313,7 +1313,7 @@ final class AlchemyGameTests {
     /** Level I raises its element's spell power by 20% and level II by 50%; 流魔 adds its dose a second to mana regeneration. */
     static void buffPotionsEffects(GameTestHelper h) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         for (BuffPotions.ElementBuff e : BuffPotions.ElementBuff.values()) {
             var power = SpellModifiers.powerAttribute(e.element);
             p.addEffect(new net.minecraft.world.effect.MobEffectInstance(e.effect, 100));
@@ -1338,7 +1338,7 @@ final class AlchemyGameTests {
     /** Every element, arcane and life included, has an empowerment and a vulnerability, at +20% for level I and +50% for level II. */
     static void elementEffectsForEveryElement(GameTestHelper h) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         for (dev.logos.lang.Element e : dev.logos.lang.Element.values()) {
             var power = SpellModifiers.powerAttribute(e);
             var vulnerability = SpellModifiers.vulnerabilityAttribute(e);
@@ -1369,7 +1369,7 @@ final class AlchemyGameTests {
                     "no fermenting of " + herb + " with germinal essence");
             BlockPos at = new BlockPos(i, 2, 5);
             h.setBlock(at, LogosMod.CULTIVATION_JAR.get());
-            var jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(at, dev.logos.block.CultivationJarBlockEntity.class);
+            var jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(at);
             h.assertFalse(jar.plant(new ItemStack(herb.plant.get())), herb + " still accepts the plant instead of its seed");
             h.assertFalse(jar.plant(new ItemStack(herb.harvest.get())), herb + " accepts its harvest as a seed");
             h.assertTrue(jar.plant(new ItemStack(herb.seed.get())), herb + " seed would not go in");

@@ -37,7 +37,7 @@ final class CompileCacheGameTests {
     private static SpellEmitterBlockEntity place(GameTestHelper h, BlockPos at) {
         BlockState state = LogosMod.SPELL_EMITTER.get().defaultBlockState().setValue(SpellEmitterBlock.FACING, Direction.EAST);
         h.setBlock(at, state);
-        return (SpellEmitterBlockEntity) h.getBlockEntity(at, SpellEmitterBlockEntity.class);
+        return (SpellEmitterBlockEntity) h.getBlockEntity(at);
     }
 
     private static ItemStack page(String source) {
@@ -106,7 +106,7 @@ final class CompileCacheGameTests {
         var saved = e.saveCustomOnly(registries);
         e.setPage(ItemStack.EMPTY, null);
         h.assertTrue(e.spell() == null && e.target() == 0, "with the page out there is nothing to cast");
-        e.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, registries, saved));
+        e.loadCustomOnly(saved, registries);
         h.assertTrue(e.spell() != null && e.spell().name().equals("渡"), "loading should bring the page's spell back, got " + e.spell());
 
         e.setPage(page("(spell :name \"被动\" :trigger hurt :mana 5 (heal caster 1))"), null);

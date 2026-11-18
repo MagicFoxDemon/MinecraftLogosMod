@@ -1,17 +1,18 @@
 package dev.logos.client;
 
-import software.bernie.geckolib.model.DefaultedBlockGeoModel;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
-import com.geckolib.renderer.base.BoneSnapshots;
-import com.geckolib.renderer.base.GeoRenderState;
-import com.geckolib.renderer.base.RenderPassInfo;
-import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.LogosMod;
 import dev.logos.item.AlchemyTableItem;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.model.DefaultedBlockGeoModel;
+import software.bernie.geckolib.renderer.GeoItemRenderer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 /**
  * The alchemy table item, drawn from the block's own model as a freshly placed table looks: no
@@ -28,24 +29,34 @@ public class AlchemyTableItemRenderer extends GeoItemRenderer<AlchemyTableItem> 
     public AlchemyTableItemRenderer() {
         super(new DefaultedBlockGeoModel<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "alchemy_table")));
         withScale(SCALE);
-        withRenderLayer(new AutoGlowingGeoLayer<>(this));
+        addRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
 
     @Override
-    public void adjustRenderPose(RenderPassInfo<GeoRenderState> info) {
-        super.adjustRenderPose(info);
-        info.poseStack().translate(0, -HALF_HEIGHT / SCALE, 0);
+    public void preRender(PoseStack poseStack, AlchemyTableItem item, BakedGeoModel model, MultiBufferSource buffers, VertexConsumer buffer,
+            boolean isReRender, float partialTick, int light, int overlay, int colour) {
+        super.preRender(poseStack, item, model, buffers, buffer, isReRender, partialTick, light, overlay, colour);
+        if (isReRender) return;
+        // GeckoLib 4 centres the item after scaling it, at (0.5, 0.51, 0.5) of the scaled model; move that to the block's
+        // centre, then down by half the table so it turns about its middle.
+        poseStack.translate(0.5f / SCALE - 0.5f, 0.51f / SCALE - 0.51f - HALF_HEIGHT / SCALE, 0.5f / SCALE - 0.5f);
     }
 
+    /** The block renderer shares these bones and leaves them as its table was; set every one this look depends on. */
     @Override
-    public void adjustModelBonesForRender(RenderPassInfo<GeoRenderState> info, BoneSnapshots snapshots) {
-        super.adjustModelBonesForRender(info, snapshots);
-        for (String bone : HIDDEN) snapshots.ifPresent(bone, s -> s.skipRender(true));
+    public void renderRecursively(PoseStack poseStack, AlchemyTableItem item, GeoBone bone, RenderType renderType, MultiBufferSource buffers,
+            VertexConsumer buffer, boolean isReRender, float partialTick, int light, int overlay, int colour) {
+        if (AlchemyTableRenderer.indexOf(HIDDEN, bone.getName()) >= 0) bone.setHidden(true);
+        else if (AlchemyTableRenderer.indexOf(AlchemyTableRenderer.LOWER, bone.getName()) >= 0) {
+            bone.setHidden(false);
+            bone.setScaleY(1);
+        }
+        super.renderRecursively(poseStack, item, bone, renderType, buffers, buffer, isReRender, partialTick, light, overlay, colour);
     }
 
     /** Glass is see-through. */
     @Override
-    public RenderType getRenderType(GeoRenderState state, ResourceLocation texture) {
+    public RenderType getRenderType(AlchemyTableItem item, ResourceLocation texture, MultiBufferSource buffers, float partialTick) {
         return RenderType.entityTranslucent(texture);
     }
 }

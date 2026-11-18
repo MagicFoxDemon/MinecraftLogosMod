@@ -52,7 +52,7 @@ public class RuneBookScenario implements UIScenario {
                     for (Kind k : Kind.values()) {
                         Item item = LogosMod.RUNE_BOOKS.get(k).get();
                         var id = BuiltInRegistries.ITEM.getKey(item);
-                        String model = mc.getModelManager().getItemModel(id).getClass().getSimpleName();
+                        String model = mc.getModelManager().getModel(net.minecraft.client.resources.model.ModelResourceLocation.inventory(id)).getClass().getSimpleName();
                         ctx.check(id + " model baked (" + model + ")", !model.toLowerCase().contains("missing"));
                     }
                     var change = new ItemStack(LogosMod.RUNE_BOOKS.get(Kind.CHANGE).get());

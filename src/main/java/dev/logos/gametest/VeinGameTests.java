@@ -28,7 +28,7 @@ final class VeinGameTests {
     private static ServerPlayer caster(GameTestHelper h, double x, double z) {
         for (int bx = 0; bx < 9; bx++) for (int bz = 0; bz < 9; bz++) h.setBlock(bx, 1, bz, Blocks.STONE);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);

@@ -58,7 +58,7 @@ final class LeechGameTests {
         FamiliarGameTests.forceAround(h, 1);
         ServerPlayer poor = prey(h, 5);
         @SuppressWarnings("removal")
-        ServerPlayer rich = h.makeMockServerPlayerInLevel();
+        ServerPlayer rich = MockPlayers.inLevel(h);
         Vec3 at = h.absoluteVec(new Vec3(7.5, 2, 7.5));
         rich.moveTo(at.x, at.y, at.z, 0, 0);
         rich.setGameMode(GameType.SURVIVAL);

@@ -15,7 +15,6 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.animal.Cow;
-import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -67,7 +66,7 @@ public class PossessViewScenario implements UIScenario {
                     double eyeGap = Math.abs(p.getEyeY() - p.getVehicle().getEyeY());
                     System.out.printf("[logos] possess: player eye %.3f off the cow's%n", eyeGap);
                     if (eyeGap > 0.05) throw new AssertionError("the player's eyes are " + eyeGap + " off the cow's");
-                    var bodies = p.level().getEntitiesOfClass(Mannequin.class, new AABB(ORIGIN.above()).inflate(1));
+                    var bodies = p.level().getEntitiesOfClass(dev.logos.runtime.PossessionBody.class, new AABB(ORIGIN.above()).inflate(1));
                     if (bodies.size() != 1 || PossessionView.owner(bodies.getFirst()) != p) throw new AssertionError("the body is not drawn as its owner: " + bodies);
                 })
                 .screenshot("first_person")

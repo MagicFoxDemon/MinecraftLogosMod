@@ -68,7 +68,7 @@ public class AlchemyTableWorkingScenario implements UIScenario {
 
     private static boolean bubbling() {
         var ferment = clientTable().getAnimatableInstanceCache().getManagerForId(0).getAnimationControllers().get("ferment");
-        return ferment != null && ferment.getPlayState() == PlayState.CONTINUE;
+        return ferment != null && ferment.getAnimationState() != software.bernie.geckolib.animation.AnimationController.State.STOPPED;
     }
 
     @Override

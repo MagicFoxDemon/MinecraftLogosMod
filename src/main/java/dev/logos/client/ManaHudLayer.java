@@ -12,7 +12,8 @@ import dev.logos.ui.Manuscript;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import dev.logos.client.port.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -160,17 +161,17 @@ public final class ManaHudLayer {
         int x = corner.right() ? home + away : home - away;
 
         g.nextStratum();
-        plan(((long) w << 16) | h, () -> ManaHudArt.plate(w, h)).draw(g, x, y);
+        plan(((long) w << 16) | h, () -> ManaHudArt.plate(w, h)).draw(g.graphics(), x, y);
         int cx = x + PAD, cy = y + PAD;
         int source = staff ? p.stored() : p.mana();
         boolean enough = p.cost() <= 0 || source + p.drawing() >= p.cost();
-        plan(enough ? 1 : 2, () -> ManaHudArt.gem(enough)).draw(g, cx, cy);
+        plan(enough ? 1 : 2, () -> ManaHudArt.gem(enough)).draw(g.graphics(), cx, cy);
 
         // The pool.
         int bx = cx + BAR_X, by = cy + 2;
-        plan(3, () -> ManaHudArt.frame(true, ManaHudArt.BAR_H)).draw(g, bx, by);
+        plan(3, () -> ManaHudArt.frame(true, ManaHudArt.BAR_H)).draw(g.graphics(), bx, by);
         int filled = cells(Mth.lerp(t, shownManaBefore, shownMana), p.maxMana());
-        plan(1000 + filled, () -> ManaHudArt.fill(filled, ManaHudArt.BAR_H, false)).draw(g, bx + 1, by + 1);
+        plan(1000 + filled, () -> ManaHudArt.fill(filled, ManaHudArt.BAR_H, false)).draw(g.graphics(), bx + 1, by + 1);
         int drawn = Math.min(cells(p.drawing(), p.maxMana()), ManaHudArt.INNER - filled);
         if (drawn > 0) g.fill(bx + 1 + filled, by + 1, bx + 1 + filled + drawn, by + ManaHudArt.BAR_H - 1, 0x80BFE6FF);
         if (filled > 4) {
@@ -180,19 +181,19 @@ public final class ManaHudLayer {
         }
         if (p.cost() > 0 && !staff) {
             int at = cells(Math.min(p.cost(), p.maxMana()), p.maxMana());
-            plan(enough ? 4 : 5, () -> ManaHudArt.mark(ManaHudArt.BAR_H, enough)).draw(g, bx + at, by);
+            plan(enough ? 4 : 5, () -> ManaHudArt.mark(ManaHudArt.BAR_H, enough)).draw(g.graphics(), bx + at, by);
         }
         g.text(font, numbers, cx + TEXT_X, cy + 1, p.mana() >= p.maxMana() ? 0xFFBFE6FF : 0xFF79BDFF, true);
 
         // What a staff holds, and casts from.
         if (staff) {
             int gy = cy + ManaHudArt.GEM_H + 2;
-            plan(6, () -> ManaHudArt.frame(false, ManaHudArt.GAUGE_H)).draw(g, bx, gy);
+            plan(6, () -> ManaHudArt.frame(false, ManaHudArt.GAUGE_H)).draw(g.graphics(), bx, gy);
             int stored = cells(p.stored(), p.capacity());
-            plan(2000 + stored, () -> ManaHudArt.fill(stored, ManaHudArt.GAUGE_H, true)).draw(g, bx + 1, gy + 1);
+            plan(2000 + stored, () -> ManaHudArt.fill(stored, ManaHudArt.GAUGE_H, true)).draw(g.graphics(), bx + 1, gy + 1);
             if (p.cost() > 0) {
                 int at = cells(Math.min(p.cost(), p.capacity()), p.capacity());
-                plan(enough ? 7 : 8, () -> ManaHudArt.mark(ManaHudArt.GAUGE_H, enough)).draw(g, bx + at, gy);
+                plan(enough ? 7 : 8, () -> ManaHudArt.mark(ManaHudArt.GAUGE_H, enough)).draw(g.graphics(), bx + at, gy);
             }
             g.text(font, held, cx + TEXT_X, gy - 2, ManaHudArt.AMBER_LIT, true);
         }
@@ -211,7 +212,7 @@ public final class ManaHudLayer {
 
         @SubscribeEvent
         static void onRegisterLayers(RegisterGuiLayersEvent event) {
-            event.registerBelow(VanillaGuiLayers.CHAT, ID, ManaHudLayer::render);
+            event.registerBelow(VanillaGuiLayers.CHAT, ID, (graphics, delta) -> ManaHudLayer.render(new GuiGraphicsExtractor(graphics), delta));
         }
     }
 }

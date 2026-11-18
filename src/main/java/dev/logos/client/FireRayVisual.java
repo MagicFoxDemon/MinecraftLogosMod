@@ -103,7 +103,7 @@ final class FireRayVisual implements RayVisual {
         // In first person the muzzle sits just under the camera: only a small flame spray, pushed out ahead,
         // and nothing along the first blocks of the line, so neither flash nor smoke covers the view.
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        boolean close = !camera.isDetached() && camera.position().distanceTo(from) < 1.6;
+        boolean close = !camera.isDetached() && camera.getPosition().distanceTo(from) < 1.6;
         if (close) playing.add(emit(MUZZLE_CLOSE, level, from.add(dir.scale(Math.min(2.5, length * .5))), dir, 1));
         else playing.add(emit(MUZZLE, level, from.add(dir.scale(.12)), dir, 1));
         double trim = Math.min(close ? 2.5 : .6, length * .5);

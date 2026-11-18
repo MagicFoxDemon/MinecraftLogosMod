@@ -8,7 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.particles.TrailParticleOption;
+import dev.logos.port.TrailParticleOption;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -55,7 +55,7 @@ public final class ChargeEffects {
         Vec3 tip = CastPoints.of(holder, 1);
         for (int i = 0; i < 6; i++) {
             Vec3 at = tip.add(randomUnit(r).scale(0.08));
-            level.addParticle(new DustParticleOptions(rgb, (1.4f + 0.3f * tier) * near(holder)), at.x, at.y, at.z, 0, 0, 0);
+            level.addParticle(new DustParticleOptions(net.minecraft.world.phys.Vec3.fromRGB24(rgb).toVector3f(), (1.4f + 0.3f * tier) * near(holder)), at.x, at.y, at.z, 0, 0, 0);
         }
         for (int i = 0; i < 14 + 8 * tier; i++) {
             Vec3 to = tip.add(randomUnit(r).scale(0.5 + 0.3 * tier));
@@ -133,7 +133,7 @@ public final class ChargeEffects {
                 level.addParticle(new TrailParticleOption(tip, rgb, 6 + r.nextInt(6)), from.x, from.y, from.z, 0, 0, 0);
             }
         } else {
-            level.addParticle(new DustParticleOptions(rgb, (0.5f + 0.15f * s.tier) * near(holder)), tip.x, tip.y, tip.z, 0, 0, 0);
+            level.addParticle(new DustParticleOptions(net.minecraft.world.phys.Vec3.fromRGB24(rgb).toVector3f(), (0.5f + 0.15f * s.tier) * near(holder)), tip.x, tip.y, tip.z, 0, 0, 0);
             if (now == s.fullSince) {
                 // The moment it fills: a flash thrown outward from the head.
                 for (int i = 0; i < 14 + 6 * s.tier; i++) {
@@ -143,7 +143,7 @@ public final class ChargeEffects {
                 // A bright knot at the head itself; the vanilla flash particle is screen-sized up close.
                 for (int i = 0; i < 4; i++) {
                     Vec3 at = tip.add(randomUnit(r).scale(0.06));
-                    level.addParticle(new DustParticleOptions(rgb, 1.6f * near(holder)), at.x, at.y, at.z, 0, 0, 0);
+                    level.addParticle(new DustParticleOptions(net.minecraft.world.phys.Vec3.fromRGB24(rgb).toVector3f(), 1.6f * near(holder)), at.x, at.y, at.z, 0, 0, 0);
                 }
             }
         }
@@ -168,7 +168,7 @@ public final class ChargeEffects {
         for (int i = 0; i < dots; i++) {
             double a = spin + 2 * Math.PI * i / dots;
             Vec3 p = centre.add(u.scale(Math.cos(a) * radius)).add(v.scale(Math.sin(a) * radius));
-            level.addParticle(new DustParticleOptions(rgb, size), p.x, p.y, p.z, 0, 0, 0);
+            level.addParticle(new DustParticleOptions(net.minecraft.world.phys.Vec3.fromRGB24(rgb).toVector3f(), size), p.x, p.y, p.z, 0, 0, 0);
         }
     }
 
@@ -176,7 +176,7 @@ public final class ChargeEffects {
     private static void circle(ClientLevel level, Vec3 centre, double radius, int dots, float spin, int rgb, float size) {
         for (int i = 0; i < dots; i++) {
             double a = spin + 2 * Math.PI * i / dots;
-            level.addParticle(new DustParticleOptions(rgb, size), centre.x + Math.cos(a) * radius, centre.y, centre.z + Math.sin(a) * radius, 0, 0, 0);
+            level.addParticle(new DustParticleOptions(net.minecraft.world.phys.Vec3.fromRGB24(rgb).toVector3f(), size), centre.x + Math.cos(a) * radius, centre.y, centre.z + Math.sin(a) * radius, 0, 0, 0);
         }
     }
 

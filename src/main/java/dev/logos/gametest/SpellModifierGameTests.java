@@ -50,7 +50,7 @@ final class SpellModifierGameTests {
     private static ServerPlayer caster(GameTestHelper h) {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 9; z++) h.setBlock(x, 1, z, Blocks.STONE);
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
@@ -210,9 +210,9 @@ final class SpellModifierGameTests {
     static void voidOnPlayers(GameTestHelper h) {
         ServerPlayer p = caster(h);
         p.setGameMode(GameType.SURVIVAL);
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         ItemStack chest = new ItemStack(Items.DIAMOND_CHESTPLATE);
-        chest.enchant(h.getLevel().registryAccess().getOrThrow(Enchantments.PROTECTION), 4);
+        chest.enchant(h.getLevel().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).getOrThrow(Enchantments.PROTECTION), 4);
         p.setItemSlot(EquipmentSlot.CHEST, chest);
         p.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 4));
         Cow c = cow(h);
@@ -332,7 +332,7 @@ final class SpellModifierGameTests {
             cast(p, "(damage (nearest :radius 6) 2 void)");
             near(h, refusing.getHealth(), 8, "on, 2 void lands");
             p.setGameMode(GameType.CREATIVE);
-            p.connection.markClientLoaded();
+            MockPlayers.loaded(p);
             float health = p.getHealth();
             Effects.damage(refusing, p, 4, Element.VOID);
             near(h, p.getHealth(), health - 4, "on, void reaches a creative player");

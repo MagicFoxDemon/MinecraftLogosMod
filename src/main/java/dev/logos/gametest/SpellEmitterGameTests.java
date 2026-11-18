@@ -33,7 +33,7 @@ final class SpellEmitterGameTests {
         BlockState state = LogosMod.SPELL_EMITTER.get().defaultBlockState().setValue(SpellEmitterBlock.FACING, Direction.EAST);
         h.setBlock(at, state);
         h.setBlock(at.east(), state);
-        SpellEmitterBlockEntity e = (SpellEmitterBlockEntity) h.getBlockEntity(at, SpellEmitterBlockEntity.class);
+        SpellEmitterBlockEntity e = (SpellEmitterBlockEntity) h.getBlockEntity(at);
         e.setPage(SpellPages.inscribed(PageTier.CRYSTAL, INFUSE_AHEAD, null), null);
         e.edit(e.page(), mode, 1, h.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE));
         e.receiveMana(mana);
@@ -41,7 +41,7 @@ final class SpellEmitterGameTests {
     }
 
     private static SpellEmitterBlockEntity at(GameTestHelper h, BlockPos pos) {
-        return (SpellEmitterBlockEntity) h.getBlockEntity(pos, SpellEmitterBlockEntity.class);
+        return (SpellEmitterBlockEntity) h.getBlockEntity(pos);
     }
 
     /**
@@ -97,7 +97,8 @@ final class SpellEmitterGameTests {
         BlockHitResult own = h.getLevel().clip(new ClipContext(centre, far, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
         h.assertTrue(own.getType() == HitResult.Type.BLOCK && own.getBlockPos().equals(h.absolutePos(pos.east(3))),
                 "the emitter's own ray stopped at " + own.getBlockPos() + " instead of the stone");
-        BlockHitResult other = h.getLevel().clip(new ClipContext(centre.add(-2, 0, 0), far, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
+        // From one block west: 1.21.1 walls each test in barriers at its edge, two blocks west would start inside one.
+        BlockHitResult other = h.getLevel().clip(new ClipContext(centre.add(-1, 0, 0), far, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE,
                 net.minecraft.world.phys.shapes.CollisionContext.empty()));
         h.assertTrue(other.getBlockPos().equals(h.absolutePos(pos)), "anything else should hit the emitter, hit " + other.getBlockPos());
         h.succeed();

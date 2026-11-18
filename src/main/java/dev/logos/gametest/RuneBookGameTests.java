@@ -15,7 +15,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.context.ContextKeySet;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -33,7 +33,7 @@ final class RuneBookGameTests {
 
     private static ServerPlayer reader(GameTestHelper h) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(GameType.SURVIVAL);
         return p;
     }
@@ -44,7 +44,7 @@ final class RuneBookGameTests {
 
     private static InteractionResult read(GameTestHelper h, ServerPlayer p, Kind kind, int count) {
         p.setItemInHand(InteractionHand.MAIN_HAND, book(kind, count));
-        return p.getMainHandItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND);
+        return p.getMainHandItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult();
     }
 
     private static List<String> learnedOf(ServerPlayer p, Kind kind) {
@@ -91,7 +91,7 @@ final class RuneBookGameTests {
         h.succeed();
     }
 
-    private static Set<Item> roll(GameTestHelper h, String table, ContextKeySet params, int times) {
+    private static Set<Item> roll(GameTestHelper h, String table, LootContextParamSet params, int times) {
         LootTable loot = h.getLevel().getServer().reloadableRegistries().getLootTable(
                 ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.withDefaultNamespace("chests/" + table)));
         LootParams context = new LootParams.Builder(h.getLevel()).withParameter(LootContextParams.ORIGIN, h.absoluteVec(new Vec3(1, 1, 1))).create(params);

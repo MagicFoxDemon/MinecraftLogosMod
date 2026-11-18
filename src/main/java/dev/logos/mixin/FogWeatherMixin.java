@@ -8,18 +8,18 @@ import com.llamalad7.mixinextras.sugar.Local;
 
 import dev.logos.runtime.AreaWeather;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.fog.environment.AtmosphericFogEnvironment;
+import net.minecraft.client.renderer.FogRenderer;
 
-/** Fog darkens and closes in under an area storm near the camera, and lifts under a clear zone. */
-@Mixin(AtmosphericFogEnvironment.class)
+/** Fog darkens under an area storm near the camera, and lifts under a clear zone (1.21.1: FogRenderer.setupColor). */
+@Mixin(FogRenderer.class)
 abstract class FogWeatherMixin {
-    @ModifyExpressionValue(method = {"getBaseColor", "updateRainFogState"}, at = @At(value = "INVOKE", target = "getRainLevel(F)F"))
-    private float logos$areaRain(float world, @Local(argsOnly = true) ClientLevel level) {
+    @ModifyExpressionValue(method = "setupColor", at = @At(value = "INVOKE", target = "getRainLevel(F)F"))
+    private static float logos$areaRain(float world, @Local(argsOnly = true) ClientLevel level) {
         return AreaWeather.skyRain(level, world);
     }
 
-    @ModifyExpressionValue(method = "getBaseColor", at = @At(value = "INVOKE", target = "getThunderLevel(F)F"))
-    private float logos$areaThunder(float world, @Local(argsOnly = true) ClientLevel level) {
+    @ModifyExpressionValue(method = "setupColor", at = @At(value = "INVOKE", target = "getThunderLevel(F)F"))
+    private static float logos$areaThunder(float world, @Local(argsOnly = true) ClientLevel level) {
         return AreaWeather.skyThunder(level, world);
     }
 }

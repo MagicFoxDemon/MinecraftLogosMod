@@ -56,7 +56,7 @@ final class ColossusGameTests {
         h.assertTrue(Math.abs(c.getHealth() - 760) < 0.01, "40 void should take 40, health " + c.getHealth());
         p.setGameMode(GameType.SURVIVAL);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(LogosMod.TAINTED_MANA_SHARD.get()));
-        c.interact(p, InteractionHand.MAIN_HAND, c.position());
+        c.interact(p, InteractionHand.MAIN_HAND);
         h.assertTrue(c.isBerserk(), "an unstable fuel should send it berserk");
         c.invulnerableTime = 0;
         Effects.damage(attacker, c, 100000, Element.VOID);
@@ -68,7 +68,7 @@ final class ColossusGameTests {
     static void executeDrains(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         AlchemicalColossus c = raise(h, other, new Vec3(5, 2, 5));
         Casting.cast(p, Casting.compile("(spell :mana 100000 (execute (nearest :radius 12)))"), null, null);
         h.assertTrue(c.isAlive(), "execute must not kill a colossus");
@@ -80,7 +80,7 @@ final class ColossusGameTests {
     static void executeAsKill(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
         @SuppressWarnings("removal")
-        ServerPlayer other = h.makeMockServerPlayerInLevel();
+        ServerPlayer other = MockPlayers.inLevel(h);
         AlchemicalColossus c = raise(h, other, new Vec3(5, 2, 5));
         LogosConfig.VOID_IS_OUT_OF_WORLD.set(true);
         try {
@@ -144,7 +144,7 @@ final class ColossusGameTests {
             h.assertTrue(z.getHealth() <= 125, "a slam should have taken about 80: health " + z.getHealth());
             h.assertTrue(z.getVehicle() == null, "and let go of it");
             // The blow counts as its master's, but the zombie's anger goes to the colossus.
-            h.assertTrue(z.getLastHurtByPlayer() == p, "its master should be credited with the blow");
+            h.assertTrue(z.lastHurtByPlayer == p, "its master should be credited with the blow");
             h.assertTrue(z.getLastHurtByMob() == c, "the zombie should blame the colossus, not its master: " + z.getLastHurtByMob());
         });
     }
@@ -187,7 +187,7 @@ final class ColossusGameTests {
         h.succeedWhen(() -> {
             if (!killed[0]) {
                 h.assertTrue(c.holdOf(z) == AlchemicalColossus.Hold.GRIP, "not holding it yet");
-                c.kill(h.getLevel());
+                c.kill();
                 killed[0] = true;
             }
             h.assertTrue(z.getVehicle() == null, "its hand should open");
@@ -205,7 +205,7 @@ final class ColossusGameTests {
         z.setNoAi(true);
         z.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
         z.setHealth(200);
-        h.assertTrue(z.startRiding(c, true, false), "the husk should climb on");
+        h.assertTrue(z.startRiding(c, true), "the husk should climb on");
         Familiars.order(c, z);
         int[] misses = {0};
         h.succeedWhen(() -> {
@@ -417,7 +417,7 @@ final class ColossusGameTests {
         h.assertTrue(c.mana() == 50000 && c.trueMana() == 60000 && !c.isBerserk(), "past 50000 it still shows 50000: " + c.mana() + " / " + c.trueMana());
         p.setGameMode(GameType.SURVIVAL);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(LogosMod.TAINTED_MANA_SHARD.get()));
-        c.interact(p, InteractionHand.MAIN_HAND, c.position());
+        c.interact(p, InteractionHand.MAIN_HAND);
         h.assertTrue(c.isBerserk() && c.isScorched(), "an unstable fuel should send it berserk");
         var adv = h.getLevel().getServer().getAdvancements().get(Colossi.FRENZY_ADVANCEMENT);
         h.assertTrue(adv != null && p.getAdvancements().getOrStartProgress(adv).isDone(), "witnesses earn 《这巨像魔了，是个魔像》");
@@ -444,7 +444,7 @@ final class ColossusGameTests {
             if (!asked[0]) {
                 // Let it finish starting up before asking.
                 h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
-                c.interact(p, InteractionHand.MAIN_HAND, c.position());
+                c.interact(p, InteractionHand.MAIN_HAND);
                 asked[0] = true;
             }
             h.assertTrue(p.getVehicle() == c && c.holdOf(p) == AlchemicalColossus.Hold.SEAT_LEFT, "it should lift its master onto its left shoulder");
@@ -466,7 +466,7 @@ final class ColossusGameTests {
             AlchemicalColossus.Act a = c.act();
             if (stage[0] == 0) {
                 h.assertTrue(a == AlchemicalColossus.Act.NONE, "still starting up");
-                c.interact(p, InteractionHand.MAIN_HAND, c.position());
+                c.interact(p, InteractionHand.MAIN_HAND);
                 stage[0] = 1;
             }
             if (stage[0] == 1) {
@@ -507,7 +507,7 @@ final class ColossusGameTests {
         h.succeedWhen(() -> {
             if (stage[0] == 0) {
                 h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
-                c.interact(p, InteractionHand.MAIN_HAND, c.position());
+                c.interact(p, InteractionHand.MAIN_HAND);
                 stage[0] = 1;
             }
             if (stage[0] == 1) {
@@ -553,7 +553,7 @@ final class ColossusGameTests {
         h.succeedWhen(() -> {
             if (stage[0] == 0) {
                 h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
-                c.interact(p, InteractionHand.MAIN_HAND, c.position());
+                c.interact(p, InteractionHand.MAIN_HAND);
                 stage[0] = 1;
             }
             if (stage[0] == 1) {
@@ -577,7 +577,7 @@ final class ColossusGameTests {
     static void riderSheltered(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
         p.setGameMode(GameType.SURVIVAL);
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         FamiliarGameTests.forceAround(h, 1);
         AlchemicalColossus c = raise(h, p, new Vec3(3.5, 2, 3.5));
         int[] stage = {0};
@@ -585,7 +585,7 @@ final class ColossusGameTests {
         h.succeedWhen(() -> {
             if (stage[0] == 0) {
                 h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
-                c.interact(p, InteractionHand.MAIN_HAND, c.position());
+                c.interact(p, InteractionHand.MAIN_HAND);
                 stage[0] = 1;
             }
             if (stage[0] == 1) {

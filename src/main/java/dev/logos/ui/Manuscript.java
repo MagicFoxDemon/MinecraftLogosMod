@@ -194,7 +194,7 @@ public final class Manuscript {
         }
 
         /** Replays the drawing on the game's own HUD, for a layer drawn outside any screen. */
-        public void draw(net.minecraft.client.gui.GuiGraphicsExtractor g, int x, int y) {
+        public void draw(net.minecraft.client.gui.GuiGraphics g, int x, int y) {
             for (Mark m : marks) {
                 int x0 = x + Math.round(m.x), y0 = y + Math.round(m.y);
                 g.fill(x0, y0, x0 + Math.round(m.w), y0 + Math.round(m.h), m.color);

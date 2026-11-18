@@ -288,7 +288,7 @@ public final class VfxParts {
     public static TextureAtlasSprite blockSprite(Level level, double x, double groundY, double z) {
         BlockState state = level.getBlockState(BlockPos.containing(x, groundY - .5, z));
         if (state.isAir() || state.getRenderShape() != RenderShape.MODEL) return null;
-        TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager().getBlockStateModelSet().getParticleMaterial(state).sprite();
+        TextureAtlasSprite sprite = Minecraft.getInstance().getBlockRenderer().getBlockModelShaper().getParticleIcon(state);
         return sprite.atlasLocation().getPath().contains("blocks") ? sprite : null;
     }
 }

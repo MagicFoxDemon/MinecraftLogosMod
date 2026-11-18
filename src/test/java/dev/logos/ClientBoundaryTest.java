@@ -55,13 +55,32 @@ class ClientBoundaryTest {
     private static final String GATE = "dev/logos/client/ClientHooks";
 
     /** Every other place where server-side code names a client-only class, and why that is safe. */
+    /**
+     * 1.21.1: {@code client/port/GuiTexture} and {@code DrawerHelperClient} stand in for LDLib2 26.1's own classes of
+     * those names, which this test does not look into there. As those, they are made while a UI is built on either
+     * side and only drawn on a client; their methods name client classes only in signatures.
+     */
+    private static final Set<String> LDLIB_STAND_INS = Set.of("dev/logos/client/port/GuiTexture", "dev/logos/client/port/DrawerHelperClient");
+
     private static final Map<String, Set<String>> KNOWN = Map.of(
             // GeckoLib's way to give an item its renderer: the provider is made on a client only.
-            "dev/logos/item/AlchemyTableItem", Set.of("dev/logos/client/AlchemyTableItemRenderer"),
+            "dev/logos/item/AlchemyTableItem", Set.of("dev/logos/client/AlchemyTableItemRenderer",
+                    "net/minecraft/client/renderer/BlockEntityWithoutLevelRenderer"),
             // The parameter of a drawing method, which only a client's frame calls.
-            "dev/logos/ui/Manuscript", Set.of("net/minecraft/client/gui/GuiGraphicsExtractor"),
+            "dev/logos/ui/Manuscript", Set.of("net/minecraft/client/gui/GuiGraphics", "dev/logos/client/port/DrawerHelperClient"),
             // The width of a word in the client's font, asked only after EffectiveSide says this is not a server.
-            "dev/logos/ui/ManuscriptControls", Set.of("net/minecraft/client/Minecraft", "net/minecraft/client/gui/Font"));
+            "dev/logos/ui/ManuscriptControls", with(LDLIB_STAND_INS, "net/minecraft/client/Minecraft", "net/minecraft/client/gui/Font"),
+            "dev/logos/ui/AlchemyArt", LDLIB_STAND_INS,
+            "dev/logos/ui/CopyTableArt", LDLIB_STAND_INS,
+            "dev/logos/ui/ManaScreens", LDLIB_STAND_INS,
+            "dev/logos/block/AlchemyTableUI", Set.of("dev/logos/client/port/GuiTexture"),
+            "dev/logos/block/CopyTableBlock", Set.of("dev/logos/client/port/GuiTexture"));
+
+    private static Set<String> with(Set<String> base, String... more) {
+        Set<String> out = new TreeSet<>(base);
+        out.addAll(Set.of(more));
+        return out;
+    }
 
     @Test
     void serverSideCodeNamesNoClientClass() throws IOException {

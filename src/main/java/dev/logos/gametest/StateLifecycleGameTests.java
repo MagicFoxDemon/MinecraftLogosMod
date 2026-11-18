@@ -24,7 +24,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
@@ -47,9 +46,9 @@ final class StateLifecycleGameTests {
 
     @SuppressWarnings("removal")
     private static ServerPlayer stranger(GameTestHelper h) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.setGameMode(GameType.SURVIVAL);
-        p.connection.markClientLoaded();
+        MockPlayers.loaded(p);
         Vec3 pos = h.absoluteVec(STANDS);
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
@@ -131,15 +130,15 @@ final class StateLifecycleGameTests {
         Vec3 start = p.position();
         var pig = h.spawn(EntityType.PIG, new BlockPos(6, 2, 6));
         h.assertTrue(Possession.start(p, pig, 30), "the possession should start");
-        Mannequin body = level.getEntitiesOfClass(Mannequin.class, new AABB(start, start).inflate(1)).getFirst();
+        dev.logos.runtime.PossessionBody body = level.getEntitiesOfClass(dev.logos.runtime.PossessionBody.class, new AABB(start, start).inflate(1)).getFirst();
         ChunkPos from = body.chunkPosition();
         body.moveTo(body.getX() + 16, body.getY(), body.getZ(), body.getYRot(), 0);
         ChunkPos to = body.chunkPosition();
         h.assertTrue(!to.equals(from), "the body should be in another chunk now");
         Possession.end(p, false);
         // Taking a ticket away answers whether there was one.
-        boolean heldFrom = Possession.TICKETS.forceChunk(level, p.getUUID(), from.x(), from.z(), false, true);
-        boolean heldTo = Possession.TICKETS.forceChunk(level, p.getUUID(), to.x(), to.z(), false, true);
+        boolean heldFrom = Possession.TICKETS.forceChunk(level, p.getUUID(), from.x, from.z, false, true);
+        boolean heldTo = Possession.TICKETS.forceChunk(level, p.getUUID(), to.x, to.z, false, true);
         h.assertTrue(!heldFrom, "the chunk it started in should not stay forced");
         h.assertTrue(!heldTo, "the chunk it was pushed to was never forced");
         h.succeed();
@@ -194,7 +193,7 @@ final class StateLifecycleGameTests {
         ServerPlayer p = caster(h);
         ServerLevel level = h.getLevel();
         SpellInstance inst = cast(h, p, "(spell :mana 200 (field :follow :life 20))", null);
-        p.kill(level);
+        p.kill();
         h.assertTrue(p.isDeadOrDying(), "the player should have died");
         // Mock players do not tick their death; twenty ticks on, this is what it does.
         p.remove(Entity.RemovalReason.KILLED);
@@ -219,7 +218,7 @@ final class StateLifecycleGameTests {
         BlockState state = LogosMod.SPELL_EMITTER.get().defaultBlockState().setValue(SpellEmitterBlock.FACING, Direction.EAST);
         h.setBlock(pos, state);
         state.getBlock().setPlacedBy(level, h.absolutePos(pos), state, owner, ItemStack.EMPTY);
-        var emitter = (SpellEmitterBlockEntity) h.getBlockEntity(pos, SpellEmitterBlockEntity.class);
+        var emitter = (SpellEmitterBlockEntity) h.getBlockEntity(pos);
         var shadow = emitter.caster(level);
         h.assertTrue(shadow.getUUID().equals(owner.getUUID()), "the stand-in should wear its owner's UUID");
         Vec3 centre = h.absolutePos(pos).getCenter();

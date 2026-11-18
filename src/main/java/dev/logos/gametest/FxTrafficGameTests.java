@@ -58,7 +58,7 @@ final class FxTrafficGameTests {
     /** A mock player whose connection negotiated the channels, at {@code at}. */
     private static ServerPlayer listener(GameTestHelper h, Vec3 at) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.moveTo(at.x, at.y, at.z, 0, 0);
         var channels = ChannelAttributes.getOrCreateAdHocChannels(p.connection.getConnection());
         channels.add(FxPayload.Batch.TYPE.id());
@@ -70,7 +70,7 @@ final class FxTrafficGameTests {
 
     private static ServerPlayer caster(GameTestHelper h, Vec3 at) {
         @SuppressWarnings("removal")
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         p.moveTo(at.x, at.y, at.z, 0, 0);
         PlayerMagic magic = PlayerMagic.of(p);
         magic.baseMaxMana = magic.mana = 100000;
@@ -296,7 +296,7 @@ final class FxTrafficGameTests {
         ServerPlayer near = listener(h, at);
         MinecraftServer server = h.getLevel().getServer();
         int[] packets = {-1};
-        server.schedule(new TickTask(server.getTickCount(), () -> {
+        server.tell(new TickTask(server.getTickCount(), () -> {
             Vfx.burst(h.getLevel(), at, Element.FIRE, 20);
             packets[0] = batches(sent(near)).size();
         }));

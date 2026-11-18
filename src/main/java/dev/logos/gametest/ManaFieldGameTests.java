@@ -179,11 +179,11 @@ final class ManaFieldGameTests {
         var nine = net.minecraft.world.item.crafting.CraftingInput.of(3, 3,
                 java.util.Collections.nCopies(9, new ItemStack(LogosMod.CAPUT_MORTUUM.get())));
         ItemStack block = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, nine, h.getLevel())
-                .map(r -> r.value().assemble(nine)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(nine, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(block.is(LogosMod.CAPUT_MORTUUM_BLOCK_ITEM.get()), "nine caput mortuum made " + block);
         var one = net.minecraft.world.item.crafting.CraftingInput.of(1, 1, java.util.List.of(new ItemStack(LogosMod.CAPUT_MORTUUM_BLOCK_ITEM.get())));
         ItemStack back = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, one, h.getLevel())
-                .map(r -> r.value().assemble(one)).orElse(ItemStack.EMPTY);
+                .map(r -> r.value().assemble(one, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
         h.assertTrue(back.is(LogosMod.CAPUT_MORTUUM.get()) && back.getCount() == 9, "the block broke into " + back);
         h.succeed();
     }
@@ -235,13 +235,13 @@ final class ManaFieldGameTests {
     static void storageTankStoresAndSupplies(GameTestHelper h) {
         BlockPos at = new BlockPos(2, 2, 2);
         h.setBlock(at, LogosMod.MANA_STORAGE_TANK.get());
-        ManaStorageTankBlockEntity tank = (ManaStorageTankBlockEntity) h.getBlockEntity(at, ManaStorageTankBlockEntity.class);
+        ManaStorageTankBlockEntity tank = (ManaStorageTankBlockEntity) h.getBlockEntity(at);
         h.setBlock(at.east(), LogosMod.CULTIVATION_JAR.get());
         h.setBlock(at.west(), LogosMod.MANA_STORAGE_TANK.get());
         h.setBlock(at.north(), LogosMod.MANA_COLLECTOR.get().defaultBlockState().setValue(ManaCollectorBlock.FACING, Direction.NORTH));
-        var jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(at.east(), dev.logos.block.CultivationJarBlockEntity.class);
-        var other = (ManaStorageTankBlockEntity) h.getBlockEntity(at.west(), ManaStorageTankBlockEntity.class);
-        var collector = (ManaCollectorBlockEntity) h.getBlockEntity(at.north(), ManaCollectorBlockEntity.class);
+        var jar = (dev.logos.block.CultivationJarBlockEntity) h.getBlockEntity(at.east());
+        var other = (ManaStorageTankBlockEntity) h.getBlockEntity(at.west());
+        var collector = (ManaCollectorBlockEntity) h.getBlockEntity(at.north());
         try (Transaction tx = Transaction.openRoot()) {
             h.assertTrue(tank.automation().insert(ItemResource.of(LogosMod.MANA_CRYSTAL.get()), 1, tx) == 1, "the tank refused a mana crystal");
             tx.commit();
@@ -270,7 +270,7 @@ final class ManaFieldGameTests {
     static void storageTankCondensesAndKeepsMana(GameTestHelper h) {
         BlockPos at = new BlockPos(2, 2, 2);
         h.setBlock(at, LogosMod.MANA_STORAGE_TANK.get());
-        ManaStorageTankBlockEntity tank = (ManaStorageTankBlockEntity) h.getBlockEntity(at, ManaStorageTankBlockEntity.class);
+        ManaStorageTankBlockEntity tank = (ManaStorageTankBlockEntity) h.getBlockEntity(at);
         tank.setMana(1000);
         tank.setMode(ManaStorageTankBlockEntity.Mode.CONDENSE);
         tank.seed().set(0, ItemResource.of(LogosMod.MANA_SHARD.get()), 1);
@@ -303,12 +303,12 @@ final class ManaFieldGameTests {
         BlockState table = LogosMod.ALCHEMY_TABLE.get().defaultBlockState().setValue(AlchemyTableBlock.FACING, Direction.SOUTH);
         h.setBlock(main, table);
         table.getBlock().setPlacedBy(h.getLevel(), h.absolutePos(main), table, null, new ItemStack(LogosMod.ALCHEMY_TABLE_ITEM.get()));
-        AlchemyTableBlockEntity tableEntity = (AlchemyTableBlockEntity) h.getBlockEntity(main, AlchemyTableBlockEntity.class);
+        AlchemyTableBlockEntity tableEntity = (AlchemyTableBlockEntity) h.getBlockEntity(main);
         // On top of the table, facing down into it.
         h.setBlock(main.above(), LogosMod.MANA_COLLECTOR.get().defaultBlockState().setValue(ManaCollectorBlock.FACING, Direction.DOWN));
         BlockPos spreaderAt = new BlockPos(0, 2, 2);
         h.setBlock(spreaderAt, LogosMod.MANA_SPREADER.get().defaultBlockState());
-        ManaSpreaderBlockEntity spreader = (ManaSpreaderBlockEntity) h.getBlockEntity(spreaderAt, ManaSpreaderBlockEntity.class);
+        ManaSpreaderBlockEntity spreader = (ManaSpreaderBlockEntity) h.getBlockEntity(spreaderAt);
         try (Transaction tx = Transaction.openRoot()) {
             h.assertTrue(spreader.fuel().insert(ItemResource.of(LogosMod.MANA_SHARD.get()), 1, tx) == 1, "the drawer refused a mana shard");
             tx.commit();

@@ -17,7 +17,7 @@ final class EndAllGameTests {
 
     @SuppressWarnings("removal")
     private static ServerPlayer player(GameTestHelper h, double x, double z) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = MockPlayers.inLevel(h);
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
         p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);

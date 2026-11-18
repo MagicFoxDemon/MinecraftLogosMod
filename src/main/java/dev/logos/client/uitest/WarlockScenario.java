@@ -39,7 +39,7 @@ public class WarlockScenario implements UIScenario {
         T mob = type.create(level);
         if (mob == null) return;
         var warlock = level.registryAccess().lookupOrThrow(Registries.VILLAGER_PROFESSION).getOrThrow(LogosMod.WARLOCK.getKey());
-        mob.setVillagerData(mob.getVillagerData().withProfession(warlock).withLevel(5));
+        mob.setVillagerData(mob.getVillagerData().setProfession(warlock.value()).setLevel(5));
         mob.moveTo(x, ORIGIN.getY() + 1, z, yaw, 0);
         mob.setYHeadRot(yaw);
         mob.setYBodyRot(yaw);
@@ -55,7 +55,7 @@ public class WarlockScenario implements UIScenario {
                 .clearArea(ORIGIN.offset(0, 4, 3), 7)
                 .fill(ORIGIN.offset(-6, 0, -6), ORIGIN.offset(6, 0, 8), Blocks.SMOOTH_STONE.defaultBlockState())
                 .server("stand four warlocks", sc -> {
-                    ServerLevel level = sc.player().level();
+                    ServerLevel level = sc.player().serverLevel();
                     stand(level, EntityType.VILLAGER, -1.5, 3.5, 180);       // facing the camera
                     stand(level, EntityType.VILLAGER, 0.5, 3.5, 0);          // its back
                     stand(level, EntityType.VILLAGER, 2.5, 3.5, 90);         // its side
@@ -74,7 +74,7 @@ public class WarlockScenario implements UIScenario {
                     var villager = player.level().getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class, player.getBoundingBox().inflate(6)).stream()
                             .filter(v -> v.getYRot() == 180).findFirst().orElseThrow();
                     villager.setNoAi(false);
-                    villager.interact(player, InteractionHand.MAIN_HAND, villager.position());
+                    villager.interact(player, InteractionHand.MAIN_HAND);
                 })
                 .awaitScreen(MerchantScreen.class)
                 .ticks(5)

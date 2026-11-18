@@ -15,7 +15,6 @@ import dev.logos.lang.Element;
 import dev.logos.net.FxPayload;
 import dev.logos.runtime.Vfx;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -172,7 +171,6 @@ final class FxLive {
         final float scale;
         final float spin;
         final long born;
-        final ItemStackRenderState state = new ItemStackRenderState();
         Vec3 prev;
         Vec3 cur;
         Vec3 heading;

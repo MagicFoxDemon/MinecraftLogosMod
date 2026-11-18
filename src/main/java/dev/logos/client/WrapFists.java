@@ -5,25 +5,20 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import com.google.common.reflect.TypeToken;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.LogosMod;
-import dev.logos.lang.Element;
+import dev.logos.client.port.BufferSubmitNodeCollector;
 import dev.logos.runtime.ManaWrap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
-import dev.logos.client.port.SubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
-import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
-import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -32,7 +27,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderArmEvent;
-import net.neoforged.neoforge.client.renderstate.RegisterRenderStateModifiersEvent;
 
 /**
  * A mana wrap on an empty main hand, drawn on the fist: the last five pixels of the arm's cube, handed to
@@ -44,42 +38,35 @@ import net.neoforged.neoforge.client.renderstate.RegisterRenderStateModifiersEve
 final class WrapFists {
     /** How long the fist is, in model pixels from the end of the arm. */
     private static final float FIST = 5;
-    /** On a living entity's render state: who it is and the element of its wrap, when it wears one. */
-    private static final ContextKey<Fist> KEY = new ContextKey<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "wrap_fist"));
     private static final Map<ModelPart.Cube, ItemSurface> SURFACES = new IdentityHashMap<>();
     private static final RandomSource RANDOM = RandomSource.create();
 
-    private record Fist(int owner, Element element) {}
-
     private WrapFists() {}
 
-    @SubscribeEvent
-    static void onRenderState(RegisterRenderStateModifiersEvent event) {
-        event.registerEntityModifier(new TypeToken<LivingEntityRenderer<LivingEntity, LivingEntityRenderState, ?>>() {}, (entity, state) -> {
-            ManaWrap w = ManaWrap.of(entity);
-            state.setRenderData(KEY, w == null ? null : new Fist(entity.getId(), w.element()));
-        });
-    }
+    @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    static final class ModBus {
+        private ModBus() {}
 
-    @SubscribeEvent
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    static void onLayers(EntityRenderersEvent.AddLayers event) {
-        for (var type : event.getEntityTypes()) {
-            if (event.getRenderer(type) instanceof LivingEntityRenderer r && r.getModel() instanceof HumanoidModel) r.addLayer(new Layer(r));
-        }
-        for (var skin : event.getSkins()) {
-            LivingEntityRenderer r = event.getPlayerRenderer(skin);
-            if (r != null) r.addLayer(new Layer(r));
+        @SubscribeEvent
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        static void onLayers(EntityRenderersEvent.AddLayers event) {
+            for (var type : event.getEntityTypes()) {
+                if (event.getRenderer(type) instanceof LivingEntityRenderer r && r.getModel() instanceof HumanoidModel) r.addLayer(new Layer(r));
+            }
+            for (var skin : event.getSkins()) {
+                if (event.getSkin(skin) instanceof LivingEntityRenderer r) r.addLayer(new Layer(r));
+            }
         }
     }
 
-    /** One's own empty main hand in first person, posed as AvatarRenderer.renderHand poses it. */
+    /** One's own empty main hand in first person, posed as PlayerRenderer.renderHand poses it. */
     @SubscribeEvent
     static void onArm(RenderArmEvent event) {
         AbstractClientPlayer player = event.getPlayer();
         ManaWrap w = ManaWrap.of(player);
         if (w == null || event.getArm() != player.getMainArm()) return;
-        var model = Minecraft.getInstance().getEntityRenderDispatcher().getPlayerRenderer(player).getModel();
+        if (!(Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(player) instanceof LivingEntityRenderer<?, ?> renderer)
+                || !(renderer.getModel() instanceof HumanoidModel<?> model)) return;
         boolean right = event.getArm() == HumanoidArm.RIGHT;
         ModelPart arm = right ? model.rightArm : model.leftArm;
         ItemSurface fist = surface(arm);
@@ -90,7 +77,7 @@ final class WrapFists {
         arm.zRot = right ? .1f : -.1f;
         arm.translateAndRotate(pose);
         SurfaceAuras.submitFist(w.element(), player.getId(), right ? ItemDisplayContext.FIRST_PERSON_RIGHT_HAND : ItemDisplayContext.FIRST_PERSON_LEFT_HAND,
-                fist, pose, event.getSubmitNodeCollector());
+                fist, pose, BufferSubmitNodeCollector.immediate(event.getMultiBufferSource()));
         pose.popPose();
     }
 
@@ -105,23 +92,25 @@ final class WrapFists {
     }
 
     /** Draws the wrap on an empty main hand, after the creature's model. */
-    private static final class Layer<S extends HumanoidRenderState, M extends HumanoidModel<S>> extends RenderLayer<S, M> {
-        Layer(RenderLayerParent<S, M> parent) {
+    private static final class Layer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
+        Layer(RenderLayerParent<T, M> parent) {
             super(parent);
         }
 
         @Override
-        public void submit(PoseStack poseStack, SubmitNodeCollector collector, int light, S state, float yRot, float xRot) {
-            Fist f = state.getRenderData(KEY);
-            if (f == null || state.isInvisible || !state.getMainHandItemState().isEmpty()) return;
-            ModelPart arm = getParentModel().getArm(state.mainArm);
+        public void render(PoseStack poseStack, MultiBufferSource buffers, int light, T entity, float limbSwing, float limbSwingAmount,
+                float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
+            ManaWrap w = ManaWrap.of(entity);
+            if (w == null || entity.isInvisible() || !entity.getMainHandItem().isEmpty()) return;
+            HumanoidArm main = entity.getMainArm();
+            ModelPart arm = main == HumanoidArm.RIGHT ? getParentModel().rightArm : getParentModel().leftArm;
             ItemSurface fist = arm.visible ? surface(arm) : null;
             if (fist == null) return;
             poseStack.pushPose();
-            getParentModel().translateToHand(state, state.mainArm, poseStack);
-            SurfaceAuras.submitFist(f.element(), f.owner(),
-                    state.mainArm == HumanoidArm.LEFT ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
-                    fist, poseStack, collector);
+            getParentModel().translateToHand(main, poseStack);
+            SurfaceAuras.submitFist(w.element(), entity.getId(),
+                    main == HumanoidArm.LEFT ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND,
+                    fist, poseStack, BufferSubmitNodeCollector.immediate(buffers));
             poseStack.popPose();
         }
     }

@@ -7,6 +7,6 @@
     "minecraft:fern",
     "minecraft:large_fern",
     "minecraft:dead_bush",
-    "minecraft:bush"
+    {"id": "minecraft:bush", "required": false}
   ]
 }

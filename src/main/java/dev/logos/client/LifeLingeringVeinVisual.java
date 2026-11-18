@@ -174,7 +174,7 @@ final class LifeLingeringVeinVisual implements VeinVisual {
 
     /** The world's light where the vine comes out, so it is dark by night like the plants round it. */
     private static int light(Level level, Vine v) {
-        return LevelRenderer.getLightCoords(level, BlockPos.containing(v.points()[0].add(v.n().scale(.6))));
+        return LevelRenderer.getLightColor(level, BlockPos.containing(v.points()[0].add(v.n().scale(.6))));
     }
 
     /**
