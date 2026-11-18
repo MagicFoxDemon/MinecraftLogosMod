@@ -82,7 +82,7 @@ final class FamiliarEvents {
     @SubscribeEvent
     static void onJoin(EntityJoinLevelEvent event) {
         if (event.loadedFromDisk() && Familiars.isFamiliar(event.getEntity())) {
-            // A companion is kept by its own mod: it answers again, unless its master has another one out by now.
+            // A companion is kept by its own mod: it answers again, unless the same character is out by now or there is no room.
             if (event.getEntity() instanceof Mob c && c instanceof LastingCompanion && !event.getLevel().isClientSide()) {
                 if (!Familiars.rebindCompanion(c)) event.setCanceled(true);
                 return;
