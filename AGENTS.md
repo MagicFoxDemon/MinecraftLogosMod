@@ -12,16 +12,16 @@
 
 ## 元素魔弹并行制作
 
-制作单个元素的魔弹飞行特效时，遵守 [PROJECTILE_VFX.md](PROJECTILE_VFX.md) 的文件边界：只修改该元素的实现、专属资源和专属测试。公共入口、参数替换逻辑、其它元素和命中效果不属于元素分支的修改范围。公共修改集中在主协调分支完成；不得顺带在元素分支里修改。
+制作单个元素的魔弹飞行特效时，遵守 [PROJECTILE_VFX.md](docs/vfx/PROJECTILE_VFX.md) 的文件边界：只修改该元素的实现、专属资源和专属测试。公共入口、参数替换逻辑、其它元素和命中效果不属于元素分支的修改范围。公共修改集中在主协调分支完成；不得顺带在元素分支里修改。
 
-制作魔弹命中特效时，遵守 [PROJECTILE_IMPACT_VFX.md](PROJECTILE_IMPACT_VFX.md)。公共碰撞入口统一后，元素分支只修改自身命中实现、专属资源和专属客户端测试；飞行外观保持只读。
+制作魔弹命中特效时，遵守 [PROJECTILE_IMPACT_VFX.md](docs/vfx/PROJECTILE_IMPACT_VFX.md)。公共碰撞入口统一后，元素分支只修改自身命中实现、专属资源和专属客户端测试；飞行外观保持只读。
 
-制作节点生效特效（BURST：伤害、治疗、护盾、推拉与缴械、药水）时，遵守 [EFFECT_BURST_VFX.md](EFFECT_BURST_VFX.md)。公共入口和伤害核心只读，各分支只修改自身实现、专属资源和专属客户端场景。
+制作节点生效特效（BURST：伤害、治疗、护盾、推拉与缴械、药水）时，遵守 [EFFECT_BURST_VFX.md](docs/vfx/EFFECT_BURST_VFX.md)。公共入口和伤害核心只读，各分支只修改自身实现、专属资源和专属客户端场景。
 
-制作射线（ray）特效时，遵守 [RAY_VFX.md](RAY_VFX.md)。公共入口只读，各元素分支只修改自身射线实现、专属资源和专属客户端场景。
+制作射线（ray）特效时，遵守 [RAY_VFX.md](docs/vfx/RAY_VFX.md)。公共入口只读，各元素分支只修改自身射线实现、专属资源和专属客户端场景。
 
-制作持续光束（beam）特效时，遵守 [BEAM_VFX.md](BEAM_VFX.md)。公共入口只读，各元素分支只修改自身光束、余迹实现、专属资源和专属客户端场景。
+制作持续光束（beam）特效时，遵守 [BEAM_VFX.md](docs/vfx/BEAM_VFX.md)。公共入口只读，各元素分支只修改自身光束、余迹实现、专属资源和专属客户端场景。
 
-制作法杖蓄力（charge）特效时，遵守 [CHARGE_VFX.md](CHARGE_VFX.md)。公共入口与公共核心只读，各元素分支只修改自身蓄力实现、专属资源和专属客户端场景。
+制作法杖蓄力（charge）特效时，遵守 [CHARGE_VFX.md](docs/vfx/CHARGE_VFX.md)。公共入口与公共核心只读，各元素分支只修改自身蓄力实现、专属资源和专属客户端场景。
 
-制作领域（field）特效时，遵守 [FIELD_VFX.md](FIELD_VFX.md)。公共入口与公共核心只读，各元素分支只修改自身领域实现、专属资源和专属客户端场景。
+制作领域（field）特效时，遵守 [FIELD_VFX.md](docs/vfx/FIELD_VFX.md)。公共入口与公共核心只读，各元素分支只修改自身领域实现、专属资源和专属客户端场景。
