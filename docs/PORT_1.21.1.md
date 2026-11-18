@@ -58,7 +58,9 @@
    战利品修改器（`loot_modifiers`）照 `main` 加文件即可：构建时 `generateLootModifierList` 生成 1.21.1 要的
    `neoforge:global_loot_modifiers` 名单。
 4. 访问不到的字段和方法写进 `META-INF/accesstransformer.cfg`，注释写明替的是 26.1 的什么。
-5. 渲染器：实体和方块实体的渲染器在这个分支是 1.21.1 的写法（`render(...)` 直接画），没有渲染状态。
+5. 继承 `BaseEntityBlock` 的方块：1.21.1 的 `getRenderShape` 默认是 `INVISIBLE`（26.1 默认画模型），要自己覆写成
+   `RenderShape.MODEL`，否则放下后整块看不见（培养罐、魔力储存罐就是这样漏的）。
+6. 渲染器：实体和方块实体的渲染器在这个分支是 1.21.1 的写法（`render(...)` 直接画），没有渲染状态。
    施法姿势用的人形渲染状态有替身（`client/port` 的 `HumanoidRenderState.of(entity, model)` 等），只给姿势代码用。
    效果代码要画物品、方块、实体时用替身的 `SubmitNodeCollector.submitDrawing`（26.1 是各自的 submit）。
 6. GeckoLib：`main` 是 GeckoLib 5（渲染状态、DataTicket、BoneSnapshots），这里是 GeckoLib 4。
@@ -95,8 +97,26 @@
   - 1.21.1 只要父模型最终是 `builtin/generated`，就只按 `layer0` 贴图生成扁平图标、丢掉元素。带元素又以
     `item/handheld` / `item/generated` 为父的物品模型（法杖、长杖）改用 `models/item/port/handheld_elements.json`
     （同样的手持视角参数，没有 generated 根）。
-  - 26.1 的贴图对象 `{"sprite": …, "force_translucent": true}` 改成贴图名，半透明写成 NeoForge 的 `render_type`。
-  - 还没处理：26.1 的多轴元素旋转（`"rotation": {"x": …, "y": …, "z": …}`），编纂台和载页的方块模型因此加载失败。
+  - 26.1 的贴图对象 `{"sprite": …, "force_translucent": true}` 改成贴图名（半透明见下一条）。
+  - 渲染层：26.1 按每个面 uv 盖住的贴图像素自动分层（有 alpha 介于 0 和 255 之间的像素就半透明，有全透明像素就镂空，
+    `force_translucent` 也算半透明），1.21.1 只看方块登记（原版只登记原版方块）或模型的 `render_type`，所以 Logos 的
+    方块原来全按实心画，透明像素露出存着的颜色（编纂台、拓印台载页四周的深色框，作物和魔力簇的底色）。构建时按 26.1
+    的规则给每个方块模型算出层，写成 `render_type`：有半透明面写 `minecraft:translucent`，否则有镂空面写
+    `minecraft:cutout_mipped`（26.1 的镂空层用带 mipmap 的图集、丢掉 alpha < 0.5 的像素，正是 1.21.1 的
+    cutout_mipped；它的物品形态和 1.21.1 默认的方块物品一样是 entity cutout）。1.21.1 的 `render_type` 按模型而不是
+    按面，所以混合的模型取最透的那一层；子模型会继承父模型的 `render_type`，所以只在和继承来的不同的地方写（包括写回
+    `minecraft:solid`）。原版父模型和原版贴图（作物、十字形）从 1.21.1 自己的资源 jar 里读。
+  - 发光元素：26.1 元素的 `light_emission` 1.21.1 不读（法杖宝石、长杖光环、魔力装置的发光部分原来不亮），改写成同一个
+    元素上的 NeoForge `"neoforge_data": {"block_light": n}`，效果相同：方块光取世界光和 n 的较大值，天空光不变。
+  - 物品定义里用特殊渲染器画的物品（`{"type": "minecraft:special", "base": …}`，炼金术桌的 GeckoLib 模型）：1.21.1
+    只有父模型链以 `builtin/entity` 结尾才交给自定义渲染器，所以它的 base 模型改用这个父模型，显示参数不变。
+  - 26.1 的元素旋转可以是多轴（`"rotation": {"x": …, "y": …, "z": …}`，R = Rz·Ry·Rx）或任意角度的单轴，1.21.1
+    只认单轴且角度为 0、±22.5、±45，否则整个模型加载失败（编纂台和载页的方块模型）。`gradle/port-models.gradle`
+    把 R 拆成 Q·P：P 是 24 种轴对齐旋转之一，直接烘进元素的 `from`/`to` 和各个面（面换到 P 转过去的方向，uv 矩形不变，
+    没写 uv 的按 26.1 的默认值写出来，再换一个面的 `rotation` 让每个顶点拿到原来的 uv；`texture`、`cullface`、
+    `tintindex` 不变）；剩下的 Q 是允许的单轴旋转，写回 `rotation`，Q 为单位旋转时去掉 `rotation`。每个改过的元素都
+    按两个版本的烘焙逐顶点比较位置和 uv，拆不开或对不上就让构建失败并报出文件和元素，不会悄悄写出错的模型。
+    同一个文件可以同时受上面几处改写（一次解析、一次写出）。
 - GeckoLib：4.9 从 `geo/`、`animations/` 读模型和动画，26.1 的 GeckoLib 5 从 `geckolib/models/`、`geckolib/animations/` 读。
   文件留在 `main` 的位置，`generateGeckoLibAssets` 构建时复制过去。
 - 物品表面特效、魔力缠绕：挂在 `ItemRenderer.render` 末尾（`mixin/ItemRendererMixin`），物品归谁由

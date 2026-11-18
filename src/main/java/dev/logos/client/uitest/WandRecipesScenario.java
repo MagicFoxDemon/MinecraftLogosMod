@@ -70,8 +70,10 @@ public final class WandRecipesScenario implements UIScenario {
                     var mc = Minecraft.getInstance();
                     ctx.check("one sage template", mc.player.containerMenu.getSlot(0).getItem().is(LogosMod.SAGE_UPGRADE_TEMPLATE.get())
                             && mc.player.containerMenu.getSlot(0).getItem().getCount() == 1);
-                    ctx.check("template model baked", mc.getModelManager().getModel(net.minecraft.client.resources.model.ModelResourceLocation.inventory(LogosMod.SAGE_UPGRADE_TEMPLATE.getId()))
-                            .getClass().getSimpleName().equals("CuboidItemModelWrapper"));
+                    // 26.1 bakes it as a CuboidItemModelWrapper; 1.21.1 has no such class, so: its own model, and one that draws.
+                    var templateModel = mc.getModelManager().getModel(net.minecraft.client.resources.model.ModelResourceLocation.inventory(LogosMod.SAGE_UPGRADE_TEMPLATE.getId()));
+                    ctx.check("template model baked", templateModel != mc.getModelManager().getMissingModel()
+                            && !templateModel.getQuads(null, null, net.minecraft.util.RandomSource.create()).isEmpty());
                 }).screenshot("sage_template_crafting")
                 .step("take the crafted template", ctx -> takeResult(0)).ticks(5)
                 .step("template crafting pays both materials", ctx -> {

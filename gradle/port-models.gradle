@@ -1,0 +1,641 @@
+// 26.1 element rotations that 1.21.1 cannot load, rewritten at build time (applied from build.gradle, called from the
+// models rewrite in processResources; the files themselves stay the same as on main).
+//
+// 26.1 takes an element rotation as {"origin", "x", "y", "z"} (Euler angles: R = Rz * Ry * Rx about origin) or as
+// {"origin", "axis", "angle"} with any angle. 1.21.1 takes only one axis and an angle of 0, ±22.5 or ±45; anything else
+// fails the whole model ("Missing axis" / "Invalid rotation"). Every such R used so far is a quarter-turn rotation
+// followed by at most one allowed single-axis turn, so the element is split as R = Q * P: P (one of the 24 rotations
+// that map axes onto axes) is baked into the element's box and faces, and Q is what is left in "rotation" (dropped when
+// it is the identity). Baking P moves each face to direction P*d; it keeps its uv rectangle (written out from 26.1's
+// default when the face had none) and gets the face "rotation" that puts the same uv on each moved corner. texture,
+// cullface, tintindex and neoforge_data stay as they are: neither version changes them for an element rotation.
+// "rescale" carries over unchanged (26.1 scales by R's axis images, which is Q's scale moved through P).
+//
+// Every converted element is checked by baking it as each version would (vertex positions and the uv each vertex
+// gets); a rotation with no such split, or any vertex that does not land on the same place with the same uv, fails the
+// build with the file and the element's name instead of writing a wrong model.
+
+class PortModelRotations {
+    static final double EPS_POS = 1e-3
+    static final double EPS_UV = 1e-4
+    static final List<Double> LEGAL_ANGLES = [0d, 22.5d, -22.5d, 45d, -45d]
+    static final Map<String, List<Integer>> DIRECTIONS = [
+            down: [0, -1, 0], up: [0, 1, 0], north: [0, 0, -1], south: [0, 0, 1], west: [-1, 0, 0], east: [1, 0, 0]]
+    // The four corners of each face in the order both versions bake them (FaceInfo), as -1 = from, +1 = to per axis.
+    static final Map<String, List<List<Integer>>> FACE_CORNERS = [
+            down : [[-1, -1, 1], [-1, -1, -1], [1, -1, -1], [1, -1, 1]],
+            up   : [[-1, 1, -1], [-1, 1, 1], [1, 1, 1], [1, 1, -1]],
+            north: [[1, 1, -1], [1, -1, -1], [-1, -1, -1], [-1, 1, -1]],
+            south: [[-1, 1, 1], [-1, -1, 1], [1, -1, 1], [1, 1, 1]],
+            west : [[-1, 1, -1], [-1, -1, -1], [-1, -1, 1], [-1, 1, 1]],
+            east : [[1, 1, 1], [1, -1, 1], [1, -1, -1], [1, 1, -1]]]
+    static final List<String> AXES = ['x', 'y', 'z']
+    // The 24 rotations that map axes onto axes, identity first.
+    static final List<double[][]> QUARTER_TURNS = quarterTurns()
+
+    /** Rewrites, in place, every element rotation of the model that 1.21.1 cannot load; returns how many were rewritten. */
+    static int convert(Map model, String file) {
+        if (!(model.elements instanceof List)) return 0
+        int converted = 0
+        List elements = model.elements
+        for (int i = 0; i < elements.size(); i++) {
+            Map element = elements[i] as Map
+            if (!(element.rotation instanceof Map) || loadsOn1211(element.rotation as Map)) continue
+            String name = "element ${i}" + (element.name != null ? " \"${element.name}\"" : "")
+            try {
+                elements[i] = convertElement(element)
+                check(element, elements[i] as Map)
+            } catch (IllegalStateException e) {
+                throw new org.gradle.api.GradleException("${file}, ${name}: ${e.message}")
+            }
+            converted++
+        }
+        return converted
+    }
+
+    /** What 1.21.1's BlockElement.Deserializer accepts. */
+    static boolean loadsOn1211(Map rotation) {
+        if (!rotation.containsKey('axis') || !rotation.containsKey('angle')) return false
+        if (rotation.containsKey('x') || rotation.containsKey('y') || rotation.containsKey('z')) return false
+        if (!(rotation.axis instanceof String) || !(rotation.axis.toLowerCase(Locale.ROOT) in AXES)) return false
+        float angle = rotation.angle as float
+        return angle == 0f || Math.abs(angle) == 22.5f || Math.abs(angle) == 45f
+    }
+
+    static Map convertElement(Map element) {
+        Map rotation = element.rotation as Map
+        double[][] r = rotation261(rotation)
+        List<Double> origin = vec(rotation.origin)
+        // Prefer no rotation left, then the smallest turn.
+        def best = null
+        for (double[][] p : QUARTER_TURNS) {
+            def q = singleAxis(mul(r, transpose(p)))
+            if (q != null && (best == null || Math.abs(q.angle as double) < Math.abs(best.angle as double))) best = [p: p, axis: q.axis, angle: q.angle]
+            if (best != null && best.angle == 0d) break
+        }
+        if (best == null) throw new IllegalStateException("rotation ${rotation} is not a quarter-turn rotation followed by one turn of 0, ±22.5 or ±45 degrees, so 1.21.1 cannot draw it")
+        double[][] p = best.p as double[][]
+
+        List<Double> from = vec(element.from), to = vec(element.to)
+        List<Double> newFrom = [Double.MAX_VALUE] * 3, newTo = [-Double.MAX_VALUE] * 3
+        for (int sx : [-1, 1]) for (int sy : [-1, 1]) for (int sz : [-1, 1]) {
+            List<Double> moved = about(p, corner(from, to, [sx, sy, sz]), origin)
+            for (int a = 0; a < 3; a++) {
+                newFrom[a] = Math.min(newFrom[a], moved[a])
+                newTo[a] = Math.max(newTo[a], moved[a])
+            }
+        }
+        newFrom = newFrom.collect { round4(it) }
+        newTo = newTo.collect { round4(it) }
+        for (double c : newFrom + newTo) if (c < -16d || c > 32d) throw new IllegalStateException("the turned box ${newFrom}..${newTo} leaves -16..32")
+
+        Map newFaces = [:]
+        (element.faces as Map).each { String dir, Map face ->
+            String newDir = direction(apply(p, DIRECTIONS[dir].collect { it as double }))
+            List uv = face.uv != null ? face.uv as List : defaultUv(from, to, dir).collect { number(it) }
+            int shift = quarter(face.rotation)
+            // Corner j of the old face lands on corner (j + turn) of the new one; the same turn for all four, since P
+            // keeps the faces' winding.
+            int turn = -1
+            for (int j = 0; j < 4; j++) {
+                List<Integer> moved = apply(p, FACE_CORNERS[dir][j].collect { it as double }).collect { Math.round(it) as int }
+                int k = FACE_CORNERS[newDir].findIndexOf { it == moved }
+                int t = Math.floorMod(k - j, 4)
+                if (k < 0 || (turn >= 0 && t != turn)) throw new IllegalStateException("face ${dir} does not map onto face ${newDir}")
+                turn = t
+            }
+            Map newFace = new LinkedHashMap(face)
+            newFace.uv = uv
+            int newShift = Math.floorMod(shift - turn, 4)
+            if (newShift == 0) newFace.remove('rotation') else newFace.rotation = newShift * 90
+            newFaces[newDir] = newFace
+        }
+
+        Map out = [:]
+        element.each { k, v ->
+            if (k == 'from') out.from = newFrom.collect { number(it) }
+            else if (k == 'to') out.to = newTo.collect { number(it) }
+            else if (k == 'faces') out.faces = newFaces
+            else if (k == 'rotation') {
+                if (best.angle != 0d) {
+                    Map q = [origin: rotation.origin, axis: best.axis, angle: number(best.angle as double)]
+                    if (rotation.containsKey('rescale')) q.rescale = rotation.rescale
+                    out.rotation = q
+                }
+            } else out[k] = v
+        }
+        return out
+    }
+
+    // --- The check: bake the old element as 26.1 does and the new one as 1.21.1 does, and compare vertex by vertex. ---
+
+    static void check(Map before, Map after) {
+        List<Map> old = bake261(before), now = bake1211(after)
+        if (old.size() != now.size()) throw new IllegalStateException("has ${now.size()} faces after the rewrite, ${old.size()} before")
+        List<Map> unused = new ArrayList<>(now)
+        for (Map face : old) {
+            Map match = unused.find { sameFace(face, it) }
+            if (match == null) throw new IllegalStateException("face ${face.dir} (texture ${face.texture}) does not come out the same on 1.21.1")
+            unused.remove(match)
+        }
+    }
+
+    static boolean sameFace(Map a, Map b) {
+        if (a.texture != b.texture || a.cullface != b.cullface || a.tintindex != b.tintindex || a.data != b.data) return false
+        List<Map> left = new ArrayList<>(b.vertices as List)
+        for (Map v : a.vertices) {
+            Map w = left.find { close(v.pos, it.pos, EPS_POS) && close(v.uv, it.uv, EPS_UV) }
+            if (w == null) return false
+            left.remove(w)
+        }
+        // Same winding, or the face would be culled from the wrong side.
+        List<Double> na = normal(a.vertices*.pos), nb = normal(b.vertices*.pos)
+        return dot(na, na) < 1e-9 || dot(nb, nb) < 1e-9 || dot(na, nb) > 0
+    }
+
+    static List<Map> bake261(Map element) {
+        Map rotation = element.rotation as Map
+        double[][] r = rotation261(rotation)
+        List<Double> origin = vec(rotation.origin)
+        double[] scale = [1, 1, 1]
+        if (rotation.rescale && !isIdentity(r)) {
+            // CuboidRotation.computeRescale: 1 / the largest component of each turned axis, applied before the turn.
+            for (int a = 0; a < 3; a++) scale[a] = 1d / [Math.abs(r[0][a]), Math.abs(r[1][a]), Math.abs(r[2][a])].max()
+        }
+        List<Double> from = vec(element.from), to = vec(element.to)
+        return (element.faces as Map).collect { String dir, Map face ->
+            List<Double> uv = vec(face.uv != null ? face.uv : defaultUv(from, to, dir))
+            int shift = quarter(face.rotation)
+            def vertices = (0..3).collect { int j ->
+                List<Double> local = sub(corner(from, to, FACE_CORNERS[dir][j]), origin)
+                local = (0..2).collect { local[it] * scale[it] }
+                [pos: add(apply(r, local), origin), uv: uvCorner(uv, (j + shift) % 4)]
+            }
+            faceInfo(dir, face, vertices)
+        }
+    }
+
+    static List<Map> bake1211(Map element) {
+        Map rotation = element.rotation as Map
+        if (rotation != null && !loadsOn1211(rotation)) throw new IllegalStateException("rewritten rotation ${rotation} still does not load on 1.21.1")
+        double[][] r = identity()
+        double[] scale = [1, 1, 1]
+        List<Double> origin = [0d, 0d, 0d]
+        if (rotation != null) {
+            float angle = rotation.angle as float
+            String axis = (rotation.axis as String).toLowerCase(Locale.ROOT)
+            r = axisRotation(axis, angle as double)
+            origin = vec(rotation.origin)
+            if (rotation.rescale) {
+                // FaceBakery.applyElementRotation: the two other axes scaled after the turn, 1/cos(22.5) or else 1/cos(45).
+                double f = Math.abs(angle) == 22.5f ? 1d / Math.cos(Math.PI / 8) : 1d / Math.cos(Math.PI / 4)
+                for (int a = 0; a < 3; a++) if (AXES[a] != axis) scale[a] = f
+            }
+        }
+        List<Double> from = vec(element.from), to = vec(element.to)
+        return (element.faces as Map).collect { String dir, Map face ->
+            List<Double> uv = vec(face.uv != null ? face.uv : defaultUv(from, to, dir))
+            def rot = face.rotation == null ? 0 : face.rotation as int
+            if (rot < 0 || rot % 90 != 0 || rot > 270) throw new IllegalStateException("face ${dir} rotation ${rot} does not load on 1.21.1")
+            def vertices = (0..3).collect { int j ->
+                List<Double> turned = apply(r, sub(corner(from, to, FACE_CORNERS[dir][j]), origin))
+                [pos: add((0..2).collect { turned[it] * scale[it] }, origin), uv: uvCorner(uv, (j + rot.intdiv(90)) % 4)]
+            }
+            faceInfo(dir, face, vertices)
+        }
+    }
+
+    static Map faceInfo(String dir, Map face, List vertices) {
+        return [dir: dir, texture: face.texture, cullface: face.cullface, tintindex: face.tintindex == null ? -1 : face.tintindex as int,
+                data: face.neoforge_data, vertices: vertices]
+    }
+
+    // --- Shared pieces ---
+
+    /** 26.1's CuboidModelElement.Deserializer.getRotation, as a matrix. */
+    static double[][] rotation261(Map rotation) {
+        if (rotation.containsKey('axis') || rotation.containsKey('angle')) {
+            return axisRotation((rotation.axis as String).toLowerCase(Locale.ROOT), rotation.angle as double)
+        }
+        if (!rotation.containsKey('x') && !rotation.containsKey('y') && !rotation.containsKey('z')) throw new IllegalStateException("rotation ${rotation} has neither axis and angle nor x, y, z")
+        double x = (rotation.x ?: 0) as double, y = (rotation.y ?: 0) as double, z = (rotation.z ?: 0) as double
+        return mul(axisRotation('z', z), mul(axisRotation('y', y), axisRotation('x', x)))
+    }
+
+    /** Q as one turn about a principal axis, or null. */
+    static Map singleAxis(double[][] q) {
+        if (isIdentity(q)) return [axis: 'y', angle: 0d]
+        for (int a = 0; a < 3; a++) {
+            int b = (a + 1) % 3, c = (a + 2) % 3
+            double angle = Math.toDegrees(Math.atan2(q[c][b], q[b][b]))
+            double snapped = LEGAL_ANGLES.min { Math.abs(it - angle) }
+            if (Math.abs(snapped - angle) > 1e-3) continue
+            double[][] want = axisRotation(AXES[a], snapped)
+            boolean same = (0..2).every { i -> (0..2).every { j -> Math.abs(want[i][j] - q[i][j]) < 1e-5 } }
+            if (same && snapped != 0d) return [axis: AXES[a], angle: snapped]
+        }
+        return null
+    }
+
+    static double[][] axisRotation(String axis, double degrees) {
+        double c = cosDeg(degrees), s = cosDeg(degrees - 90)
+        switch (axis) {
+            case 'x': return [[1, 0, 0], [0, c, -s], [0, s, c]] as double[][]
+            case 'y': return [[c, 0, s], [0, 1, 0], [-s, 0, c]] as double[][]
+            case 'z': return [[c, -s, 0], [s, c, 0], [0, 0, 1]] as double[][]
+            default: throw new IllegalStateException("unknown rotation axis ${axis}")
+        }
+    }
+
+    /** cos, exact at multiples of 90 degrees so quarter turns compare cleanly. */
+    static double cosDeg(double degrees) {
+        double m = Math.floorMod(Math.round(degrees * 1e6), 360000000L) / 1e6
+        if (m == 0d) return 1d
+        if (m == 90d || m == 270d) return 0d
+        if (m == 180d) return -1d
+        return Math.cos(Math.toRadians(degrees))
+    }
+
+    /** 26.1's FaceBakery.defaultFaceUV (the same as 1.21.1's BlockElement.uvsByFace). */
+    static List<Double> defaultUv(List<Double> from, List<Double> to, String dir) {
+        switch (dir) {
+            case 'down': return [from[0], 16 - to[2], to[0], 16 - from[2]]
+            case 'up': return [from[0], from[2], to[0], to[2]]
+            case 'north': return [16 - to[0], 16 - to[1], 16 - from[0], 16 - from[1]]
+            case 'south': return [from[0], 16 - to[1], to[0], 16 - from[1]]
+            case 'west': return [from[2], 16 - to[1], to[2], 16 - from[1]]
+            case 'east': return [16 - to[2], 16 - to[1], 16 - from[2], 16 - from[1]]
+            default: throw new IllegalStateException("unknown face ${dir}")
+        }
+    }
+
+    /** The uv both versions give vertex index i of a face (after the face rotation shift). */
+    static List<Double> uvCorner(List<Double> uv, int i) {
+        return [i == 0 || i == 1 ? uv[0] : uv[2], i == 0 || i == 3 ? uv[1] : uv[3]]
+    }
+
+    /** A face "rotation" as 26.1 reads it (Quadrant.parseJson). */
+    static int quarter(Object rotation) {
+        int degrees = rotation == null ? 0 : rotation as int
+        int m = Math.floorMod(degrees, 360)
+        if (m % 90 != 0) throw new IllegalStateException("face rotation ${degrees} is not a multiple of 90")
+        return m.intdiv(90)
+    }
+
+    static String direction(List<Double> v) {
+        List<Integer> d = v.collect { Math.round(it) as int }
+        return DIRECTIONS.find { k, w -> w == d }?.key
+    }
+
+    static List<double[][]> quarterTurns() {
+        List<double[][]> out = []
+        for (List<Integer> perm : [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]]) {
+            for (int signs = 0; signs < 8; signs++) {
+                double[][] m = new double[3][3]
+                for (int i = 0; i < 3; i++) m[i][perm[i]] = (signs >> i & 1) == 0 ? 1d : -1d
+                if (Math.abs(det(m) - 1d) < 1e-9) out << m
+            }
+        }
+        return out
+    }
+
+    static List<Double> corner(List<Double> from, List<Double> to, List<Integer> signs) {
+        return (0..2).collect { signs[it] < 0 ? from[it] : to[it] }
+    }
+
+    static List<Double> about(double[][] m, List<Double> v, List<Double> origin) {
+        return add(apply(m, sub(v, origin)), origin)
+    }
+
+    static List<Double> vec(Object list) { return (list as List).collect { it as double } }
+
+    static List<Double> apply(double[][] m, List<Double> v) {
+        return (0..2).collect { i -> m[i][0] * v[0] + m[i][1] * v[1] + m[i][2] * v[2] }
+    }
+
+    static double[][] mul(double[][] a, double[][] b) {
+        double[][] out = new double[3][3]
+        for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) for (int k = 0; k < 3; k++) out[i][j] += a[i][k] * b[k][j]
+        return out
+    }
+
+    static double[][] transpose(double[][] m) {
+        double[][] out = new double[3][3]
+        for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) out[i][j] = m[j][i]
+        return out
+    }
+
+    static double det(double[][] m) {
+        return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+    }
+
+    static double[][] identity() { return [[1, 0, 0], [0, 1, 0], [0, 0, 1]] as double[][] }
+
+    static boolean isIdentity(double[][] m) {
+        return (0..2).every { i -> (0..2).every { j -> Math.abs(m[i][j] - (i == j ? 1d : 0d)) < 1e-6 } }
+    }
+
+    static List<Double> add(List<Double> a, List<Double> b) { return (0..2).collect { a[it] + b[it] } }
+
+    static List<Double> sub(List<Double> a, List<Double> b) { return (0..2).collect { a[it] - b[it] } }
+
+    static double dot(List<Double> a, List<Double> b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] }
+
+    static boolean close(List<Double> a, List<Double> b, double eps) {
+        return (0..<a.size()).every { Math.abs(a[it] - b[it]) < eps }
+    }
+
+    /** Newell's normal of a polygon (zero for a face with no area). */
+    static List<Double> normal(List<List<Double>> pts) {
+        double x = 0, y = 0, z = 0
+        for (int i = 0; i < pts.size(); i++) {
+            List<Double> a = pts[i], b = pts[(i + 1) % pts.size()]
+            x += (a[1] - b[1]) * (a[2] + b[2])
+            y += (a[2] - b[2]) * (a[0] + b[0])
+            z += (a[0] - b[0]) * (a[1] + b[1])
+        }
+        return [x, y, z]
+    }
+
+    static double round4(double v) { return Math.round(v * 10000d) / 10000d }
+
+    /** A coordinate as JSON writes it best: an integer when whole, else at most four decimals. */
+    static Number number(double v) {
+        double r = round4(v)
+        if (r == Math.rint(r) && Math.abs(r) < 1e9) return (int) r
+        return new BigDecimal(r).setScale(4, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+    }
+}
+
+ext.portModelRotations = PortModelRotations
+
+// The chunk layer of each Logos block model, written as NeoForge's "render_type" (called from the same models rewrite).
+//
+// 26.1 picks every quad's layer from the texels its uv covers (FaceBakery.computeMaterialTransparency,
+// SpriteContents.computeTransparency): a texel with alpha strictly between 0 and 255 makes the quad translucent, a fully
+// transparent one cutout, otherwise it is solid; a texture object with force_translucent makes it translucent. 1.21.1
+// takes the layer from the block (vanilla's ItemBlockRenderTypes, which lists only vanilla blocks) or from the model's
+// render_type, so every Logos block drew solid there, transparent texels in their stored colour: the dark frame round the
+// inscription table's page, the background of crop and cluster textures.
+//
+// Each block model gets the layer its faces come to on 26.1: translucent if any face is, else cutout_mipped if any face is
+// cutout (26.1's cutout layer samples the mipmapped atlas and drops texels below alpha 0.5, which is 1.21.1's
+// cutout_mipped; its item form draws with the same entity cutout 1.21.1 gives every block item), else solid. render_type
+// is per model on 1.21.1, so a model mixing layers takes the most see-through one. A model inherits its parent's
+// render_type on 1.21.1, so one is written only where the model's own layer differs from what it would inherit (solid
+// included). Vanilla parents and textures (crops and crosses) are read from 1.21.1's own resources.
+class PortModelLayers {
+    static final List<String> LAYERS = ['solid', 'cutout', 'translucent']
+    static final Map<String, String> RENDER_TYPES = [cutout: 'minecraft:cutout_mipped', translucent: 'minecraft:translucent']
+
+    final File models
+    final File textures
+    final Object vanillaJar
+    private final Map<String, Map> modelCache = [:]
+    private final Map<String, Map> textureCache = [:]
+    private final Map<String, java.util.Optional<String>> hintCache = [:]
+
+    /** {@code models} and {@code textures} are assets/logos/models and assets/logos/textures; {@code vanillaJar} is a provider of 1.21.1's resources jar. */
+    PortModelLayers(File models, File textures, Object vanillaJar) {
+        this.models = models
+        this.textures = textures
+        this.vanillaJar = vanillaJar
+    }
+
+    /** The render_type to write into this block model (path as processResources names it), or null to leave it as it is. */
+    String renderType(Map model, String path) {
+        if (model.containsKey('render_type')) return null
+        String id = 'logos:' + path.substring('assets/logos/models/'.length(), path.length() - '.json'.length())
+        String own = hint(id)
+        String inherited = model.parent instanceof String ? hint(model.parent as String) : null
+        return own == inherited ? null : own
+    }
+
+    /** The render_type 1.21.1 ends up with for a model once every Logos block model is rewritten; null means none (solid). */
+    String hint(String id) {
+        id = normalize(id)
+        if (hintCache.containsKey(id)) return hintCache[id].orElse(null)
+        hintCache[id] = java.util.Optional.empty() // a parent loop leaves no hint instead of recursing forever
+        Map m = model(id)
+        String out = null
+        if (m != null) {
+            String parentHint = m.parent instanceof String ? hint(m.parent as String) : null
+            if (m.render_type instanceof String) out = m.render_type
+            else if (!id.startsWith('logos:block/')) out = parentHint
+            else {
+                String layer = layer(id)
+                if (layer == null) out = parentHint
+                else if (layer == 'solid') out = parentHint == null ? null : 'minecraft:solid'
+                else out = RENDER_TYPES[layer]
+            }
+        }
+        hintCache[id] = java.util.Optional.ofNullable(out)
+        return out
+    }
+
+    /** The most see-through layer 26.1 gives the model's faces, or null when its elements cannot be found. */
+    String layer(String id) {
+        List<Map> chain = []
+        String cur = normalize(id)
+        while (cur != null && !cur.startsWith('minecraft:builtin/') && chain.size() < 64) {
+            Map m = model(cur)
+            if (m == null) break
+            chain << m
+            cur = m.parent instanceof String ? normalize(m.parent as String) : null
+        }
+        List elements = chain.find { it.elements instanceof List }?.elements as List
+        if (elements == null) return null
+        Map slots = [:]
+        chain.reverseEach { m -> if (m.textures instanceof Map) slots.putAll(m.textures as Map) }
+        int worst = 0
+        for (Object e : elements) {
+            Map element = e as Map
+            List<Double> from = PortModelRotations.vec(element.from), to = PortModelRotations.vec(element.to)
+            (element.faces as Map).each { String dir, Map face ->
+                Map material = material(slots, face.texture as String)
+                int t = 0
+                if (material != null) {
+                    List uv = face.uv != null ? face.uv as List : PortModelRotations.defaultUv(from, to, dir)
+                    t = material.force ? 2 : transparency(material.sprite as String, uv, id)
+                }
+                worst = Math.max(worst, t)
+            }
+        }
+        return LAYERS[worst]
+    }
+
+    /** 26.1's TextureSlots: follow "#name" references to a sprite and whether it is forced translucent; null if unresolved. */
+    static Map material(Map slots, String texture) {
+        Object v = texture
+        for (int guard = 0; guard < 64 && v != null; guard++) {
+            if (v instanceof Map) return [sprite: (v as Map).sprite, force: (v as Map).force_translucent == true]
+            String s = v as String
+            if (!s.startsWith('#')) return [sprite: s, force: false]
+            v = slots[s.substring(1)]
+        }
+        return null
+    }
+
+    /** 2 translucent, 1 cutout, 0 solid, for the texels this uv covers (SpriteContents.computeTransparency). */
+    int transparency(String sprite, List uv, String model) {
+        Map tex = texture(sprite)
+        if (tex == null || tex.whole == 0) return 0 // a missing texture draws opaque
+        float u0 = (float) (Math.min(uv[0] as float, uv[2] as float) / 16f), v0 = (float) (Math.min(uv[1] as float, uv[3] as float) / 16f)
+        float u1 = (float) (Math.max(uv[0] as float, uv[2] as float) / 16f), v1 = (float) (Math.max(uv[1] as float, uv[3] as float) / 16f)
+        if (u0 == 0f && v0 == 0f && u1 == 1f && v1 == 1f) return tex.whole as int
+        int w = tex.width as int, h = tex.height as int
+        int x0 = (int) Math.floor((float) (u0 * w)), y0 = (int) Math.floor((float) (v0 * h))
+        int x1 = (int) Math.ceil((float) (u1 * w)), y1 = (int) Math.ceil((float) (v1 * h))
+        java.awt.image.BufferedImage image = tex.image as java.awt.image.BufferedImage
+        if (tex.frames == null) return region(image, x0, y0, x1, y1, sprite, model)
+        int worst = 0
+        int perRow = tex.perRow as int
+        for (int frame : tex.frames as List<Integer>) {
+            int fx = (frame % perRow) * w, fy = frame.intdiv(perRow) * h
+            worst = Math.max(worst, region(image, fx + x0, fy + y0, fx + x1, fy + y1, sprite, model))
+        }
+        return worst
+    }
+
+    static int region(java.awt.image.BufferedImage image, int x0, int y0, int x1, int y1, String sprite, String model) {
+        if (x0 < 0 || y0 < 0 || x1 > image.width || y1 > image.height) {
+            // 26.1 throws here too (NativeImage.computeTransparency), so such a model would not load on main either.
+            throw new IllegalStateException("${model}: uv of ${sprite} reaches outside the texture ([${x0}, ${y0}, ${x1}, ${y1}] in ${image.width}x${image.height})")
+        }
+        boolean transparent = false
+        for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++) {
+            int alpha = image.getRGB(x, y) >>> 24
+            if (alpha == 0) transparent = true
+            else if (alpha != 255) return 2
+        }
+        return transparent ? 1 : 0
+    }
+
+    /** The image, its frame size, the frames an animation shows (null when still) and the whole image's transparency. */
+    Map texture(String sprite) {
+        sprite = normalize(sprite)
+        if (textureCache.containsKey(sprite)) return textureCache[sprite]
+        int colon = sprite.indexOf(':')
+        String path = 'textures/' + sprite.substring(colon + 1) + '.png'
+        byte[] png = read(sprite.substring(0, colon), path), meta = read(sprite.substring(0, colon), path + '.mcmeta')
+        Map out = null
+        if (png != null) {
+            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(new ByteArrayInputStream(png))
+            int width = image.width, height = image.height
+            List<Integer> frames = null
+            int perRow = 1
+            Map animation = meta != null ? new groovy.json.JsonSlurper().parse(meta).animation as Map : null
+            if (animation != null) {
+                // AnimationMetadataSection.calculateFrameSize and SpriteContents.createAnimatedTexture.
+                if (animation.width != null) { width = animation.width as int; height = animation.height != null ? animation.height as int : image.height }
+                else if (animation.height != null) height = animation.height as int
+                else width = height = Math.min(image.width, image.height)
+                perRow = image.width.intdiv(width)
+                int total = perRow * image.height.intdiv(height)
+                int frameTime = animation.frametime != null ? animation.frametime as int : 1
+                List<Integer> shown = []
+                if (animation.frames instanceof List) {
+                    for (Object f : animation.frames as List) {
+                        int index = f instanceof Map ? (f as Map).index as int : f as int
+                        int time = f instanceof Map && (f as Map).time != null ? (f as Map).time as int : frameTime
+                        if (time > 0 && index >= 0 && index < total) shown << index
+                    }
+                } else (0..<total).each { shown << it }
+                if (shown.size() > 1) frames = shown.unique()
+            }
+            out = [image: image, width: width, height: height, perRow: perRow, frames: frames,
+                   whole: region(image, 0, 0, image.width, image.height, sprite, sprite)]
+        }
+        textureCache[sprite] = out
+        return out
+    }
+
+    /** A model's JSON: Logos ones from the sources, vanilla ones from 1.21.1's resources; null if there is none. */
+    Map model(String id) {
+        id = normalize(id)
+        if (modelCache.containsKey(id)) return modelCache[id]
+        int colon = id.indexOf(':')
+        byte[] json = read(id.substring(0, colon), 'models/' + id.substring(colon + 1) + '.json')
+        Map out = json != null ? new groovy.json.JsonSlurper().parse(json) as Map : null
+        modelCache[id] = out
+        return out
+    }
+
+    byte[] read(String namespace, String path) {
+        if (namespace == 'logos') {
+            File f = new File(path.startsWith('models/') ? models : textures, path.substring(path.indexOf('/') + 1))
+            return f.isFile() ? f.bytes : null
+        }
+        if (namespace != 'minecraft') return null
+        File jar = vanillaJar.get().asFile
+        new java.util.zip.ZipFile(jar).withCloseable { zip ->
+            def entry = zip.getEntry("assets/minecraft/${path}")
+            return entry != null ? zip.getInputStream(entry).bytes : null
+        }
+    }
+
+    static String normalize(String id) {
+        return id.contains(':') ? id : 'minecraft:' + id
+    }
+}
+
+// 26.1 elements can glow ("light_emission": block light 0-15, as at least that much light on their faces); 1.21.1's
+// BlockElement does not read it, so the wand gems, staff orbits and the mana devices' glowing parts drew unlit. NeoForge's
+// "neoforge_data" {"block_light": n} on the element does the same on 1.21.1: each vertex takes the larger of the world's
+// block light and n, sky light untouched (26.1's LightCoordsUtil.lightCoordsWithEmission). A face with its own
+// neoforge_data replaces the element's on 1.21.1, so it gets the light too.
+class PortModelLights {
+    /** Writes the light of every glowing element as NeoForge face data; returns how many elements it changed. */
+    static int convert(Map model) {
+        if (!(model.elements instanceof List)) return 0
+        int changed = 0
+        for (Object e : model.elements as List) {
+            Map element = e as Map
+            int light = element.light_emission instanceof Number ? element.light_emission as int : 0
+            if (light <= 0) continue
+            element.neoforge_data = withLight(element.neoforge_data, light)
+            (element.faces as Map)?.each { dir, Map face -> if (face.neoforge_data instanceof Map) face.neoforge_data = withLight(face.neoforge_data, light) }
+            changed++
+        }
+        return changed
+    }
+
+    static Map withLight(Object data, int light) {
+        Map out = data instanceof Map ? new LinkedHashMap(data as Map) : new LinkedHashMap()
+        out.block_light = Math.max(out.block_light instanceof Number ? out.block_light as int : 0, light)
+        return out
+    }
+}
+
+// 26.1's item definitions can draw an item with a special renderer ({"type": "minecraft:special", "base": <model>}; the
+// alchemy table's GeckoLib model). 1.21.1 hands an item to its custom renderer only when the item model's parent chain
+// ends in builtin/entity, so those base models get that parent; their display transforms stay as they are.
+class PortSpecialItems {
+    final File items
+    private Set<String> bases
+
+    /** {@code items} is assets/logos/items. */
+    PortSpecialItems(File items) {
+        this.items = items
+    }
+
+    /** Whether some item definition draws this model (path as processResources names it) with a special renderer. */
+    boolean isBase(String path) {
+        if (bases == null) {
+            bases = new HashSet<>()
+            items.listFiles()?.findAll { it.name.endsWith('.json') }?.each { collect(new groovy.json.JsonSlurper().parse(it), bases) }
+        }
+        return bases.contains('logos:' + path.substring('assets/logos/models/'.length(), path.length() - '.json'.length()))
+    }
+
+    static void collect(Object node, Set<String> out) {
+        if (node instanceof Map) {
+            if (node.type == 'minecraft:special' && node.base instanceof String) out << PortModelLayers.normalize(node.base as String)
+            (node as Map).values().each { collect(it, out) }
+        } else if (node instanceof List) (node as List).each { collect(it, out) }
+    }
+}
+
+ext.portModelLayers = PortModelLayers
+ext.portModelLights = PortModelLights
+ext.portSpecialItems = PortSpecialItems

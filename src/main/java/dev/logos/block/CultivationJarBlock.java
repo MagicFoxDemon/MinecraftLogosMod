@@ -53,6 +53,12 @@ public class CultivationJarBlock extends BaseEntityBlock implements Bonemealable
         return CODEC;
     }
 
+    /** 1.21.1's BaseEntityBlock draws nothing by default (26.1 draws the model); the jar is its block model. */
+    @Override
+    protected net.minecraft.world.level.block.RenderShape getRenderShape(BlockState state) {
+        return net.minecraft.world.level.block.RenderShape.MODEL;
+    }
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(MEDIUM);

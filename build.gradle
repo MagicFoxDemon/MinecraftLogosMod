@@ -6,6 +6,7 @@ plugins {
 }
 
 apply from: rootProject.file('gradle/ldlib2-uitest.gradle')
+apply from: rootProject.file('gradle/port-models.gradle')
 
 tasks.named('wrapper', Wrapper).configure {
     // Define wrapper values here so as to not have to always do so when updating gradlew.properties.
@@ -176,33 +177,63 @@ neoForge.ideSyncTask generateGeckoLibAssets
 // 1.21.1 builds any model whose parents end in builtin/generated from its layer textures alone and drops its elements
 // (26.1 draws the elements). Wands and staffs are 3D models with minecraft:item/handheld as parent, so on 1.21.1 they
 // came out empty. Item models that have elements and a handheld or generated parent get models/item/port/handheld_elements
-// instead: the same display transforms with no generated root. The files themselves stay the same as on main.
+// instead: the same display transforms with no generated root. The other model rewrites below (texture objects, chunk
+// layers, element rotations, glowing elements, special item renderers) are explained where they happen and in
+// gradle/port-models.gradle. The files themselves stay the same as on main.
 tasks.named('processResources', ProcessResources) {
     // Gradle does not see changes inside these closures; bump this when they change so the resources are processed again.
-    inputs.property("portModelRewrites", 1)
-    // 26.1 lets a model texture be {"sprite": ..., "force_translucent": true}; 1.21.1 wants the sprite name, and the
-    // translucency comes from NeoForge's render_type on the model (cultivation jar glass, mana fog, storage tank).
-    filesMatching('assets/logos/models/block/**/*.json') { details ->
+    inputs.property("portModelRewrites", 3)
+    inputs.file(rootProject.file('gradle/port-models.gradle'))
+    // 1.21.1's vanilla resources, for the parents and textures of block models (crops, crosses): see PortModelLayers.
+    var vanillaResources = tasks.named('createMinecraftArtifacts').flatMap { it.resourcesArtifact }
+    inputs.file(vanillaResources).withPropertyName('vanillaResources').withPathSensitivity(PathSensitivity.NONE)
+    var portModelRotations = project.ext.portModelRotations
+    var portModelLights = project.ext.portModelLights
+    var portModelLayers = project.ext.portModelLayers.newInstance(file('src/main/resources/assets/logos/models'),
+            file('src/main/resources/assets/logos/textures'), vanillaResources)
+    var portSpecialItems = project.ext.portSpecialItems.newInstance(file('src/main/resources/assets/logos/items'))
+    // One pass per model file, so a file can take several of these rewrites.
+    filesMatching('assets/logos/models/**/*.json') { details ->
         String text = details.file.text
-        if (text.contains('"sprite"')) {
-            var model = new groovy.json.JsonSlurper().parseText(text)
-            boolean translucent = false
-            model.textures?.each { k, v ->
+        boolean block = details.path.startsWith('assets/logos/models/block/')
+        boolean item = details.path.startsWith('assets/logos/models/item/')
+        boolean special = item && portSpecialItems.isBase(details.path)
+        if (!block && !special && !(item && text.contains('"elements"')) && !text.contains('"rotation"') && !text.contains('"light_emission"')) return
+        var model = new groovy.json.JsonSlurper().parseText(text)
+        boolean changed = false
+        // The chunk layer 26.1 picks per quad from the texture's alpha, as NeoForge's render_type: gradle/port-models.gradle.
+        String renderType = block ? portModelLayers.renderType(model, details.path) : null
+        if (renderType != null) {
+            model.render_type = renderType
+            changed = true
+        }
+        // 26.1 lets a model texture be {"sprite": ..., "force_translucent": true}; 1.21.1 wants the sprite name (the
+        // translucency is in the render_type above: cultivation jar glass, mana fog, storage tank).
+        if (block && model.textures instanceof Map) {
+            model.textures.each { k, v ->
                 if (v instanceof Map) {
-                    if (v.force_translucent) translucent = true
                     model.textures[k] = v.sprite
+                    changed = true
                 }
             }
-            if (translucent && !model.render_type) model.render_type = "minecraft:translucent"
+        }
+        // Element rotations 1.21.1 cannot load (several axes, or angles other than 0, ±22.5, ±45): gradle/port-models.gradle.
+        if (portModelRotations.convert(model, details.path) > 0) changed = true
+        // Glowing elements ("light_emission") as NeoForge's block light: gradle/port-models.gradle.
+        if (portModelLights.convert(model) > 0) changed = true
+        if (item && model.containsKey('elements') && model.parent ==~ /(minecraft:)?item\/(handheld|generated)/) {
+            model.parent = "logos:item/port/handheld_elements"
+            changed = true
+        }
+        // Item models a special renderer draws (the alchemy table's GeckoLib model): gradle/port-models.gradle.
+        if (special && model.parent != "minecraft:builtin/entity") {
+            model.parent = "minecraft:builtin/entity"
+            changed = true
+        }
+        if (changed) {
             String out = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(model))
             boolean first = true
             details.filter { String line -> if (first) { first = false; return out }; return null }
-        }
-    }
-    filesMatching('assets/logos/models/item/**/*.json') { details ->
-        String text = details.file.text
-        if (text.contains('"elements"') && text =~ /"parent"\s*:\s*"(minecraft:)?item\/(handheld|generated)"/) {
-            details.filter { String line -> line.replaceAll(/"parent"\s*:\s*"(minecraft:)?item\/(handheld|generated)"/, '"parent": "logos:item/port/handheld_elements"') }
         }
     }
 }

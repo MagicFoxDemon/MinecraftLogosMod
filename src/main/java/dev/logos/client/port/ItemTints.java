@@ -29,9 +29,22 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 public final class ItemTints {
     private sealed interface Tint permits Constant, Potion {}
 
-    private record Constant(int value) implements Tint {}
+    /**
+     * Opaque whatever the file's alpha, as 26.1's {@code Constant} makes it: values are RGB, and one written without an
+     * alpha byte (the sage template's {@code 16744585}) would be fully transparent to 1.21.1, which draws the alpha.
+     */
+    private record Constant(int value) implements Tint {
+        Constant {
+            value = FastColor.ARGB32.opaque(value);
+        }
+    }
 
-    private record Potion(int fallback) implements Tint {}
+    /** The fallback is opaque too, as on 26.1. */
+    private record Potion(int fallback) implements Tint {
+        Potion {
+            fallback = FastColor.ARGB32.opaque(fallback);
+        }
+    }
 
     private static Map<Item, Tint[]> tints = Map.of();
 

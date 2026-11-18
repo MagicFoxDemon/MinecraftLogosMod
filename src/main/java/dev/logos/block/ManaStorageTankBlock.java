@@ -43,6 +43,12 @@ public class ManaStorageTankBlock extends BaseEntityBlock implements BlockUIMenu
         return CODEC;
     }
 
+    /** 1.21.1's BaseEntityBlock draws nothing by default (26.1 draws the model); the tank is its block model. */
+    @Override
+    protected net.minecraft.world.level.block.RenderShape getRenderShape(BlockState state) {
+        return net.minecraft.world.level.block.RenderShape.MODEL;
+    }
+
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ManaStorageTankBlockEntity(pos, state);

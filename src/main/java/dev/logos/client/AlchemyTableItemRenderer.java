@@ -1,5 +1,6 @@
 package dev.logos.client;
 
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -37,9 +38,15 @@ public class AlchemyTableItemRenderer extends GeoItemRenderer<AlchemyTableItem> 
             boolean isReRender, float partialTick, int light, int overlay, int colour) {
         super.preRender(poseStack, item, model, buffers, buffer, isReRender, partialTick, light, overlay, colour);
         if (isReRender) return;
-        // GeckoLib 4 centres the item after scaling it, at (0.5, 0.51, 0.5) of the scaled model; move that to the block's
-        // centre, then down by half the table so it turns about its middle.
-        poseStack.translate(0.5f / SCALE - 0.5f, 0.51f / SCALE - 0.51f - HALF_HEIGHT / SCALE, 0.5f / SCALE - 0.5f);
+        // As on main: GeckoLib 4 and 5 both scale first and then move to (0.5, 0.51, 0.5) of the scaled model, so only
+        // the drop by half the table is ours.
+        poseStack.translate(0, -HALF_HEIGHT / SCALE, 0);
+    }
+
+    /** 26.1 lights it as a 3D item in the inventory (its model lights like a block); GeckoLib 4 would light it flat. */
+    @Override
+    public void setupLightingForGuiRender() {
+        Lighting.setupFor3DItems();
     }
 
     /** The block renderer shares these bones and leaves them as its table was; set every one this look depends on. */
