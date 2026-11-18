@@ -1,9 +1,13 @@
 # Logos（逻各斯）
 > **在这里，魔法不是现成的技能，而是一门有类型、事件驱动、靠魔力计量的语言。**
 Logos 中没有「火球术」或「连锁闪电」这样写死的法术按钮。所谓「火球术」，不过是**「塑成魔弹 → 命中时造成火焰伤害 → 消散时灼烧周遭敌人」**；所谓「连锁闪电」，则是**「射线命中目标后 → 自目标处再折射向下一名敌人」**。只要掌握了符文语法，**你能写下什么，就能施展什么**。
-- **适用版本**：Minecraft `26.1.2` · NeoForge `26.1.2.112+` · Java `25`
+> **这是 1.21.1 移植分支（`port/1.21.1`）。** 26.1.2 版本在 [`main`](https://github.com/MagicFoxDemon/MinecraftLogosMod/tree/main) 分支。
+> 移植仍在进行中：单元测试和世界内测试已基本通过，尚未进游戏完整试玩，暂未发布。移植说明见 [`docs/PORT_1.21.1.md`](docs/PORT_1.21.1.md)。
+
+- **适用版本**：Minecraft `1.21.1` · NeoForge `21.1.267+` · Java `21`
+- **前置模组**：LDLib2 `2.2.45+` · Photon `2.2.11+` · GeckoLib `4.9.3+`；可选：车万女仆
 - **Mod ID**：`logos`
-- **官方维度附属**：[维度-咒械原（Logos: Spellwrought Expanse）](https://github.com/wushuowei1145/Logos-Spellwrought-Expanse)
+- **官方维度附属**：[维度-咒械原（Logos: Spellwrought Expanse）](https://github.com/wushuowei1145/Logos-Spellwrought-Expanse)（目前只支持 26.1.2）
 ---
 ## ✨ 模组亮点速览
 - **可视化术式编纂（术式工坊）**：在羊皮纸节点画布上连线构筑法术，支持百余个正交符文节点、实时语法与类型检查、单次施放魔力估算、意图推断，以及 40+ 篇内置示例术式模板。
