@@ -91,6 +91,14 @@
   `models/item/<id>.json`（引用别的模型的写成 parent，组合模型写成 `neoforge:composite`），不进仓库；着色（`tints`）
   运行时由 `client/port/ItemTints` 读同一份文件；药水的分支由 `client/PotionBottles` 读 `items/potion.json`。
   新物品照 `main` 加 `items/` 文件即可，和物品同名的模型照旧放 `models/item/`。
+- 构建时对模型的另外几处改写（`processResources`，源文件和 `main` 同一份；改了改写逻辑要把 `portModelRewrites` 加一）：
+  - 1.21.1 只要父模型最终是 `builtin/generated`，就只按 `layer0` 贴图生成扁平图标、丢掉元素。带元素又以
+    `item/handheld` / `item/generated` 为父的物品模型（法杖、长杖）改用 `models/item/port/handheld_elements.json`
+    （同样的手持视角参数，没有 generated 根）。
+  - 26.1 的贴图对象 `{"sprite": …, "force_translucent": true}` 改成贴图名，半透明写成 NeoForge 的 `render_type`。
+  - 还没处理：26.1 的多轴元素旋转（`"rotation": {"x": …, "y": …, "z": …}`），编纂台和载页的方块模型因此加载失败。
+- GeckoLib：4.9 从 `geo/`、`animations/` 读模型和动画，26.1 的 GeckoLib 5 从 `geckolib/models/`、`geckolib/animations/` 读。
+  文件留在 `main` 的位置，`generateGeckoLibAssets` 构建时复制过去。
 - 物品表面特效、魔力缠绕：挂在 `ItemRenderer.render` 末尾（`mixin/ItemRendererMixin`），物品归谁由
   `EntityRenderDispatcherMixin` 和手持物品的 `renderStatic` 记下；画之前先把已经写进缓冲的物品画掉，特效才盖在物品上。
 - 输入法：1.21.1 不会每刻关掉输入法，没有 `LdlibIme`；拼写中的文字由输入法自己的窗口显示。

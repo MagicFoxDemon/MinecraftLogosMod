@@ -162,6 +162,51 @@ tasks.named('jar', Jar) {
     exclude 'dev/logos/gametest/**', 'dev/logos/client/uitest/**'
 }
 
+// GeckoLib 4 (1.21.1) reads models from assets/<ns>/geo/ and animations from assets/<ns>/animations/; GeckoLib 5 (26.1)
+// from assets/<ns>/geckolib/models/ and geckolib/animations/. The files stay where main keeps them and are copied to
+// GeckoLib 4's folders at build time (without this the alchemy table item crashed the creative screen).
+var generateGeckoLibAssets = tasks.register("generateGeckoLibAssets", Sync) {
+    into layout.buildDirectory.dir("generated/sources/geckolib")
+    from("src/main/resources/assets/logos/geckolib/models") { into "assets/logos/geo" }
+    from("src/main/resources/assets/logos/geckolib/animations") { into "assets/logos/animations" }
+}
+sourceSets.main.resources.srcDir generateGeckoLibAssets
+neoForge.ideSyncTask generateGeckoLibAssets
+
+// 1.21.1 builds any model whose parents end in builtin/generated from its layer textures alone and drops its elements
+// (26.1 draws the elements). Wands and staffs are 3D models with minecraft:item/handheld as parent, so on 1.21.1 they
+// came out empty. Item models that have elements and a handheld or generated parent get models/item/port/handheld_elements
+// instead: the same display transforms with no generated root. The files themselves stay the same as on main.
+tasks.named('processResources', ProcessResources) {
+    // Gradle does not see changes inside these closures; bump this when they change so the resources are processed again.
+    inputs.property("portModelRewrites", 1)
+    // 26.1 lets a model texture be {"sprite": ..., "force_translucent": true}; 1.21.1 wants the sprite name, and the
+    // translucency comes from NeoForge's render_type on the model (cultivation jar glass, mana fog, storage tank).
+    filesMatching('assets/logos/models/block/**/*.json') { details ->
+        String text = details.file.text
+        if (text.contains('"sprite"')) {
+            var model = new groovy.json.JsonSlurper().parseText(text)
+            boolean translucent = false
+            model.textures?.each { k, v ->
+                if (v instanceof Map) {
+                    if (v.force_translucent) translucent = true
+                    model.textures[k] = v.sprite
+                }
+            }
+            if (translucent && !model.render_type) model.render_type = "minecraft:translucent"
+            String out = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(model))
+            boolean first = true
+            details.filter { String line -> if (first) { first = false; return out }; return null }
+        }
+    }
+    filesMatching('assets/logos/models/item/**/*.json') { details ->
+        String text = details.file.text
+        if (text.contains('"elements"') && text =~ /"parent"\s*:\s*"(minecraft:)?item\/(handheld|generated)"/) {
+            details.filter { String line -> line.replaceAll(/"parent"\s*:\s*"(minecraft:)?item\/(handheld|generated)"/, '"parent": "logos:item/port/handheld_elements"') }
+        }
+    }
+}
+
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
