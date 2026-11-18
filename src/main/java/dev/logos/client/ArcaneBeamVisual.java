@@ -6,20 +6,20 @@ import static dev.logos.client.ArcaneRayVisual.polyline;
 import static dev.logos.client.ArcaneRayVisual.smooth;
 import static dev.logos.client.ArcaneRayVisual.sprite;
 import java.util.Random;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
@@ -99,7 +99,7 @@ final class ArcaneBeamVisual {
         dir = delta.scale(1 / length);
         side = dir.cross(Math.abs(dir.y) > .95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
         lift = side.cross(dir).normalize();
-        double now = level.getGameTime() + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        double now = level.getGameTime() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         if (born == Long.MIN_VALUE) born = level.getGameTime();
         double age = now - born;
         // Still reaching out while it is at least as long as LogosFx's reach could make it since it first showed.
@@ -301,9 +301,9 @@ final class ArcaneBeamVisual {
                 .withCull(false).withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(additive ? BlendFunction.LIGHTNING : BlendFunction.TRANSLUCENT));
         for (String define : defines) builder.withShaderDefine(define);
-        return RenderType.create("logos_arcane_beam_" + name, RenderSetup.builder(builder.build())
+        return dev.logos.client.port.RenderTypes.create("logos_arcane_beam_" + name, RenderSetup.builder(builder.build())
                 .withTexture("Sampler0", id("textures/vfx/arcane_ray/" + texture + ".png")).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

@@ -80,7 +80,7 @@ public class CultivationJarScenario implements UIScenario {
                         jar.receiveMana(25);
                         jar.grow();
                         jar.grow();
-                        jar.reserve().set(0, net.neoforged.neoforge.transfer.item.ItemResource.of(LogosMod.RAW_MASH.get()), 2);
+                        jar.reserve().set(0, dev.logos.port.ItemResource.of(LogosMod.RAW_MASH.get()), 2);
                     }
                 })
                 .server("fly, so the camera stays where it is put", sc -> {

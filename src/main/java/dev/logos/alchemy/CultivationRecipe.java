@@ -3,7 +3,7 @@ package dev.logos.alchemy;
 import java.util.List;
 import java.util.Optional;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -12,17 +12,16 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.logos.LogosMod;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemStackTemplate;
+import dev.logos.port.ItemStackTemplate;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.PlacementInfo;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -56,13 +55,13 @@ public record CultivationRecipe(Ingredient seed, Optional<Ingredient> medium, Op
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("mana", 0).forGetter(CultivationRecipe::mana)).apply(i, CultivationRecipe::new));
     public static final StreamCodec<RegistryFriendlyByteBuf, CultivationRecipe> STREAM_CODEC = StreamCodec.composite(
             Ingredient.CONTENTS_STREAM_CODEC, CultivationRecipe::seed,
-            Ingredient.OPTIONAL_CONTENTS_STREAM_CODEC, CultivationRecipe::medium,
+            ByteBufCodecs.optional(Ingredient.CONTENTS_STREAM_CODEC), CultivationRecipe::medium,
             ByteBufCodecs.optional(ByteBufCodecs.registry(Registries.BLOCK)), CultivationRecipe::plant,
             ItemStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), CultivationRecipe::harvest,
             ByteBufCodecs.FLOAT, CultivationRecipe::growth,
             ByteBufCodecs.VAR_INT, CultivationRecipe::mana,
             CultivationRecipe::new);
-    public static final RecipeSerializer<CultivationRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
+    public static final RecipeSerializer<CultivationRecipe> SERIALIZER = new dev.logos.port.SimpleRecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
 
     /** The planted seed and the medium the jar is working with (empty if none). */
     public record Input(ItemStack seed, ItemStack medium) implements RecipeInput {
@@ -79,9 +78,9 @@ public record CultivationRecipe(Ingredient seed, Optional<Ingredient> medium, Op
 
     /** What grows of {@code seed} in {@code medium}: the recipe that names the medium first, then one for any medium. Server side only. */
     public static @Nullable CultivationRecipe find(Level level, ItemStack seed, ItemStack medium) {
-        if (seed.isEmpty() || !(level.recipeAccess() instanceof net.minecraft.world.item.crafting.RecipeManager recipes)) return null;
+        if (seed.isEmpty() || !(level.getRecipeManager() instanceof net.minecraft.world.item.crafting.RecipeManager recipes)) return null;
         CultivationRecipe any = null;
-        for (RecipeHolder<CultivationRecipe> h : recipes.recipeMap().byType(LogosMod.CULTIVATION_RECIPE.get())) {
+        for (RecipeHolder<CultivationRecipe> h : recipes.getAllRecipesFor(LogosMod.CULTIVATION_RECIPE.get())) {
             CultivationRecipe r = h.value();
             if (!r.seed.test(seed)) continue;
             if (r.medium.isEmpty()) {
@@ -105,7 +104,7 @@ public record CultivationRecipe(Ingredient seed, Optional<Ingredient> medium, Op
     }
 
     @Override
-    public ItemStack assemble(Input input) {
+    public ItemStack assemble(Input input, HolderLookup.Provider registries) {
         return harvest.isEmpty() ? ItemStack.EMPTY : harvest.getFirst().create();
     }
 
@@ -121,7 +120,7 @@ public record CultivationRecipe(Ingredient seed, Optional<Ingredient> medium, Op
     }
 
     @Override
-    public String group() {
+    public String getGroup() {
         return "";
     }
 
@@ -135,14 +134,14 @@ public record CultivationRecipe(Ingredient seed, Optional<Ingredient> medium, Op
         return LogosMod.CULTIVATION_RECIPE.get();
     }
 
-    /** Not made in a crafting grid, so not placeable by the recipe book. */
+    /** Not made in a crafting grid. */
     @Override
-    public PlacementInfo placementInfo() {
-        return PlacementInfo.NOT_PLACEABLE;
+    public boolean canCraftInDimensions(int width, int height) {
+        return false;
     }
 
     @Override
-    public RecipeBookCategory recipeBookCategory() {
-        return LogosMod.ALCHEMY_BOOK_CATEGORY.get();
+    public ItemStack getResultItem(HolderLookup.Provider registries) {
+        return harvest.isEmpty() ? ItemStack.EMPTY : harvest.getFirst().create();
     }
 }

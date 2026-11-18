@@ -3,10 +3,18 @@
   "category": "equipment",
   "group": "wood_staff",
   "ingredients": [
-    "logos:dark_oak_wand",
-    "#minecraft:dark_oak_logs",
-    "minecraft:gold_nugget",
-    "minecraft:gold_nugget"
+    {
+      "item": "logos:dark_oak_wand"
+    },
+    {
+      "tag": "minecraft:dark_oak_logs"
+    },
+    {
+      "item": "minecraft:gold_nugget"
+    },
+    {
+      "item": "minecraft:gold_nugget"
+    }
   ],
   "result": {
     "id": "logos:dark_oak_staff"

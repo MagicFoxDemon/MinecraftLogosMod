@@ -1,18 +1,18 @@
 package dev.logos.client;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
@@ -140,7 +140,7 @@ final class FireBeamCore {
                 .withShaderDefine(define).withSampler("NoiseTex").withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(blend)).build();
-        return RenderType.create("logos_fire_beam_" + name, RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_fire_beam_" + name, RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id("textures/vfx/" + texture + ".png"))
                 .withTexture("NoiseTex", id("textures/vfx/fire_ray/noise.png")).sortOnUpload().createRenderSetup());
     }
@@ -150,9 +150,9 @@ final class FireBeamCore {
                 .withLocation(id("pipeline/fire_beam_glow")).withFragmentShader(id("core/fire_beam_glow"))
                 .withCull(false).withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING)).build();
-        return RenderType.create("logos_fire_beam_glow", RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_fire_beam_glow", RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id("textures/vfx/fire_ray/glow.png")).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:paper",
-    "logos:philosophers_stone",
-    "logos:adhesive"
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "logos:philosophers_stone"
+    },
+    {
+      "item": "logos:adhesive"
+    }
   ],
   "result": {
     "id": "logos:sage_spell_page"

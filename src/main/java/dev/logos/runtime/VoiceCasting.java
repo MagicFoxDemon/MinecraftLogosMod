@@ -2,7 +2,7 @@ package dev.logos.runtime;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.item.SpellBag;
@@ -39,12 +39,12 @@ public final class VoiceCasting {
     /** A wand listening: how fast it gathers, how much it may, and what is in so far. A staff gathers nothing. */
     public static final class Listen {
         final boolean staff;
-        final Charging.@Nullable Rate rate;
+        final @Nullable Charging.Rate rate;
         final double cap;
         int done;
         double injected;
 
-        Listen(boolean staff, Charging.@Nullable Rate rate, double cap) {
+        Listen(boolean staff, @Nullable Charging.Rate rate, double cap) {
             this.staff = staff;
             this.rate = rate;
             this.cap = cap;
@@ -66,7 +66,7 @@ public final class VoiceCasting {
     }
 
     /** {@code page} where it lies now among what {@code wand} reaches, or null if it has gone (moved, burnt, rewritten). */
-    static SpellBag.@Nullable Entry find(Player player, ItemStack wand, ItemStack page) {
+    static @Nullable SpellBag.Entry find(Player player, ItemStack wand, ItemStack page) {
         for (SpellBag.Entry e : spoken(player, wand)) if (ItemStack.isSameItemSameComponents(e.page(), page)) return e;
         return null;
     }
@@ -99,7 +99,7 @@ public final class VoiceCasting {
             m.listen = new Listen(false, rate, cap);
             Charging.show(player, Element.ARCANE, 0, 0, false);
         }
-        Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 1.1f);
+        Vfx.sound(player.serverLevel(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 1.1f);
         return true;
     }
 
@@ -118,7 +118,7 @@ public final class VoiceCasting {
                 m.mana = Math.max(0, m.mana - share);
                 l.injected += share;
                 l.done++;
-                Charging.chime(player.level(), Charging.tip(player), l.done, (float) (l.injected / l.cap), l.injected >= l.cap);
+                Charging.chime(player.serverLevel(), Charging.tip(player), l.done, (float) (l.injected / l.cap), l.injected >= l.cap);
             }
         }
         if (player.level().getGameTime() % 2 == 0)
@@ -172,7 +172,7 @@ public final class VoiceCasting {
     }
 
     /** The spoken spell a staff with a chant charm keeps casting, if it is still on the staff. */
-    static SpellBag.@Nullable Entry chanting(ServerPlayer player, ItemStack staff) {
+    static @Nullable SpellBag.Entry chanting(ServerPlayer player, ItemStack staff) {
         ItemStack page = PlayerMagic.of(player).chanting;
         return page == null ? null : find(player, staff, page);
     }
@@ -193,7 +193,7 @@ public final class VoiceCasting {
     }
 
     private static void spill(ServerPlayer player, double mana) {
-        if (mana > 0) FreeManaEntity.release(player.level(), player.getEyePosition().add(player.getLookAngle().scale(0.8)), mana);
+        if (mana > 0) FreeManaEntity.release(player.serverLevel(), player.getEyePosition().add(player.getLookAngle().scale(0.8)), mana);
     }
 
     /** Mana gathered beyond what the named spell injects goes back into the pool; past a full pool it spills free. */

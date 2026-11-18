@@ -14,10 +14,11 @@ public final class Net {
     /** Registers every payload of the mod; {@code LogosMod}'s constructor adds this to the mod bus. */
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1");
+        dev.logos.port.PlayerInputs.register(registrar);
         registrar.playToServer(InscribePayload.TYPE, InscribePayload.CODEC, InscribePayload::handle);
         registrar.playToServer(EmitterEditPayload.TYPE, EmitterEditPayload.CODEC, EmitterEditPayload::handle);
-        registrar.playToClient(FxPayload.Batch.TYPE, FxPayload.Batch.CODEC);
-        registrar.playToClient(LifeformCorePayload.TYPE, LifeformCorePayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, FxPayload.Batch.TYPE, FxPayload.Batch.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, LifeformCorePayload.TYPE, LifeformCorePayload.CODEC);
         registrar.playToServer(SelectSpellPayload.TYPE, SelectSpellPayload.CODEC, SelectSpellPayload::handle);
         registrar.playToServer(StaffFillPayload.TYPE, StaffFillPayload.CODEC, StaffFillPayload::handle);
         registrar.playToServer(WrapSwingPayload.TYPE, WrapSwingPayload.CODEC, WrapSwingPayload::handle);
@@ -27,23 +28,23 @@ public final class Net {
         registrar.playToServer(PossessControlPayload.TYPE, PossessControlPayload.CODEC, PossessControlPayload::handle);
         registrar.playToServer(RevertPayload.TYPE, RevertPayload.CODEC, RevertPayload::handle);
         registrar.playToServer(FormSkillPayload.TYPE, FormSkillPayload.CODEC, FormSkillPayload::handle);
-        registrar.playToClient(AnchorsPayload.TYPE, AnchorsPayload.CODEC);
-        registrar.playToClient(ChargePayload.TYPE, ChargePayload.CODEC);
-        registrar.playToClient(ManaHudPayload.TYPE, ManaHudPayload.CODEC);
-        registrar.playToClient(AreaWeatherPayload.TYPE, AreaWeatherPayload.CODEC);
-        registrar.playToClient(AreaWeatherPayload.Moved.TYPE, AreaWeatherPayload.Moved.CODEC);
-        registrar.playToClient(ManaFieldPayload.TYPE, ManaFieldPayload.CODEC);
-        registrar.playToClient(PillarBurstPayload.TYPE, PillarBurstPayload.CODEC);
-        registrar.playToClient(ManaTornadoPayload.TYPE, ManaTornadoPayload.CODEC);
-        registrar.playToClient(CastPosePayload.TYPE, CastPosePayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, AnchorsPayload.TYPE, AnchorsPayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, ChargePayload.TYPE, ChargePayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, ManaHudPayload.TYPE, ManaHudPayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, AreaWeatherPayload.TYPE, AreaWeatherPayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, AreaWeatherPayload.Moved.TYPE, AreaWeatherPayload.Moved.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, ManaFieldPayload.TYPE, ManaFieldPayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, PillarBurstPayload.TYPE, PillarBurstPayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, ManaTornadoPayload.TYPE, ManaTornadoPayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, CastPosePayload.TYPE, CastPosePayload.CODEC);
         registrar.playToServer(AnchorEditPayload.TYPE, AnchorEditPayload.CODEC, AnchorEditPayload::handle);
         registrar.playToServer(AlchemyCardPayload.TYPE, AlchemyCardPayload.CODEC, AlchemyCardPayload::handle);
         registrar.playToServer(SageAskPayload.TYPE, SageAskPayload.CODEC, SageAskPayload::handle);
         registrar.playToServer(SageCancelPayload.TYPE, SageCancelPayload.CODEC, SageCancelPayload::handle);
         registrar.playToServer(SageAdminPayload.TYPE, SageAdminPayload.CODEC, SageAdminPayload::handle);
-        registrar.playToClient(SageReplyPayload.TYPE, SageReplyPayload.CODEC);
-        registrar.playToClient(SageStatusPayload.TYPE, SageStatusPayload.CODEC);
-        registrar.playToClient(SageAdminStatePayload.TYPE, SageAdminStatePayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, SageReplyPayload.TYPE, SageReplyPayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, SageStatusPayload.TYPE, SageStatusPayload.CODEC);
+        dev.logos.port.ClientPayloads.playToClient(registrar, SageAdminStatePayload.TYPE, SageAdminStatePayload.CODEC);
     }
 
     /** To the players of {@code level} within {@code radius} of {@code at} whose connection knows the channel (fake players and modless clients do not). */

@@ -66,7 +66,7 @@ final class FamiliarEvents {
             }
             // Like a tamed wolf: what a familiar kills, its master killed (stats, experience, player-only drops).
             if (victim.level().getPlayerByUUID(attackerMaster) instanceof net.minecraft.world.entity.player.Player master) {
-                victim.setLastHurtByPlayer(master, 100);
+                victim.setLastHurtByPlayer(master);
             }
         }
         if (victim instanceof ServerPlayer master && attacker instanceof LivingEntity a && a != master) Familiars.rally(master, a);

@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:candleflame_seed",
+  "seed": {
+    "item": "logos:candleflame_seed"
+  },
   "plant": "logos:candleflame_crop",
   "growth": 0.3
 }

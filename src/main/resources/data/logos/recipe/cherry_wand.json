@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "G": "minecraft:gold_nugget",
-    "L": "#minecraft:cherry_logs",
-    "P": "minecraft:cherry_planks"
+    "G": {
+      "item": "minecraft:gold_nugget"
+    },
+    "L": {
+      "tag": "minecraft:cherry_logs"
+    },
+    "P": {
+      "item": "minecraft:cherry_planks"
+    }
   },
   "pattern": [
     "  G",

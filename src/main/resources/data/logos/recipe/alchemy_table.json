@@ -2,12 +2,24 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "B": "minecraft:brewing_stand",
-    "C": "minecraft:copper_ingot",
-    "G": "minecraft:glass",
-    "K": "minecraft:cauldron",
-    "T": "minecraft:crafting_table",
-    "V": "minecraft:glass_bottle"
+    "B": {
+      "item": "minecraft:brewing_stand"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "K": {
+      "item": "minecraft:cauldron"
+    },
+    "T": {
+      "item": "minecraft:crafting_table"
+    },
+    "V": {
+      "item": "minecraft:glass_bottle"
+    }
   },
   "pattern": [
     "GBV",

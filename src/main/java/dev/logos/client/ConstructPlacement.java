@@ -37,7 +37,7 @@ final class ConstructPlacement {
         HitResult vanilla = mc.hitResult;
         if (vanilla != null && vanilla.getType() != HitResult.Type.MISS
                 && vanilla.getLocation().distanceToSqr(eye) <= best.getLocation().distanceToSqr(eye)) return;
-        Vec3 out = Vec3.atLowerCornerOf(best.getDirection().getUnitVec3i());
+        Vec3 out = Vec3.atLowerCornerOf(best.getDirection().getNormal());
         BlockPos target = BlockPos.containing(best.getLocation().add(out.scale(0.25)));
         BlockHitResult click = new BlockHitResult(best.getLocation(), best.getDirection(), target, false);
         InteractionResult result = mc.gameMode.useItemOn(mc.player, event.getHand(), click);

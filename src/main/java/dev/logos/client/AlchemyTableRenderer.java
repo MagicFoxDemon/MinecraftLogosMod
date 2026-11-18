@@ -1,12 +1,12 @@
 package dev.logos.client;
 
-import com.geckolib.constant.dataticket.DataTicket;
-import com.geckolib.model.DefaultedBlockGeoModel;
-import com.geckolib.renderer.GeoBlockRenderer;
+import software.bernie.geckolib.constant.dataticket.DataTicket;
+import software.bernie.geckolib.model.DefaultedBlockGeoModel;
+import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
-import com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 import dev.logos.LogosMod;
 import dev.logos.alchemy.Process;
@@ -14,9 +14,9 @@ import dev.logos.block.AlchemyTableBlock;
 import dev.logos.block.AlchemyTableBlockEntity;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.AABB;
 
 /**
@@ -45,7 +45,7 @@ public class AlchemyTableRenderer<R extends BlockEntityRenderState & GeoRenderSt
     private static final float SCALE = 0.5f;
 
     public AlchemyTableRenderer(BlockEntityRendererProvider.Context context) {
-        super(context, new DefaultedBlockGeoModel<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "alchemy_table")));
+        super(context, new DefaultedBlockGeoModel<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "alchemy_table")));
         withScale(SCALE);
         withRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
@@ -98,8 +98,8 @@ public class AlchemyTableRenderer<R extends BlockEntityRenderState & GeoRenderSt
 
     /** Glass and water are see-through. */
     @Override
-    public RenderType getRenderType(R state, Identifier texture) {
-        return RenderTypes.entityTranslucent(texture);
+    public RenderType getRenderType(R state, ResourceLocation texture) {
+        return RenderType.entityTranslucent(texture);
     }
 
     /** The whole two-block table and what stands on it. */

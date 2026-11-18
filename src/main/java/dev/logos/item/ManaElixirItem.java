@@ -1,5 +1,7 @@
 package dev.logos.item;
 
+import net.minecraft.world.InteractionResultHolder;
+import java.util.List;
 import java.util.function.Consumer;
 
 import dev.logos.lang.Node;
@@ -20,8 +22,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.Consumables;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 
 /**
@@ -30,7 +30,7 @@ import net.minecraft.world.level.Level;
  * and the ancient ones found only in chests. Each item counts on its own, at most {@link #LIMIT} bottles a
  * player, so neither way of getting them stands in for the other: a player who wants the whole cap does both.
  */
-public final class ManaElixirItem extends Item {
+public final class ManaElixirItem extends dev.logos.port.DrinkItem {
     /** Bottles of one item a player may drink. */
     public static final int LIMIT = 3;
 
@@ -76,8 +76,8 @@ public final class ManaElixirItem extends Item {
 
     /** Drunk like a potion, its bottle given back; the ancient ones shimmer. */
     public static Properties properties(Properties p, Grade grade, boolean ancient) {
-        p = p.stacksTo(16).rarity(grade.rarity).usingConvertsTo(Items.GLASS_BOTTLE)
-                .component(DataComponents.CONSUMABLE, Consumables.defaultDrink().build());
+        p = p.stacksTo(16).rarity(grade.rarity)
+                .food(new net.minecraft.world.food.FoodProperties.Builder().alwaysEdible().usingConvertsTo(Items.GLASS_BOTTLE).build());
         return ancient ? p.component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true) : p;
     }
 
@@ -99,12 +99,17 @@ public final class ManaElixirItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        return new InteractionResultHolder<>(useItem(level, player, hand), player.getItemInHand(hand));
+    }
+
+    /** What {@link #use} does: the result alone, as 26.1's {@code use} returns it. */
+    protected InteractionResult useItem(Level level, Player player, InteractionHand hand) {
         if (player instanceof ServerPlayer sp && drunk(sp) >= LIMIT) {
             full(sp);
             return InteractionResult.FAIL;
         }
-        return super.use(level, player, hand);
+        return super.use(level, player, hand).getResult();
     }
 
     @Override
@@ -131,7 +136,8 @@ public final class ManaElixirItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
         builder.accept(Component.translatable("logos.mana_elixir.raises", Node.fmt(grade.amount)).withStyle(ChatFormatting.GRAY));
         builder.accept(Component.translatable("logos.mana_elixir.limit", LIMIT).withStyle(ChatFormatting.DARK_GRAY));
         builder.accept(Component.translatable(ancient ? "logos.mana_elixir.ancient" : "logos.mana_elixir.brewed").withStyle(ChatFormatting.DARK_GRAY));

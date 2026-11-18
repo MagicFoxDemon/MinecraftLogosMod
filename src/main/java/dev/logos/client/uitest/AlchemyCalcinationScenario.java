@@ -23,8 +23,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import dev.logos.port.ItemResource;
+import dev.logos.port.Transaction;
 
 /**
  * Real-client look at the apparatus worked beside the table, in Chinese: with a blast furnace and a

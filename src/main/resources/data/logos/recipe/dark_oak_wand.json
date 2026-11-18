@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "G": "minecraft:gold_nugget",
-    "L": "#minecraft:dark_oak_logs",
-    "P": "minecraft:dark_oak_planks"
+    "G": {
+      "item": "minecraft:gold_nugget"
+    },
+    "L": {
+      "tag": "minecraft:dark_oak_logs"
+    },
+    "P": {
+      "item": "minecraft:dark_oak_planks"
+    }
   },
   "pattern": [
     "  G",

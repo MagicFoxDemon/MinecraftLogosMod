@@ -1,18 +1,21 @@
 package dev.logos.block;
 
-import com.geckolib.animatable.GeoBlockEntity;
-import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
-import com.geckolib.animation.AnimationController;
-import com.geckolib.animation.RawAnimation;
-import com.geckolib.animation.object.PlayState;
-import com.geckolib.util.GeckoLibUtil;
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.alchemy.Process;
@@ -33,19 +36,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.transfer.CombinedResourceHandler;
-import net.neoforged.neoforge.transfer.RangedResourceHandler;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
-import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+import dev.logos.port.CombinedResourceHandler;
+import dev.logos.port.RangedResourceHandler;
+import dev.logos.port.ResourceHandler;
+import dev.logos.port.FluidResource;
+import dev.logos.port.FluidStacksResourceHandler;
+import dev.logos.port.ItemResource;
+import dev.logos.port.ItemStacksResourceHandler;
+import dev.logos.port.Transaction;
+import dev.logos.port.TransactionContext;
 
 /**
  * 炼金术桌, kept on its main half: a raw-material area and a product area, a mana pool and a fluid
@@ -53,7 +56,7 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * take from the product area; the tank is open both ways. The pool fills from mana fuel, from free
  * mana that drifts onto the table, and from a wand's holder.
  */
-public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEntity, ManaVessel {
+public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEntity, ManaVessel, dev.logos.port.RemovalSideEffects {
     public static final int RAW_SLOTS = 18, PRODUCT_SLOTS = 9, SLOTS = RAW_SLOTS + PRODUCT_SLOTS;
     public static final int MAX_MANA = 1000;
     /** Ten buckets. One fluid at a time. */
@@ -214,7 +217,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
 
     /** The mana a fuel item gives the table; unstable fuel (a tainted shard) is not accepted. */
     public static int fuelValue(ItemStack stack) {
-        Lifeforms.ManaFuel f = stack.typeHolder().getData(LogosMod.MANA_FUEL);
+        Lifeforms.ManaFuel f = stack.getItemHolder().getData(LogosMod.MANA_FUEL);
         return f == null || f.unstable() ? 0 : (int) f.mana();
     }
 
@@ -297,8 +300,9 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueOutput output = TagValueOutput.of(tag, registries);
+        super.saveAdditional(tag, registries);
         items.serialize(output.child("items"));
         fuel.serialize(output.child("fuel"));
         tank.serialize(output.child("tank"));
@@ -309,8 +313,9 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
+        super.loadAdditional(tag, registries);
         input.child("items").ifPresent(items::deserialize);
         input.child("fuel").ifPresent(fuel::deserialize);
         input.child("tank").ifPresent(tank::deserialize);
@@ -361,11 +366,11 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
      */
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<AlchemyTableBlockEntity>("ferment", 4,
+        controllers.add(new AnimationController<AlchemyTableBlockEntity>(this, "ferment", 4,
                 test -> isWorking(Process.FERMENT) ? test.setAndContinue(FERMENT) : PlayState.STOP));
         for (Process p : Process.values()) {
             if (!p.onTable()) continue;
-            controllers.add(new AnimationController<AlchemyTableBlockEntity>(LEVER + p.ordinal(), 0, test -> PlayState.STOP)
+            controllers.add(new AnimationController<AlchemyTableBlockEntity>(this, LEVER + p.ordinal(), 0, test -> PlayState.STOP)
                     .triggerableAnim("press", RawAnimation.begin().thenPlay("animation.alchemy_table.select_" + p.ordinal())));
         }
     }

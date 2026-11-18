@@ -5,10 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.joml.Vector2f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.gson.JsonParser;
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.ItemStackTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
@@ -18,10 +18,10 @@ import dev.logos.graph.EnumValues.Kind;
 import dev.logos.ui.Manuscript;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.client.renderer.RenderPipelines;
+import dev.logos.client.port.RenderPipelines;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Items;
@@ -57,7 +57,7 @@ final class EnumPreviews {
     }
 
     private static IGuiTexture texture(Kind kind, String id) {
-        Identifier key = Identifier.tryParse(id);
+        ResourceLocation key = ResourceLocation.tryParse(id);
         if (key == null) return symbol(kind, id);
         if (kind == Kind.CREATURE) return BuiltInRegistries.ENTITY_TYPE.getOptional(key).flatMap(SpawnEggItem::byId)
                 .<IGuiTexture>map(egg -> new ItemStackTexture(new ItemStack(egg))).orElseGet(() -> symbol(kind, id));
@@ -75,7 +75,7 @@ final class EnumPreviews {
                 var json = JsonParser.parseReader(reader).getAsJsonObject();
                 if (json.has("textures") && !json.getAsJsonArray("textures").isEmpty()) {
                     IGuiTexture[] frames = json.getAsJsonArray("textures").asList().stream()
-                            .map(t -> Identifier.parse(t.getAsString()).withPrefix("textures/particle/").withSuffix(".png"))
+                            .map(t -> ResourceLocation.parse(t.getAsString()).withPrefix("textures/particle/").withSuffix(".png"))
                             .map(SpriteTexture::of).toArray(IGuiTexture[]::new);
                     return (GuiTexture) (context, x, y, w, h) -> context.drawTexture(frames[(int) ((System.currentTimeMillis() / 150) % frames.length)], x, y, w, h);
                 }
@@ -117,8 +117,8 @@ final class EnumPreviews {
         if (FAILED.contains(id)) return null;
         if (ENTITIES.containsKey(id)) return ENTITIES.get(id);
         try {
-            var type = BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.parse(id)).orElse(null);
-            if (type == null || !(type.create(mc.level, EntitySpawnReason.COMMAND) instanceof LivingEntity living)) {
+            var type = BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.parse(id)).orElse(null);
+            if (type == null || !(type.create(mc.level) instanceof LivingEntity living)) {
                 FAILED.add(id); return null;
             }
             living.setSilent(true);

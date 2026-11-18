@@ -1,9 +1,14 @@
 package dev.logos.block;
 
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.alchemy.CultivationMedium;
@@ -13,7 +18,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
@@ -21,12 +26,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.transfer.CombinedResourceHandler;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
+import dev.logos.port.CombinedResourceHandler;
+import dev.logos.port.ResourceHandler;
+import dev.logos.port.ItemResource;
+import dev.logos.port.ItemStacksResourceHandler;
 
 /**
  * 培养罐: the seed planted in the jar's soul humus, the medium poured on it, and the harvests waiting
@@ -413,8 +418,9 @@ public class CultivationJarBlockEntity extends SyncedManaVesselBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueOutput output = TagValueOutput.of(tag, registries);
+        super.saveAdditional(tag, registries);
         seed.serialize(output.child("seed"));
         reserve.serialize(output.child("reserve"));
         outputs.serialize(output.child("outputs"));
@@ -426,8 +432,9 @@ public class CultivationJarBlockEntity extends SyncedManaVesselBlockEntity {
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
+        super.loadAdditional(tag, registries);
         int oldColor = mediumColor();
         input.child("seed").ifPresent(seed::deserialize);
         input.child("reserve").ifPresent(reserve::deserialize);
@@ -436,7 +443,7 @@ public class CultivationJarBlockEntity extends SyncedManaVesselBlockEntity {
         mediumUses = input.getIntOr("medium_uses", 0);
         age = input.getIntOr("age", 0);
         mana = input.getDoubleOr("mana", 0);
-        plant = input.getString("plant").map(Identifier::tryParse).map(BuiltInRegistries.BLOCK::getValue).map(JarPlant::of).orElse(null);
+        plant = input.getString("plant").map(ResourceLocation::tryParse).map(BuiltInRegistries.BLOCK::get).map(JarPlant::of).orElse(null);
         recipeKnown = false;
         // A new medium colour is tinted into the jar's own model: have the client draw it again.
         if (level != null && level.isClientSide() && oldColor != mediumColor()) {

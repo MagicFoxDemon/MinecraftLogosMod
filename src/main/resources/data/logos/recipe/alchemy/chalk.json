@@ -2,15 +2,42 @@
   "type": "logos:alchemy",
   "process": "purify",
   "ingredients": [
-    { "ingredient": "logos:soul_humus", "count": 4 },
-    { "ingredient": "logos:rebis" },
-    { "ingredient": "logos:philosophers_mercury" },
-    { "ingredient": "minecraft:ghast_tear" }
+    {
+      "ingredient": {
+        "item": "logos:soul_humus"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "logos:rebis"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:philosophers_mercury"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:ghast_tear"
+      }
+    }
   ],
-  "fluid": { "ingredient": "minecraft:water", "amount": 1000 },
+  "fluid": {
+    "ingredient": {
+      "fluid": "minecraft:water"
+    },
+    "amount": 1000
+  },
   "results": [
-    { "id": "logos:chalk", "count": 4 },
-    { "id": "minecraft:glass_bottle" }
+    {
+      "id": "logos:chalk",
+      "count": 4
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
   ],
   "mana": 30
 }

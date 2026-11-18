@@ -8,7 +8,7 @@ import org.joml.Vector2f;
 import com.lowdragmc.lowdraglib2.Platform;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIScreen;
 import com.lowdragmc.lowdraglib2.gui.texture.ColorRectTexture;
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
 import com.lowdragmc.lowdraglib2.gui.ui.Style;
@@ -66,13 +66,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.ProblemReporter;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.port.ProblemReporter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The spell workbench: a node-graph canvas on the left (typed ports, wires snap only when the
@@ -81,7 +81,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  */
 public final class SpellEditor {
     /** Ink and paper for the runes on the canvas; layered over the toolkit theme. */
-    static final Identifier MANUSCRIPT = Identifier.fromNamespaceAndPath(LogosMod.MODID, "lss/manuscript.lss");
+    static final ResourceLocation MANUSCRIPT = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "lss/manuscript.lss");
     /** Where the inscription table holding the page stands; saving writes into that page. */
     private final BlockPos table;
     /** Grade of the page on the table: the editor warns when the spell injects more than it holds. */
@@ -106,11 +106,11 @@ public final class SpellEditor {
     private UIElement overviewPage;
     private SagePanel sage;
     /** 言出法随's page; pages in a spell emitter are not cast by hand, so the emitter has none. */
-    private @org.jspecify.annotations.Nullable VoicePanel voicePanel;
+    private @javax.annotation.Nullable VoicePanel voicePanel;
     /** The name 言出法随 is applied under for this page: as the page had it, until changed on the voice page. */
-    private @org.jspecify.annotations.Nullable String voice;
+    private @javax.annotation.Nullable String voice;
     /** The player's own drawing, kept aside while a spell from the sage is shown on the canvas. */
-    private @org.jspecify.annotations.Nullable CompoundTag beforePreview;
+    private @javax.annotation.Nullable CompoundTag beforePreview;
 
     private enum Shelf { OVERVIEW, LIBRARY, ENUMS, SAGE, VOICE, NONE }
     /** Ticks until the canvas is framed around a freshly loaded graph (node sizes need a layout pass first). */
@@ -208,13 +208,13 @@ public final class SpellEditor {
      * Set when the page lies in a spell emitter at {@link #table} rather than on an inscription table:
      * the emitter's node stands in for the invocation, and what it has no place for is kept here.
      */
-    private final @org.jspecify.annotations.Nullable SpellEmitterBlockEntity emitter;
+    private final @javax.annotation.Nullable SpellEmitterBlockEntity emitter;
     private EmitterGraphs.Kept kept = EmitterGraphs.Kept.DEFAULT;
 
     /** What the page said when opened: its words stay writable on it, learned or not (符文解锁). */
-    private final dev.logos.lang.@org.jspecify.annotations.Nullable Spell before;
+    private final @javax.annotation.Nullable dev.logos.lang.Spell before;
 
-    private SpellEditor(BlockPos table, PageTier tier, @org.jspecify.annotations.Nullable SpellEmitterBlockEntity emitter, ItemStack page) {
+    private SpellEditor(BlockPos table, PageTier tier, @javax.annotation.Nullable SpellEmitterBlockEntity emitter, ItemStack page) {
         this.table = table;
         this.tier = tier;
         this.emitter = emitter;
@@ -255,7 +255,7 @@ public final class SpellEditor {
         if (tag != null) {
             try {
                 SpellGraph g = new SpellGraph();
-                g.graphModel.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), tag));
+                dev.logos.port.Persisted.deserialize(g.graphModel, TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), tag));
                 return g;
             } catch (RuntimeException ex) {
                 LogosMod.LOGGER.warn("Could not restore spell graph, rebuilding from source", ex);
@@ -447,7 +447,7 @@ public final class SpellEditor {
             public void revert() {
                 if (beforePreview == null) return;
                 SpellGraph g = new SpellGraph();
-                g.graphModel.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), beforePreview));
+                dev.logos.port.Persisted.deserialize(g.graphModel, TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), beforePreview));
                 beforePreview = null;
                 load(g);
             }
@@ -518,13 +518,13 @@ public final class SpellEditor {
         SpellGraph page = graph;
         if (emitter != null) {
             TagValueOutput copy = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());
-            graph.graphModel.serialize(copy);
+            dev.logos.port.Persisted.serialize(graph.graphModel, copy);
             page = new SpellGraph();
-            page.graphModel.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), copy.buildResult()));
+            dev.logos.port.Persisted.deserialize(page.graphModel, TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), copy.buildResult()));
             EmitterGraphs.toPage(page, kept);
         }
         TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());
-        page.graphModel.serialize(out);
+        dev.logos.port.Persisted.serialize(page.graphModel, out);
         return out.buildResult();
     }
 
@@ -536,7 +536,7 @@ public final class SpellEditor {
         var player = Minecraft.getInstance().player;
         DividersItem.Measure m = player == null ? null : DividersItem.carried(player);
         if (m == null) {
-            if (player != null) player.sendOverlayMessage(Component.translatable("logos.editor.no_dividers"));
+            if (player != null) player.displayClientMessage(Component.translatable("logos.editor.no_dividers"), true);
             return;
         }
         if (!(editor.getCurrentView() instanceof SpellGraphView view)) return;
@@ -613,7 +613,7 @@ public final class SpellEditor {
         runeDescription.setText(node != null && Sealed.node(node) ? Sealed.garble(help) : help);
     }
 
-    private SpecialNodes.@org.jspecify.annotations.Nullable SpellRoot root() {
+    private @javax.annotation.Nullable SpecialNodes.SpellRoot root() {
         for (var n : graph.getNodes()) if (n instanceof SpecialNodes.SpellRoot r) return r;
         return null;
     }
@@ -644,7 +644,7 @@ public final class SpellEditor {
     }
 
     /** The emitter's store, how long one charge takes, and what its trigger does, as set on its node. */
-    private String emitterInfo(dev.logos.lang.@org.jspecify.annotations.Nullable Spell s) {
+    private String emitterInfo(@javax.annotation.Nullable dev.logos.lang.Spell s) {
         StringBuilder sb = new StringBuilder(I18n.get("logos.editor.emitter.mana", (int) emitter.mana(), (int) SpellEmitterBlockEntity.MAX_MANA)).append('\n');
         if (s != null) {
             double in = Math.min(s.mana(), tier.capacity());
@@ -675,17 +675,17 @@ public final class SpellEditor {
         var player = Minecraft.getInstance().player;
         if (player == null) return;
         if (!r.ok()) {
-            player.sendOverlayMessage(Component.translatable("logos.editor.invalid", r.error()));
+            player.displayClientMessage(Component.translatable("logos.editor.invalid", r.error()), true);
             return;
         }
         int sealed = unlearned(r.spell());
         if (sealed > 0) {
-            player.sendOverlayMessage(dev.logos.runtime.RuneKnowledge.refusal(sealed));
+            player.displayClientMessage(dev.logos.runtime.RuneKnowledge.refusal(sealed), true);
             return;
         }
         // The server would refuse it, or past the packet quota drop the connection over it.
         if (!dev.logos.net.EditLimits.fits(graphTag)) {
-            player.sendOverlayMessage(dev.logos.net.EditLimits.tooLarge(graphTag));
+            player.displayClientMessage(dev.logos.net.EditLimits.tooLarge(graphTag), true);
             return;
         }
         // Writing a previewed spell down is adopting it.
@@ -694,7 +694,7 @@ public final class SpellEditor {
             sendToEmitter(graphTag);
             return;
         }
-        ClientPacketDistributor.sendToServer(new InscribePayload(table, r.source(), graphTag,
+        PacketDistributor.sendToServer(new InscribePayload(table, r.source(), graphTag,
                 r.spell().name().equals(voice) ? voice : ""));
         seal.stamp();
     }
@@ -704,17 +704,17 @@ public final class SpellEditor {
         SpecialNodes.EmitterRoot node = EmitterGraphs.root(graph, SpecialNodes.EmitterRoot.class);
         if (node == null) return;
         SpellGraph page = new SpellGraph();
-        page.graphModel.deserialize(TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), graphTag));
+        dev.logos.port.Persisted.deserialize(page.graphModel, TagValueInput.create(ProblemReporter.DISCARDING, Platform.getFrozenRegistry(), graphTag));
         EmitterGraphs.toPage(page, kept);
         GraphCompiler.Result r = GraphCompiler.compile(page);
         var player = Minecraft.getInstance().player;
         if (!r.ok() || player == null) {
-            if (player != null) player.sendOverlayMessage(Component.translatable("logos.editor.invalid", r.error()));
+            if (player != null) player.displayClientMessage(Component.translatable("logos.editor.invalid", r.error()), true);
             return;
         }
         TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());
-        page.graphModel.serialize(out);
-        ClientPacketDistributor.sendToServer(new EmitterEditPayload(table, r.source(), out.buildResult(), node.mode(), node.interval(), fireOnSave));
+        dev.logos.port.Persisted.serialize(page.graphModel, out);
+        PacketDistributor.sendToServer(new EmitterEditPayload(table, r.source(), out.buildResult(), node.mode(), node.interval(), fireOnSave));
         seal.stamp();
     }
 }

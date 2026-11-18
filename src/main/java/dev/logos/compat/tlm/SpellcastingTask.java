@@ -3,7 +3,7 @@ package dev.logos.compat.tlm;
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.github.tartaricacid.touhoulittlemaid.api.task.IRangedAttackTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -12,7 +12,7 @@ import com.mojang.datafixers.util.Pair;
 
 import dev.logos.LogosMod;
 import dev.logos.item.WandItem;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
@@ -27,10 +27,10 @@ import net.minecraft.world.item.ItemStack;
  * maid mod, so its attack list and target rules apply, and she does not panic when hurt.
  */
 final class SpellcastingTask implements IRangedAttackTask {
-    static final Identifier UID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "spellcasting");
+    static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "spellcasting");
 
     @Override
-    public Identifier getUid() {
+    public ResourceLocation getUid() {
         return UID;
     }
 

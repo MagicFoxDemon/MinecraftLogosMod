@@ -3,7 +3,7 @@ package dev.logos.runtime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.IContainerUIHolder;
 import com.lowdragmc.lowdraglib2.gui.holder.ModularUIContainerMenu;
@@ -20,7 +20,7 @@ import dev.logos.LogosMod;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.Container;
@@ -29,22 +29,20 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.animal.equine.AbstractHorse;
-import net.minecraft.world.entity.animal.equine.Llama;
-import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.horse.Llama;
+import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.npc.InventoryCarrier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.transfer.CombinedResourceHandler;
-import net.neoforged.neoforge.transfer.IndexModifier;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.LivingEntityEquipmentWrapper;
-import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import dev.logos.port.Capabilities;
+import dev.logos.port.IndexModifier;
+import dev.logos.port.ResourceHandler;
+import dev.logos.port.ItemResource;
+import dev.logos.port.ResourceHandlerSlot;
+import dev.logos.port.Transaction;
 
 /**
  * A possessing player's inventory key (see {@link Possession}): the creature's things above the
@@ -61,7 +59,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 public final class PossessionInventory {
     public static final int MAX_STORAGE = 36;
     private static final List<EquipmentSlot> ORDER = List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET,
-            EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND, EquipmentSlot.BODY, EquipmentSlot.SADDLE);
+            EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND, EquipmentSlot.BODY);
 
     private PossessionInventory() {}
 
@@ -108,9 +106,8 @@ public final class PossessionInventory {
         for (int i = 0; i < ORDER.size(); i++) {
             EquipmentSlot slot = ORDER.get(i);
             boolean shown = switch (slot) {
-                case BODY -> mob.is(EntityTypeTags.CAN_WEAR_HORSE_ARMOR) || mob.is(EntityTypeTags.CAN_WEAR_NAUTILUS_ARMOR)
-                        || mob.is(EntityTypeTags.CAN_EQUIP_HARNESS) || mob instanceof Wolf || mob instanceof Llama;
-                case SADDLE -> mob.is(EntityTypeTags.CAN_EQUIP_SADDLE);
+                // 1.21.1: no saddle slot; a horse's saddle is among what it carries.
+                case BODY -> mob instanceof AbstractHorse || mob instanceof Wolf;
                 default -> true;
             };
             if ((shown || !mob.getItemBySlot(slot).isEmpty()) && mob.canUseSlot(slot)) mask |= 1 << i;
@@ -139,8 +136,7 @@ public final class PossessionInventory {
 
     /** NeoForge's fallback item handler for any living entity: its hands and armour, nothing more. */
     private static boolean isFallback(ResourceHandler<ItemResource> handler) {
-        Class<?> c = handler.getClass();
-        return c == CombinedResourceHandler.class || c == LivingEntityEquipmentWrapper.class;
+        return Capabilities.isEquipmentFallback(handler);
     }
 
     @SuppressWarnings("unchecked")
@@ -167,8 +163,10 @@ public final class PossessionInventory {
             Worn worn = new Worn(h.mob, ORDER.get(i));
             ItemSlot s = new ItemSlot();
             s.bind(worn);
-            Identifier icon = worn.getNoItemIcon();
-            if (icon != null) s.slotStyle(st -> st.slotOverlay(VanillaSpriteTexture.of(icon)).showSlotOverlayOnlyEmpty(true));
+            var icon = worn.getNoItemIcon();
+            // 1.21.1: the empty-slot pictures are item textures, not GUI sprites.
+            if (icon != null) s.slotStyle(st -> st.slotOverlay(com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture.of(icon.getSecond().withPath(p -> "textures/" + p + ".png")))
+                    .showSlotOverlayOnlyEmpty(true));
             equipment.addChild(s);
         }
         UIElement root = new UIElement().addClass("panel_bg").layout(l -> l.paddingAll(7).gapAll(5));
@@ -190,13 +188,63 @@ public final class PossessionInventory {
         return ModularUI.of(UI.of(root, StylesheetManager.INSTANCE.getStylesheetSafe(StylesheetManager.GDP)), player);
     }
 
+    /** One equipment slot of a creature as a container of one, for a menu slot. */
+    private record EquipmentContainer(Mob mob, EquipmentSlot slot) implements Container {
+        @Override
+        public int getContainerSize() {
+            return 1;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return mob.getItemBySlot(slot).isEmpty();
+        }
+
+        @Override
+        public ItemStack getItem(int index) {
+            return mob.getItemBySlot(slot);
+        }
+
+        @Override
+        public ItemStack removeItem(int index, int count) {
+            ItemStack taken = mob.getItemBySlot(slot).split(count);
+            if (!taken.isEmpty()) setChanged();
+            return taken;
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int index) {
+            ItemStack was = mob.getItemBySlot(slot);
+            mob.setItemSlot(slot, ItemStack.EMPTY);
+            return was;
+        }
+
+        @Override
+        public void setItem(int index, ItemStack stack) {
+            mob.setItemSlot(slot, stack);
+        }
+
+        @Override
+        public void setChanged() {}
+
+        @Override
+        public boolean stillValid(Player player) {
+            return mob.isAlive();
+        }
+
+        @Override
+        public void clearContent() {
+            mob.setItemSlot(slot, ItemStack.EMPTY);
+        }
+    }
+
     /** One of the creature's equipment slots: armour slots take only what fits that slot and creature, hands take anything. */
     private static final class Worn extends Slot {
         private final Mob mob;
         private final EquipmentSlot slot;
 
         Worn(Mob mob, EquipmentSlot slot) {
-            super(mob.createEquipmentSlotContainer(slot), 0, 0, 0);
+            super(new EquipmentContainer(mob, slot), 0, 0, 0);
             this.mob = mob;
             this.slot = slot;
         }
@@ -218,18 +266,16 @@ public final class PossessionInventory {
         }
 
         @Override
-        public @Nullable Identifier getNoItemIcon() {
-            return switch (slot) {
-                case HEAD -> Identifier.withDefaultNamespace("container/slot/helmet");
-                case CHEST -> Identifier.withDefaultNamespace("container/slot/chestplate");
-                case LEGS -> Identifier.withDefaultNamespace("container/slot/leggings");
-                case FEET -> Identifier.withDefaultNamespace("container/slot/boots");
-                case MAINHAND -> Identifier.withDefaultNamespace("container/slot/sword");
-                case OFFHAND -> Identifier.withDefaultNamespace("container/slot/shield");
-                case SADDLE -> Identifier.withDefaultNamespace("container/slot/saddle");
-                case BODY -> Identifier.withDefaultNamespace(mob instanceof Llama ? "container/slot/llama_armor" : "container/slot/horse_armor");
+        public @Nullable com.mojang.datafixers.util.Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            ResourceLocation icon = switch (slot) {
+                case HEAD -> net.minecraft.world.inventory.InventoryMenu.EMPTY_ARMOR_SLOT_HELMET;
+                case CHEST -> net.minecraft.world.inventory.InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE;
+                case LEGS -> net.minecraft.world.inventory.InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS;
+                case FEET -> net.minecraft.world.inventory.InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS;
+                case OFFHAND -> net.minecraft.world.inventory.InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD;
                 default -> null;
             };
+            return icon == null ? null : com.mojang.datafixers.util.Pair.of(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, icon);
         }
     }
 }

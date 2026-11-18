@@ -1,6 +1,6 @@
 package dev.logos.client.uitest;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.client.ClientCharges;

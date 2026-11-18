@@ -2,7 +2,7 @@ package dev.logos.graph;
 
 import java.util.function.Predicate;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;

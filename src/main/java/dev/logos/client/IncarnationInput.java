@@ -11,7 +11,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
 
 /**
@@ -39,7 +39,7 @@ final class IncarnationInput {
     /** Each client tick, before the game's own keys. */
     static void tick() {
         while (REVERT.consumeClick()) {
-            if (Incarnation.active(Minecraft.getInstance().player)) ClientPacketDistributor.sendToServer(RevertPayload.INSTANCE);
+            if (Incarnation.active(Minecraft.getInstance().player)) PacketDistributor.sendToServer(RevertPayload.INSTANCE);
         }
     }
 
@@ -56,6 +56,6 @@ final class IncarnationInput {
         event.setSwingHand(false);
         event.setCanceled(true);
         Entity target = PossessionInput.aimed(p);
-        ClientPacketDistributor.sendToServer(new FormSkillPayload(target == null ? -1 : target.getId()));
+        PacketDistributor.sendToServer(new FormSkillPayload(target == null ? -1 : target.getId()));
     }
 }

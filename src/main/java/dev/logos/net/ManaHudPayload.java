@@ -11,7 +11,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server → one player: what their mana HUD shows, sent by {@link dev.logos.runtime.ManaHud} when it changes. The pool
@@ -25,8 +25,8 @@ import net.minecraft.resources.Identifier;
  */
 public record ManaHudPayload(boolean wand, int mana, int maxMana, int cost, int drawing, int stored, int capacity, Optional<Component> spell)
         implements CustomPacketPayload {
-    public static final Type<ManaHudPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_hud"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, ManaHudPayload> CODEC = StreamCodec.composite(
+    public static final Type<ManaHudPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "mana_hud"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, ManaHudPayload> CODEC = dev.logos.port.StreamCodecs.composite(
             ByteBufCodecs.BOOL, ManaHudPayload::wand, ByteBufCodecs.VAR_INT, ManaHudPayload::mana, ByteBufCodecs.VAR_INT, ManaHudPayload::maxMana,
             ByteBufCodecs.VAR_INT, ManaHudPayload::cost, ByteBufCodecs.VAR_INT, ManaHudPayload::drawing,
             ByteBufCodecs.VAR_INT, ManaHudPayload::stored, ByteBufCodecs.VAR_INT, ManaHudPayload::capacity,

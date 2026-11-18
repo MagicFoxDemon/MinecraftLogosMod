@@ -7,11 +7,21 @@
     "PAP"
   ],
   "key": {
-    "P": "minecraft:dark_oak_planks",
-    "S": "logos:mana_shard",
-    "C": "minecraft:copper_ingot",
-    "D": "minecraft:dispenser",
-    "A": "logos:adhesive"
+    "P": {
+      "item": "minecraft:dark_oak_planks"
+    },
+    "S": {
+      "item": "logos:mana_shard"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "D": {
+      "item": "minecraft:dispenser"
+    },
+    "A": {
+      "item": "logos:adhesive"
+    }
   },
   "result": {
     "id": "logos:spell_emitter"

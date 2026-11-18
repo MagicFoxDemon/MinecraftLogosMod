@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.ALC10;
 import org.lwjgl.openal.ALC11;

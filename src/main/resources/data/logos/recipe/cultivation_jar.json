@@ -7,9 +7,15 @@
     "S"
   ],
   "key": {
-    "L": "#minecraft:logs",
-    "G": "minecraft:glass",
-    "S": "logos:soul_humus"
+    "L": {
+      "tag": "minecraft:logs"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "S": {
+      "item": "logos:soul_humus"
+    }
   },
   "result": {
     "id": "logos:cultivation_jar",

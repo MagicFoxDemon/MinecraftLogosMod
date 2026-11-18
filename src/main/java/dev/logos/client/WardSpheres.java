@@ -11,8 +11,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.logos.runtime.Effects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 

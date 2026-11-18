@@ -9,8 +9,8 @@ import com.google.gson.JsonParser;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -45,7 +45,7 @@ final class ChargeAuraMesh {
     }
 
     private static ChargeAuraMesh load(String name) {
-        Identifier id = Identifier.fromNamespaceAndPath("logos", "vfx_meshes/" + name + ".json");
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("logos", "vfx_meshes/" + name + ".json");
         try (Reader in = Minecraft.getInstance().getResourceManager().openAsReader(id)) {
             JsonObject o = JsonParser.parseReader(in).getAsJsonObject();
             return new ChargeAuraMesh(floats(o.getAsJsonArray("pos")), floats(o.getAsJsonArray("uv")),

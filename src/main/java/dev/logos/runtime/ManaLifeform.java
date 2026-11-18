@@ -1,19 +1,23 @@
 package dev.logos.runtime;
 
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.nbt.CompoundTag;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
-import com.geckolib.animatable.GeoEntity;
-import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
-import com.geckolib.animation.AnimationController;
-import com.geckolib.animation.RawAnimation;
-import com.geckolib.animation.object.PlayState;
-import com.geckolib.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import dev.logos.LogosMod;
 import dev.logos.item.PageTier;
@@ -52,8 +56,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -414,13 +418,14 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     }
 
     @Override
-    public boolean causeFallDamage(double distance, float multiplier, DamageSource source) {
+    public boolean causeFallDamage(float distance, float multiplier, DamageSource source) {
         return false; // mana does not break when it falls
     }
 
+    /** Never drowns: on 1.21.1 breathing underwater is asked per fluid. */
     @Override
-    public boolean canBreatheUnderwater() {
-        return true;
+    public boolean canDrownInFluidType(net.neoforged.neoforge.fluids.FluidType type) {
+        return false;
     }
 
     @Override
@@ -447,7 +452,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
                 // Lying still: no flight left in it. Its flying move control turns gravity back off
                 // whenever it carries out a move it was still given, so drop that move and keep gravity on.
                 getNavigation().stop();
-                getMoveControl().setWait();
+                getMoveControl().operation = net.minecraft.world.entity.ai.control.MoveControl.Operation.WAIT;
                 if (isNoGravity()) setNoGravity(false);
             }
         } else if (!isDormant() && tickCount % 5 == 0) {
@@ -476,8 +481,9 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput out) {
-        super.addAdditionalSaveData(out);
+    public void addAdditionalSaveData(CompoundTag tag) {
+        ValueOutput out = TagValueOutput.of(tag, registryAccess());
+        super.addAdditionalSaveData(tag);
         out.putInt("life_level", lifeLevel());
         out.putDouble("mana", mana());
         out.putBoolean("dormant", isDormant());
@@ -488,12 +494,13 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         out.putInt("core_layout", CORE_LAYOUT);
         NonNullList<ItemStack> items = NonNullList.withSize(CORE_SLOTS, ItemStack.EMPTY);
         for (int i = 0; i < CORE_SLOTS; i++) items.set(i, core.getItem(i));
-        ContainerHelper.saveAllItems(out, items);
+        ContainerHelper.saveAllItems(tag, items, registryAccess());
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput in) {
-        super.readAdditionalSaveData(in);
+    public void readAdditionalSaveData(CompoundTag tag) {
+        ValueInput in = TagValueInput.create(ProblemReporter.DISCARDING, registryAccess(), tag);
+        super.readAdditionalSaveData(tag);
         entityData.set(LEVEL, Mth.clamp(in.getIntOr("life_level", 1), 1, MAX_LEVEL));
         entityData.set(MANA, (float) in.getDoubleOr("mana", 0));
         boolean dormant = in.getBooleanOr("dormant", false);
@@ -506,7 +513,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
         loyalty = in.getFloatOr("loyalty", 1);
         temperamentRolled = true;
         NonNullList<ItemStack> items = NonNullList.withSize(CORE_SLOTS, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(in, items);
+        ContainerHelper.loadAllItems(tag, items, registryAccess());
         if (in.getIntOr("core_layout", 1) < 2) {
             // The first layout: slot 0 the attack, 1–4 the passives.
             NonNullList<ItemStack> moved = NonNullList.withSize(CORE_SLOTS, ItemStack.EMPTY);
@@ -635,18 +642,18 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
-        Lifeforms.ManaFuel fuel = held.isEmpty() ? null : held.typeHolder().getData(LogosMod.MANA_FUEL);
+        Lifeforms.ManaFuel fuel = held.isEmpty() ? null : held.getItemHolder().getData(LogosMod.MANA_FUEL);
         if (fuel != null) {
             if (level().isClientSide()) return InteractionResult.SUCCESS;
             if (mana() >= maxMana()) {
-                player.sendOverlayMessage(Component.translatable("logos.mana.full").withStyle(ChatFormatting.GRAY));
+                player.displayClientMessage(Component.translatable("logos.mana.full").withStyle(ChatFormatting.GRAY), true);
                 return InteractionResult.CONSUME;
             }
             receiveMana(fuel.mana());
             if (!player.getAbilities().instabuild) held.shrink(1);
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 1.2f + random.nextFloat() * 0.4f);
             LifeformMind.emote(this, LifeformMind.Emote.HAPPY);
-            player.sendOverlayMessage(status());
+            player.displayClientMessage(status(), true);
             return InteractionResult.SUCCESS;
         }
         boolean master = player.getUUID().equals(Familiars.masterOf(this));
@@ -655,7 +662,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
             return InteractionResult.SUCCESS;
         }
         if (held.isEmpty()) {
-            if (!level().isClientSide()) player.sendOverlayMessage(status());
+            if (!level().isClientSide()) player.displayClientMessage(status(), true);
             return InteractionResult.SUCCESS;
         }
         return super.mobInteract(player, hand);
@@ -681,7 +688,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         // The cast is a state, not a triggered animation: it follows the synced flag, and quickened it plays faster.
-        controllers.add(new AnimationController<ManaLifeform>("main", 4, test -> {
+        controllers.add(new AnimationController<ManaLifeform>(this, "main", 4, test -> {
             if (isDormant()) {
                 test.setControllerSpeed(1f);
                 return test.setAndContinue(SHUTDOWN);
@@ -694,7 +701,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
             return test.setAndContinue(woke ? WAKE : IDLE);
         }));
         // The orbit rests while it lies dormant, while it is waking, and while a cast holds its parts.
-        controllers.add(new AnimationController<ManaLifeform>("orbit", 4, test -> {
+        controllers.add(new AnimationController<ManaLifeform>(this, "orbit", 4, test -> {
             if (isDormant() || isCasting() || (woke && tickCount - wokeAt < STARTUP_TICKS)) return PlayState.STOP;
             return test.setAndContinue(ORBIT);
         }));

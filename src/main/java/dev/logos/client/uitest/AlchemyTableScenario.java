@@ -21,8 +21,8 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.item.ItemResource;
+import dev.logos.port.FluidResource;
+import dev.logos.port.ItemResource;
 
 /**
  * Real-client check of the alchemy table: seen from the front, full of mana with an empty tank, then

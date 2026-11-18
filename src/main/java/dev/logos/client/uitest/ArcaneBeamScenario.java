@@ -17,7 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
@@ -75,11 +75,11 @@ public class ArcaneBeamScenario implements UIScenario {
     }
 
     private static int stand(net.minecraft.server.level.ServerLevel level, double x, double y, double z, float yaw, float pitch) {
-        ArmorStand eye = EntityType.ARMOR_STAND.create(level, EntitySpawnReason.COMMAND);
+        ArmorStand eye = EntityType.ARMOR_STAND.create(level);
         if (eye == null) throw new IllegalStateException("armour stand creation failed");
         eye.setInvisible(true);
         eye.setNoGravity(true);
-        eye.snapTo(x, y, z, yaw, pitch);
+        eye.moveTo(x, y, z, yaw, pitch);
         level.addFreshEntity(eye);
         return eye.getId();
     }

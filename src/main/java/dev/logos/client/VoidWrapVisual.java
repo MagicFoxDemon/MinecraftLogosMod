@@ -6,20 +6,20 @@ import java.util.function.IntFunction;
 
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.OrderedSubmitNodeCollector;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -166,11 +166,11 @@ final class VoidWrapVisual extends WrapVisual {
                 .withSampler("StarTex").withSampler("AuraTex")
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).build();
-        return RenderType.create("logos_void_wrap_window", RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_void_wrap_window", RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id("textures/vfx/void_beam/solid.png"))
-                .withTexture("StarTex", Identifier.withDefaultNamespace("textures/entity/end_portal/end_portal.png"))
+                .withTexture("StarTex", ResourceLocation.withDefaultNamespace("textures/entity/end_portal/end_portal.png"))
                 .withTexture("AuraTex", id("textures/vfx/void_beam/aura.png")).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

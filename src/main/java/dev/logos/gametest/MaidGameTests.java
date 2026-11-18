@@ -20,28 +20,27 @@ import dev.logos.runtime.ManaVessels;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.StatusData;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * The Touhou Little Maid compat: a tamed maid's mana, the 施法 work mode, and summoned maids. Registered (by name, from
  * {@link LogosGameTests}) and loaded only when the maid mod is installed: run with {@code -Ptlm}.
  */
 final class MaidGameTests {
-    private static final Identifier SPELLCASTING = Identifier.fromNamespaceAndPath(LogosMod.MODID, "spellcasting");
+    private static final ResourceLocation SPELLCASTING = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "spellcasting");
 
     private MaidGameTests() {}
 
-    static List<String> register(DeferredRegister<Consumer<GameTestHelper>> functions) {
+    static List<String> register(TestFunctions functions) {
         functions.register("maid_mana_follows_owner", () -> MaidGameTests::manaFollowsOwner);
         functions.register("maid_casts_attack_page", () -> MaidGameTests::castsAttackPage);
         functions.register("maid_heals_owner", () -> MaidGameTests::healsOwner);

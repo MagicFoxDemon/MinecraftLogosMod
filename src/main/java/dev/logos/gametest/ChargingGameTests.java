@@ -39,7 +39,7 @@ final class ChargingGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1000;
         m.trace = false;
@@ -56,7 +56,7 @@ final class ChargingGameTests {
 
     /** Presses right-click; true if charging started. */
     private static boolean press(GameTestHelper h, ServerPlayer p) {
-        return wand(p).getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.CONSUME && p.isUsingItem();
+        return wand(p).getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.CONSUME && p.isUsingItem();
     }
 
     private static void hold(GameTestHelper h, ServerPlayer p, int ticks) {
@@ -122,7 +122,7 @@ final class ChargingGameTests {
         ItemStack w = wand(p);
         p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         p.setItemInHand(InteractionHand.OFF_HAND, w);
-        h.assertTrue(w.getItem().use(h.getLevel(), p, InteractionHand.OFF_HAND) == InteractionResult.FAIL, "an off-hand wand charged");
+        h.assertTrue(w.getItem().use(h.getLevel(), p, InteractionHand.OFF_HAND).getResult() == InteractionResult.FAIL, "an off-hand wand charged");
         h.succeed();
     }
 
@@ -186,7 +186,7 @@ final class ChargingGameTests {
     static void staffFillsThenCasts(GameTestHelper h) {
         ServerPlayer p = staffCaster(h);
         ItemStack staff = wand(p);
-        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.FAIL, "an empty staff cast");
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.FAIL, "an empty staff cast");
         StaffCharging.start(p);
         fill(p, 20);
         near(h, StaffCharging.held(p, staff), 42, "a second of filling");
@@ -197,12 +197,12 @@ final class ChargingGameTests {
         StaffCharging.stop(p);
         h.assertTrue(PlayerMagic.of(p).fill == null, "letting go ends the fill");
         near(h, StaffItem.stored(staff), 150, "letting go keeps what went in");
-        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.CONSUME, "a filled staff did not cast");
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.CONSUME, "a filled staff did not cast");
         h.assertTrue(StatusData.stacks(p, new Status("#charged")) == 1, "right-click casts at once");
         near(h, StaffItem.stored(staff), 50, "the cast is paid from the staff");
         near(h, PlayerMagic.of(p).mana, 850, "not from the pool");
         p.stopUsingItem();
-        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.FAIL, "a staff holding 50 cast 100");
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.FAIL, "a staff holding 50 cast 100");
         near(h, StaffItem.stored(staff), 50, "a refused cast takes nothing");
         h.succeed();
     }
@@ -256,7 +256,7 @@ final class ChargingGameTests {
         chant(staff);
         StaffItem.store(staff, 150);
         int every = Math.max(1, dev.logos.LogosConfig.chargeMinTicks());
-        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.CONSUME, "the first cast failed");
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.CONSUME, "the first cast failed");
         for (int k = 1; k < every; k++) StaffCharging.repeat(p, staff, k);
         near(h, StaffItem.stored(staff), 130, "nothing more before the shortest charge time");
         for (int k = every; k <= 7 * every; k++) StaffCharging.repeat(p, staff, k);

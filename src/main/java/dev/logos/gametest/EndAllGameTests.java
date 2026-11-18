@@ -19,7 +19,7 @@ final class EndAllGameTests {
     private static ServerPlayer player(GameTestHelper h, double x, double z) {
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1e9;
         m.trace = false;

@@ -6,15 +6,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
-import dev.logos.mixin.MannequinAccessor;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,13 +21,12 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.decoration.ArmorStand;
-import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.ResolvableProfile;
@@ -77,10 +75,10 @@ public final class Possession {
     /** The value of {@link LogosMod#POSSESSOR} on a creature nobody possesses. */
     public static final UUID NOBODY = new UUID(0, 0);
     /** Entity types that can never be possessed, besides players and bosses ({@code #c:bosses}). */
-    public static final TagKey<EntityType<?>> UNPOSSESSABLE = TagKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "unpossessable"));
-    public static final ResourceKey<DamageType> BACKLASH_DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "possession_backlash"));
+    public static final TagKey<EntityType<?>> UNPOSSESSABLE = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "unpossessable"));
+    public static final ResourceKey<DamageType> BACKLASH_DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "possession_backlash"));
     /** Keeps the body's chunk ticking, so it stays where it can be hurt. Sessions do not outlive the server, nor do their tickets. */
-    public static final TicketController TICKETS = new TicketController(Identifier.fromNamespaceAndPath(LogosMod.MODID, "possession"),
+    public static final TicketController TICKETS = new TicketController(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "possession"),
             (level, tickets) -> Set.copyOf(tickets.getEntityTickets().keySet()).forEach(tickets::removeAllTickets));
     /** On a body: its owner's UUID. */
     private static final String BODY_TAG = "logos_possession_body";
@@ -90,7 +88,7 @@ public final class Possession {
     private static final class Session {
         final ServerPlayer player;
         final Mob mob;
-        final Mannequin body;
+        final PossessionBody body;
         /** The chunk its ticket holds: where the body stood at the start, wherever it has been pushed since. */
         final ChunkPos ticket;
         final long until;
@@ -100,7 +98,7 @@ public final class Possession {
         long instinctUntil;
         @Nullable LivingEntity instinctTarget;
 
-        Session(ServerPlayer player, Mob mob, Mannequin body, long until) {
+        Session(ServerPlayer player, Mob mob, PossessionBody body, long until) {
             this.player = player;
             this.mob = mob;
             this.body = body;
@@ -153,14 +151,13 @@ public final class Possession {
     /** Puts {@code p} into {@code mob} for {@code seconds}, leaving their body where they stand; false (nothing done) if they cannot. */
     public static boolean start(ServerPlayer p, Mob mob, double seconds) {
         if (!canStart(p, mob) || !(p.level() instanceof ServerLevel level)) return false;
-        Mannequin body = EntityType.MANNEQUIN.create(level, EntitySpawnReason.TRIGGERED);
+        PossessionBody body = LogosMod.POSSESSION_BODY.get().create(level);
         if (body == null) return false;
-        body.snapTo(p.getX(), p.getY(), p.getZ(), p.getYRot(), 0);
+        body.moveTo(p.getX(), p.getY(), p.getZ(), p.getYRot(), 0);
         body.setYHeadRot(p.getYHeadRot());
         body.yBodyRot = p.yBodyRot;
-        body.setComponent(DataComponents.PROFILE, ResolvableProfile.createResolved(p.getGameProfile()));
+        body.setOwner(p.getUUID());
         body.setCustomName(p.getName());
-        ((MannequinAccessor) body).logos$setDescription(Component.translatable("logos.possess.body"));
         body.getPersistentData().putString(BODY_TAG, p.getUUID().toString());
 
         p.stopRiding();
@@ -172,7 +169,7 @@ public final class Possession {
             return false;
         }
         mob.setData(LogosMod.POSSESSOR, p.getUUID());
-        if (!p.startRiding(mob, true, true)) {
+        if (!p.startRiding(mob, true)) {
             ACTIVE.remove(p.getUUID());
             mob.setData(LogosMod.POSSESSOR, NOBODY);
             body.discard();
@@ -181,15 +178,15 @@ public final class Possession {
         mob.setTarget(null);
         mob.getNavigation().stop();
         CompoundTag back = new CompoundTag();
-        back.putString("dimension", level.dimension().identifier().toString());
+        back.putString("dimension", level.dimension().location().toString());
         back.putDouble("x", body.getX());
         back.putDouble("y", body.getY());
         back.putDouble("z", body.getZ());
         p.getPersistentData().put(RETURN_TAG, back);
-        TICKETS.forceChunk(level, p.getUUID(), s.ticket.x(), s.ticket.z(), true, true);
+        TICKETS.forceChunk(level, p.getUUID(), s.ticket.x, s.ticket.z, true, true);
         // Whatever was after the player is after their body now.
         for (Mob m : level.getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(48), m -> m.getTarget() == p)) m.setTarget(body);
-        p.sendOverlayMessage(Component.translatable("logos.possess.start", (int) Math.round(seconds)));
+        p.displayClientMessage(Component.translatable("logos.possess.start", (int) Math.round(seconds)), true);
         return true;
     }
 
@@ -201,12 +198,12 @@ public final class Possession {
         if (instinct(s.mob)) s.mob.setData(LogosMod.INSTINCT, false);
         if (p.getVehicle() == s.mob) p.stopRiding();
         ServerLevel level = (ServerLevel) s.body.level();
-        p.teleportTo(level, s.body.getX(), s.body.getY(), s.body.getZ(), Set.of(), s.body.getYRot(), p.getXRot(), true);
+        p.teleportTo(level, s.body.getX(), s.body.getY(), s.body.getZ(), Set.of(), s.body.getYRot(), p.getXRot());
         p.resetFallDistance();
-        TICKETS.forceChunk(level, p.getUUID(), s.ticket.x(), s.ticket.z(), false, true);
+        TICKETS.forceChunk(level, p.getUUID(), s.ticket.x, s.ticket.z, false, true);
         s.body.discard();
         p.getPersistentData().remove(RETURN_TAG);
-        if (backlash) p.hurtServer(level, level.damageSources().source(BACKLASH_DAMAGE, s.mob), p.getMaxHealth() * BACKLASH);
+        if (backlash) p.hurt(level.damageSources().source(BACKLASH_DAMAGE, s.mob), p.getMaxHealth() * BACKLASH);
     }
 
     /**
@@ -223,7 +220,7 @@ public final class Possession {
         if (!on) {
             s.instinctTarget = null;
             Familiars.aim(s.mob, null);
-            p.sendOverlayMessage(Component.translatable("logos.possess.steer"));
+            p.displayClientMessage(Component.translatable("logos.possess.steer"), true);
             return;
         }
         s.instinctUntil = s.mob.level().getGameTime() + INSTINCT_TICKS;
@@ -233,7 +230,7 @@ public final class Possession {
             Familiars.aim(s.mob, t);
             s.instinctTarget = t;
         }
-        p.sendOverlayMessage(Component.translatable("logos.possess.instinct", INSTINCT_TICKS / 20, Component.keybind("key.logos.instinct")));
+        p.displayClientMessage(Component.translatable("logos.possess.instinct", INSTINCT_TICKS / 20, Component.keybind("key.logos.instinct")), true);
     }
 
     /** Whether the creature's instincts have had their time, or lost what they were set on. */
@@ -251,7 +248,7 @@ public final class Possession {
         mob.swing(InteractionHand.MAIN_HAND);
         if (!(target instanceof LivingEntity t) || t == mob || t == p || !t.isAlive() || t.level() != mob.level()) return;
         if (t instanceof Player other && !p.canHarmPlayer(other)) return;
-        if (mob.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE) && mob.isWithinMeleeAttackRange(t)) mob.doHurtTarget((ServerLevel) mob.level(), t);
+        if (mob.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE) && mob.isWithinMeleeAttackRange(t)) mob.doHurtTarget(t);
     }
 
     /**
@@ -324,7 +321,7 @@ public final class Possession {
         mob.setXRot(p.getXRot());
         mob.yBodyRot = mob.getYRot();
         mob.yHeadRot = mob.getYRot();
-        mob.setJumping(p.isJumping());
+        mob.setJumping(((dev.logos.mixin.LivingEntityAccessor) p).logos$isJumping());
     }
 
     /** Where the player sits: with their eyes at the creature's. */
@@ -356,7 +353,7 @@ public final class Possession {
         p.resetFallDistance();
         PossessionSkills.tick(p, s.mob);
         if (instinct(s.mob) && instinctSpent(s)) instinct(p, null, false);
-        if (left <= 100 && left % 20 == 0) p.sendOverlayMessage(Component.translatable("logos.possess.ending", left / 20));
+        if (left <= 100 && left % 20 == 0) p.displayClientMessage(Component.translatable("logos.possess.ending", left / 20), true);
     }
 
     /** A possessed creature's death throws its possessor back, hurt; a possessing player's own death puts them back first, so their things drop by their body. */
@@ -382,7 +379,7 @@ public final class Possession {
         level.broadcastDamageEvent(t, event.getSource());
         forwarding = true;
         try {
-            s.player.hurtServer(level, event.getSource(), event.getAmount());
+            s.player.hurt(event.getSource(), event.getAmount());
         } finally {
             forwarding = false;
         }
@@ -399,7 +396,7 @@ public final class Possession {
     /** A body left behind by a session that is gone (a crash, a reload) does not come back. */
     @SubscribeEvent
     static void onJoin(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Mannequin m) || !m.getPersistentData().contains(BODY_TAG)) return;
+        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof PossessionBody m) || !m.getPersistentData().contains(BODY_TAG)) return;
         if (sessionOfBody(m) == null) event.setCanceled(true);
     }
 
@@ -412,13 +409,13 @@ public final class Possession {
     @SubscribeEvent
     static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer p) || !p.getPersistentData().contains(RETURN_TAG)) return;
-        CompoundTag back = p.getPersistentData().getCompoundOrEmpty(RETURN_TAG);
+        CompoundTag back = p.getPersistentData().getCompound(RETURN_TAG);
         p.getPersistentData().remove(RETURN_TAG);
         p.stopRiding();
-        Identifier dim = Identifier.tryParse(back.getStringOr("dimension", ""));
+        ResourceLocation dim = ResourceLocation.tryParse(back.getString("dimension"));
         ServerLevel level = dim == null ? null : p.level().getServer().getLevel(ResourceKey.create(Registries.DIMENSION, dim));
-        if (level != null) p.teleportTo(level, back.getDoubleOr("x", p.getX()), back.getDoubleOr("y", p.getY()), back.getDoubleOr("z", p.getZ()),
-                Set.of(), p.getYRot(), p.getXRot(), true);
+        if (level != null) p.teleportTo(level, (back.contains("x") ? back.getDouble("x") : p.getX()), (back.contains("y") ? back.getDouble("y") : p.getY()), (back.contains("z") ? back.getDouble("z") : p.getZ()),
+                Set.of(), p.getYRot(), p.getXRot());
     }
 
     @SubscribeEvent
@@ -432,7 +429,7 @@ public final class Possession {
     }
 
     private static @Nullable Session sessionOfBody(Entity e) {
-        if (!(e instanceof Mannequin) || !e.getPersistentData().contains(BODY_TAG)) return null;
+        if (!(e instanceof PossessionBody) || !e.getPersistentData().contains(BODY_TAG)) return null;
         for (Session s : ACTIVE.values()) if (s.body == e) return s;
         return null;
     }

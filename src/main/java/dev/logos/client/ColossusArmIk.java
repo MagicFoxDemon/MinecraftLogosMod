@@ -7,11 +7,11 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
-import com.geckolib.animation.state.BoneSnapshot;
-import com.geckolib.cache.model.BakedGeoModel;
-import com.geckolib.cache.model.GeoBone;
+import software.bernie.geckolib.animation.state.BoneSnapshot;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import com.geckolib.renderer.base.BoneSnapshots;
 
 import net.minecraft.util.Mth;

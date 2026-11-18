@@ -31,7 +31,7 @@ final class PlayerRefusalGameTests {
         p.setGameMode(GameType.SURVIVAL);
         p.connection.markClientLoaded();
         Vec3 pos = h.absoluteVec(new Vec3(0.5, 2, 0.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         var pig = h.spawn(EntityType.PIG, new BlockPos(6, 2, 6));
         var cow = h.spawn(EntityType.COW, new BlockPos(2, 2, 6));
 

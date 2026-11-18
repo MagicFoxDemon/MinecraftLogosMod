@@ -1,5 +1,7 @@
 package dev.logos.item;
 
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -25,7 +27,12 @@ public final class AnchorNailItem extends Item {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        return new InteractionResultHolder<>(useItem(level, player, hand), player.getItemInHand(hand));
+    }
+
+    /** What {@link #use} does: the result alone, as 26.1's {@code use} returns it. */
+    protected InteractionResult useItem(Level level, Player player, InteractionHand hand) {
         if (level.isClientSide()) dev.logos.client.ClientHooks.openAnchorList();
         return InteractionResult.SUCCESS;
     }

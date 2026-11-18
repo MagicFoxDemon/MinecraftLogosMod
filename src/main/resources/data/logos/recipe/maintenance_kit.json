@@ -2,10 +2,18 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "logos:caput_mortuum",
-    "logos:caput_mortuum",
-    "logos:adhesive",
-    "minecraft:copper_ingot"
+    {
+      "item": "logos:caput_mortuum"
+    },
+    {
+      "item": "logos:caput_mortuum"
+    },
+    {
+      "item": "logos:adhesive"
+    },
+    {
+      "item": "minecraft:copper_ingot"
+    }
   ],
   "result": {
     "id": "logos:maintenance_kit"

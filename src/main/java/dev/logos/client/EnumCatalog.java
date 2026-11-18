@@ -18,7 +18,7 @@ import dev.logos.lang.Weather;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -42,7 +42,7 @@ final class EnumCatalog {
     List<Entry> entries(Kind kind) { return entries.computeIfAbsent(kind, this::read); }
 
     static Component name(Kind kind, String id) {
-        Identifier key = Identifier.tryParse(id);
+        ResourceLocation key = ResourceLocation.tryParse(id);
         if (key == null) return Component.literal(id);
         return switch (kind) {
             case CREATURE -> BuiltInRegistries.ENTITY_TYPE.getOptional(key).map(t -> t.getDescription()).orElse(Component.literal(id));
@@ -77,7 +77,7 @@ final class EnumCatalog {
     }
 
     static boolean usable(Kind kind, String id) {
-        Identifier key = Identifier.tryParse(id);
+        ResourceLocation key = ResourceLocation.tryParse(id);
         if (key == null) return false;
         return switch (kind) {
             case CREATURE -> BuiltInRegistries.ENTITY_TYPE.containsKey(key);

@@ -11,7 +11,7 @@ import dev.logos.lang.Element;
 import dev.logos.runtime.SpellModifiers;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -141,7 +141,7 @@ public final class BuffPotions {
     /** Whether {@code stack} holds a Logos potion (drunk, splash, lingering or on an arrow). */
     public static boolean isLogosPotion(ItemStack stack) {
         return stack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, PotionContents.EMPTY).potion()
-                .flatMap(Holder::unwrapKey).filter(k -> k.identifier().getNamespace().equals(LogosMod.MODID)).isPresent();
+                .flatMap(Holder::unwrapKey).filter(k -> k.location().getNamespace().equals(LogosMod.MODID)).isPresent();
     }
 
     /** The brewing stand's recipes for these potions; the alchemy table dissolves by the same ones. */
@@ -204,7 +204,7 @@ public final class BuffPotions {
         }
     }
 
-    private static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(LogosMod.MODID, path);
+    private static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, path);
     }
 }

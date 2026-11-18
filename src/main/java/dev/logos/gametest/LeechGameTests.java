@@ -15,7 +15,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -60,7 +60,7 @@ final class LeechGameTests {
         @SuppressWarnings("removal")
         ServerPlayer rich = h.makeMockServerPlayerInLevel();
         Vec3 at = h.absoluteVec(new Vec3(7.5, 2, 7.5));
-        rich.snapTo(at.x, at.y, at.z, 0, 0);
+        rich.moveTo(at.x, at.y, at.z, 0, 0);
         rich.setGameMode(GameType.SURVIVAL);
         PlayerMagic.of(rich).baseMaxMana = PlayerMagic.of(rich).mana = 80;
         ManaLeech leech = leech(h, 2.5, 4.5);
@@ -110,7 +110,7 @@ final class LeechGameTests {
         boolean[] struck = {false};
         h.succeedWhen(() -> {
             if (!struck[0] && leech.state() == ManaLeech.State.LATCHED) {
-                leech.hurtServer(h.getLevel(), p.damageSources().playerAttack(p), 1);
+                leech.hurt(p.damageSources().playerAttack(p), 1);
                 h.assertTrue(leech.state() == ManaLeech.State.FALL && leech.latchedOn() == null, "a Knockback blow should strike it off, is " + leech.state());
                 struck[0] = true;
             }
@@ -215,11 +215,11 @@ final class LeechGameTests {
         leech.setNoAi(true);
         leech.setOffspring(true);
         leech.setMana(50);
-        leech.hurtServer(h.getLevel(), p.damageSources().playerAttack(p), 1);
+        leech.hurt(p.damageSources().playerAttack(p), 1);
         h.assertTrue(Math.abs(leech.mana() - 30) < 0.01, "Bane III should scatter 40%, left " + leech.mana());
         h.assertTrue(Math.abs(freeMana(h, leech) - 20) < 0.01, "the scattered 20 should be free mana, got " + freeMana(h, leech));
         leech.invulnerableTime = 0;
-        leech.hurtServer(h.getLevel(), h.getLevel().damageSources().genericKill(), Float.MAX_VALUE);
+        leech.hurt(h.getLevel().damageSources().genericKill(), Float.MAX_VALUE);
         h.assertTrue(Math.abs(freeMana(h, leech) - (20 + 24)) < 0.01, "80% of the 30 left should be set free, got " + freeMana(h, leech));
         h.succeedWhen(() -> {
             int shards = h.getLevel().getEntitiesOfClass(ItemEntity.class, leech.getBoundingBox().inflate(4),

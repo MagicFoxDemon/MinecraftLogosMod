@@ -9,7 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.client.CastPoses;
 import dev.logos.client.WandTips;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;

@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:netherite_seed",
+  "seed": {
+    "item": "logos:netherite_seed"
+  },
   "plant": "logos:netherite_pod_crop",
   "growth": 0.1,
   "mana": 150

@@ -3,11 +3,15 @@
   "process": "dissolve",
   "ingredients": [
     {
-      "ingredient": "minecraft:sculk_vein",
+      "ingredient": {
+        "item": "minecraft:sculk_vein"
+      },
       "count": 3
     },
     {
-      "ingredient": "logos:raw_mash"
+      "ingredient": {
+        "item": "logos:raw_mash"
+      }
     }
   ],
   "results": [

@@ -17,9 +17,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -101,7 +101,7 @@ public class ArcaneRayScenario implements UIScenario {
                 .step("clear", ctx -> clearRays())
                 .fill(new BlockPos(-2, 101, 9), new BlockPos(2, 105, 9), Blocks.AIR.defaultBlockState())
                 .server("cow", sc -> {
-                    target = EntityType.COW.create(sc.level(), EntitySpawnReason.COMMAND);
+                    target = EntityType.COW.create(sc.level());
                     if (target == null) throw new IllegalStateException("cow creation failed");
                     target.setPos(.5, 101, 6);
                     target.setNoAi(true);

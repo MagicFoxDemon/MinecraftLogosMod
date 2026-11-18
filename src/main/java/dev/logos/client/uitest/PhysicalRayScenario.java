@@ -16,9 +16,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -118,7 +118,7 @@ public class PhysicalRayScenario implements UIScenario {
         eyes(s, "fp_wall_burst", 30, 7, Vfx.RayEnd.BLOCK);
         wall(s, false);
         s.server("a cow down the line", sc -> {
-            cow = EntityType.COW.create(sc.level(), EntitySpawnReason.COMMAND);
+            cow = EntityType.COW.create(sc.level());
             if (cow == null) throw new IllegalStateException("cow creation failed");
             cow.setPos(.5, 101, 10);
             cow.setNoAi(true);

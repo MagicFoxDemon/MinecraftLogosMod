@@ -11,7 +11,7 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
@@ -27,7 +27,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
  * cast with no leading form gives a light flick. Each is a {@link Frame} along its progress, drawn the same
  * way in third person (arm, then the item turned in the hand) and first person (the hand moved in view).
  */
-@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 final class CastGestures {
     /** A wand's model leans back in the hand; this much more forward turn lays it along the arm as a staff is. */
     private static final float WAND_LEAN = 0.5f;
@@ -98,7 +98,7 @@ final class CastGestures {
         register(CastPose.CAST, 8, CastGestures::cast);
     }
 
-    private static void register(Identifier id, int ticks, java.util.function.Function<Float, Frame> at) {
+    private static void register(ResourceLocation id, int ticks, java.util.function.Function<Float, Frame> at) {
         CastPoses.register(id, new Gesture(ticks, at));
     }
 

@@ -15,21 +15,21 @@ import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
 
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.util.LightCoordsUtil;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
+import dev.logos.client.port.LightCoordsUtil;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
 /** QFX Ares-inspired flowing ribbons and a shared, smoothly moving head; Photon supplies embers. */
@@ -121,29 +121,29 @@ final class FireProjectileVisual implements ProjectileVisual {
 
     private static RenderType material(boolean noise) {
         var builder = RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET, RenderPipelines.GLOBALS_SNIPPET)
-                .withLocation(Identifier.fromNamespaceAndPath("logos", "pipeline/fire_" + (noise ? "noise" : "trail")))
-                .withFragmentShader(Identifier.fromNamespaceAndPath("logos", "core/fire_trail"))
+                .withLocation(ResourceLocation.fromNamespaceAndPath("logos", "pipeline/fire_" + (noise ? "noise" : "trail")))
+                .withFragmentShader(ResourceLocation.fromNamespaceAndPath("logos", "core/fire_trail"))
                 .withSampler("Sampler1").withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(noise ? BlendFunction.LIGHTNING : BlendFunction.TRANSLUCENT));
         if (noise) builder.withShaderDefine("ARES_NOISE");
-        return RenderType.create("logos_fire_" + (noise ? "noise" : "trail"), RenderSetup.builder(builder.build())
+        return dev.logos.client.port.RenderTypes.create("logos_fire_" + (noise ? "noise" : "trail"), RenderSetup.builder(builder.build())
                 .withTexture("Sampler0", texture(noise ? "ares_noise" : "ares_trail"))
                 .withTexture("Sampler1", texture("ares_mask")).sortOnUpload().createRenderSetup());
     }
 
     private static RenderType headMaterial(String texture, boolean additive) {
         var pipeline = RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET)
-                .withLocation(Identifier.fromNamespaceAndPath("logos", "pipeline/fire_" + texture))
+                .withLocation(ResourceLocation.fromNamespaceAndPath("logos", "pipeline/fire_" + texture))
                 .withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(additive ? BlendFunction.LIGHTNING : BlendFunction.TRANSLUCENT)).build();
-        return RenderType.create("logos_fire_" + texture, RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_fire_" + texture, RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", texture(texture)).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier texture(String name) {
-        return Identifier.fromNamespaceAndPath("logos", "textures/vfx/fire/" + name + ".png");
+    private static ResourceLocation texture(String name) {
+        return ResourceLocation.fromNamespaceAndPath("logos", "textures/vfx/fire/" + name + ".png");
     }
 
     @Override

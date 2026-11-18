@@ -14,7 +14,7 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
@@ -64,11 +64,11 @@ public class ManaTornadoScenario implements UIScenario {
     static int summonCaster(ServerLevel level) {
         Entity old = caster >= 0 ? level.getEntity(caster) : null;
         if (old != null) old.discard();
-        var villager = EntityType.VILLAGER.create(level, EntitySpawnReason.COMMAND);
+        var villager = EntityType.VILLAGER.create(level);
         villager.setNoAi(true);
         villager.setInvulnerable(true);
         villager.setSilent(true);
-        villager.snapTo(AT.x, AT.y, AT.z, 0, 0);
+        villager.moveTo(AT.x, AT.y, AT.z, 0, 0);
         villager.setYHeadRot(0);
         level.addFreshEntity(villager);
         return villager.getId();

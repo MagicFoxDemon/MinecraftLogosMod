@@ -2,11 +2,22 @@
   "type": "logos:alchemy",
   "process": "ferment",
   "ingredients": [
-    { "ingredient": "logos:starter_culture" },
-    { "ingredient": "minecraft:wheat" }
+    {
+      "ingredient": {
+        "item": "logos:starter_culture"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:wheat"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:starter_culture", "count": 3 }
+    {
+      "id": "logos:starter_culture",
+      "count": 3
+    }
   ],
   "mana": 1
 }

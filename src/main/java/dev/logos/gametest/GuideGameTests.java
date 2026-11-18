@@ -56,7 +56,7 @@ final class GuideGameTests {
     /** A book and a lapis lazuli make another. */
     static void recipe(GameTestHelper h) {
         CraftingInput input = CraftingInput.of(2, 1, List.of(new ItemStack(Items.BOOK), new ItemStack(Items.LAPIS_LAZULI)));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
                 .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(LogosMod.GUIDE_BOOK.get()), "a book and lapis made " + out);
         h.succeed();

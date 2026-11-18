@@ -8,21 +8,21 @@ import static dev.logos.client.ChargeParts.smooth;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.client.ChargeParts.View;
 import dev.logos.lang.Element;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -173,10 +173,10 @@ final class PhysicalFieldVisual extends FieldCore {
                 .withSampler("FillTex")
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING)).build();
-        return RenderType.create("logos_physical_field_wall", RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_physical_field_wall", RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id("textures/vfx/physical/trail_noise.png"))
                 .withTexture("FillTex", id("textures/vfx/physical_ray/wind.png")).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

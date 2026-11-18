@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.joml.Vector3f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 

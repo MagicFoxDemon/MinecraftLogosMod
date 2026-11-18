@@ -56,8 +56,8 @@ base {
     archivesName = mod_id
 }
 
-// Mojang ships Java 25 to end users in 26.1.2, so mods should target Java 25.
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+// Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 neoForge {
     // Specify the version of NeoForge to use.
@@ -229,10 +229,10 @@ neoForge {
 }
 
 dependencies {
-    implementation "com.lowdragmc.ldlib2:ldlib2-neoforge-26.1:${ldlib2_version}"
-    implementation("com.lowdragmc.photon:photon-neoforge-26.1:${photon_version}") { transitive = false }
-    implementation("com.lowdragmc.kilagraph:kilagraph-neoforge-26.1:${kilagraph_version}") { transitive = false }
-    // geckolib-neoforge-26.1.2-5.5.2 (Modrinth version id; the version number is shared with the Fabric build)
+    implementation "com.lowdragmc.ldlib2:ldlib2-neoforge-1.21.1:${ldlib2_version}"
+    implementation("com.lowdragmc.photon:photon-neoforge-1.21.1:${photon_version}") { transitive = false }
+    implementation("com.lowdragmc.kilagraph:kilagraph-neoforge-1.21.1:${kilagraph_version}") { transitive = false }
+    // geckolib-neoforge-1.21.1-4.9.3 (Modrinth version id; the version number is shared with the Fabric build)
     implementation "maven.modrinth:geckolib:${geckolib_version}"
     // Iris is optional: compiled against for IrisCompat, never required or bundled.
     compileOnly("maven.modrinth:iris:${iris_version}") { transitive = false }
@@ -240,7 +240,7 @@ dependencies {
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     if (project.hasProperty("jei")) localRuntime "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    // Touhou Little Maid is optional too (the maid work mode in compat/tlm), but has no 26.1 build on any Maven yet:
+    // Touhou Little Maid is optional too (the maid work mode in compat/tlm):
     // it compiles against a local jar, -Ptlm_jar=<path> or libs/touhoulittlemaid.jar, and -Ptlm adds that jar to the dev runs.
     if (tlmJar.exists()) {
         compileOnly files(tlmJar)

@@ -56,8 +56,8 @@ public class AnchorScenario implements UIScenario {
                 .ticks(5)
                 .screenshot("anchor_name_screen_into")
                 .step("drive an anchor into the block, and one onto its top", ctx -> {
-                    net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(dev.logos.net.AnchorEditPayload.set("炉", ORIGIN.offset(1, 0, 2), Direction.UP, true));
-                    net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(dev.logos.net.AnchorEditPayload.set("炉顶", ORIGIN.offset(1, 0, 2), Direction.UP, false));
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(dev.logos.net.AnchorEditPayload.set("炉", ORIGIN.offset(1, 0, 2), Direction.UP, true));
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(dev.logos.net.AnchorEditPayload.set("炉顶", ORIGIN.offset(1, 0, 2), Direction.UP, false));
                 })
                 .waitUntilServer("the anchors stand in the block's centre and on its top", sc -> {
                     var into = Anchors.of(sc.player()).get("炉");

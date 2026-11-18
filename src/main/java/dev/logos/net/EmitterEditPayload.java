@@ -19,7 +19,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -32,7 +32,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public record EmitterEditPayload(BlockPos pos, String source, CompoundTag graph, EmitterMode mode, int interval, boolean fire)
         implements CustomPacketPayload {
-    public static final Type<EmitterEditPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "emitter_edit"));
+    public static final Type<EmitterEditPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "emitter_edit"));
     private static final StreamCodec<ByteBuf, EmitterMode> MODE = ByteBufCodecs.idMapper(i -> EmitterMode.values()[Math.floorMod(i, EmitterMode.values().length)], EmitterMode::ordinal);
     public static final StreamCodec<RegistryFriendlyByteBuf, EmitterEditPayload> CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC, EmitterEditPayload::pos,
@@ -60,7 +60,7 @@ public record EmitterEditPayload(BlockPos pos, String source, CompoundTag graph,
             return;
         }
         if (spell.isPassive()) {
-            sp.sendOverlayMessage(Component.translatable("logos.emitter.passive").withStyle(ChatFormatting.YELLOW));
+            sp.displayClientMessage(Component.translatable("logos.emitter.passive").withStyle(ChatFormatting.YELLOW), true);
             return;
         }
         if (!dev.logos.runtime.RuneKnowledge.mayWrite(sp, spell, emitter.page().get(dev.logos.LogosMod.SPELL_SOURCE.get()))) return;

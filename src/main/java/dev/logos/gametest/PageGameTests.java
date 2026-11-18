@@ -44,7 +44,7 @@ final class PageGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1000;
         m.trace = false;
@@ -202,7 +202,7 @@ final class PageGameTests {
         ItemStack page = new ItemStack(LogosMod.SPELL_PAGE.get());
         var input = net.minecraft.world.item.crafting.CraftingInput.of(2, 2,
                 List.of(page.copy(), page.copy(), new ItemStack(net.minecraft.world.item.Items.LECTERN), ItemStack.EMPTY));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
                 .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(LogosMod.COPY_TABLE_ITEM.get()) && out.getCount() == 1, "two pages over a lectern made " + out);
         h.succeed();

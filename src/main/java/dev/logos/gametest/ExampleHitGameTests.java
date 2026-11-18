@@ -18,7 +18,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * Every attack example of the first two course groups, cast once by a player at a husk in front of them, hurts it
@@ -34,7 +33,7 @@ final class ExampleHitGameTests {
     private ExampleHitGameTests() {}
 
     /** Registers one test per example of the basic and advanced groups; returns their names. */
-    static List<String> register(DeferredRegister<Consumer<GameTestHelper>> functions) {
+    static List<String> register(TestFunctions functions) {
         List<String> names = new ArrayList<>();
         for (String id : Examples.ALL.keySet()) {
             String group = Examples.group(id);
@@ -57,7 +56,7 @@ final class ExampleHitGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 10000;
         m.trace = false;

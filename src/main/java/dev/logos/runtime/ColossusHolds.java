@@ -1,6 +1,6 @@
 package dev.logos.runtime;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.runtime.AlchemicalColossus.Act;
 import dev.logos.runtime.AlchemicalColossus.Hold;
@@ -49,7 +49,7 @@ final class ColossusHolds {
         c.getEntityData().set(key, e == null ? -1 : e.getId());
         if (e != null && e.getVehicle() != c) {
             e.stopRiding();
-            e.startRiding(c, true, false);
+            e.startRiding(c, true);
         }
     }
 

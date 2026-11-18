@@ -22,8 +22,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import dev.logos.port.RegisterClientPayloadHandlersEvent;
 
 /**
  * Where a question to the sage goes. The server's sage when the server offers one (and the player
@@ -67,9 +67,9 @@ public final class SageClient {
         switch (route()) {
             case SERVER -> {
                 PENDING.put(id, new Pending(listener, done));
-                ClientPacketDistributor.sendToServer(new SageAskPayload(id, lang, SageServer.writeHistory(history), message, current, capacity, emitter));
+                PacketDistributor.sendToServer(new SageAskPayload(id, lang, SageServer.writeHistory(history), message, current, capacity, emitter));
                 return () -> {
-                    if (PENDING.remove(id) != null) ClientPacketDistributor.sendToServer(new SageCancelPayload(id));
+                    if (PENDING.remove(id) != null) PacketDistributor.sendToServer(new SageCancelPayload(id));
                 };
             }
             case LOCAL -> {
@@ -104,20 +104,6 @@ public final class SageClient {
         }
     }
 
-    @SubscribeEvent
-    static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
-        event.register(SageReplyPayload.TYPE, (p, ctx) -> {
-            Pending pending = p.done() ? PENDING.remove(p.id()) : PENDING.get(p.id());
-            if (pending == null) return;
-            if (p.done()) pending.done().accept(p.outcome());
-            else pending.listener().status(p.key(), p.arg());
-        });
-        event.register(SageStatusPayload.TYPE, (p, ctx) -> {
-            serverOffered = p.offered();
-            admin = p.admin();
-        });
-        event.register(SageAdminStatePayload.TYPE, (p, ctx) -> adminListener.accept(p));
-    }
 
     @SubscribeEvent
     static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
@@ -125,5 +111,26 @@ public final class SageClient {
         admin = false;
         PENDING.clear();
         SageWork.cancel();
+    }
+
+    /** Its listeners on the mod bus: on 1.21.1 a subscriber listens on one bus. */
+    @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    static final class ModBus {
+        private ModBus() {}
+
+        @SubscribeEvent
+        static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
+            event.register(SageReplyPayload.TYPE, (p, ctx) -> {
+                Pending pending = p.done() ? PENDING.remove(p.id()) : PENDING.get(p.id());
+                if (pending == null) return;
+                if (p.done()) pending.done().accept(p.outcome());
+                else pending.listener().status(p.key(), p.arg());
+            });
+            event.register(SageStatusPayload.TYPE, (p, ctx) -> {
+                serverOffered = p.offered();
+                admin = p.admin();
+            });
+            event.register(SageAdminStatePayload.TYPE, (p, ctx) -> adminListener.accept(p));
+        }
     }
 }

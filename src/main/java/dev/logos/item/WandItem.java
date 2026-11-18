@@ -1,5 +1,7 @@
 package dev.logos.item;
 
+import net.minecraft.world.InteractionResultHolder;
+import java.util.List;
 import java.util.function.Consumer;
 
 import com.lowdragmc.lowdraglib2.gui.factory.HeldItemUIMenuType;
@@ -16,7 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -24,11 +26,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.component.TooltipDisplay;
-import net.minecraft.world.item.component.UseEffects;
 import net.minecraft.world.level.Level;
 
 /**
@@ -55,8 +54,8 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
      * a better wand holds and draws more.
      */
     public WandItem(Properties properties, int slots, double flow, double surge, double maxMana, double regeneration) {
-        super(properties.component(DataComponents.USE_EFFECTS, new UseEffects(true, false, 1.0f))
-                .attributes(attributes(flow, surge, regeneration)));
+        // 1.21.1 has no use-effects component: walking at full speed while charging is dev.logos.mixin.LocalPlayerMixin.
+        super(properties.attributes(attributes(flow, surge, regeneration)));
         this.slots = slots;
         this.maxMana = maxMana;
     }
@@ -70,11 +69,11 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
         return b.build();
     }
 
-    private static final Identifier FLOW_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_flow");
-    private static final Identifier SURGE_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_surge");
+    private static final ResourceLocation FLOW_ID = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "wand_flow");
+    private static final ResourceLocation SURGE_ID = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "wand_surge");
     /** The cap the best carried wand gives; the id the main-hand bonus had, so it takes that one's place. */
-    public static final Identifier MAX_MANA_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_max_mana");
-    private static final Identifier REGENERATION_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_mana_regeneration");
+    public static final ResourceLocation MAX_MANA_ID = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "wand_max_mana");
+    private static final ResourceLocation REGENERATION_ID = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "wand_mana_regeneration");
 
     public int slots() {
         return slots;
@@ -105,7 +104,12 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        return new InteractionResultHolder<>(useItem(level, player, hand), player.getItemInHand(hand));
+    }
+
+    /** What {@link #use} does: the result alone, as 26.1's {@code use} returns it. */
+    protected InteractionResult useItem(Level level, Player player, InteractionHand hand) {
         ItemStack wand = player.getItemInHand(hand);
         if (player.isShiftKeyDown()) {
             if (!level.isClientSide() && player instanceof ServerPlayer sp) HeldItemUIMenuType.openUI(sp, hand);
@@ -122,8 +126,8 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     }
 
     @Override
-    public ItemUseAnimation getUseAnimation(ItemStack stack) {
-        return ItemUseAnimation.NONE;
+    public net.minecraft.world.item.UseAnim getUseAnimation(ItemStack stack) {
+        return net.minecraft.world.item.UseAnim.NONE;
     }
 
     @Override
@@ -134,8 +138,8 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     }
 
     @Override
-    public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {
-        return entity instanceof ServerPlayer sp && Charging.release(sp);
+    public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {
+        if (entity instanceof ServerPlayer sp) Charging.release(sp);
     }
 
     /** Let go too early, switched away, or anything else that stops the charge: the mana goes back out free. */
@@ -158,7 +162,8 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
         long n = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).count();
         builder.accept(Component.translatable("logos.wand.slots", n, slots).withStyle(ChatFormatting.GRAY));
         var pages = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).toList();

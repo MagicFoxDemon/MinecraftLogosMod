@@ -1,8 +1,9 @@
 package dev.logos.block;
 
+import net.minecraft.world.ItemInteractionResult;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -35,7 +36,6 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
@@ -52,9 +52,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.fluid.FluidUtil;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import dev.logos.port.FluidResource;
+import net.neoforged.neoforge.fluids.FluidUtil;
+import dev.logos.port.Transaction;
 
 /**
  * 炼金术桌: a table two blocks long. Like a bed, it is placed as a main half and a side half to the
@@ -79,7 +79,7 @@ public class AlchemyTableBlock extends HorizontalDirectionalBlock implements Ent
     public static final int BOTTLE = 250;
     /** The table top; what stands above it (the hourglass, the still) does not block movement. */
     private static final VoxelShape BODY = Block.box(0, 0, 0, 16, 12, 16);
-    private static final Map<Direction, VoxelShape> OUTLINE = Shapes.rotateHorizontal(Block.box(0, 0, 0, 16, 16, 16));
+    private static final Map<Direction, VoxelShape> OUTLINE = dev.logos.port.ShapeRotations.rotateHorizontal(Block.box(0, 0, 0, 16, 16, 16));
 
     public AlchemyTableBlock(Properties properties) {
         super(properties);
@@ -137,9 +137,9 @@ public class AlchemyTableBlock extends HorizontalDirectionalBlock implements Ent
 
     /** A half whose partner is gone goes too (dropping the table if it was the main half). */
     @Override
-    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction toNeighbour,
-            BlockPos neighbourPos, BlockState neighbour, RandomSource random) {
-        if (!neighbourPos.equals(otherHalf(pos, state))) return super.updateShape(state, level, ticks, pos, toNeighbour, neighbourPos, neighbour, random);
+    protected BlockState updateShape(BlockState state, Direction toNeighbour, BlockState neighbour, net.minecraft.world.level.LevelAccessor level,
+            BlockPos pos, BlockPos neighbourPos) {
+        if (!neighbourPos.equals(otherHalf(pos, state))) return super.updateShape(state, toNeighbour, neighbour, level, pos, neighbourPos);
         return neighbour.is(this) && neighbour.getValue(PART) != state.getValue(PART) && neighbour.getValue(FACING) == state.getValue(FACING)
                 ? state : Blocks.AIR.defaultBlockState();
     }
@@ -147,7 +147,7 @@ public class AlchemyTableBlock extends HorizontalDirectionalBlock implements Ent
     /** In creative, breaking the side half takes the main half without its drop (beds do the same). */
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && player.preventsBlockDrops() && state.getValue(PART) == Part.SIDE) {
+        if (!level.isClientSide() && player.isCreative() && state.getValue(PART) == Part.SIDE) {
             BlockPos main = otherHalf(pos, state);
             BlockState mainState = level.getBlockState(main);
             if (mainState.is(this) && mainState.getValue(PART) == Part.MAIN) {
@@ -196,29 +196,29 @@ public class AlchemyTableBlock extends HorizontalDirectionalBlock implements Ent
      * fill or drain the tank. With a water bottle or an empty bottle: pour or draw one bottle (250 mB).
      */
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         AlchemyTableBlockEntity table = table(level, pos, state);
-        if (table == null) return InteractionResult.TRY_WITH_EMPTY_HAND;
+        if (table == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (stack.getItem() instanceof WandItem) {
             if (!level.isClientSide()) charge(table, player);
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
         if (stack.is(Items.POTION) && stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).is(Potions.WATER)) {
             if (!level.isClientSide() && pour(table, FluidResource.of(Fluids.WATER), true)) {
                 player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, new ItemStack(Items.GLASS_BOTTLE)));
                 level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1, 1);
             }
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
         if (stack.is(Items.GLASS_BOTTLE)) {
             if (!level.isClientSide() && pour(table, FluidResource.of(Fluids.WATER), false)) {
                 player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, PotionContents.createItemStack(Items.POTION, Potions.WATER)));
                 level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1, 1);
             }
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
-        if (FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection(), null)) return InteractionResult.SUCCESS;
-        return InteractionResult.TRY_WITH_EMPTY_HAND;
+        if (FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) return ItemInteractionResult.SUCCESS;
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     /** One bottle of {@code fluid} into the tank ({@code in}) or out of it; all or nothing. */
@@ -235,8 +235,8 @@ public class AlchemyTableBlock extends HorizontalDirectionalBlock implements Ent
         PlayerMagic m = PlayerMagic.of(player);
         double given = table.receiveMana(Math.min(AlchemyTableBlockEntity.WAND_CHARGE, Math.floor(m.mana)));
         m.mana -= given;
-        player.sendOverlayMessage(Component.translatable("logos.alchemy_table.charged", (int) given, (int) table.mana(), AlchemyTableBlockEntity.MAX_MANA)
-                .withStyle(ChatFormatting.AQUA));
+        player.displayClientMessage(Component.translatable("logos.alchemy_table.charged", (int) given, (int) table.mana(), AlchemyTableBlockEntity.MAX_MANA)
+                .withStyle(ChatFormatting.AQUA), true);
     }
 
     @Override

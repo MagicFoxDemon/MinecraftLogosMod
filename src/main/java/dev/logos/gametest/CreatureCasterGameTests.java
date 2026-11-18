@@ -17,8 +17,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.wolf.Wolf;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.animal.Wolf;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.phys.Vec3;
 
 /** Creatures that cast without being familiars (another mod's maid): a tamed one is on its owner's side, and a compat can give one a pool. */

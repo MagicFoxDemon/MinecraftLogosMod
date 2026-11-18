@@ -1,5 +1,6 @@
 package dev.logos.item;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import net.minecraft.ChatFormatting;
@@ -7,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 
 /**
  * 杖饰: hung in one of a wand's page slots (not a codex's) in place of a page, it changes how the wand
@@ -28,7 +28,8 @@ public class WandCharmItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
         builder.accept(effect.copy().withStyle(ChatFormatting.GRAY));
         builder.accept(Component.translatable("logos.charm.hang_hint").withStyle(ChatFormatting.DARK_GRAY));
     }

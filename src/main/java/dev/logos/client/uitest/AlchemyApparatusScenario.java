@@ -25,8 +25,8 @@ import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import dev.logos.port.ItemResource;
+import dev.logos.port.Transaction;
 
 /**
  * Real-client look at the alchemy table as one page, in Chinese: all four apparatus on the bench,

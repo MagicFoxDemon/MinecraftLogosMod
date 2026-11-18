@@ -113,10 +113,10 @@ final class ColossusSpawnEggGameTests {
         ServerPlayer p = FamiliarGameTests.master(h);
         h.setBlock(5, 2, 5, Blocks.WATER);
         Vec3 above = h.absoluteVec(new Vec3(5.5, 5, 5.5));
-        p.snapTo(above.x, above.y, above.z, 0, 90);
+        p.moveTo(above.x, above.y, above.z, 0, 90);
         ItemStack eggs = new ItemStack(LogosMod.ALCHEMICAL_COLOSSUS_SPAWN_EGG.get(), 2);
         p.setItemInHand(InteractionHand.MAIN_HAND, eggs);
-        var result = eggs.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND);
+        var result = eggs.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult();
         h.assertTrue(result == InteractionResult.SUCCESS && eggs.getCount() == 1, "source-water use must spend one egg");
         full(h, guardian(h, p));
         h.succeed();

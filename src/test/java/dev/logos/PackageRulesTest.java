@@ -27,12 +27,14 @@ class PackageRulesTest {
      * {@link ClientBoundaryTest} and {@link TestCodeStaysOutTest}; nothing below lists {@code compat}, so nothing may use it.
      */
     private static final Set<String> ON_TOP = Set.of("", "client", "compat", "gametest");
-    /** Uses of these are not this test's to judge: anything may use the entry and settings, and the other two have their own tests. */
-    private static final Set<String> NOT_JUDGED = Set.of("", "client", "gametest");
+    /** Uses of these are not this test's to judge: anything may use the entry and settings and the 1.21.1 stand-ins (port), and the client and tests have their own tests. */
+    private static final Set<String> NOT_JUDGED = Set.of("", "client", "gametest", "port");
 
     /** Each other package, and the packages it uses. */
     private static final Map<String, Set<String>> MAY_USE = Map.ofEntries(
             entry("guide", Set.of()),
+            // The 1.21.1 branch's stand-ins for the 26.1 API (dev.logos.port): anything may use them, and they use nothing of the mod's.
+            entry("port", Set.of()),
             // Only its rune files reach out; see languageCoreStandsAlone.
             entry("lang", Set.of("runtime", "block")),
             entry("graph", Set.of("lang")),

@@ -4,14 +4,14 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.AlchemicalColossus.Act;
 import dev.logos.runtime.AlchemicalColossus.Hold;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -59,7 +59,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     static final double STOMP_HEIGHT = 1, STOMP_HEALTH = 25;
     /** What it will not pick up, only strike: the ender dragon by default; packs may add more. */
     public static final TagKey<EntityType<?>> HEAVY = TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
-            Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossus_heavy"));
+            ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "colossus_heavy"));
 
     private final AlchemicalColossus c;
     private @Nullable ColossusSequence sequence;

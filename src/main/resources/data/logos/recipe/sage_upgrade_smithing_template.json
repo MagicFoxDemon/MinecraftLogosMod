@@ -2,8 +2,12 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:netherite_upgrade_smithing_template",
-    "logos:philosophers_stone"
+    {
+      "item": "minecraft:netherite_upgrade_smithing_template"
+    },
+    {
+      "item": "logos:philosophers_stone"
+    }
   ],
   "result": {
     "id": "logos:sage_upgrade_smithing_template"

@@ -3,9 +3,15 @@
   "category": "misc",
   "group": "echo_spell_page_upgrade",
   "ingredients": [
-    "logos:crystal_inscribed_page",
-    "logos:echo_tincture",
-    "logos:adhesive"
+    {
+      "item": "logos:crystal_inscribed_page"
+    },
+    {
+      "item": "logos:echo_tincture"
+    },
+    {
+      "item": "logos:adhesive"
+    }
   ],
   "result": {
     "id": "logos:echo_inscribed_page"

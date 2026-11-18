@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.InteractMaidEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.event.MaidTickEvent;
@@ -64,21 +64,21 @@ final class MaidEvents {
         EntityMaid maid = event.getMaid();
         ItemStack held = event.getStack();
         if (held.isEmpty() || !casting(maid)) return;
-        Lifeforms.ManaFuel fuel = held.typeHolder().getData(LogosMod.MANA_FUEL);
+        Lifeforms.ManaFuel fuel = held.getItemHolder().getData(LogosMod.MANA_FUEL);
         if (fuel == null) return;
         event.setCanceled(true);
         if (event.getWorld().isClientSide()) return;
         CreatureMana pool = MaidMana.of(maid);
         if (pool == null) return;
         if (pool.mana() >= pool.maxMana()) {
-            event.getPlayer().sendOverlayMessage(Component.translatable("logos.mana.full").withStyle(ChatFormatting.GRAY));
+            event.getPlayer().displayClientMessage(Component.translatable("logos.mana.full").withStyle(ChatFormatting.GRAY), true);
             return;
         }
         pool.receiveMana(fuel.mana());
         if (!event.getPlayer().getAbilities().instabuild) held.shrink(1);
         maid.level().playSound(null, maid.getX(), maid.getY(), maid.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f,
                 1.2f + maid.getRandom().nextFloat() * 0.4f);
-        event.getPlayer().sendOverlayMessage(status(maid, pool));
+        event.getPlayer().displayClientMessage(status(maid, pool), true);
     }
 
     static Component status(EntityMaid maid, CreatureMana pool) {

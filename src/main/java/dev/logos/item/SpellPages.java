@@ -1,6 +1,6 @@
 package dev.logos.item;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Examples;

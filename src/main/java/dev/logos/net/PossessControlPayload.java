@@ -7,7 +7,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -18,7 +18,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public record PossessControlPayload(byte action, int target) implements CustomPacketPayload {
     public static final byte STRIKE = 0, SHOOT = 1, INVENTORY = 2, INSTINCT = 3, STEER = 4;
-    public static final Type<PossessControlPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "possess_control"));
+    public static final Type<PossessControlPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "possess_control"));
     public static final StreamCodec<RegistryFriendlyByteBuf, PossessControlPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.BYTE, PossessControlPayload::action, ByteBufCodecs.VAR_INT, PossessControlPayload::target, PossessControlPayload::new);
 

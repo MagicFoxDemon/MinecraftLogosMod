@@ -17,7 +17,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemContainerContents;
-import net.minecraft.world.item.component.TooltipDisplay;
 
 /**
  * Wands and staffs add to the mana refill in the main hand, and to the mana cap while carried anywhere, the best one
@@ -120,7 +119,7 @@ final class WandManaGameTests {
         near(h, PlayerMagic.maxMana(p), 200 + 800 + 800, "wand + reservoir III");
         near(h, regen(p), flat + 8 + 3, "wand + wellspring II");
         List<Component> lines = new ArrayList<>();
-        wand.getItem().appendHoverText(wand, Item.TooltipContext.of(h.getLevel()), TooltipDisplay.DEFAULT, lines::add, TooltipFlag.NORMAL);
+        wand.getItem().appendHoverText(wand, Item.TooltipContext.of(h.getLevel()), lines, TooltipFlag.NORMAL);
         h.assertTrue(lines.stream().anyMatch(c -> c.getContents() instanceof TranslatableContents t && t.getKey().equals("logos.wand.carried_max_mana")
                 && List.of(t.getArgs()).contains("+1600")), "the wand's tooltip should read its carried cap +1600: " + lines);
         p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);

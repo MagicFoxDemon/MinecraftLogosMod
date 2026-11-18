@@ -5,8 +5,8 @@ import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.world.phys.Vec3;
 
 /** Element-local flight visuals; packet handling and independent look/trail overrides stay shared. */

@@ -5,14 +5,14 @@ import dev.logos.runtime.Incarnation;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /** Client → server: an incarnated player pressed the revert key (V by default) to take their own shape back, for free. */
 public record RevertPayload() implements CustomPacketPayload {
     public static final RevertPayload INSTANCE = new RevertPayload();
-    public static final Type<RevertPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "revert"));
+    public static final Type<RevertPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "revert"));
     public static final StreamCodec<ByteBuf, RevertPayload> CODEC = StreamCodec.unit(INSTANCE);
 
     @Override

@@ -4,11 +4,12 @@
   "package": "dev.logos.mixin",
   "mixins": [
     "AbstractArrowAccessor",
+    "LivingEntityAccessor",
+    "BlockBehaviourMixin",
     "BlockStateBaseMixin",
     "BeaconAccessor",
     "EntityMixin",
     "ServerGamePacketListenerMixin",
-    "MannequinAccessor",
     "EnderDragonAccessor",
     "EnderDragonFightAccessor",
     "EnderDragonMixin",
@@ -19,9 +20,11 @@
     "ServerLevelMixin",
     "LivingEntityMixin",
     "WardenMixin",
-    "ProjectileMixin"
+    "ProjectileMixin",
+    "VillagerMixin"
   ],
   "client": [
+    "LocalPlayerMixin",
     "ItemStackRenderStateAccessor",
     "LayerRenderStateAccessor"
   ],

@@ -1,5 +1,7 @@
 package dev.logos.item;
 
+import net.minecraft.world.InteractionResultHolder;
+import java.util.List;
 import java.util.function.Consumer;
 
 import dev.logos.LogosMod;
@@ -15,7 +17,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 
 /**
@@ -51,8 +52,13 @@ public class StaffItem extends WandItem {
 
     /** Right-click casts once; the press stays in use until let go, so holding it does not cast again every few ticks. */
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
-        if (player.isShiftKeyDown()) return super.use(level, player, hand);
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        return new InteractionResultHolder<>(useItem(level, player, hand), player.getItemInHand(hand));
+    }
+
+    /** What {@link #use} does: the result alone, as 26.1's {@code use} returns it. */
+    protected InteractionResult useItem(Level level, Player player, InteractionHand hand) {
+        if (player.isShiftKeyDown()) return super.useItem(level, player, hand);
         ItemStack staff = player.getItemInHand(hand);
         if (player instanceof ServerPlayer sp && !(VoiceCasting.armed(staff) ? VoiceCasting.begin(sp, staff, hand) : StaffCharging.cast(sp, staff, hand))) return InteractionResult.FAIL;
         player.startUsingItem(hand);
@@ -66,9 +72,7 @@ public class StaffItem extends WandItem {
     }
 
     @Override
-    public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {
-        return false;
-    }
+    public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {}
 
     @Override
     public void onStopUsing(ItemStack stack, LivingEntity entity, int count) {
@@ -99,13 +103,24 @@ public class StaffItem extends WandItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
         builder.accept(Component.translatable("logos.staff.stored", Node.fmt(stored(stack)), Node.fmt(capacity)).withStyle(ChatFormatting.AQUA));
-        super.appendHoverText(stack, context, display, builder, flag);
+        super.appendHoverText(stack, context, tooltip, flag);
     }
 
     @Override
     protected Component usage() {
         return Component.translatable("logos.staff.usage");
+    }
+
+    /** The mana it holds keeps changing as it fills: the staff in hand is not lowered and raised again for that. */
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        if (slotChanged || !ItemStack.isSameItem(oldStack, newStack)) return true;
+        ItemStack before = oldStack.copy(), after = newStack.copy();
+        before.remove(LogosMod.STORED_MANA.get());
+        after.remove(LogosMod.STORED_MANA.get());
+        return !ItemStack.isSameItemSameComponents(before, after);
     }
 }

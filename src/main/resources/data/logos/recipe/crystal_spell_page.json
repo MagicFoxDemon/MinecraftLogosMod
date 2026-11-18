@@ -2,10 +2,18 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:paper",
-    "minecraft:gold_nugget",
-    "minecraft:amethyst_shard",
-    "logos:adhesive"
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "minecraft:gold_nugget"
+    },
+    {
+      "item": "minecraft:amethyst_shard"
+    },
+    {
+      "item": "logos:adhesive"
+    }
   ],
   "result": {
     "id": "logos:crystal_spell_page"

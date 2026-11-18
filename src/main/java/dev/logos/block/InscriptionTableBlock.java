@@ -1,8 +1,9 @@
 package dev.logos.block;
 
+import net.minecraft.world.ItemInteractionResult;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.MapCodec;
 
@@ -70,7 +71,7 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
      * Desk body plus the slanted drawing board (drawers facing north). The model overhangs the block
      * by a couple of pixels; the shape stays inside it so neighbours and pathing behave.
      */
-    private static final Map<Direction, VoxelShape> SHAPES = Shapes.rotateHorizontal(Shapes.or(
+    private static final Map<Direction, VoxelShape> SHAPES = dev.logos.port.ShapeRotations.rotateHorizontal(Shapes.or(
             Block.box(0, 0, 0, 16, 11.5, 16),
             Block.box(4.75, 11.5, 1, 16, 21.5, 11)));
 
@@ -111,17 +112,17 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
     }
 
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!SpellPages.isPage(stack) || player.isSecondaryUseActive()) return InteractionResult.TRY_WITH_EMPTY_HAND;
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!SpellPages.isPage(stack) || player.isSecondaryUseActive()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!(level.getBlockEntity(pos) instanceof InscriptionTableBlockEntity table) || !table.page().isEmpty()) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (!level.isClientSide()) {
             table.setPage(stack.copyWithCount(1));
             stack.consume(1, player);
             level.playSound(null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1, 1);
         }
-        return InteractionResult.SUCCESS;
+        return ItemInteractionResult.SUCCESS;
     }
 
     @Override
@@ -129,7 +130,7 @@ public class InscriptionTableBlock extends HorizontalDirectionalBlock implements
         if (!(level.getBlockEntity(pos) instanceof InscriptionTableBlockEntity table)) return InteractionResult.PASS;
         if (table.page().isEmpty()) {
             if (!level.isClientSide()) {
-                player.sendOverlayMessage(Component.translatable("logos.inscription_table.empty_hint").withStyle(ChatFormatting.YELLOW));
+                player.displayClientMessage(Component.translatable("logos.inscription_table.empty_hint").withStyle(ChatFormatting.YELLOW), true);
             }
             return InteractionResult.SUCCESS;
         }

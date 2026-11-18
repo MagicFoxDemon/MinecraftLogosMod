@@ -2,11 +2,19 @@
   "type": "logos:alchemy",
   "process": "settle",
   "ingredients": [
-    { "ingredient": "logos:philosophers_mercury" }
+    {
+      "ingredient": {
+        "item": "logos:philosophers_mercury"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:rebis" },
-    { "id": "minecraft:glass_bottle" }
+    {
+      "id": "logos:rebis"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
   ],
   "mana": 20
 }

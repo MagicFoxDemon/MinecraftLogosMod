@@ -15,7 +15,7 @@ import dev.logos.runtime.Casting;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
@@ -103,7 +103,7 @@ public class VoidProjectileImpactScenario implements UIScenario {
 
         s.step("reset entity routing observation", ctx -> resetCache())
                 .server("real projectile into cow", sc -> {
-                    target = EntityType.COW.create(sc.level(), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+                    target = EntityType.COW.create(sc.level());
                     if (target == null) throw new IllegalStateException("cow creation failed");
                     target.setPos(.5, 101, 2);
                     target.setNoAi(true);

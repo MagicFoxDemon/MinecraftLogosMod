@@ -12,7 +12,7 @@ import dev.logos.lang.Unlocks;
 import dev.logos.runtime.RuneKnowledge;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.context.ContextKeySet;
@@ -93,7 +93,7 @@ final class RuneBookGameTests {
 
     private static Set<Item> roll(GameTestHelper h, String table, ContextKeySet params, int times) {
         LootTable loot = h.getLevel().getServer().reloadableRegistries().getLootTable(
-                ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace("chests/" + table)));
+                ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.withDefaultNamespace("chests/" + table)));
         LootParams context = new LootParams.Builder(h.getLevel()).withParameter(LootContextParams.ORIGIN, h.absoluteVec(new Vec3(1, 1, 1))).create(params);
         Set<Item> found = new HashSet<>();
         for (int i = 0; i < times; i++) loot.getRandomItems(context, s -> found.add(s.getItem()));

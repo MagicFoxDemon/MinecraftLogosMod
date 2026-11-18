@@ -5,7 +5,7 @@ import static dev.logos.client.ChargeParts.argb;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.client.ChargeParts.View;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 

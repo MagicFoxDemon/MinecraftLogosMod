@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.joml.Vector2f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.PortModel;
 
@@ -123,7 +123,7 @@ public final class GraphBuilder {
     private record Region(SourceNotes.Note note, String text, float top, float noteHeight, float[] box) {}
 
     /** Starts a region for {@code note} at {@code x}: keeps room above for its title and sticky note, and frames what follows. */
-    private @Nullable Region open(SourceNotes.@Nullable Note note, float x) {
+    private @Nullable Region open(@Nullable SourceNotes.Note note, float x) {
         if (note == null) return null;
         float top = y;
         String text = wrap(note.text(), NOTE_W);
@@ -135,7 +135,7 @@ public final class GraphBuilder {
     }
 
     /** The room a region for {@code note} keeps above what it frames: its title bar and sticky note. */
-    private static float header(SourceNotes.@Nullable Note note) {
+    private static float header(@Nullable SourceNotes.Note note) {
         if (note == null) return 0;
         String text = wrap(note.text(), NOTE_W);
         return TITLE_H + (text.isEmpty() ? 0 : noteHeight(text) + PAD) + PAD;

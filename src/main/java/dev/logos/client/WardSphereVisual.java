@@ -14,21 +14,21 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.Curve;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurves;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -266,11 +266,11 @@ final class WardSphereVisual {
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT));
         if (band) pipeline.withShaderDefine("WARD_RIBBON");
-        return RenderType.create("logos_ward_" + (band ? "band" : "sphere"), RenderSetup.builder(pipeline.build())
+        return dev.logos.client.port.RenderTypes.create("logos_ward_" + (band ? "band" : "sphere"), RenderSetup.builder(pipeline.build())
                 .withTexture("Sampler0", id("textures/vfx/ward/honeycomb.png"))
                 .withTexture("NoiseTex", id("textures/vfx/ward/noise.png"))
                 .sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

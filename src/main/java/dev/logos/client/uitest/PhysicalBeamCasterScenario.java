@@ -61,7 +61,7 @@ public class PhysicalBeamCasterScenario implements UIScenario {
                     Casting.cast(sc.player(), Casting.compile("(spell :mana 6000 (summon mana_lifeform :level 3 :at (pos-of caster)))"), null, null);
                     var lf = (ManaLifeform)Familiars.latest(sc.player(), null);
                     if (lf == null) throw new AssertionError("no lifeform");
-                    lf.snapTo(-3, 101.4, 4, -90, 0); lf.setNoAi(true); lifeformId = lf.getId();
+                    lf.moveTo(-3, 101.4, 4, -90, 0); lf.setNoAi(true); lifeformId = lf.getId();
                 }).ticks(12)
                 .step("lifeform holds a physical beam", ctx -> {
                     var lf = Minecraft.getInstance().level.getEntity(lifeformId);

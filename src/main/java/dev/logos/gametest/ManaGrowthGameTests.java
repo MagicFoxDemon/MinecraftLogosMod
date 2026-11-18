@@ -5,7 +5,7 @@ import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellModifiers;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -39,7 +39,7 @@ final class ManaGrowthGameTests {
 
     private static void add(ServerPlayer p, Holder<Attribute> attribute, String id, double amount) {
         p.getAttribute(attribute).addOrUpdateTransientModifier(new AttributeModifier(
-                Identifier.fromNamespaceAndPath("logos_test", id), amount, AttributeModifier.Operation.ADD_VALUE));
+                ResourceLocation.fromNamespaceAndPath("logos_test", id), amount, AttributeModifier.Operation.ADD_VALUE));
     }
 
     private static double term(ServerPlayer p, ManaGrowth.Term t) {
@@ -71,7 +71,7 @@ final class ManaGrowthGameTests {
         near(h, term(p, ManaGrowth.Term.XP), 150, "1395 points");
         near(h, term(p, ManaGrowth.Term.PRACTICE), 100, "20000 mana spent");
         near(h, PlayerMagic.maxMana(p), 200 + 112 + 40 + 100 + 150 + 100, "whole cap");
-        p.getAttribute(Attributes.ARMOR).removeModifier(Identifier.fromNamespaceAndPath("logos_test", "armor"));
+        p.getAttribute(Attributes.ARMOR).removeModifier(ResourceLocation.fromNamespaceAndPath("logos_test", "armor"));
         ManaGrowth.tick(p);
         h.assertTrue(p.getAttribute(SpellModifiers.MAX_MANA).getModifier(ManaGrowth.Term.ARMOR.id) == null, "armor term left behind");
         h.succeed();

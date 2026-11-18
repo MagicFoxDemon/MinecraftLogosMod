@@ -3,7 +3,7 @@ package dev.logos.client.uitest;
 import java.util.EnumSet;
 import java.util.Set;
 
-import com.geckolib.animation.object.PlayState;
+import software.bernie.geckolib.animation.PlayState;
 
 import com.lowdragmc.lowdraglib2.registry.RegistrationEnvironment;
 import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegisterClient;
@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.transfer.item.ItemResource;
+import dev.logos.port.ItemResource;
 
 /**
  * Real-client check of the alchemy table at work: idle (no flame, still airlock), then with a

@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:copper_seed",
+  "seed": {
+    "item": "logos:copper_seed"
+  },
   "plant": "logos:copper_pod_crop",
   "growth": 0.25,
   "mana": 5

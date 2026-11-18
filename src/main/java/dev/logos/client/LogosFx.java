@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.photon.client.fx.FX;
 import com.lowdragmc.photon.client.fx.FXRuntime;
@@ -33,8 +33,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.SubmitCustomGeometryEvent;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -128,7 +128,7 @@ public final class LogosFx {
                 }
                 t.lastSeen = level.getGameTime();
                 if (t.particle == null || t.look == null) {
-                    double now = level.getGameTime() + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+                    double now = level.getGameTime() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
                     if (t.visual == null) t.visual = ProjectileVisual.create(el, pos, now);
                     t.visual.move(pos, new Vec3(p.ax(), p.ay(), p.az()), p.size(), now);
                 }

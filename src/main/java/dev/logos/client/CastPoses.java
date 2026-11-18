@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -18,7 +18,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
@@ -85,12 +85,12 @@ public final class CastPoses {
     public static final EnumProxy<HumanoidModel.ArmPose> HOLD = new EnumProxy<>(HumanoidModel.ArmPose.class,
             false, false, (IArmPoseTransformer) CastPoses::poseArm);
 
-    private static final Map<Identifier, Pose> POSES = new ConcurrentHashMap<>();
+    private static final Map<ResourceLocation, Pose> POSES = new ConcurrentHashMap<>();
     /** Per entity id, its holds by hold id, in the order they began. */
     private static final Map<Integer, LinkedHashMap<Integer, Held>> HELD = new HashMap<>();
 
     private static final class Held {
-        final Identifier pose;
+        final ResourceLocation pose;
         final long start;
         /** A one-shot's length in ticks; 0 for a hold. */
         final int duration;
@@ -98,7 +98,7 @@ public final class CastPoses {
         /** Client tick it was let go at; -1 while held. */
         long released = -1;
 
-        Held(Identifier pose, long now) {
+        Held(ResourceLocation pose, long now) {
             this.pose = pose;
             this.start = this.seen = now;
             Pose p = POSES.get(pose);
@@ -132,12 +132,12 @@ public final class CastPoses {
     }
 
     /** The pose an entity shows now, how far it is on, and how many ticks since it began. */
-    public record Active(Identifier pose, float weight, float age) {}
+    public record Active(ResourceLocation pose, float weight, float age) {}
 
     private CastPoses() {}
 
     /** Says how {@code id} is drawn. Call from client setup; a later call for the same id replaces it. */
-    public static void register(Identifier id, Pose pose) {
+    public static void register(ResourceLocation id, Pose pose) {
         POSES.put(id, pose);
     }
 
@@ -180,7 +180,7 @@ public final class CastPoses {
     }
 
     /** For an item's {@code getArmPose}: the posed arm while {@code entity} shows a pose, else null (the item's own pose). */
-    public static HumanoidModel.@Nullable ArmPose armPose(Entity entity) {
+    public static @Nullable HumanoidModel.ArmPose armPose(Entity entity) {
         return of(entity, 1) != null ? HOLD.getValue() : null;
     }
 

@@ -3,16 +3,24 @@
   "process": "ferment",
   "ingredients": [
     {
-      "ingredient": "minecraft:chorus_fruit"
+      "ingredient": {
+        "item": "minecraft:chorus_fruit"
+      }
     },
     {
-      "ingredient": "logos:echo_tincture"
+      "ingredient": {
+        "item": "logos:echo_tincture"
+      }
     },
     {
-      "ingredient": "logos:germinal_essence"
+      "ingredient": {
+        "item": "logos:germinal_essence"
+      }
     },
     {
-      "ingredient": "minecraft:dragon_breath"
+      "ingredient": {
+        "item": "minecraft:dragon_breath"
+      }
     }
   ],
   "results": [

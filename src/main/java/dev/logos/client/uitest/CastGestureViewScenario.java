@@ -17,7 +17,7 @@ import dev.logos.runtime.PlayerMagic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -39,17 +39,17 @@ public class CastGestureViewScenario implements UIScenario {
         o.tags("logos", "wand", "pose").guiScale(3);
     }
 
-    private static void plays(String what, Identifier expected) {
+    private static void plays(String what, ResourceLocation expected) {
         var a = CastPoses.of(Minecraft.getInstance().player, 0);
         LogosMod.LOGGER.info("[cast gesture] {}: {}", what, a);
         if (a == null || !a.pose().equals(expected)) throw new AssertionError(what + " should play " + expected + ", shows " + a);
     }
 
     private static void select(int page) {
-        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new dev.logos.net.SelectSpellPayload(page));
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new dev.logos.net.SelectSpellPayload(page));
     }
 
-    private static void play(ScenarioBuilder s, String name, Identifier gesture, int at, int length) {
+    private static void play(ScenarioBuilder s, String name, ResourceLocation gesture, int at, int length) {
         // Caught by the pose's own clock (a scenario tick is not a client tick), which stops for the screenshot.
         s.server("play " + name, sc -> CastPose.play(sc.player(), gesture))
                 .waitUntil(name + " reaches " + at, ctx -> {

@@ -2,12 +2,26 @@
   "type": "logos:alchemy",
   "process": "ferment",
   "ingredients": [
-    { "ingredient": "logos:vital_mash" },
-    { "ingredient": "logos:mana_gemstone" },
-    { "ingredient": "logos:chalk" }
+    {
+      "ingredient": {
+        "item": "logos:vital_mash"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:mana_gemstone"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:chalk"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:chalk_mana_elixir" }
+    {
+      "id": "logos:chalk_mana_elixir"
+    }
   ],
   "mana": 160
 }

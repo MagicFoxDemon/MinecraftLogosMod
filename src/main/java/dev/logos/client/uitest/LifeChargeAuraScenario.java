@@ -10,7 +10,7 @@ import dev.logos.lang.Element;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -65,11 +65,11 @@ public class LifeChargeAuraScenario extends ChargeTour {
 
         // Side-on: a still villager six blocks ahead casts while the player looks at it from its side.
         s.server("a villager to cast", sc -> {
-            var v = EntityType.VILLAGER.create(sc.player().level(), EntitySpawnReason.COMMAND);
+            var v = EntityType.VILLAGER.create(sc.player().level());
             v.setNoAi(true);
             v.setInvulnerable(true);
             v.setSilent(true);
-            v.snapTo(.5, 101, 6.5, 90, 0);
+            v.moveTo(.5, 101, 6.5, 90, 0);
             v.setYHeadRot(90);
             sc.player().level().addFreshEntity(v);
             caster = v.getId();

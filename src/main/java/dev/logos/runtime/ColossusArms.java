@@ -2,7 +2,7 @@ package dev.logos.runtime;
 
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.runtime.AlchemicalColossus.Act;
 import net.minecraft.util.Mth;

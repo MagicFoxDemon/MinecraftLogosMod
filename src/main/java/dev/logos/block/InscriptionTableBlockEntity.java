@@ -1,6 +1,9 @@
 package dev.logos.block;
 
-import org.jspecify.annotations.Nullable;
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.item.PageTier;
@@ -16,11 +19,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 
 /** Holds the one spell page lying on an inscription table; synced to clients so the editor can open it. */
-public class InscriptionTableBlockEntity extends BlockEntity {
+public class InscriptionTableBlockEntity extends BlockEntity implements dev.logos.port.RemovalSideEffects {
     private ItemStack page = ItemStack.EMPTY;
 
     public InscriptionTableBlockEntity(BlockPos pos, BlockState state) {
@@ -53,14 +56,16 @@ public class InscriptionTableBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueOutput output = TagValueOutput.of(tag, registries);
+        super.saveAdditional(tag, registries);
         if (!page.isEmpty()) output.store("page", ItemStack.CODEC, page);
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
+        super.loadAdditional(tag, registries);
         page = input.read("page", ItemStack.CODEC).orElse(ItemStack.EMPTY);
     }
 

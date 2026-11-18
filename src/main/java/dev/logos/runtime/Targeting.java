@@ -10,7 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
@@ -139,13 +139,13 @@ public final class Targeting {
         return matches(filter, block.builtInRegistryHolder(), Registries.BLOCK, BuiltInRegistries.BLOCK.getKey(block));
     }
 
-    private static <T> boolean matches(String filter, Holder<T> holder, net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<T>> registry, Identifier id) {
+    private static <T> boolean matches(String filter, Holder<T> holder, net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<T>> registry, ResourceLocation id) {
         String f = filter.trim();
         if (f.startsWith("#")) {
-            Identifier tag = Identifier.tryParse(f.substring(1));
+            ResourceLocation tag = ResourceLocation.tryParse(f.substring(1));
             return tag != null && holder.is(TagKey.create(registry, tag));
         }
-        Identifier want = Identifier.tryParse(f);
+        ResourceLocation want = ResourceLocation.tryParse(f);
         return want != null && want.equals(id);
     }
 

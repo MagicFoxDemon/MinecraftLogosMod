@@ -19,9 +19,9 @@ import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
@@ -89,7 +89,7 @@ public class PotionBurstScenario implements UIScenario {
                 .teleportPlayer(.5, 101, -2, 0, 8)
                 .server("three cows", sc -> {
                     for (float x : X) {
-                        Cow cow = EntityType.COW.create(sc.level(), EntitySpawnReason.COMMAND);
+                        Cow cow = EntityType.COW.create(sc.level());
                         if (cow == null) throw new IllegalStateException("cow creation failed");
                         cow.setPos(x, 101, 2.5);
                         cow.setYRot(90);
@@ -113,7 +113,7 @@ public class PotionBurstScenario implements UIScenario {
                 .teleportPlayer(.5, 101, -2, 0, 8).ticks(5);
 
         real(s, "poison", MobEffects.POISON, Vfx.Burst.POTION_HARMFUL);
-        real(s, "speed", MobEffects.SPEED, Vfx.Burst.POTION_BENEFICIAL);
+        real(s, "speed", MobEffects.MOVEMENT_SPEED, Vfx.Burst.POTION_BENEFICIAL);
         real(s, "glowing", MobEffects.GLOWING, Vfx.Burst.POTION_NEUTRAL);
         s.teardown("remove preview cows", ctx -> {
             cows.forEach(Cow::discard);

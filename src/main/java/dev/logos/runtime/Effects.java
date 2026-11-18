@@ -5,7 +5,7 @@ import dev.logos.LogosMod;
 import dev.logos.lang.Element;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -24,19 +24,19 @@ import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingUseTotemEvent;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 /** Sulfur: the ways a spell changes the world. */
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class Effects {
     /** Raises max_absorption so a shield can go past vanilla's limit (0 without the Absorption effect). */
-    private static final Identifier SHIELD = Identifier.fromNamespaceAndPath(LogosMod.MODID, "shield");
+    private static final ResourceLocation SHIELD = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "shield");
 
     /**
      * Fire damage: vanilla fire (tagged {@code minecraft:is_fire}, not armour-piercing), so armour, protection,
      * fire protection, fire resistance and fire immunity all turn it aside, credited to the attacker.
      */
-    public static final ResourceKey<DamageType> FIRE = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "spell_fire"));
+    public static final ResourceKey<DamageType> FIRE = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "spell_fire"));
 
     /**
      * Void damage: true damage, close to falling out of the world. Armour, shields, protection, the resistance effect,
@@ -44,12 +44,12 @@ public final class Effects {
      * back. It leaves out {@code bypasses_invulnerability}, so creative players, invulnerable entities and invulnerable
      * states (a charging wither, a time stop) are still safe, and a totem of undying still works unless configured off.
      */
-    public static final ResourceKey<DamageType> VOID = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "spell_void"));
+    public static final ResourceKey<DamageType> VOID = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "spell_void"));
 
     /** True while a spell is dealing damage, so passive triggers do not re-enter themselves. */
     private static int spellDepth;
     /** The element of the damage being dealt right now; see {@link #dealing}. */
-    private static @org.jspecify.annotations.Nullable Element dealing;
+    private static @javax.annotation.Nullable Element dealing;
 
     private Effects() {}
 
@@ -62,7 +62,7 @@ public final class Effects {
      * for code running inside the hurt, such as a shield-block event: every element but physical and fire is vanilla
      * magic, so the damage type alone does not tell them apart. Null outside such a hurt.
      */
-    public static @org.jspecify.annotations.Nullable Element dealing() {
+    public static @javax.annotation.Nullable Element dealing() {
         return dealing;
     }
 
@@ -118,11 +118,11 @@ public final class Effects {
         Element outer = dealing;
         dealing = el;
         try {
-            if (!spell) return t.hurtServer(level, src, (float) amt) && !t.isAlive();
+            if (!spell) return t.hurt(src, (float) amt) && !t.isAlive();
             t.invulnerableTime = 0;
             spellDepth++;
             try {
-                t.hurtServer(level, src, (float) amt);
+                t.hurt(src, (float) amt);
             } finally {
                 spellDepth--;
             }
@@ -176,8 +176,8 @@ public final class Effects {
         t.invulnerableTime = 0;
         spellDepth++;
         try {
-            if (LogosConfig.voidIsOutOfWorld()) t.kill((ServerLevel) t.level());
-            else t.hurtServer((ServerLevel) t.level(), voidHit(inst.caster, t, Float.MAX_VALUE), Float.MAX_VALUE);
+            if (LogosConfig.voidIsOutOfWorld()) t.kill();
+            else t.hurt(voidHit(inst.caster, t, Float.MAX_VALUE), Float.MAX_VALUE);
         } finally {
             spellDepth--;
         }

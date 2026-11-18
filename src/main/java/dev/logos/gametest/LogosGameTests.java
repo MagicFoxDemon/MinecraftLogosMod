@@ -1,21 +1,15 @@
 package dev.logos.gametest;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Examples;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellInstance;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.gametest.framework.FunctionGameTestInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.TestData;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
+import net.minecraft.gametest.framework.GameTestGenerator;
+import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -26,7 +20,6 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * In-world tests of the spell runtime: a mock player casts real spells at real mobs.
@@ -35,7 +28,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  */
 @Mod(LogosMod.MODID)
 public final class LogosGameTests {
-    private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS = DeferredRegister.create(Registries.TEST_FUNCTION, LogosMod.MODID);
+    private static final TestFunctions FUNCTIONS = new TestFunctions();
 
     private static final List<String> TESTS = List.of(
             "tier_wands_charge_and_cast", "tier_staffs_fill_and_cast", "tier_last_slot_persists",
@@ -554,46 +547,51 @@ public final class LogosGameTests {
             MockClientChannels.knowChannelsOf("touhou_little_maid");
         }
         EXAMPLE_TESTS.addAll(ExampleHitGameTests.register(FUNCTIONS));
-        FUNCTIONS.register(modBus);
         modBus.addListener(LogosGameTests::onRegisterTests);
     }
 
     /**
-     * Registers the tests of an optional mod's compat ({@code register(DeferredRegister)} on {@code className}) and returns
+     * Registers the tests of an optional mod's compat ({@code register(TestFunctions)} on {@code className}) and returns
      * their names. Looked up by name: the class, and the compat it tests, are only built and loaded with that mod.
      */
     @SuppressWarnings("unchecked")
     private static List<String> compatTests(String className) {
         try {
-            return (List<String>) Class.forName(className).getDeclaredMethod("register", DeferredRegister.class).invoke(null, FUNCTIONS);
+            return (List<String>) Class.forName(className).getDeclaredMethod("register", TestFunctions.class).invoke(null, FUNCTIONS);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Could not register " + className, e);
         }
     }
 
     private static void onRegisterTests(RegisterGameTestsEvent event) {
-        Holder<TestEnvironmentDefinition<?>> env = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf());
-        for (String name : java.util.stream.Stream.concat(TESTS.stream(), COMPAT_TESTS.stream()).toList()) {
-            // Tests of one environment run side by side, batch by batch: one of its own has the server to itself.
-            Holder<TestEnvironmentDefinition<?>> batch = SpellBudgetGameTests.ALONE.contains(name) ? event.registerEnvironment(id(name), new TestEnvironmentDefinition.AllOf()) : env;
-            event.registerTest(id(name), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id(name)),
-                    // 400 ticks: polled tests finish as soon as they pass; the headroom is for a loaded machine.
-                    new TestData<>(batch, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
-        }
-        // The examples' spells reach further than most tests': side by side with each other only.
-        Holder<TestEnvironmentDefinition<?>> examples = event.registerEnvironment(id("examples"), new TestEnvironmentDefinition.AllOf());
-        for (String name : EXAMPLE_TESTS) {
-            event.registerTest(id(name), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id(name)),
-                    new TestData<>(examples, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
-        }
-        // Batches run one after another, one per environment: clearing the runtime would end the other tests' spells.
-        Holder<TestEnvironmentDefinition<?>> alone = event.registerEnvironment(id("alone"), new TestEnvironmentDefinition.AllOf());
-        event.registerTest(id("lifecycle_clear_ends_wraps"), new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, id("lifecycle_clear_ends_wraps")),
-                new TestData<>(alone, Identifier.withDefaultNamespace("empty"), 400, 0, true, Rotation.NONE, false, 1, 1, false, 16)));
+        event.register(LogosGameTests.class);
     }
 
-    private static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(LogosMod.MODID, path);
+    /**
+     * Every test as a test function. Tests of one batch run side by side, and batches run one after another: a test
+     * with a batch of its own has the server to itself.
+     */
+    @GameTestGenerator
+    public static List<TestFunction> tests() {
+        List<TestFunction> tests = new java.util.ArrayList<>();
+        for (String name : java.util.stream.Stream.concat(TESTS.stream(), COMPAT_TESTS.stream()).toList()) {
+            tests.add(test(SpellBudgetGameTests.ALONE.contains(name) ? name : "default", name));
+        }
+        // The examples' spells reach further than most tests': side by side with each other only.
+        for (String name : EXAMPLE_TESTS) tests.add(test("examples", name));
+        // Clearing the runtime would end the other tests' spells.
+        tests.add(test("alone", "lifecycle_clear_ends_wraps"));
+        return tests;
+    }
+
+    /**
+     * A test in {@code logos:empty}, an air-only structure: its size keeps neighbouring tests apart, as the padding
+     * around each test does in later versions. 400 ticks: polled tests finish as soon as they pass; the headroom is for
+     * a loaded machine.
+     */
+    private static TestFunction test(String batch, String name) {
+        return new TestFunction(LogosMod.MODID + "_" + batch, LogosMod.MODID + "." + name, LogosMod.MODID + ":empty",
+                Rotation.NONE, 400, 0, true, false, 1, 1, false, FUNCTIONS.get(name));
     }
 
     // ---- fixtures ----------------------------------------------------------------------------
@@ -602,7 +600,7 @@ public final class LogosGameTests {
         for (int x = 0; x < 9; x++) for (int z = 0; z < 20; z++) h.setBlock(x, 1, z, Blocks.STONE);
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0); // yaw 0 faces +Z
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0); // yaw 0 faces +Z
         p.setYHeadRot(0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 10000;
@@ -804,7 +802,7 @@ public final class LogosGameTests {
         wand.set(net.minecraft.core.component.DataComponents.CONTAINER, net.minecraft.world.item.component.ItemContainerContents.fromItems(
                 List.of(dev.logos.item.SpellPages.inscribed("(spell :name \"t\" :trigger attack :mana 10 (mark target #hit))", null))));
         p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, wand);
-        husk.hurtServer(h.getLevel(), husk.damageSources().playerAttack(p), 1);
+        husk.hurt(husk.damageSources().playerAttack(p), 1);
         h.succeedWhen(() -> h.assertTrue(dev.logos.runtime.StatusData.stacks(husk, new dev.logos.lang.Status("#hit")) == 1,
                 "attack passive did not run exactly once"));
     }

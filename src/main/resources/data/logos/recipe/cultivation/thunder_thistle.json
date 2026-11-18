@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:thunder_thistle_seed",
+  "seed": {
+    "item": "logos:thunder_thistle_seed"
+  },
   "plant": "logos:thunder_thistle_crop",
   "growth": 0.25
 }

@@ -17,7 +17,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.tags.TagLoader;
 import net.minecraft.util.RandomSource;
@@ -155,7 +155,7 @@ final class JarCropGameTests {
         var mandrake = LogosMod.MANDRAKE_CROP.get();
         var mercury = LogosMod.MERCURY_MUSHROOM_CROP.get();
         var moss = LogosMod.STARLIGHT_MOSS_CROP.get();
-        h.assertTrue(mandrake.plantableOn().location().equals(Identifier.fromNamespaceAndPath("logos", "plantable_on/mandrake_crop")),
+        h.assertTrue(mandrake.plantableOn().location().equals(ResourceLocation.fromNamespaceAndPath("logos", "plantable_on/mandrake_crop")),
                 "unexpected mandrake substrate tag");
         Map<TagKey<Block>, List<Holder<Block>>> modified = new HashMap<>(original);
         modified.put(mandrake.plantableOn(), List.of(Blocks.FARMLAND.builtInRegistryHolder()));

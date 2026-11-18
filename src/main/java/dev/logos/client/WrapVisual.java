@@ -8,8 +8,8 @@ import java.util.function.IntFunction;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.lang.Element;
-import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.OrderedSubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.util.RandomSource;
 
 /**

@@ -9,20 +9,20 @@ import static dev.logos.client.ChargeParts.smooth;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.client.ChargeAuraEvokeParts.Accent;
 import dev.logos.client.ChargeAuraEvokeParts.Ribbon;
 import dev.logos.client.ChargeParts.View;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -60,7 +60,7 @@ final class VoidChargeAura {
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
                 .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT));
         if (ribbon) pipeline.withShaderDefine("RIBBON");
-        return RenderType.create("logos_void_charge_aura_" + key, RenderSetup.builder(pipeline.build())
+        return dev.logos.client.port.RenderTypes.create("logos_void_charge_aura_" + key, RenderSetup.builder(pipeline.build())
                 .withTexture("Sampler0", ChargeAuraEvokeParts.vfx("charge_aura/noise_cloudy"))
                 .withTexture("NoiseTex", ChargeAuraEvokeParts.vfx("charge_aura/noise_fire04"))
                 .withTexture("StarTex", ChargeAuraEvokeParts.PORTAL)

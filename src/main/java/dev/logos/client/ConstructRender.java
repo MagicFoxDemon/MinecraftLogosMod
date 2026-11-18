@@ -8,14 +8,14 @@ import dev.logos.lang.Element;
 import dev.logos.runtime.ConstructEntity;
 import dev.logos.runtime.ConstructGeometry;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.entity.DisplayRenderer;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
  * stops things. With {@code :look &block} each cell is drawn as that block instead.
  */
 final class ConstructRender {
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/misc/construct.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/misc/construct.png");
     private static final int SEGMENTS = 24, RINGS = 8;
     private static final BlockModelRenderState BLOCK = new BlockModelRenderState();
 
@@ -67,7 +67,7 @@ final class ConstructRender {
             int front = argb(c.oneWay() ? 0.62f : 0.42f, fade, rgb);
             int other = argb(c.oneWay() ? 0.22f : 0.42f, fade, rgb);
             Mesh mesh = new Mesh(g, eye, front, other);
-            out.submitCustomGeometry(pose, RenderTypes.beaconBeam(TEXTURE, true), mesh::render);
+            out.submitCustomGeometry(pose, RenderType.beaconBeam(TEXTURE, true), mesh::render);
         }
     }
 

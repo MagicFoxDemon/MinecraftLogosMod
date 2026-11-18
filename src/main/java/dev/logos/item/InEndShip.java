@@ -6,7 +6,6 @@ import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
@@ -26,18 +25,18 @@ public record InEndShip() implements LootItemCondition {
     public static final MapCodec<InEndShip> CODEC = MapCodec.unit(new InEndShip());
 
     @Override
-    public MapCodec<InEndShip> codec() {
-        return CODEC;
+    public net.minecraft.world.level.storage.loot.predicates.LootItemConditionType getType() {
+        return dev.logos.LogosMod.IN_END_SHIP.get();
     }
 
     @Override
-    public Set<ContextKey<?>> getReferencedContextParams() {
+    public Set<net.minecraft.world.level.storage.loot.parameters.LootContextParam<?>> getReferencedContextParams() {
         return Set.of(LootContextParams.ORIGIN);
     }
 
     @Override
     public boolean test(LootContext context) {
-        Vec3 origin = context.getOptionalParameter(LootContextParams.ORIGIN);
+        Vec3 origin = context.getParamOrNull(LootContextParams.ORIGIN);
         if (origin == null) return false;
         ServerLevel level = context.getLevel();
         BlockPos pos = BlockPos.containing(origin);
@@ -46,7 +45,7 @@ public record InEndShip() implements LootItemCondition {
         for (StructurePiece piece : city.getPieces()) {
             if (piece.getType() != StructurePieceType.END_CITY_PIECE || !piece.getBoundingBox().isInside(pos)) continue;
             // The template's name is only reachable through the piece's saved form.
-            if ("ship".equals(piece.createTag(StructurePieceSerializationContext.fromLevel(level)).getStringOr("Template", ""))) return true;
+            if ("ship".equals(piece.createTag(StructurePieceSerializationContext.fromLevel(level)).getString("Template"))) return true;
         }
         return false;
     }

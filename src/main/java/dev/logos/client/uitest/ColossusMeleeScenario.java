@@ -11,10 +11,10 @@ import dev.logos.runtime.Colossi;
 import dev.logos.runtime.Familiars;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.zombie.Husk;
-import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -47,7 +47,7 @@ public class ColossusMeleeScenario implements UIScenario {
                 .server("raise a colossus and post it ahead", sc -> {
                     var p = sc.player();
                     Vec3 at = Vec3.atBottomCenterOf(ORIGIN.offset(0, 1, 8));
-                    Colossi.summon(p, p.level(), at, null);
+                    Colossi.summon(p, p.serverLevel(), at, null);
                     for (var m : Familiars.of(p)) if (m instanceof AlchemicalColossus c) colossus = c;
                     // Posted more than six blocks off, it stands there rather than at the player's side.
                     Familiars.sendTo(colossus, at);
@@ -55,9 +55,9 @@ public class ColossusMeleeScenario implements UIScenario {
                 .ticks(70)
                 .screenshot("colossus_guard")
                 .server("a zombie right in front of it", sc -> {
-                    Zombie z = EntityType.ZOMBIE.create(sc.level(), EntitySpawnReason.COMMAND);
+                    Zombie z = EntityType.ZOMBIE.create(sc.level());
                     // Squarely between it and the camera, within reach.
-                    z.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 5.6, 180, 0);
+                    z.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 5.6, 180, 0);
                     z.setNoAi(true);
                     z.getAttribute(Attributes.MAX_HEALTH).setBaseValue(200);
                     z.setHealth(200);
@@ -74,7 +74,7 @@ public class ColossusMeleeScenario implements UIScenario {
                 })
                 .ticks(30)
                 .screenshot("frenzy")
-                .server("struck down mid-frenzy", sc -> colossus.hurtServer(sc.level(), sc.level().damageSources().generic(), 100000))
+                .server("struck down mid-frenzy", sc -> colossus.hurt(sc.level().damageSources().generic(), 100000))
                 .ticks(90)
                 .screenshot("burnt_out");
     }

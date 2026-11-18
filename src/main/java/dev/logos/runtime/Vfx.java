@@ -1,6 +1,6 @@
 package dev.logos.runtime;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.lang.Element;
 import dev.logos.lang.Motion;
@@ -8,7 +8,7 @@ import dev.logos.net.FxPayload;
 import dev.logos.net.FxPayload.Kind;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -52,7 +52,7 @@ public final class Vfx {
 
     /** The raw registry id of the item named {@code id}, or {@link #NONE}. */
     public static int lookId(String id) {
-        Identifier key = Identifier.tryParse(id);
+        ResourceLocation key = ResourceLocation.tryParse(id);
         if (key == null) return NONE;
         return BuiltInRegistries.ITEM.getOptional(key).map(BuiltInRegistries.ITEM::getId).orElse(NONE);
     }
@@ -62,7 +62,7 @@ public final class Vfx {
      * so it rides in the same field as an item look; {@link #creatureOf} unfolds it.
      */
     public static int creatureLook(String id) {
-        Identifier key = Identifier.tryParse(id);
+        ResourceLocation key = ResourceLocation.tryParse(id);
         if (key == null) return NONE;
         return BuiltInRegistries.ENTITY_TYPE.getOptional(key).map(t -> -2 - BuiltInRegistries.ENTITY_TYPE.getId(t)).orElse(NONE);
     }
@@ -74,7 +74,7 @@ public final class Vfx {
 
     /** The raw registry id of the particle type named {@code id}, or {@link #NONE}. */
     public static int particleId(String id) {
-        Identifier key = Identifier.tryParse(id);
+        ResourceLocation key = ResourceLocation.tryParse(id);
         if (key == null) return NONE;
         return BuiltInRegistries.PARTICLE_TYPE.getOptional(key).map(BuiltInRegistries.PARTICLE_TYPE::getId).orElse(NONE);
     }
@@ -215,7 +215,7 @@ public final class Vfx {
      * else (neutral, or from another mod, whose category may not mean the same) as neutral.
      */
     public static Burst potion(Holder<MobEffect> effect) {
-        boolean vanilla = effect.unwrapKey().map(k -> k.identifier().getNamespace().equals("minecraft")).orElse(false);
+        boolean vanilla = effect.unwrapKey().map(k -> k.location().getNamespace().equals("minecraft")).orElse(false);
         if (!vanilla) return Burst.POTION_NEUTRAL;
         return switch (effect.value().getCategory()) {
             case BENEFICIAL -> Burst.POTION_BENEFICIAL;

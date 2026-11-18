@@ -1,7 +1,7 @@
 package dev.logos.client;
 
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
+import dev.logos.client.port.DrawerHelperClient;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphPreview;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.GraphView;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.node.NodeElement;

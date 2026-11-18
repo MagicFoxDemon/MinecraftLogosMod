@@ -41,12 +41,12 @@ final class GraphGameTests {
             Spell again = Compiler.compile(r.source());
             h.assertTrue(again.stability() == back.stability(), e.getKey() + ": regenerated source is not stable");
             // The wand stores the drawing as NBT: saving and reloading must give the same spell.
-            var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
-                    net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
-            graph.graphModel.serialize(out);
+            var out = dev.logos.port.TagValueOutput.createWithContext(
+                    dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+            dev.logos.port.Persisted.serialize(graph.graphModel, out);
             SpellGraph reloaded = new SpellGraph();
-            reloaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(
-                    net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
+            dev.logos.port.Persisted.deserialize(reloaded.graphModel, dev.logos.port.TagValueInput.create(
+                    dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
             GraphCompiler.Result rr = GraphCompiler.compile(reloaded);
             h.assertTrue(rr.ok() && rr.source().equals(r.source()), e.getKey() + ": graph changed after save/load: " + rr.error() + "\n" + rr.source());
         }
@@ -126,12 +126,12 @@ final class GraphGameTests {
                 "the launch note sits in its region above the projectile");
         GraphCompiler.Result r = GraphCompiler.compile(graph);
         h.assertTrue(r.ok() && r.spell().name().equals(original.name()) && r.spell().mana() == original.mana(), "notes change nothing: " + r.error());
-        var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
-                net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
-        graph.graphModel.serialize(out);
+        var out = dev.logos.port.TagValueOutput.createWithContext(
+                dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+        dev.logos.port.Persisted.serialize(graph.graphModel, out);
         SpellGraph reloaded = new SpellGraph();
-        reloaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(
-                net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
+        dev.logos.port.Persisted.deserialize(reloaded.graphModel, dev.logos.port.TagValueInput.create(
+                dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
         h.assertTrue(reloaded.graphModel.getPlacematModels().size() == 4 && reloaded.graphModel.getStickyNoteModels().size() == 3
                 && reloaded.graphModel.getPlacematModels().stream().anyMatch(p -> p.getName().equals("余波")), "regions and notes are saved with the drawing");
         // A branch that opens with a region keeps its first node level with the other branch's, so the wire to it passes above that one.
@@ -187,11 +187,11 @@ final class GraphGameTests {
         node.model().defineNode();
         h.assertTrue(GraphCompiler.compile(graph).source().contains(":radius 5"), "back to a shield, its radius 5 returns");
         // Saved and reloaded (as the wand stores it), the shield still hides the wall's sizes.
-        var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
-        graph.graphModel.serialize(out);
+        var out = dev.logos.port.TagValueOutput.createWithContext(dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+        dev.logos.port.Persisted.serialize(graph.graphModel, out);
         SpellGraph reloaded = new SpellGraph();
-        reloaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(
-                net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
+        dev.logos.port.Persisted.deserialize(reloaded.graphModel, dev.logos.port.TagValueInput.create(
+                dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
         var again = reloaded.getNodes().stream().filter(n -> n instanceof dev.logos.graph.RuneNodes.Construct).map(n -> (dev.logos.graph.RuneNodes.Construct) n).findFirst().orElseThrow();
         h.assertTrue(!RuneNode.hidden(again.in(RuneNode.kw("radius"))) && RuneNode.hidden(again.in(RuneNode.kw("width"))), "after save/load a shield still shows its radius only");
         h.assertTrue(GraphCompiler.compile(reloaded).source().contains(":radius 5"), "after save/load the radius is kept");
@@ -272,12 +272,12 @@ final class GraphGameTests {
             boolean written = r.source().contains(":mode " + mode);
             h.assertTrue(mode.equals("nearest") ? !written && !r.source().contains(":mode") : written,
                     "round :mode " + mode + " did not survive the graph:\n" + r.source());
-            var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
-                    net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
-            graph.graphModel.serialize(out);
+            var out = dev.logos.port.TagValueOutput.createWithContext(
+                    dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+            dev.logos.port.Persisted.serialize(graph.graphModel, out);
             SpellGraph reloaded = new SpellGraph();
-            reloaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(
-                    net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
+            dev.logos.port.Persisted.deserialize(reloaded.graphModel, dev.logos.port.TagValueInput.create(
+                    dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess(), out.buildResult()));
             h.assertTrue(GraphCompiler.compile(reloaded).source().equals(r.source()), "round :mode " + mode + " changed after save/load");
         }
     }
@@ -310,10 +310,10 @@ final class GraphGameTests {
             var wire = graph.graphModel.createWire(consumer.in(c.port()), card.out(RuneNode.OUT));
             GraphCompiler.Result compiled = GraphCompiler.compile(graph);
             h.assertTrue(compiled.ok() && compiled.source().contains(c.value()), c.kind() + " did not compile: " + compiled.error());
-            var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
-            graph.graphModel.serialize(out);
+            var out = dev.logos.port.TagValueOutput.createWithContext(dev.logos.port.ProblemReporter.DISCARDING, h.getLevel().registryAccess());
+            dev.logos.port.Persisted.serialize(graph.graphModel, out);
             SpellGraph loaded = new SpellGraph();
-            loaded.graphModel.deserialize(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING,
+            dev.logos.port.Persisted.deserialize(loaded.graphModel, dev.logos.port.TagValueInput.create(dev.logos.port.ProblemReporter.DISCARDING,
                     h.getLevel().registryAccess(), out.buildResult()));
             GraphCompiler.Result back = GraphCompiler.compile(loaded);
             h.assertTrue(back.ok() && back.source().equals(compiled.source()), c.kind() + " changed after saving: " + back.error());

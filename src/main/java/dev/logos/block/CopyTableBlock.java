@@ -1,6 +1,6 @@
 package dev.logos.block;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -72,7 +72,7 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
 
     public static final EnumProperty<Sheet> LEFT_PAGE = EnumProperty.create("left_page", Sheet.class);
     public static final EnumProperty<Sheet> RIGHT_PAGE = EnumProperty.create("right_page", Sheet.class);
-    private static final Map<Direction, VoxelShape> SHAPES = Shapes.rotateHorizontal(Shapes.or(
+    private static final Map<Direction, VoxelShape> SHAPES = dev.logos.port.ShapeRotations.rotateHorizontal(Shapes.or(
             Block.box(0, 0, 0, 16, 12, 16), Block.box(8.75, 12, 2.5, 14.75, 15.5, 10.5), Block.box(.5, 12, 14, 15.5, 13.75, 15.75)));
 
     public CopyTableBlock(Properties properties) {
@@ -206,8 +206,8 @@ public class CopyTableBlock extends HorizontalDirectionalBlock implements Entity
                 StylesheetManager.INSTANCE.getStylesheetSafe(MANUSCRIPT)), player);
     }
 
-    private static final net.minecraft.resources.Identifier MANUSCRIPT =
-            net.minecraft.resources.Identifier.fromNamespaceAndPath(dev.logos.LogosMod.MODID, "lss/manuscript.lss");
+    private static final net.minecraft.resources.ResourceLocation MANUSCRIPT =
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(dev.logos.LogosMod.MODID, "lss/manuscript.lss");
     private static final int WIDTH = 9 * 18 + 10, TRAY_W = 46, TRAY_H = 58;
 
     private static ItemSlot slot(Slot s) {

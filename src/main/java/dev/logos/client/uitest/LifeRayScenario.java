@@ -17,9 +17,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -86,7 +86,7 @@ public class LifeRayScenario implements UIScenario {
                 .ticks(8).screenshot("life_ray_block_bloom");
         s.teleportPlayer(lane(1), 101, -2, 0, 0).ticks(2)
                 .server("ray at a cow", sc -> {
-                    target = EntityType.COW.create(sc.level(), EntitySpawnReason.COMMAND);
+                    target = EntityType.COW.create(sc.level());
                     if (target == null) throw new IllegalStateException("cow creation failed");
                     target.setPos(lane(1), 101, 6);
                     target.setNoAi(true);

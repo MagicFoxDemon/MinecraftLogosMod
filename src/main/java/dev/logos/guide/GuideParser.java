@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.guide.GuideDoc.Block;
 import dev.logos.guide.GuideDoc.Span;
@@ -183,7 +183,7 @@ public final class GuideParser {
     }
 
     /** For {@code [text](target)} at {@code open}: where the {@code ]} and the closing {@code )} are, or null. */
-    private static int @Nullable [] link(String text, int open) {
+    private static @Nullable int[] link(String text, int open) {
         for (int i = open + 1; i < text.length(); i++) {
             char c = text.charAt(i);
             if (c == '\\') {

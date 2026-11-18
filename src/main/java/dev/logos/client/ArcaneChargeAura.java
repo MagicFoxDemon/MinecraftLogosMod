@@ -6,20 +6,20 @@ import static dev.logos.client.ChargeParts.lerpColor;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.client.ChargeParts.View;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -472,10 +472,10 @@ final class ArcaneChargeAura {
         if (detail != null) pipeline.withSampler("DetailTex");
         var setup = RenderSetup.builder(pipeline.build()).withTexture("Sampler0", id("textures/vfx/" + texture + ".png"));
         if (detail != null) setup.withTexture("DetailTex", id("textures/vfx/" + detail + ".png"));
-        return RenderType.create("logos_arcane_charge_aura_" + name, setup.sortOnUpload().createRenderSetup());
+        return dev.logos.client.port.RenderTypes.create("logos_arcane_charge_aura_" + name, setup.sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 
     /**
      * An Unreal float curve at {@code x}: keys of (time, value, arrive tangent, leave tangent, cubic), each segment

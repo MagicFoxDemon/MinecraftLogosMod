@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * One page of 逻各斯手记 as written: the fields of its header and its blocks, read from the guide's small

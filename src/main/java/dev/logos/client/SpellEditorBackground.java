@@ -1,6 +1,6 @@
 package dev.logos.client;
 
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 

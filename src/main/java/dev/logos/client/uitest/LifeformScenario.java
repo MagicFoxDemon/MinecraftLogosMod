@@ -12,7 +12,7 @@ import dev.logos.runtime.Lifeforms;
 import dev.logos.runtime.ManaLifeform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -34,8 +34,8 @@ public class LifeformScenario implements UIScenario {
     }
 
     private ManaLifeform spawn(ServerLevel level, net.minecraft.server.level.ServerPlayer p, int lv, double x) {
-        ManaLifeform lf = LogosMod.MANA_LIFEFORM.get().create(level, EntitySpawnReason.MOB_SUMMONED);
-        lf.snapTo(ORIGIN.getX() + x, ORIGIN.getY() + 1.2, ORIGIN.getZ() + 2.2, 180, 0);
+        ManaLifeform lf = LogosMod.MANA_LIFEFORM.get().create(level);
+        lf.moveTo(ORIGIN.getX() + x, ORIGIN.getY() + 1.2, ORIGIN.getZ() + 2.2, 180, 0);
         lf.setLifeLevel(lv);
         lf.setMana(ManaLifeform.maxMana(lv));
         // Left without a master: its mind then keeps it where it is, for the camera.
@@ -54,8 +54,8 @@ public class LifeformScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() - 0.5, 0, 25)
                 .server("summon a level-1 and a level-5 lifeform", sc -> {
                     var p = sc.player();
-                    small = spawn(p.level(), p, 1, -0.3);
-                    big = spawn(p.level(), p, 5, 1.4);
+                    small = spawn(p.serverLevel(), p, 1, -0.3);
+                    big = spawn(p.serverLevel(), p, 5, 1.4);
                     small.core.setItem(0, SpellPages.write(new ItemStack(LogosMod.SPELL_PAGE.get()), "(spell :name \"灵弹\" :mana 20 (damage (foe) 6))", null));
                 })
                 .ticks(30)

@@ -28,7 +28,7 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.Mob;
@@ -48,7 +48,7 @@ final class RuneGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1000;
         m.trace = false;
@@ -70,7 +70,7 @@ final class RuneGameTests {
                 SpellPages.inscribed("(spell :name \"被选中\" :mana 10 (mark caster #cast))", null),
                 SpellPages.inscribed("(spell :name \"攻\" :trigger attack :mana 10 (mark target #hit))", null))));
         p.setItemInHand(InteractionHand.MAIN_HAND, codex);
-        husk.hurtServer(h.getLevel(), husk.damageSources().playerAttack(p), 1);
+        husk.hurt(husk.damageSources().playerAttack(p), 1);
         h.succeedWhen(() -> h.assertTrue(StatusData.stacks(husk, new Status("#hit")) == 1,
                 "the attack passive in a codex held without a wand did not run exactly once"));
     }
@@ -248,7 +248,7 @@ final class RuneGameTests {
         ServerPlayer p = caster(h);
         var husk = mob(h, EntityType.HUSK);
         var inst = Casting.cast(p, Casting.compile("(spell :mana 40 (potion (nearest :radius 6) slowness 10 2))"), null, null);
-        var slow = husk.getEffect(MobEffects.SLOWNESS);
+        var slow = husk.getEffect(MobEffects.MOVEMENT_SLOWDOWN);
         h.assertTrue(slow != null && slow.getAmplifier() == 1 && slow.getDuration() == 200, "expected Slowness II for 10s, got " + slow);
         h.assertTrue(inst != null && Math.abs(inst.mana - (40 - 1 - 10 * 2 * 0.8)) < 1e-6, "expected 1 (nearest) + 16 (10s × level 2 × 0.8) spent, left " + (inst == null ? "-" : inst.mana));
         Casting.cast(p, Casting.compile("(spell :mana 40 (potion caster minecraft:night_vision 30))"), null, null);
@@ -269,14 +269,14 @@ final class RuneGameTests {
         husk.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 600, 3));
         Casting.cast(p, Casting.compile("(spell :mana 40 (shield (nearest :radius 6) 2))"), null, null);
         h.assertTrue(Effects.shielded(husk), "a shield inside absorption headroom should still be marked");
-        husk.hurtServer(h.getLevel(), husk.damageSources().generic(), 100);
+        husk.hurt(husk.damageSources().generic(), 100);
         h.assertTrue(husk.getAbsorptionAmount() <= 0 && !Effects.shielded(husk), "a broken shield should be unmarked");
         h.succeed();
     }
 
     /** Potion bursts read vanilla effects by category; neutral or unregistered (another mod's) ones read neutral. */
     static void potionBurstPolarity(GameTestHelper h) {
-        h.assertTrue(Vfx.potion(MobEffects.SPEED) == Vfx.Burst.POTION_BENEFICIAL, "speed should read beneficial");
+        h.assertTrue(Vfx.potion(MobEffects.MOVEMENT_SPEED) == Vfx.Burst.POTION_BENEFICIAL, "speed should read beneficial");
         h.assertTrue(Vfx.potion(MobEffects.POISON) == Vfx.Burst.POTION_HARMFUL, "poison should read harmful");
         h.assertTrue(Vfx.potion(MobEffects.GLOWING) == Vfx.Burst.POTION_NEUTRAL, "glowing should read neutral");
         Holder<MobEffect> foreign = Holder.direct(new MobEffect(MobEffectCategory.BENEFICIAL, 0) {});
@@ -294,8 +294,8 @@ final class RuneGameTests {
         h.assertTrue(Math.abs(inst.injected - inst.mana - 9) < 1e-6, "nearest 1 + 2 s × 4 should cost 9, cost " + (inst.injected - inst.mana));
         double y = husk.getY();
         float full = husk.getHealth();
-        husk.hurtServer(h.getLevel(), husk.damageSources().magic(), 3);
-        husk.hurtServer(h.getLevel(), husk.damageSources().magic(), 2);
+        husk.hurt(husk.damageSources().magic(), 3);
+        husk.hurt(husk.damageSources().magic(), 2);
         h.assertTrue(husk.getHealth() == full && TimeStop.stored(husk) == 5, "both blows should be kept, kept " + TimeStop.stored(husk));
         h.runAfterDelay(20, () -> h.assertTrue(TimeStop.stopped(husk) && husk.getY() == y, "a stopped husk should hang still, moved to " + husk.getY()));
         // Both land, the second not turned away by the first one's invulnerability.
@@ -322,7 +322,7 @@ final class RuneGameTests {
         p.travel(new Vec3(0, 0, 1));
         h.assertTrue(p.position().distanceTo(at) < 1e-9, "a stopped player should not walk, even in the air; moved " + p.position().distanceTo(at));
         float full = p.getHealth();
-        p.hurtServer(h.getLevel(), p.damageSources().magic(), 4);
+        p.hurt(p.damageSources().magic(), 4);
         h.assertTrue(p.getHealth() == full, "the blow should be kept, health " + p.getHealth() + ", kept " + TimeStop.stored(p));
         h.succeedWhen(() -> h.assertTrue(!TimeStop.stopped(p) && p.getAttributeValue(Attributes.MOVEMENT_SPEED) == speed && p.getHealth() == full - 4,
                 "once time resumes, the player should move again and take 4; health " + p.getHealth()));
@@ -348,8 +348,8 @@ final class RuneGameTests {
         wrapped.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
         plain.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
         float hit0 = hit.getHealth(), control0 = control.getHealth();
-        wrapped.doHurtTarget(h.getLevel(), hit);
-        plain.doHurtTarget(h.getLevel(), control);
+        wrapped.doHurtTarget(hit);
+        plain.doHurtTarget(control);
         h.succeedWhen(() -> {
             float extra = (hit0 - hit.getHealth()) - (control0 - control.getHealth());
             h.assertTrue(Math.abs(extra - 3) < 1e-3, "the wrapped blow should deal 3 more, dealt " + extra + " more");
@@ -372,7 +372,7 @@ final class RuneGameTests {
             h.assertTrue(StatusData.stacks(aimed, new Status("#hit")) == 0, "a weak blow should not set off on-hit");
             charged(p);
             blow(h, p, aimed);
-            swept.hurtServer(h.getLevel(), swept.damageSources().playerAttack(p), 1);
+            swept.hurt(swept.damageSources().playerAttack(p), 1);
             h.succeedWhen(() -> {
                 h.assertTrue(StatusData.stacks(aimed, new Status("#hit")) == 1, "a charged blow should set off on-hit");
                 h.assertTrue(StatusData.stacks(swept, new Status("#hit")) == 0, "the swept husk should not");
@@ -384,7 +384,7 @@ final class RuneGameTests {
     private static void blow(GameTestHelper h, ServerPlayer p, net.minecraft.world.entity.LivingEntity t) {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.AttackEntityEvent(p, t));
         t.invulnerableTime = 0;
-        t.hurtServer(h.getLevel(), t.damageSources().playerAttack(p), 1);
+        t.hurt(t.damageSources().playerAttack(p), 1);
     }
 
     /** Fully charges {@code p}'s next blow (the mock player is not ticked, so its attack timer never runs). */
@@ -408,10 +408,10 @@ final class RuneGameTests {
         for (var m : List.of(full, weak, speared)) m.setNoAi(true);
         Casting.cast(p, Casting.compile("(spell :mana 50 (imbue caster :life 30 (on-hit (mark target #hit))))"), null, null);
         var level = h.getLevel();
-        var crit = new net.minecraft.world.entity.projectile.arrow.Arrow(level, p, new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
+        var crit = new net.minecraft.world.entity.projectile.Arrow(level, p, new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
         crit.setCritArrow(true);
-        var limp = new net.minecraft.world.entity.projectile.arrow.Arrow(level, p, new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
-        var trident = new net.minecraft.world.entity.projectile.arrow.ThrownTrident(level, p, new ItemStack(Items.TRIDENT));
+        var limp = new net.minecraft.world.entity.projectile.Arrow(level, p, new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
+        var trident = new net.minecraft.world.entity.projectile.ThrownTrident(level, p, new ItemStack(Items.TRIDENT));
         loose(h, crit, full);
         loose(h, limp, weak);
         loose(h, trident, speared);
@@ -424,7 +424,7 @@ final class RuneGameTests {
     }
 
     /** Sends {@code arrow} from just in front of {@code t}, straight at its middle. */
-    private static void loose(GameTestHelper h, net.minecraft.world.entity.projectile.arrow.AbstractArrow arrow, net.minecraft.world.entity.LivingEntity t) {
+    private static void loose(GameTestHelper h, net.minecraft.world.entity.projectile.AbstractArrow arrow, net.minecraft.world.entity.LivingEntity t) {
         Vec3 at = t.position().add(0, t.getBbHeight() / 2, -2.5);
         arrow.setPos(at);
         arrow.shoot(0, 0, 1, 1.5f, 0);
@@ -441,7 +441,7 @@ final class RuneGameTests {
         Casting.cast(p, Casting.compile("(spell :mana 50 (imbue (nearest :radius 2.5) :life 30"
                 + " (on-swing (mark self #swung)) (on-kill (mark self #killed))))"), null, null);
         h.assertTrue(WrapObj.on(husk) != null, "the husk should be wrapped");
-        husk.doHurtTarget(h.getLevel(), pig);
+        husk.doHurtTarget(pig);
         // The player's own wrap: each counted swing hurts the nearest enemy (the husk) by 1; a second straight after does not count.
         Casting.cast(p, Casting.compile("(spell :mana 50 (imbue caster :life 30 (on-swing (damage (nearest :radius 3) 1 arcane))))"), null, null);
         float husk0 = husk.getHealth();
@@ -463,7 +463,7 @@ final class RuneGameTests {
      */
     static void imbueWrapModifiers(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        var id = net.minecraft.resources.Identifier.fromNamespaceAndPath(LogosMod.MODID, "test_wrap_focus");
+        var id = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "test_wrap_focus");
         p.getAttribute(dev.logos.runtime.SpellModifiers.WRAP_COST).addTransientModifier(
                 new net.minecraft.world.entity.ai.attributes.AttributeModifier(id, -0.3, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
         p.getAttribute(dev.logos.runtime.SpellModifiers.WRAP_POWER).addTransientModifier(
@@ -486,8 +486,8 @@ final class RuneGameTests {
         h.assertTrue(Math.abs((out0 - outside.getHealth()) - 3) < 1e-3, "damage outside a wrap should not be raised, dealt " + (out0 - outside.getHealth()));
         float hit0 = hit.getHealth(), control0 = control.getHealth();
         double before = inst.mana;
-        wrapped.doHurtTarget(h.getLevel(), hit);
-        plain.doHurtTarget(h.getLevel(), control);
+        wrapped.doHurtTarget(hit);
+        plain.doHurtTarget(control);
         h.succeedWhen(() -> {
             float extra = (hit0 - hit.getHealth()) - (control0 - control.getHealth());
             h.assertTrue(Math.abs(extra - 3.9) < 1e-3, "the wrapped blow should deal 3.9 more, dealt " + extra + " more");
@@ -519,7 +519,7 @@ final class RuneGameTests {
             Effects.damage(p, husk, 2, Element.VOID);
             Effects.followUp(p, husk, 2, Element.FROST);
             husk.invulnerableTime = 0;
-            husk.hurtServer(h.getLevel(), husk.damageSources().generic(), 1);
+            husk.hurt(husk.damageSources().generic(), 1);
         } finally {
             DEALT.remove(husk.getUUID());
         }
@@ -551,8 +551,8 @@ final class RuneGameTests {
         ManaWrap.wrap(wrapped, Element.LIFE, 2, 30);
         h.assertTrue(ManaWrap.of(wrapped) != null && ManaWrap.of(wrapped).element() == Element.LIFE, "the life wrap should be on");
         float hit0 = hit.getHealth(), control0 = control.getHealth();
-        wrapped.doHurtTarget(h.getLevel(), hit);
-        plain.doHurtTarget(h.getLevel(), control);
+        wrapped.doHurtTarget(hit);
+        plain.doHurtTarget(control);
         h.succeedWhen(() -> {
             float extra = (hit0 - hit.getHealth()) - (control0 - control.getHealth());
             h.assertTrue(Math.abs(extra - 2) < 1e-3, "the life-wrapped blow should deal 2 more, dealt " + extra + " more");

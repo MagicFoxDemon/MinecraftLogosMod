@@ -55,7 +55,7 @@ final class VoiceGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1000;
         m.trace = false;
@@ -73,7 +73,7 @@ final class VoiceGameTests {
     }
 
     private static boolean press(GameTestHelper h, ServerPlayer p) {
-        return p.getMainHandItem().getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND) == InteractionResult.CONSUME && p.isUsingItem();
+        return p.getMainHandItem().getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult() == InteractionResult.CONSUME && p.isUsingItem();
     }
 
     private static void hold(GameTestHelper h, ServerPlayer p, int ticks) {
@@ -204,7 +204,7 @@ final class VoiceGameTests {
         BlockPos rel = new BlockPos(1, 2, 1);
         h.setBlock(rel, LogosMod.INSCRIPTION_TABLE.get());
         BlockPos pos = h.absolutePos(rel);
-        p.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 1.5, 0, 0);
+        p.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 1.5, 0, 0);
         var table = (InscriptionTableBlockEntity) h.getLevel().getBlockEntity(pos);
         table.setPage(new ItemStack(LogosMod.SPELL_PAGE.get()));
         EditAccessGameTests.rightClick(p, pos);

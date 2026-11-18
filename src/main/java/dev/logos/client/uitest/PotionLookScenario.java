@@ -26,7 +26,7 @@ import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -106,7 +106,7 @@ public class PotionLookScenario implements UIScenario {
                 .runCommand("gamerule advance_time true");
 
         s.step("the definition file is vanilla's alone", ctx -> {
-            var sources = ctx.mc().getResourceManager().getResourceStack(Identifier.withDefaultNamespace("items/potion.json"));
+            var sources = ctx.mc().getResourceManager().getResourceStack(ResourceLocation.withDefaultNamespace("items/potion.json"));
             ctx.check("only vanilla defines minecraft:potion", sources.size() == 1 && sources.getFirst().sourcePackId().equals("vanilla"),
                     "vanilla", sources.stream().map(r -> r.sourcePackId()).toList());
         });

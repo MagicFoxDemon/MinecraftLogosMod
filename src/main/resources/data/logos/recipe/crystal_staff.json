@@ -2,9 +2,15 @@
   "type": "logos:wand_upgrade",
   "category": "equipment",
   "ingredients": [
-    "#logos:wood_staffs",
-    "minecraft:amethyst_shard",
-    "minecraft:gold_ingot"
+    {
+      "tag": "logos:wood_staffs"
+    },
+    {
+      "item": "minecraft:amethyst_shard"
+    },
+    {
+      "item": "minecraft:gold_ingot"
+    }
   ],
   "result": {
     "id": "logos:crystal_staff"

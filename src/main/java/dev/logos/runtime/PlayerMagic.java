@@ -57,15 +57,15 @@ public final class PlayerMagic {
     /** Not persisted: passive spell name → game tick when it may fire again. */
     public final Map<String, Long> cooldowns = new HashMap<>();
     /** Not persisted: what the client last heard its mana HUD shows, spell included (see {@link ManaHud}). */
-    public dev.logos.net.@org.jspecify.annotations.Nullable ManaHudPayload hudSent;
+    public @javax.annotation.Nullable dev.logos.net.ManaHudPayload hudSent;
     /** Not persisted: the wand cast being charged, if any (see {@link Charging}). */
-    public Charging.@org.jspecify.annotations.Nullable Charge charge;
+    public @javax.annotation.Nullable Charging.Charge charge;
     /** Not persisted: the staff being filled, if any (see {@link StaffCharging}). */
-    public StaffCharging.@org.jspecify.annotations.Nullable Fill fill;
+    public @javax.annotation.Nullable StaffCharging.Fill fill;
     /** Not persisted: the wand listening for a spell's name, if any (see {@link VoiceCasting}). */
-    public VoiceCasting.@org.jspecify.annotations.Nullable Listen listen;
+    public @javax.annotation.Nullable VoiceCasting.Listen listen;
     /** Not persisted: the page whose spell a staff with a chant charm keeps casting after it was named aloud. */
-    public net.minecraft.world.item.@org.jspecify.annotations.Nullable ItemStack chanting;
+    public @javax.annotation.Nullable net.minecraft.world.item.ItemStack chanting;
 
     public PlayerMagic() {
         this(Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_MAX_MANA, Limits.DEFAULT_STABILITY, false, 0, -1, 0, Map.of());
@@ -121,6 +121,6 @@ public final class PlayerMagic {
 
     /** Shows an action-bar alert. */
     public static void alert(ServerPlayer p, Component message) {
-        p.sendOverlayMessage(message);
+        p.displayClientMessage(message, true);
     }
 }

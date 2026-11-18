@@ -3,18 +3,18 @@ package dev.logos.client;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -44,18 +44,18 @@ final class FieldParts {
                     .withSampler("FillTex")
                     .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                     .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING)).build();
-            return RenderType.create("logos_field_lines_" + key, RenderSetup.builder(pipeline)
+            return dev.logos.client.port.RenderTypes.create("logos_field_lines_" + key, RenderSetup.builder(pipeline)
                     .withTexture("Sampler0", id("textures/vfx/" + circle + ".png"))
                     .withTexture("FillTex", id("textures/vfx/" + fill + ".png")).sortOnUpload().createRenderSetup());
         });
     }
 
-    private static Identifier shaderId(String shader) {
-        Identifier parsed = Identifier.tryParse(shader);
+    private static ResourceLocation shaderId(String shader) {
+        ResourceLocation parsed = ResourceLocation.tryParse(shader);
         return shader.contains(":") && parsed != null ? parsed : id(shader);
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 
     /**
      * A circle of radius {@code r} lying flat at {@code c} (in the x-z plane), turned by {@code turn}: its

@@ -2,12 +2,25 @@
   "type": "logos:alchemy",
   "process": "distill",
   "ingredients": [
-    { "ingredient": "minecraft:redstone", "count": 3 },
-    { "ingredient": "minecraft:glass_bottle" }
+    {
+      "ingredient": {
+        "item": "minecraft:redstone"
+      },
+      "count": 3
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass_bottle"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:mercury_bottle" },
-    { "id": "logos:sulfur_powder" }
+    {
+      "id": "logos:mercury_bottle"
+    },
+    {
+      "id": "logos:sulfur_powder"
+    }
   ],
   "mana": 3
 }

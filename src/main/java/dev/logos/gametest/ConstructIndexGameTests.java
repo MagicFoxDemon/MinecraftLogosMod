@@ -17,8 +17,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
-import net.minecraft.world.entity.monster.zombie.Husk;
-import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -78,7 +78,7 @@ final class ConstructIndexGameTests {
         Husk husk = new Husk(EntityType.HUSK, level);
         husk.setNoAi(true);
         husk.setNoGravity(true);
-        husk.snapTo(at.x, at.y, at.z, 0, 0);
+        husk.moveTo(at.x, at.y, at.z, 0, 0);
         h.assertTrue(level.addFreshEntity(husk), "the husk was not added");
         return husk;
     }
@@ -148,7 +148,7 @@ final class ConstructIndexGameTests {
         h.assertTrue(Constructs.withCollisions(none, level, arrow, onWall) == none, "an arrow got collisions");
         h.assertTrue(ConstructIndex.looked() == before, "an arrow's collisions looked at " + (ConstructIndex.looked() - before) + " constructs");
         Husk husk = new Husk(EntityType.HUSK, level);
-        husk.snapTo(at.getX() + 0.5, at.getY() - 1, at.getZ() + 3.5, 0, 0);
+        husk.moveTo(at.getX() + 0.5, at.getY() - 1, at.getZ() + 3.5, 0, 0);
         h.assertTrue(!Constructs.withCollisions(none, level, husk, onWall).isEmpty(), "a husk got no collisions");
         h.assertTrue(ConstructIndex.looked() > before, "a husk's collisions looked at nothing");
         free(h, at, 0);
@@ -165,7 +165,7 @@ final class ConstructIndexGameTests {
         BlockPos at = site(h, 800, 0);
         ConstructEntity wall = raise(h, p, WALL, at);
         Husk husk = new Husk(EntityType.HUSK, level);
-        husk.snapTo(at.getX() + 0.5, at.getY() - 1, at.getZ() + 3.5, 0, 0);
+        husk.moveTo(at.getX() + 0.5, at.getY() - 1, at.getZ() + 3.5, 0, 0);
         AABB onWall = wall.geometry().bounds;
         List<VoxelShape> first = Constructs.withCollisions(List.of(), level, husk, onWall);
         h.assertTrue(first.size() == wall.geometry().cells.size(), "asked for the whole wall, got " + first.size() + " shapes of " + wall.geometry().cells.size());
@@ -278,7 +278,7 @@ final class ConstructIndexGameTests {
 
         // In a chunk nothing has loaded: added, never tracked. Dimension travel below lands the same way, so nothing waits on the Nether generating.
         BlockPos unready = at.east(16 * 40);
-        ConstructEntity untracked = LogosMod.CONSTRUCT.get().create(level, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
+        ConstructEntity untracked = LogosMod.CONSTRUCT.get().create(level);
         untracked.setup(ConstructShape.WALL, Vec3.atCenterOf(unready), new Vec3(0, 0, 1), 5, 3, 1, 1, false, false, Element.ARCANE, null, p.getId(), null);
         h.assertTrue(level.addFreshEntity(untracked), "the untracked wall was not added");
         AABB onUnready = new AABB(unready).inflate(0.5);

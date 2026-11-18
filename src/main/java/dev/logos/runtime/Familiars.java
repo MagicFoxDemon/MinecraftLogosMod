@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -24,7 +24,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -123,8 +123,7 @@ public final class Familiars {
     public static @Nullable UUID sideOf(@Nullable Entity caster) {
         UUID master = masterOf(caster);
         if (master != null) return master;
-        var owner = caster instanceof net.minecraft.world.entity.OwnableEntity o ? o.getOwnerReference() : null;
-        return owner == null ? null : owner.getUUID();
+        return caster instanceof net.minecraft.world.entity.OwnableEntity o ? o.getOwnerUUID() : null;
     }
 
     public static List<Mob> of(Player owner) {
@@ -219,11 +218,11 @@ public final class Familiars {
         Component locked = locked(owner, type);
         if (locked != null) return Component.translatable("logos.familiar.locked", name, locked);
         if (of(owner).stream().filter(f -> !(f instanceof KeptFamiliar)).count() >= LogosConfig.maxFamiliars()) return Component.translatable("logos.familiar.too_many", LogosConfig.maxFamiliars());
-        if (!(type.create(level, EntitySpawnReason.MOB_SUMMONED) instanceof Mob m)) return Component.translatable("logos.familiar.not_summonable", name);
-        m.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);
+        if (!(type.create(level) instanceof Mob m)) return Component.translatable("logos.familiar.not_summonable", name);
+        m.moveTo(at.x, at.y, at.z, owner.getYRot(), 0);
         if (!inst.spend(m.getMaxHealth() * 2, "summon " + name.getString(), dev.logos.lang.Category.EFFECT)) return null; // the spell itself reports running dry
         try {
-            m.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(at)), EntitySpawnReason.MOB_SUMMONED, null);
+            m.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(at)), MobSpawnType.MOB_SUMMONED, null);
         } catch (RuntimeException e) {
             // A modded mob that cannot finish spawning this way still works as a plain body.
             LogosMod.LOGGER.debug("Familiar {} could not finish spawning", name, e);
@@ -324,7 +323,7 @@ public final class Familiars {
         List<ItemStack> out = new ArrayList<>();
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             ItemStack s = m.getItemBySlot(slot);
-            if (!s.isEmpty() && m.getDropChances().isPreserved(slot)) out.add(s.copy());
+            if (!s.isEmpty() && m.getEquipmentDropChance(slot) > 1.0f) out.add(s.copy());
         }
         // A lifeform's core pages are its master's.
         if (m instanceof ManaLifeform lf) {
@@ -546,8 +545,8 @@ public final class Familiars {
         if (stuck) {
             s.errand = null;
             m.getNavigation().stop();
-            owner.sendOverlayMessage(Component.translatable("logos.familiar.gave_up", m.getName())
-                    .withStyle(net.minecraft.ChatFormatting.GRAY));
+            owner.displayClientMessage(Component.translatable("logos.familiar.gave_up", m.getName())
+                    .withStyle(net.minecraft.ChatFormatting.GRAY), true);
         }
     }
 
@@ -570,7 +569,7 @@ public final class Familiars {
             boolean flies = m.isNoGravity();
             if (!flies && !m.level().getBlockState(at.below()).isFaceSturdy(m.level(), at.below(), net.minecraft.core.Direction.UP)) continue;
             if (!m.level().noCollision(m, m.getBoundingBox().move(Vec3.atBottomCenterOf(at).subtract(m.position())))) continue;
-            m.snapTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, m.getYRot(), m.getXRot());
+            m.moveTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, m.getYRot(), m.getXRot());
             m.getNavigation().stop();
             return true;
         }

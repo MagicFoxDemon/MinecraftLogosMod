@@ -8,9 +8,9 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -54,9 +54,9 @@ abstract class ChargeAuraEvokeTour extends ChargeTour {
         // From the side: a husk charging, seen side-on from five blocks off (not despawned as on peaceful).
         s.runCommand("difficulty normal").server("a husk to charge, side-on", sc -> {
             var p = sc.player();
-            Husk h = EntityType.HUSK.create(p.level(), EntitySpawnReason.COMMAND);
+            Husk h = EntityType.HUSK.create(p.level());
             if (h == null) throw new AssertionError("no husk");
-            h.snapTo(.5, 101, 3.5, 0, 0);
+            h.moveTo(.5, 101, 3.5, 0, 0);
             h.setYHeadRot(0);
             h.setYBodyRot(0);
             h.setNoAi(true);

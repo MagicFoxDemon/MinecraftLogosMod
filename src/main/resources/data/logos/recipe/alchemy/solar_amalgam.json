@@ -2,11 +2,21 @@
   "type": "logos:alchemy",
   "process": "dissolve",
   "ingredients": [
-    { "ingredient": "minecraft:gold_ingot" },
-    { "ingredient": "logos:philosophers_mercury" }
+    {
+      "ingredient": {
+        "item": "minecraft:gold_ingot"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:philosophers_mercury"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:solar_amalgam" }
+    {
+      "id": "logos:solar_amalgam"
+    }
   ],
   "mana": 10
 }

@@ -22,7 +22,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.data.AtlasIds;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
@@ -64,7 +64,7 @@ abstract class TierEquipmentScenario implements UIScenario {
                                 SpellPages.inscribed(PageTier.values()[i + 1], "(spell :name \"Tier test\" :mana 50 (mark caster #tier_ui))", null))));
                         p.getInventory().setItem(i, stack);
                     }
-                    p.getInventory().setSelectedSlot(0);
+                    p.getInventory().selected = 0;
                 }).ticks(10)
                 .step("registered item models and effect attachment points", ctx -> {
                     var mc = Minecraft.getInstance();
@@ -80,7 +80,7 @@ abstract class TierEquipmentScenario implements UIScenario {
                     }
                     if (staff) {
                         for (String key : List.of("echo", "transmuted", "chalk", "firmament", "sage", "principle")) {
-                            var id = Identifier.fromNamespaceAndPath("logos", "block/staff/" + key + "_orbit");
+                            var id = ResourceLocation.fromNamespaceAndPath("logos", "block/staff/" + key + "_orbit");
                             var sprite = mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).getSprite(id);
                             ctx.check(key + " animated orbit", sprite.contents().isAnimated() && sprite.contents().getUniqueFrames().size() == 32);
                         }
@@ -93,11 +93,11 @@ abstract class TierEquipmentScenario implements UIScenario {
         for (int i = 0; i < equipment.size(); i++) {
             final int index = i;
             s.server("select tier " + (i + 2), sc -> {
-                sc.player().getInventory().setSelectedSlot(index);
+                sc.player().getInventory().selected = index;
                 PlayerMagic.of(sc.player()).mana = 1000;
             }).step("first person", ctx -> {
                 var mc = Minecraft.getInstance();
-                mc.player.getInventory().setSelectedSlot(index);
+                mc.player.getInventory().selected = index;
                 mc.options.setCameraType(CameraType.FIRST_PERSON);
                 mc.options.hideGui = false;
             }).ticks(5)

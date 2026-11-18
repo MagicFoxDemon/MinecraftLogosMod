@@ -1,5 +1,6 @@
 package dev.logos.item;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import dev.logos.lang.Node;
@@ -9,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 
 /**
  * 术式余烬: a page burnt by Formula Immolation. The spell survives in it (it can sit on a wand or
@@ -27,7 +27,8 @@ public class SpellEmberItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
         Spell s = SpellPages.spell(stack);
         if (s != null) {
             builder.accept(Component.translatable("logos.page.summary", Spell.triggerName(s.trigger()), Node.fmt(s.mana()), Node.fmt(s.stability()))

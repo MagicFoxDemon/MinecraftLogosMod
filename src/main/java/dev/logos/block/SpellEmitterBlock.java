@@ -1,6 +1,7 @@
 package dev.logos.block;
 
-import org.jspecify.annotations.Nullable;
+import net.minecraft.world.ItemInteractionResult;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.MapCodec;
 
@@ -31,7 +32,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.EntityCollisionContext;
@@ -95,7 +95,7 @@ public class SpellEmitterBlock extends DirectionalBlock implements EntityBlock {
     }
 
     @Override
-    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, @Nullable Orientation orientation, boolean moved) {
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean moved) {
         boolean powered = level.hasNeighborSignal(pos);
         if (powered == state.getValue(BlockStateProperties.TRIGGERED)) return;
         level.setBlock(pos, state.setValue(BlockStateProperties.TRIGGERED, powered), Block.UPDATE_CLIENTS);
@@ -109,27 +109,27 @@ public class SpellEmitterBlock extends DirectionalBlock implements EntityBlock {
 
     /** How full its store of mana is. */
     @Override
-    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos, Direction direction) {
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof SpellEmitterBlockEntity emitter) || emitter.mana() <= 0) return 0;
         return 1 + (int) Math.floor(emitter.mana() / SpellEmitterBlockEntity.MAX_MANA * 14);
     }
 
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!SpellPages.isPage(stack) || player.isSecondaryUseActive()) return InteractionResult.TRY_WITH_EMPTY_HAND;
-        if (!(level.getBlockEntity(pos) instanceof SpellEmitterBlockEntity emitter) || !emitter.page().isEmpty()) return InteractionResult.TRY_WITH_EMPTY_HAND;
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!SpellPages.isPage(stack) || player.isSecondaryUseActive()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (!(level.getBlockEntity(pos) instanceof SpellEmitterBlockEntity emitter) || !emitter.page().isEmpty()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!level.isClientSide()) {
-            if (!emitter.mayChange(player)) return InteractionResult.SUCCESS;
+            if (!emitter.mayChange(player)) return ItemInteractionResult.SUCCESS;
             var spell = SpellPages.spell(stack);
             if (spell != null && spell.isPassive()) {
-                player.sendOverlayMessage(Component.translatable("logos.emitter.passive_named", spell.name()).withStyle(ChatFormatting.YELLOW));
-                return InteractionResult.SUCCESS;
+                player.displayClientMessage(Component.translatable("logos.emitter.passive_named", spell.name()).withStyle(ChatFormatting.YELLOW), true);
+                return ItemInteractionResult.SUCCESS;
             }
             emitter.setPage(stack.copyWithCount(1), player);
             stack.consume(1, player);
             level.playSound(null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1, 1);
         }
-        return InteractionResult.SUCCESS;
+        return ItemInteractionResult.SUCCESS;
     }
 
     @Override
@@ -137,7 +137,7 @@ public class SpellEmitterBlock extends DirectionalBlock implements EntityBlock {
         if (!(level.getBlockEntity(pos) instanceof SpellEmitterBlockEntity emitter)) return InteractionResult.PASS;
         if (emitter.page().isEmpty()) {
             if (level instanceof ServerLevel) {
-                player.sendOverlayMessage(Component.translatable("logos.emitter.empty_hint", (int) emitter.mana(), (int) SpellEmitterBlockEntity.MAX_MANA).withStyle(ChatFormatting.YELLOW));
+                player.displayClientMessage(Component.translatable("logos.emitter.empty_hint", (int) emitter.mana(), (int) SpellEmitterBlockEntity.MAX_MANA).withStyle(ChatFormatting.YELLOW), true);
             }
             return InteractionResult.SUCCESS;
         }

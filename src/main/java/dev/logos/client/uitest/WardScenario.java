@@ -14,7 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -42,9 +42,9 @@ public class WardScenario implements UIScenario {
     }
 
     private static <T extends Mob> T spawn(net.minecraft.server.level.ServerLevel level, EntityType<T> type, double x, double z, float yaw) {
-        T mob = type.create(level, EntitySpawnReason.COMMAND);
+        T mob = type.create(level);
         if (mob == null) throw new IllegalStateException("could not create " + type);
-        mob.snapTo(x, 101, z, yaw, 0);
+        mob.moveTo(x, 101, z, yaw, 0);
         mob.setYHeadRot(yaw);
         mob.setNoAi(true);
         level.addFreshEntity(mob);
@@ -99,7 +99,7 @@ public class WardScenario implements UIScenario {
         // Knock the cow's shield off: 6 damage against 4 absorption.
         s.teleportPlayer(.5, 101, -2, 0, 0).ticks(3)
                 .server("break the cow's shield", sc -> {
-                    cow.hurtServer(sc.level(), sc.level().damageSources().generic(), 6);
+                    cow.hurt(sc.level().damageSources().generic(), 6);
                     if (Effects.shielded(cow)) throw new IllegalStateException("the cow's shield should be broken");
                 })
                 .ticks(2).screenshot("ward_break")

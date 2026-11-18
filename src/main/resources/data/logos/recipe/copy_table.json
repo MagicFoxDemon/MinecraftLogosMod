@@ -2,8 +2,12 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "L": "minecraft:lectern",
-    "P": "logos:spell_page"
+    "L": {
+      "item": "minecraft:lectern"
+    },
+    "P": {
+      "item": "logos:spell_page"
+    }
   },
   "pattern": [
     "PP",

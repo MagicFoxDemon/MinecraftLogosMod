@@ -5,19 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -283,12 +283,12 @@ public final class VeinCrystals {
                     .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT));
             if (s.clear < 1) pipeline.withShaderDefine("CLEAR", s.clear);
             if (s.contrast < 1) pipeline.withShaderDefine("CONTRAST", s.contrast);
-            return RenderType.create("logos_vein_crystal_" + key, RenderSetup.builder(pipeline.build())
+            return dev.logos.client.port.RenderTypes.create("logos_vein_crystal_" + key, RenderSetup.builder(pipeline.build())
                     .withTexture("Sampler0", id("textures/vfx/" + s.texture + ".png")).sortOnUpload().createRenderSetup());
         });
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 
     private static float smooth(float t) {
         t = Mth.clamp(t, 0, 1);

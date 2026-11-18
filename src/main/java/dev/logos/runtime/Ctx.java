@@ -3,7 +3,7 @@ package dev.logos.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;

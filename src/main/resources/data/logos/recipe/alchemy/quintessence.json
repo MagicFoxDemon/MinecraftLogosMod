@@ -2,11 +2,19 @@
   "type": "logos:alchemy",
   "process": "sublime",
   "ingredients": [
-    { "ingredient": "logos:aether" }
+    {
+      "ingredient": {
+        "item": "logos:aether"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:quintessence" },
-    { "id": "minecraft:glass_bottle" }
+    {
+      "id": "logos:quintessence"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
   ],
   "mana": 60
 }

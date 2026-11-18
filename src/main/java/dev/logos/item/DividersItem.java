@@ -1,8 +1,9 @@
 package dev.logos.item;
 
+import java.util.List;
 import java.util.function.Consumer;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -13,13 +14,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -35,10 +35,10 @@ public final class DividersItem extends Item {
     public static final int REACH = 48;
 
     /** Where it was set down and which way is forward there; once measured, how far the target lies. */
-    public record Measure(BlockPos from, Identifier dimension, Direction forward, boolean done, int f, int u, int r) {
+    public record Measure(BlockPos from, ResourceLocation dimension, Direction forward, boolean done, int f, int u, int r) {
         public static final Codec<Measure> CODEC = RecordCodecBuilder.create(i -> i.group(
                 BlockPos.CODEC.fieldOf("from").forGetter(Measure::from),
-                Identifier.CODEC.fieldOf("dimension").forGetter(Measure::dimension),
+                ResourceLocation.CODEC.fieldOf("dimension").forGetter(Measure::dimension),
                 Direction.CODEC.fieldOf("forward").forGetter(Measure::forward),
                 Codec.BOOL.fieldOf("done").forGetter(Measure::done),
                 Codec.INT.fieldOf("f").forGetter(Measure::f),
@@ -67,7 +67,7 @@ public final class DividersItem extends Item {
             Measure m = measured(player.getItemInHand(hand));
             if (m != null) return m;
         }
-        for (ItemStack s : player.getInventory()) {
+        for (ItemStack s : player.getInventory().items) {
             Measure m = measured(s);
             if (m != null) return m;
         }
@@ -81,24 +81,24 @@ public final class DividersItem extends Item {
         if (ctx.getLevel().isClientSide()) return InteractionResult.SUCCESS;
         ItemStack stack = ctx.getItemInHand();
         BlockPos pos = ctx.getClickedPos();
-        Identifier dimension = ctx.getLevel().dimension().identifier();
+        ResourceLocation dimension = ctx.getLevel().dimension().location();
         Measure m = stack.get(LogosMod.DIVIDERS.get());
         if (player.isSecondaryUseActive()) {
             stack.remove(LogosMod.DIVIDERS.get());
-            player.sendOverlayMessage(Component.translatable("logos.dividers.put_away").withStyle(ChatFormatting.GRAY));
+            player.displayClientMessage(Component.translatable("logos.dividers.put_away").withStyle(ChatFormatting.GRAY), true);
         } else if (m == null || m.done()) {
             Direction forward = forwardOf(ctx.getLevel().getBlockState(pos), player);
             stack.set(LogosMod.DIVIDERS.get(), new Measure(pos, dimension, forward, false, 0, 0, 0));
-            player.sendOverlayMessage(Component.translatable("logos.dividers.started", name(forward)).withStyle(ChatFormatting.AQUA));
+            player.displayClientMessage(Component.translatable("logos.dividers.started", name(forward)).withStyle(ChatFormatting.AQUA), true);
         } else if (!m.dimension().equals(dimension)) {
-            player.sendOverlayMessage(Component.translatable("logos.dividers.other_dimension").withStyle(ChatFormatting.YELLOW));
+            player.displayClientMessage(Component.translatable("logos.dividers.other_dimension").withStyle(ChatFormatting.YELLOW), true);
         } else {
             int[] d = Offsets.measure(m.from(), m.forward(), pos);
             Measure done = new Measure(m.from(), m.dimension(), m.forward(), true, d[0], d[1], d[2]);
             stack.set(LogosMod.DIVIDERS.get(), done);
             boolean far = Math.max(Math.abs(d[0]), Math.max(Math.abs(d[1]), Math.abs(d[2]))) > REACH;
-            player.sendOverlayMessage(Component.translatable(far ? "logos.dividers.measured_far" : "logos.dividers.measured", done.describe())
-                    .withStyle(far ? ChatFormatting.YELLOW : ChatFormatting.AQUA));
+            player.displayClientMessage(Component.translatable(far ? "logos.dividers.measured_far" : "logos.dividers.measured", done.describe())
+                    .withStyle(far ? ChatFormatting.YELLOW : ChatFormatting.AQUA), true);
         }
         return InteractionResult.SUCCESS;
     }
@@ -115,7 +115,8 @@ public final class DividersItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
         Measure m = stack.get(LogosMod.DIVIDERS.get());
         if (m == null) builder.accept(Component.translatable("logos.dividers.hint").withStyle(ChatFormatting.GRAY));
         else if (!m.done()) builder.accept(Component.translatable("logos.dividers.from", m.from().toShortString(), name(m.forward())).withStyle(ChatFormatting.GRAY));

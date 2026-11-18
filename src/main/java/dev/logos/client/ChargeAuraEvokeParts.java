@@ -3,19 +3,19 @@ package dev.logos.client;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.client.ChargeParts.View;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -47,7 +47,7 @@ final class ChargeAuraEvokeParts {
     /** The two mesh materials: the spiral's panned noise (UvFade_Pan) and the burst ray (BrustRay). */
     enum Mesh { SPIRAL, RAY }
 
-    static final Identifier PORTAL = Identifier.withDefaultNamespace("textures/entity/end_portal/end_portal.png");
+    static final ResourceLocation PORTAL = ResourceLocation.withDefaultNamespace("textures/entity/end_portal/end_portal.png");
     private static final Map<String, RenderType> TYPES = new HashMap<>();
 
     /** Ribbon of {@code kind}, with the element's accent: alpha-blended, as the reference's translucent materials. */
@@ -65,7 +65,7 @@ final class ChargeAuraEvokeParts {
             var setup = RenderSetup.builder(p.build()).withTexture("Sampler0", vfx(main));
             if (kind == Ribbon.HAIR) setup.withTexture("NoiseTex", vfx("charge_aura/noise_smoke")).withTexture("AlphaTex", vfx("charge_aura/noise_01"));
             if (accent == Accent.STARRY) setup.withTexture("StarTex", PORTAL);
-            return RenderType.create(name(k), setup.sortOnUpload().createRenderSetup());
+            return dev.logos.client.port.RenderTypes.create(name(k), setup.sortOnUpload().createRenderSetup());
         });
     }
 
@@ -77,7 +77,7 @@ final class ChargeAuraEvokeParts {
             if (accent == Accent.STARRY) p.withSampler("StarTex");
             var setup = RenderSetup.builder(p.build()).withTexture("Sampler0", vfx("charge_aura/noise_01"));
             if (accent == Accent.STARRY) setup.withTexture("StarTex", PORTAL);
-            return RenderType.create(name(k), setup.sortOnUpload().createRenderSetup());
+            return dev.logos.client.port.RenderTypes.create(name(k), setup.sortOnUpload().createRenderSetup());
         });
     }
 
@@ -88,7 +88,7 @@ final class ChargeAuraEvokeParts {
     static RenderType sprite(String texture, boolean translucent) {
         return TYPES.computeIfAbsent("sprite_" + (translucent ? "blend_" : "add_") + texture, k -> {
             var p = pipeline(k, "core/charge_aura_evoke_sprite", translucent ? BlendFunction.TRANSLUCENT : BlendFunction.LIGHTNING, false);
-            return RenderType.create(name(k), RenderSetup.builder(p.build()).withTexture("Sampler0", vfx(texture)).sortOnUpload()
+            return dev.logos.client.port.RenderTypes.create(name(k), RenderSetup.builder(p.build()).withTexture("Sampler0", vfx(texture)).sortOnUpload()
                     .createRenderSetup());
         });
     }
@@ -104,9 +104,9 @@ final class ChargeAuraEvokeParts {
 
     static String name(String key) { return "logos_charge_aura_evoke_" + key.replace('/', '_').toLowerCase(); }
 
-    static Identifier vfx(String texture) { return id("textures/vfx/" + texture + ".png"); }
+    static ResourceLocation vfx(String texture) { return id("textures/vfx/" + texture + ".png"); }
 
-    static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 
     // ---- geometry ----------------------------------------------------------------------------------
 

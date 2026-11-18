@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -15,7 +15,7 @@ import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.net.ManaFieldPayload;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
@@ -64,7 +64,7 @@ public final class ManaField {
     public static final int LEVELS = 10;
     /** Biomes where twice the ambient mana wells up (cherry groves, mushroom fields, the deep dark). */
     public static final TagKey<Biome> MANA_RICH = TagKey.create(net.minecraft.core.registries.Registries.BIOME,
-            Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_rich"));
+            ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "mana_rich"));
     /** Ticks between workings of the field. */
     public static final int PERIOD = 20;
     /** How far a chunk's spread mana moves before the chunk asks to be saved again: a saved world comes back within this of the live value. */
@@ -134,7 +134,7 @@ public final class ManaField {
     public static int insulation(LevelChunk chunk) {
         insulationAsked++;
         Map<Long, Integer> counts = chunk.getLevel().getExistingDataOrNull(LogosMod.CAPUT_MORTUUM_COUNTS);
-        return counts == null ? 0 : Math.min(MAX_INSULATION, counts.getOrDefault(chunk.getPos().pack(), 0));
+        return counts == null ? 0 : Math.min(MAX_INSULATION, counts.getOrDefault(chunk.getPos().toLong(), 0));
     }
 
     /**
@@ -142,7 +142,7 @@ public final class ManaField {
      * also leave as their chunk unloads and come back as it loads, so a chunk's entry lasts only while it has some.
      */
     public static void countMarker(ServerLevel level, BlockPos pos, int by) {
-        level.getData(LogosMod.CAPUT_MORTUUM_COUNTS).merge(ChunkPos.pack(pos), by, (a, b) -> a + b == 0 ? null : a + b);
+        level.getData(LogosMod.CAPUT_MORTUUM_COUNTS).merge(ChunkPos.asLong(pos), by, (a, b) -> a + b == 0 ? null : a + b);
     }
 
     private static long insulationAsked;
@@ -158,7 +158,7 @@ public final class ManaField {
 
     /** The spread mana of the chunk {@code pos} is in (0 where it is not loaded). */
     public static double spread(ServerLevel level, BlockPos pos) {
-        LevelChunk chunk = loaded(level, ChunkPos.pack(pos));
+        LevelChunk chunk = loaded(level, ChunkPos.asLong(pos));
         return chunk == null ? 0 : mana(chunk);
     }
 
@@ -176,7 +176,7 @@ public final class ManaField {
         int[][] steps = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
         for (int i = 0; i < n; i++) {
             int x = cx - r + i % side, z = cz - r + i / side;
-            LevelChunk here = loaded(level, ChunkPos.pack(x, z));
+            LevelChunk here = loaded(level, ChunkPos.asLong(x, z));
             if (here == null) {
                 out[i] = -1;
                 continue;
@@ -184,7 +184,7 @@ public final class ManaField {
             double mine = mana(here);
             out[i] = (int) Math.round(mine * 10);
             for (int d = 0; d < 4; d++) {
-                LevelChunk there = loaded(level, ChunkPos.pack(x + steps[d][0], z + steps[d][1]));
+                LevelChunk there = loaded(level, ChunkPos.asLong(x + steps[d][0], z + steps[d][1]));
                 if (there != null && (mine - mana(there) - threshold(here, there)) * FLOW >= SURVEY_FLOW) out[n + i] |= 1 << d;
             }
         }
@@ -193,14 +193,14 @@ public final class ManaField {
 
     /** Sets a loaded chunk's spread mana, keeping it among the worked chunks while it holds any. */
     static void set(ServerLevel level, LevelChunk chunk, double mana) {
-        long key = chunk.getPos().pack();
+        long key = chunk.getPos().toLong();
         double value = mana < EPS ? 0 : Math.min(CAP, mana);
         Air air = chunk.getData(LogosMod.MANA_FIELD);
         air.moved += Math.abs(value - air.mana);
         air.mana = value;
         if (air.moved > SAVE_STEP) {
             air.moved = 0;
-            chunk.markUnsaved();
+            chunk.setUnsaved(true);
         }
         Set<Long> active = ACTIVE.computeIfAbsent(level, l -> new HashSet<>());
         if (value > 0) active.add(key);
@@ -210,7 +210,7 @@ public final class ManaField {
 
     /** Pours up to {@code amount} into the chunk {@code pos} is in, as far as {@link #CAP}; returns what went in. */
     public static double pour(ServerLevel level, BlockPos pos, double amount) {
-        LevelChunk chunk = loaded(level, ChunkPos.pack(pos));
+        LevelChunk chunk = loaded(level, ChunkPos.asLong(pos));
         if (chunk == null || amount <= 0) return 0;
         double had = mana(chunk);
         double in = Math.min(amount, CAP - had);
@@ -221,7 +221,7 @@ public final class ManaField {
 
     /** What a collector at {@code pos} draws of its chunk's spread mana this second: its share, at most {@code room}. */
     public static double drawSpread(ServerLevel level, BlockPos pos, double room) {
-        LevelChunk chunk = loaded(level, ChunkPos.pack(pos));
+        LevelChunk chunk = loaded(level, ChunkPos.asLong(pos));
         if (chunk == null || room <= 0) return 0;
         double had = mana(chunk);
         double out = Math.min(room, Math.min(had * DRAW_SHARE, DRAW_MAX));
@@ -244,7 +244,7 @@ public final class ManaField {
      */
     public static double drawAmbient(ServerLevel level, BlockPos pos, double room) {
         if (room <= 0) return 0;
-        long key = ChunkPos.pack(pos);
+        long key = ChunkPos.asLong(pos);
         DRAWING.computeIfAbsent(level, l -> new HashMap<>()).merge(key, 1, Integer::sum);
         int sharers = Math.max(1, DREW.getOrDefault(level, Map.of()).getOrDefault(key, 1));
         return Math.min(room, Math.min(COLLECTOR_AMBIENT, ambientRate(level, pos) / sharers));
@@ -272,7 +272,7 @@ public final class ManaField {
             if (here == null) continue;
             double mine = mana(here);
             int x = ChunkPos.getX(key), z = ChunkPos.getZ(key);
-            for (long next : new long[] {ChunkPos.pack(x + 1, z), ChunkPos.pack(x - 1, z), ChunkPos.pack(x, z + 1), ChunkPos.pack(x, z - 1)}) {
+            for (long next : new long[] {ChunkPos.asLong(x + 1, z), ChunkPos.asLong(x - 1, z), ChunkPos.asLong(x, z + 1), ChunkPos.asLong(x, z - 1)}) {
                 LevelChunk there = loaded(level, next);
                 if (there == null) continue;
                 double gap = mine - mana(there);
@@ -316,7 +316,7 @@ public final class ManaField {
         if (now == 0) told.remove(key);
         else told.put(key, now);
         ManaFieldPayload payload = new ManaFieldPayload(key, now);
-        for (ServerPlayer p : level.getChunkSource().chunkMap.getPlayers(ChunkPos.unpack(key), false)) send(p, payload);
+        for (ServerPlayer p : level.getChunkSource().chunkMap.getPlayers(new ChunkPos(key), false)) send(p, payload);
     }
 
     private static void send(ServerPlayer p, ManaFieldPayload payload) {
@@ -327,21 +327,21 @@ public final class ManaField {
     @SubscribeEvent
     static void onWatch(ChunkWatchEvent.Watch event) {
         int now = levelOf(mana(event.getChunk()));
-        if (now > 0) send(event.getPlayer(), new ManaFieldPayload(event.getPos().pack(), now));
+        if (now > 0) send(event.getPlayer(), new ManaFieldPayload(event.getPos().toLong(), now));
     }
 
     @SubscribeEvent
     static void onChunkLoad(ChunkEvent.Load event) {
         if (event.getLevel() instanceof ServerLevel level && event.getChunk() instanceof LevelChunk chunk
                 && mana(chunk) > 0) {
-            ACTIVE.computeIfAbsent(level, l -> new HashSet<>()).add(chunk.getPos().pack());
+            ACTIVE.computeIfAbsent(level, l -> new HashSet<>()).add(chunk.getPos().toLong());
         }
     }
 
     @SubscribeEvent
     static void onChunkUnload(ChunkEvent.Unload event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
-        long key = event.getChunk().getPos().pack();
+        long key = event.getChunk().getPos().toLong();
         Set<Long> active = ACTIVE.get(level);
         if (active != null) active.remove(key);
         Map<Long, Integer> told = TOLD.get(level);
@@ -385,12 +385,12 @@ public final class ManaField {
      */
     public static void clientForgetBeyond(Level level, ChunkPos center, int radius) {
         if (clientLevel != level) return;
-        CLIENT.keySet().removeIf(k -> Math.abs(ChunkPos.getX(k) - center.x()) > radius || Math.abs(ChunkPos.getZ(k) - center.z()) > radius);
+        CLIENT.keySet().removeIf(k -> Math.abs(ChunkPos.getX(k) - center.x) > radius || Math.abs(ChunkPos.getZ(k) - center.z) > radius);
     }
 
     /** The level a client knows for the chunk {@code pos} is in (0 to {@link #LEVELS}). */
     public static int clientLevel(Level level, BlockPos pos) {
-        return clientLevel == level ? CLIENT.getOrDefault(ChunkPos.pack(pos), 0) : 0;
+        return clientLevel == level ? CLIENT.getOrDefault(ChunkPos.asLong(pos), 0) : 0;
     }
 
     /** Whether a client knows any mana in the air around it. */

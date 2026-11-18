@@ -54,7 +54,7 @@ public class ColossusReservoirScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 2.2, ORIGIN.getZ() - 2.6, 0, 8)
                 .server("raise a colossus facing away", sc -> {
                     var p = sc.player();
-                    Colossi.summon(p, p.level(), Vec3.atBottomCenterOf(ORIGIN.offset(0, 1, 1)), null);
+                    Colossi.summon(p, p.serverLevel(), Vec3.atBottomCenterOf(ORIGIN.offset(0, 1, 1)), null);
                     for (var m : Familiars.of(p)) if (m instanceof AlchemicalColossus c) colossus = c;
                     colossus.setNoAi(true);
                     colossus.setYRot(0);

@@ -14,9 +14,9 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -67,8 +67,8 @@ public class ArcaneChargeAuraScenario extends ChargeTour {
 
         // Side on: a husk five blocks ahead, facing east, casting while we look on in first person.
         s.server("a husk to cast", sc -> {
-            husk = EntityType.HUSK.create(sc.player().level(), EntitySpawnReason.COMMAND);
-            husk.snapTo(.5, 101, 6.5, -90, 0);
+            husk = EntityType.HUSK.create(sc.player().level());
+            husk.moveTo(.5, 101, 6.5, -90, 0);
             husk.setNoAi(true);
             husk.setYBodyRot(-90);
             husk.setYHeadRot(-90);

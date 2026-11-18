@@ -42,7 +42,7 @@ public final class WaterWalking extends MobEffect {
     /** {@code shape}, the block's own collision, joined with its fluid's surface when that should hold the colliding entity up. */
     public static VoxelShape withSurface(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context, VoxelShape shape) {
         FluidState fluid = state.getFluidState();
-        if (fluid.isEmpty() || context.isDescending() || context.isPlacement()
+        if (fluid.isEmpty() || context.isDescending()
                 || !(context instanceof EntityCollisionContext c) || !(c.getEntity() instanceof LivingEntity walker)
                 || !(walker.hasEffect(LogosMod.WATER_WALKING) || fluid.is(FluidTags.LAVA) && Incarnation.walksOnLava(walker))) return shape;
         // Only the top of a column of fluid is a surface.

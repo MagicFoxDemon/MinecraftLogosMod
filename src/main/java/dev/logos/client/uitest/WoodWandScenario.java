@@ -38,7 +38,7 @@ public class WoodWandScenario implements UIScenario {
                 .server("hand out the wood wands", sc -> {
                     var wands = LogosMod.WOOD_WANDS;
                     for (int i = 0; i < wands.size(); i++) sc.player().getInventory().setItem(i, new ItemStack(wands.get(i).get()));
-                    sc.player().getInventory().setSelectedSlot(0);
+                    sc.player().getInventory().selected = 0;
                     sc.player().setItemInHand(InteractionHand.OFF_HAND, new ItemStack(LogosMod.WOOD_WANDS.get(6).get()));
                 })
                 .ticks(20)

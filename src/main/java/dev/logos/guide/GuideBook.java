@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * 逻各斯手记 as loaded: its chapters in order, each with its entries in order, and every entry by id. An entry's id is

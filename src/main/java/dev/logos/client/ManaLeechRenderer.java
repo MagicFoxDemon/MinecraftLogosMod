@@ -1,16 +1,16 @@
 package dev.logos.client;
 
-import com.geckolib.constant.dataticket.DataTicket;
-import com.geckolib.model.DefaultedEntityGeoModel;
-import com.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.constant.dataticket.DataTicket;
+import software.bernie.geckolib.model.DefaultedEntityGeoModel;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import com.geckolib.renderer.base.GeoRenderState;
-import com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.ManaLeech;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * The mana leech (assets/logos/geckolib/…/mana_leech). Its glands glow brighter with the mana it holds:
@@ -18,23 +18,23 @@ import net.minecraft.resources.Identifier;
  */
 public class ManaLeechRenderer<R extends LivingEntityRenderState & GeoRenderState> extends GeoEntityRenderer<ManaLeech, R> {
     private static final DataTicket<Integer> GLOW = DataTicket.create("logos_leech_glow", Integer.class);
-    private static final Identifier[] GLOWMASKS = {
+    private static final ResourceLocation[] GLOWMASKS = {
             glowmask("mana_leech_glowmask"), glowmask("mana_leech_feed_1_glowmask"),
             glowmask("mana_leech_feed_2_glowmask"), glowmask("mana_leech_feed_3_glowmask")};
 
     public ManaLeechRenderer(EntityRendererProvider.Context context) {
-        super(context, new DefaultedEntityGeoModel<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_leech")));
+        super(context, new DefaultedEntityGeoModel<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "mana_leech")));
         this.shadowRadius = 0.35f;
         withRenderLayer(new AutoGlowingGeoLayer<>(this) {
             @Override
-            protected Identifier getTextureResource(R state) {
+            protected ResourceLocation getTextureResource(R state) {
                 return GLOWMASKS[state.getOrDefaultGeckolibData(GLOW, 0)];
             }
         });
     }
 
-    private static Identifier glowmask(String name) {
-        return Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/" + name + ".png");
+    private static ResourceLocation glowmask(String name) {
+        return ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/" + name + ".png");
     }
 
     @Override

@@ -1,6 +1,6 @@
 package dev.logos.client;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.lang.Element;
 import net.minecraft.client.Minecraft;
@@ -37,7 +37,7 @@ public final class LiveCharge {
     final int tier;
     final ChargeVisual visual;
     /** The synced charge while it is charging or held; null once over (or for a release never seen charging). */
-    ClientCharges.@Nullable State state;
+    @Nullable ClientCharges.State state;
     Phase phase;
     final long born;
     long since;

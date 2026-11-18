@@ -3,7 +3,7 @@ package dev.logos.client.uitest;
 import java.util.List;
 import java.util.function.BiFunction;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.uitest.ScenarioBuilder;
 import com.lowdragmc.lowdraglib2.uitest.ScenarioOptions;

@@ -30,7 +30,7 @@ final class FormOpsGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(0.5, 2, 0.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
@@ -120,7 +120,7 @@ final class FormOpsGameTests {
         // A field made where the caster stands; the caster steps away, and pos-of the kept field brings them back.
         Vec3 start = p.position();
         Casting.cast(p, Casting.compile("(spell :mana 200 (let $f (field :life 5) (delay 0.5 (blink (pos-of $f)))))"), null, null);
-        p.snapTo(start.x + 4, start.y, start.z + 4, 0, 0);
+        p.moveTo(start.x + 4, start.y, start.z + 4, 0, 0);
         FamiliarGameTests.forceAround(h, 1);
         h.succeedWhen(() -> {
             var wall = ConstructEntity.near(h.getLevel(), new AABB(h.absolutePos(BlockPos.ZERO)).inflate(16)).stream().findFirst().orElse(null);

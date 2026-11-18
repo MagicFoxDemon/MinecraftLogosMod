@@ -14,7 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
@@ -125,11 +125,11 @@ public class LightningBeamWakeScenario implements UIScenario {
 
         // From the side of the open lane, through an armour stand's eyes.
         s.server("place the side camera", sc -> {
-            ArmorStand stand = EntityType.ARMOR_STAND.create(sc.level(), EntitySpawnReason.COMMAND);
+            ArmorStand stand = EntityType.ARMOR_STAND.create(sc.level());
             if (stand == null) throw new IllegalStateException("armour stand creation failed");
             stand.setInvisible(true);
             stand.setNoGravity(true);
-            stand.snapTo(-13.5, OPEN - .2, 12.5, -90, 4);
+            stand.moveTo(-13.5, OPEN - .2, 12.5, -90, 4);
             stand.setYHeadRot(-90);
             sc.level().addFreshEntity(stand);
             eyeId = stand.getId();

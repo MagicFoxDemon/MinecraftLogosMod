@@ -3,7 +3,7 @@ package dev.logos.client;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.runtime.AlchemicalColossus;
 import net.minecraft.client.Minecraft;

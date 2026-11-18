@@ -3,10 +3,14 @@
   "process": "dissolve",
   "ingredients": [
     {
-      "ingredient": "minecraft:sculk"
+      "ingredient": {
+        "item": "minecraft:sculk"
+      }
     },
     {
-      "ingredient": "logos:raw_mash"
+      "ingredient": {
+        "item": "logos:raw_mash"
+      }
     }
   ],
   "results": [

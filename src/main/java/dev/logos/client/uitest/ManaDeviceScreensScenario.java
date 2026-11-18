@@ -21,7 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.transfer.item.ItemResource;
+import dev.logos.port.ItemResource;
 
 /**
  * Real-client look at the screens of the mana spreader and the mana collector: the spreader's map of

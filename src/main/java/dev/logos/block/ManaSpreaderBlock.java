@@ -1,6 +1,7 @@
 package dev.logos.block;
 
-import org.jspecify.annotations.Nullable;
+import net.minecraft.world.ItemInteractionResult;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -31,8 +32,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import dev.logos.port.ItemResource;
+import dev.logos.port.Transaction;
 
 /**
  * 魔力散布器: puts mana into the air around it (see {@link ManaSpreaderBlockEntity}). Fuel goes in its
@@ -88,9 +89,9 @@ public class ManaSpreaderBlock extends HorizontalDirectionalBlock implements Ent
 
     /** Mana fuel in hand goes into the drawer, as much as fits. */
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (AlchemyTableBlockEntity.fuelValue(stack) <= 0 || !(level.getBlockEntity(pos) instanceof ManaSpreaderBlockEntity spreader)) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (!level.isClientSide()) {
             try (Transaction tx = Transaction.openRoot()) {
@@ -99,7 +100,7 @@ public class ManaSpreaderBlock extends HorizontalDirectionalBlock implements Ent
                 if (!player.getAbilities().instabuild) stack.shrink(in);
             }
         }
-        return InteractionResult.SUCCESS;
+        return ItemInteractionResult.SUCCESS;
     }
 
     @Override

@@ -36,11 +36,11 @@ public final class SpecialNodes {
     public enum IntentChoice {
         AUTO, STRIKE, AREA, CONTROL, HEAL, WARD, MOVE, UTILITY;
 
-        public dev.logos.lang.@org.jspecify.annotations.Nullable Intent intent() {
+        public @javax.annotation.Nullable dev.logos.lang.Intent intent() {
             return this == AUTO ? null : dev.logos.lang.Intent.valueOf(name());
         }
 
-        public static IntentChoice of(dev.logos.lang.@org.jspecify.annotations.Nullable Intent intent) {
+        public static IntentChoice of(@javax.annotation.Nullable dev.logos.lang.Intent intent) {
             return intent == null ? AUTO : valueOf(intent.name());
         }
     }

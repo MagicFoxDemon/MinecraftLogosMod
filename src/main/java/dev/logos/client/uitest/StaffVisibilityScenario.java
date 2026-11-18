@@ -44,15 +44,15 @@ public final class StaffVisibilityScenario implements UIScenario {
                         stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, false);
                         sc.player().getInventory().setItem(i, stack);
                     }
-                    sc.player().getInventory().setSelectedSlot(0);
+                    sc.player().getInventory().selected = 0;
                 }).step("third person without charging effects", ctx -> {
                     Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT);
                     Minecraft.getInstance().options.hideGui = true;
                 }).ticks(10);
         for (int i = 0; i < 7; i++) {
             final int slot = i;
-            s.server("hold staff " + (i + 2), sc -> sc.player().getInventory().setSelectedSlot(slot))
-                    .step("select on the client", ctx -> Minecraft.getInstance().player.getInventory().setSelectedSlot(slot))
+            s.server("hold staff " + (i + 2), sc -> sc.player().getInventory().selected = slot)
+                    .step("select on the client", ctx -> Minecraft.getInstance().player.getInventory().selected = slot)
                     .ticks(6).screenshot("staff_" + (i + 2) + "_third_person");
         }
         s.teleportPlayer(0.5, 101, -6.5, 0, 24)

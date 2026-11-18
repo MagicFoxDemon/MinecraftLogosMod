@@ -7,7 +7,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /** Server → client: every area weather in one dimension, sent whole whenever one starts or ends. */
 public record AreaWeatherPayload(String dimension, List<Zone> zones) implements CustomPacketPayload {
@@ -18,7 +18,7 @@ public record AreaWeatherPayload(String dimension, List<Zone> zones) implements 
                 ByteBufCodecs.DOUBLE, Zone::z, ByteBufCodecs.FLOAT, Zone::radius, Zone::new);
     }
 
-    public static final Type<AreaWeatherPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "area_weather"));
+    public static final Type<AreaWeatherPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "area_weather"));
     public static final StreamCodec<RegistryFriendlyByteBuf, AreaWeatherPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, AreaWeatherPayload::dimension, Zone.CODEC.apply(ByteBufCodecs.list()), AreaWeatherPayload::zones,
             AreaWeatherPayload::new);
@@ -30,7 +30,7 @@ public record AreaWeatherPayload(String dimension, List<Zone> zones) implements 
 
     /** Server → client: one zone of a dimension has moved, sent as it goes (a {@code :follow} zone); the others stand as last sent. */
     public record Moved(String dimension, int id, double x, double z) implements CustomPacketPayload {
-        public static final Type<Moved> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "area_weather_moved"));
+        public static final Type<Moved> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "area_weather_moved"));
         public static final StreamCodec<RegistryFriendlyByteBuf, Moved> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, Moved::dimension, ByteBufCodecs.VAR_INT, Moved::id, ByteBufCodecs.DOUBLE, Moved::x, ByteBufCodecs.DOUBLE, Moved::z, Moved::new);
 

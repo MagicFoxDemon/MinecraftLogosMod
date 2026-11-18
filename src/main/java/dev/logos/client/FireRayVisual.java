@@ -24,24 +24,24 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Sphere;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleRendererSetting;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.logos.runtime.Vfx;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -504,7 +504,7 @@ final class FireRayVisual implements RayVisual {
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING));
         if (core) pipeline.withShaderDefine("FIRE_RAY_CORE");
-        return RenderType.create("logos_fire_ray_" + (core ? "core" : "flame"), RenderSetup.builder(pipeline.build())
+        return dev.logos.client.port.RenderTypes.create("logos_fire_ray_" + (core ? "core" : "flame"), RenderSetup.builder(pipeline.build())
                 .withTexture("Sampler0", id("textures/vfx/fire_ray/fire_trail.png"))
                 .withTexture("NoiseTex", id("textures/vfx/fire_ray/noise.png")).sortOnUpload().createRenderSetup());
     }
@@ -515,7 +515,7 @@ final class FireRayVisual implements RayVisual {
                 .withSampler("NoiseTex").withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).build();
-        return RenderType.create("logos_fire_ray_smoke", RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_fire_ray_smoke", RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id("textures/vfx/fire_ray/smoke_trail.png"))
                 .withTexture("NoiseTex", id("textures/vfx/fire_ray/noise.png")).sortOnUpload().createRenderSetup());
     }
@@ -525,9 +525,9 @@ final class FireRayVisual implements RayVisual {
                 .withLocation(id("pipeline/fire_ray_glow")).withFragmentShader(id("core/fire_ray_glow"))
                 .withCull(false).withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(BlendFunction.LIGHTNING)).build();
-        return RenderType.create("logos_fire_ray_glow", RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_fire_ray_glow", RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id("textures/vfx/fire_ray/glow.png")).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

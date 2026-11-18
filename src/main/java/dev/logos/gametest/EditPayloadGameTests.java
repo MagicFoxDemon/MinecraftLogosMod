@@ -40,16 +40,16 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.ProblemReporter;
+import dev.logos.port.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
-import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.transfer.item.ItemResource;
+import dev.logos.port.ItemResource;
 
 /** What the server holds client edit packets to, sent through their real handlers: checks before compiling, drawing limits, wiring and pace. */
 final class EditPayloadGameTests {
@@ -67,7 +67,7 @@ final class EditPayloadGameTests {
     static ServerPlayer playerAt(GameTestHelper h, double x, double z) {
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic.of(p).trace = false;
         return p;
     }
@@ -109,7 +109,7 @@ final class EditPayloadGameTests {
     private static CompoundTag serialized(GameTestHelper h, String source) {
         SpellGraph graph = GraphBuilder.build(Compiler.compile(source), SourceNotes.read(source));
         TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, h.getLevel().registryAccess());
-        graph.graphModel.serialize(out);
+        dev.logos.port.Persisted.serialize(graph.graphModel, out);
         return out.buildResult();
     }
 

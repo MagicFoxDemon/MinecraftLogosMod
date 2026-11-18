@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** A block entity with a store of mana that takes in what it is given up to a fixed cap; subclasses save it themselves. */
-public abstract class ManaVesselBlockEntity extends BlockEntity implements ManaVessel {
+public abstract class ManaVesselBlockEntity extends BlockEntity implements ManaVessel, dev.logos.port.RemovalSideEffects {
     private final double maxMana;
     protected double mana;
 
@@ -35,4 +35,8 @@ public abstract class ManaVesselBlockEntity extends BlockEntity implements ManaV
         }
         return taken;
     }
+
+    /** What it does as its block goes: nothing, unless it holds something to drop. */
+    @Override
+    public void preRemoveSideEffects(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {}
 }

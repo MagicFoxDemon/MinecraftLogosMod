@@ -24,7 +24,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
  * while charging; a staff, too tall to point that way, is thrust out level in front, the arm lower and
  * the staff turned forward in the hand so its head leads. Steady, without the charge's tremble.
  */
-@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 final class BeamPose implements CastPoses.Pose {
     /** How far the arm comes up from hanging, below the gaze: a wand nearly level with it, a staff lower. */
     private static final float WAND_RAISE = 1.4f, STAFF_RAISE = 1.2f;

@@ -13,7 +13,7 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.number.color.Gradient
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.Curve;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurves;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.mojang.blaze3d.platform.DestFactor;
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
 import dev.logos.lang.Element;
 import org.joml.Vector2i;
 

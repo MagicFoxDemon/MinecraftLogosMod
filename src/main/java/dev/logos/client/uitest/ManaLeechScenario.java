@@ -10,7 +10,7 @@ import dev.logos.LogosMod;
 import dev.logos.runtime.ManaLeech;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
@@ -50,8 +50,8 @@ public class ManaLeechScenario implements UIScenario {
                     full.discard();
                     PlayerMagic m = PlayerMagic.of(sc.player());
                     m.baseMaxMana = m.mana = 100;
-                    ManaLeech hunter = LogosMod.MANA_LEECH.get().create(sc.level(), EntitySpawnReason.COMMAND);
-                    hunter.snapTo(0.5, 101, 3.5, 180, 0);
+                    ManaLeech hunter = LogosMod.MANA_LEECH.get().create(sc.level());
+                    hunter.moveTo(0.5, 101, 3.5, 180, 0);
                     sc.level().addFreshEntity(hunter);
                 })
                 .ticks(28)
@@ -62,8 +62,8 @@ public class ManaLeechScenario implements UIScenario {
 
     /** A still leech holding {@code mana}, at {@code x} across the camera's view, facing it. */
     private static ManaLeech place(net.minecraft.server.level.ServerLevel level, double x, double mana) {
-        ManaLeech l = LogosMod.MANA_LEECH.get().create(level, EntitySpawnReason.COMMAND);
-        l.snapTo(0.5 + x, 101, 1.5, 150 + (x < 0 ? 0 : 60), 0);
+        ManaLeech l = LogosMod.MANA_LEECH.get().create(level);
+        l.moveTo(0.5 + x, 101, 1.5, 150 + (x < 0 ? 0 : 60), 0);
         l.setNoAi(true);
         l.setMana(mana);
         level.addFreshEntity(l);

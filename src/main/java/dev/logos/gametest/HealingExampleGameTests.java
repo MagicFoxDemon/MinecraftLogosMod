@@ -18,7 +18,7 @@ final class HealingExampleGameTests {
     private static ServerPlayer player(GameTestHelper h, double z) {
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 at = h.absoluteVec(new Vec3(4.5, 2, z));
-        p.snapTo(at.x, at.y, at.z, 0, 0);
+        p.moveTo(at.x, at.y, at.z, 0, 0);
         p.setYHeadRot(0);
         p.setHealth(4);
         PlayerMagic.of(p).baseMaxMana = PlayerMagic.of(p).mana = 10000;

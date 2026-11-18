@@ -1,6 +1,10 @@
 package dev.logos.runtime;
 
-import org.jspecify.annotations.Nullable;
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.nbt.CompoundTag;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import net.minecraft.core.BlockPos;
@@ -20,8 +24,8 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -250,19 +254,22 @@ public final class FreeManaEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
+    public void readAdditionalSaveData(CompoundTag tag) {
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registryAccess(), tag);
         setAmount(input.getFloatOr("amount", 0));
         age = input.getIntOr("age", 0);
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
+    public void addAdditionalSaveData(CompoundTag tag) {
+        ValueOutput output = TagValueOutput.of(tag, registryAccess());
         output.putFloat("amount", (float) amount());
         output.putInt("age", age);
     }
 
     @Override
-    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
+    public boolean hurt(DamageSource source, float damage) {
+        if (!(level() instanceof ServerLevel level)) return super.hurt(source, damage);
         return false;
     }
 

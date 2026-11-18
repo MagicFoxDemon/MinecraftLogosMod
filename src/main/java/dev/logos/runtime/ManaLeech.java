@@ -1,16 +1,20 @@
 package dev.logos.runtime;
 
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.nbt.CompoundTag;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
-import com.geckolib.animatable.GeoEntity;
-import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
-import com.geckolib.animation.AnimationController;
-import com.geckolib.animation.RawAnimation;
-import com.geckolib.animation.object.PlayState;
-import com.geckolib.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import dev.logos.LogosMod;
 import net.minecraft.core.Holder;
@@ -19,7 +23,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -31,7 +35,7 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -46,8 +50,8 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.Vec3;
 
@@ -81,9 +85,9 @@ public class ManaLeech extends Monster implements GeoEntity {
     private static final double MOUTH_AHEAD = 13.08 / 16, MOUTH_UP = 3.65 / 16;
     /** How far in front of the eyes its mouth clings. */
     private static final double FACE_GAP = 0.3;
-    public static final ResourceKey<DamageType> DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_leech"));
+    public static final ResourceKey<DamageType> DAMAGE = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "mana_leech"));
     private static final ResourceKey<LootTable> OFFSPRING_LOOT = ResourceKey.create(Registries.LOOT_TABLE,
-            Identifier.fromNamespaceAndPath(LogosMod.MODID, "entities/mana_leech_offspring"));
+            ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "entities/mana_leech_offspring"));
 
     /** What it is doing; synced so its animation follows. */
     public enum State { SEEK, CHARGE, POUNCE, LATCHED, FALL, SPLIT }
@@ -322,7 +326,7 @@ public class ManaLeech extends Monster implements GeoEntity {
     /** Straight at where the face was when it leapt: a quick step aside makes it miss. */
     private void pounce(ServerLevel level) {
         setDeltaMovement(pounceVelocity);
-        needsSync = true;
+        hasImpulse = true;
         if (prey != null && (mouth().distanceTo(prey.getEyePosition()) < 1.0 || getBoundingBox().inflate(0.2).intersects(prey.getBoundingBox()))) {
             latch(level, prey);
         } else if (stateTicks >= POUNCE_TICKS || (stateTicks > 2 && (horizontalCollision || verticalCollision))) {
@@ -388,7 +392,7 @@ public class ManaLeech extends Monster implements GeoEntity {
         }
         float bite = (float) (attack() * (level.getDifficulty() == Difficulty.HARD ? 1.5 : 1));
         if (level.getDifficulty() == Difficulty.PEACEFUL) bite = 0;
-        on.hurtServer(level, damageSources().source(DAMAGE, this), bite + wound);
+        on.hurt(damageSources().source(DAMAGE, this), bite + wound);
         playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 0.8f, 0.6f);
         level.sendParticles(ParticleTypes.ENCHANT, on.getX(), on.getEyeY(), on.getZ(), 8, 0.3, 0.3, 0.3, 0.5);
     }
@@ -444,10 +448,10 @@ public class ManaLeech extends Monster implements GeoEntity {
     /** Two empty leeches in its place; the mana it held goes into making them. */
     private void split(ServerLevel level) {
         for (int i = 0; i < 2; i++) {
-            ManaLeech child = LogosMod.MANA_LEECH.get().create(level, EntitySpawnReason.TRIGGERED);
+            ManaLeech child = LogosMod.MANA_LEECH.get().create(level);
             if (child == null) continue;
             float yaw = getYRot() + (i == 0 ? 90 : -90);
-            child.snapTo(getX(), getY(), getZ(), yaw, 0);
+            child.moveTo(getX(), getY(), getZ(), yaw, 0);
             child.setOffspring(true);
             child.prey = prey;
             child.setDeltaMovement(Vec3.directionFromRotation(0, yaw).scale(0.25).add(0, 0.2, 0));
@@ -462,8 +466,9 @@ public class ManaLeech extends Monster implements GeoEntity {
     // ---- blows and death --------------------------------------------------------------------------
 
     @Override
-    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
-        boolean hurt = super.hurtServer(level, source, damage);
+    public boolean hurt(DamageSource source, float damage) {
+        if (!(level() instanceof ServerLevel level)) return super.hurt(source, damage);
+        boolean hurt = super.hurt(source, damage);
         if (!hurt || isDeadOrDying()) return hurt;
         ItemStack weapon = source.getWeaponItem();
         if (weapon == null && source.getEntity() instanceof LivingEntity attacker) weapon = attacker.getMainHandItem();
@@ -481,7 +486,7 @@ public class ManaLeech extends Monster implements GeoEntity {
                 Vec3 away = position().subtract(on.position()).multiply(1, 0, 1);
                 away = away.lengthSqr() < 1e-4 ? Vec3.directionFromRotation(0, getYRot() + 180) : away.normalize();
                 setDeltaMovement(away.scale(0.5 + 0.4 * knock).add(0, 0.3, 0));
-                needsSync = true;
+                hasImpulse = true;
                 return hurt;
             }
         }
@@ -506,9 +511,8 @@ public class ManaLeech extends Monster implements GeoEntity {
     }
 
     @Override
-    protected void dropFromLootTable(ServerLevel level, DamageSource source, boolean playerKilled) {
-        if (offspring) dropFromLootTable(level, source, playerKilled, OFFSPRING_LOOT);
-        else super.dropFromLootTable(level, source, playerKilled);
+    protected net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable> getDefaultLootTable() {
+        return offspring ? OFFSPRING_LOOT : super.getDefaultLootTable();
     }
 
     @Override
@@ -549,15 +553,17 @@ public class ManaLeech extends Monster implements GeoEntity {
     // ---- saving -----------------------------------------------------------------------------------
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput out) {
-        super.addAdditionalSaveData(out);
+    public void addAdditionalSaveData(CompoundTag tag) {
+        ValueOutput out = TagValueOutput.of(tag, registryAccess());
+        super.addAdditionalSaveData(tag);
         out.putDouble("mana", mana());
         out.putBoolean("offspring", offspring);
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput in) {
-        super.readAdditionalSaveData(in);
+    public void readAdditionalSaveData(CompoundTag tag) {
+        ValueInput in = TagValueInput.create(ProblemReporter.DISCARDING, registryAccess(), tag);
+        super.readAdditionalSaveData(tag);
         setMana(in.getDoubleOr("mana", 0));
         offspring = in.getBooleanOr("offspring", false);
     }
@@ -566,7 +572,7 @@ public class ManaLeech extends Monster implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<ManaLeech>("body", 3, test -> {
+        controllers.add(new AnimationController<ManaLeech>(this, "body", 3, test -> {
             test.setControllerSpeed(1f);
             if (isDeadOrDying()) return test.setAndContinue(DEATH);
             switch (state()) {
@@ -590,7 +596,7 @@ public class ManaLeech extends Monster implements GeoEntity {
             return test.setAndContinue(test.isMoving() ? SWIM : IDLE);
         }));
         // Registered after the body so its swelling wins on the flesh bones it scales.
-        controllers.add(new AnimationController<ManaLeech>("swell", 5, test -> {
+        controllers.add(new AnimationController<ManaLeech>(this, "swell", 5, test -> {
             State s = state();
             if (isDeadOrDying() || s == State.LATCHED || s == State.SPLIT || mana() < SWELL_AT) return PlayState.STOP;
             return test.setAndContinue(FEED);

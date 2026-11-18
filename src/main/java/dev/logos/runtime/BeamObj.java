@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.lang.Node;
 import net.minecraft.core.BlockPos;
@@ -40,7 +40,7 @@ public final class BeamObj extends SpellObject {
     /** Set by move, halt or turn: from then on its start and direction no longer follow the caster or its :from/:dir. */
     private Vec3 heldFrom, heldDir;
     /** The caster's pose while it lasts, when the cast leads with this beam (see {@link CastPose#lead}). */
-    private CastPose.@Nullable Hold pose;
+    private @Nullable CastPose.Hold pose;
     private boolean posed;
 
     public BeamObj(Node node, Ctx ctx, double radius, double range, int life, int every, @Nullable Node fromNode, @Nullable Node dirNode, int trail) {

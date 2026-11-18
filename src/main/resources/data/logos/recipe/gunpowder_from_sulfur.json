@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "logos:sulfur_powder",
-    "#minecraft:coals",
-    "logos:saltpeter"
+    {
+      "item": "logos:sulfur_powder"
+    },
+    {
+      "tag": "minecraft:coals"
+    },
+    {
+      "item": "logos:saltpeter"
+    }
   ],
   "result": {
     "count": 3,

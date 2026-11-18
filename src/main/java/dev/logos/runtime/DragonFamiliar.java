@@ -6,13 +6,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.mixin.EnderDragonAccessor;
 import dev.logos.mixin.EnderDragonFightAccessor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,12 +26,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
+import net.minecraft.world.entity.boss.EnderDragonPart;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhaseManager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball;
+import net.minecraft.world.entity.projectile.DragonFireball;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -186,7 +185,7 @@ public final class DragonFamiliar {
      * the gaze. It turns to face where its rider faces.
      */
     private static void flyRidden(EnderDragon d, ServerPlayer rider) {
-        var input = rider.getLastClientInput();
+        var input = dev.logos.port.PlayerInputs.last(rider);
         float yaw = rider.getYRot() * Mth.DEG_TO_RAD;
         Vec3 ahead = new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw)), left = new Vec3(Mth.cos(yaw), 0, Mth.sin(yaw));
         Vec3 want = Vec3.ZERO;
@@ -226,7 +225,7 @@ public final class DragonFamiliar {
             case BREATH_ON -> {
                 // Run dry, it must catch its breath before breathing again.
                 if (BREATH.getOrDefault(d, BREATH_MAX) >= BREATH_RESTART) BREATHING.add(d);
-                else p.sendOverlayMessage(breathGauge(BREATH.get(d)));
+                else p.displayClientMessage(breathGauge(BREATH.get(d)), true);
             }
             case BREATH_OFF -> BREATHING.remove(d);
             default -> {}
@@ -240,7 +239,7 @@ public final class DragonFamiliar {
         NEXT_FIRE.put(d, now + FIRE_COOLDOWN);
         Vec3 from = mouth(d), dir = aimPoint(rider, 96).subtract(from).normalize();
         var f = new DragonFireball(d.level(), d, dir);
-        f.snapTo(from.x, from.y, from.z, 0, 0);
+        f.moveTo(from.x, from.y, from.z, 0, 0);
         // Launched faster than it flies, so the dragon does not overtake its own fireball.
         f.setDeltaMovement(dir.scale(1.2).add(d.getDeltaMovement()));
         d.level().addFreshEntity(f);
@@ -259,7 +258,7 @@ public final class DragonFamiliar {
             BREATHING.remove(d);
             if (left < BREATH_MAX) {
                 if (now % 2 == 0) BREATH.put(d, ++left);
-                if (now % 10 == 0) rider.sendOverlayMessage(breathGauge(left));
+                if (now % 10 == 0) rider.displayClientMessage(breathGauge(left), true);
             }
             return;
         }
@@ -268,7 +267,7 @@ public final class DragonFamiliar {
         Vec3 from = mouth(d), aim = aimPoint(rider, 96).subtract(from).normalize();
         BlockHitResult hit = level.clip(new ClipContext(from, from.add(aim.scale(BREATH_RANGE)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, d));
         double reach = hit.getType() == HitResult.Type.MISS ? BREATH_RANGE : hit.getLocation().distanceTo(from);
-        var breath = PowerParticleOption.create(ParticleTypes.DRAGON_BREATH, 1.0F);
+        var breath = ParticleTypes.DRAGON_BREATH;
         var r = d.getRandom();
         for (int i = 0; i < 6; i++) {
             Vec3 v = aim.add(r.nextGaussian() * 0.08, r.nextGaussian() * 0.08, r.nextGaussian() * 0.08).scale(0.8 + r.nextDouble() * 0.6);
@@ -280,9 +279,9 @@ public final class DragonFamiliar {
                 if (e == d || e.getVehicle() == d || Familiars.friendly(master, e)) continue;
                 Vec3 to = e.getBoundingBox().getCenter().subtract(from);
                 if (to.length() > reach + 1 || to.normalize().dot(aim) < BREATH_CONE) continue;
-                e.hurtServer(level, d.damageSources().source(DamageTypes.DRAGON_BREATH, d), BREATH_DAMAGE);
+                e.hurt(d.damageSources().source(DamageTypes.DRAGON_BREATH, d), BREATH_DAMAGE);
             }
-            rider.sendOverlayMessage(breathGauge(left));
+            rider.displayClientMessage(breathGauge(left), true);
         }
         if (now % 20 == 0) {
             level.playSound(null, from.x, from.y, from.z, SoundEvents.ENDER_DRAGON_GROWL, SoundSource.HOSTILE, 1.5f, 1.2f);
@@ -290,11 +289,10 @@ public final class DragonFamiliar {
                 // As its fireballs do: a cloud of breath where it strikes, its owner the dragon (so its master's side is spared).
                 var cloud = new AreaEffectCloud(level, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z);
                 cloud.setOwner(d);
-                cloud.setCustomParticle(breath);
+                cloud.setParticle(breath);
                 cloud.setRadius(2);
                 cloud.setDuration(60);
-                cloud.setPotionDurationScale(0.25F);
-                cloud.addEffect(new MobEffectInstance(MobEffects.INSTANT_DAMAGE, 1, 1));
+                cloud.addEffect(new MobEffectInstance(MobEffects.HARM, 1, 1));
                 level.addFreshEntity(cloud);
             }
         }
@@ -342,7 +340,7 @@ public final class DragonFamiliar {
 
     /** Brought back high above its master: a dragon needs sky, not a spot on the ground. */
     static boolean teleportNear(EnderDragon d, Player owner) {
-        d.snapTo(owner.getX(), owner.getY() + 20, owner.getZ(), d.getYRot(), d.getXRot());
+        d.moveTo(owner.getX(), owner.getY() + 20, owner.getZ(), d.getYRot(), d.getXRot());
         d.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
         return true;
     }

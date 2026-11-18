@@ -2,9 +2,15 @@
   "type": "logos:wand_upgrade",
   "category": "equipment",
   "ingredients": [
-    "logos:echo_wand",
-    "logos:raven_head",
-    "minecraft:gold_ingot"
+    {
+      "item": "logos:echo_wand"
+    },
+    {
+      "item": "logos:raven_head"
+    },
+    {
+      "item": "minecraft:gold_ingot"
+    }
   ],
   "result": {
     "id": "logos:adept_wand"

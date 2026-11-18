@@ -5,7 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
@@ -40,7 +40,7 @@ public final class ConstructGeometry {
     public final List<AABB> cells;
     public final AABB bounds;
     /** Each cell's collision shape once something has touched it. A construct that moves, turns or is resized gets a new geometry, and with it new shapes. */
-    private VoxelShape @Nullable [] shapes;
+    private @Nullable VoxelShape[] shapes;
 
     private ConstructGeometry(ConstructShape shape, Vec3 center, Vec3 right, Vec3 up, Vec3 forward,
             double width, double height, double depth, double radius, double cell) {
@@ -91,8 +91,8 @@ public final class ConstructGeometry {
         flat = flat.lengthSqr() < 1e-6 ? new Vec3(0, 0, 1) : flat.normalize();
         if (snap) {
             at = Vec3.atCenterOf(BlockPos.containing(at));
-            flat = Vec3.atLowerCornerOf(Direction.getApproximateNearest(flat.x, 0, flat.z).getUnitVec3i());
-            f = Vec3.atLowerCornerOf(Direction.getApproximateNearest(f.x, f.y, f.z).getUnitVec3i());
+            flat = Vec3.atLowerCornerOf(Direction.getNearest(flat.x, 0, flat.z).getNormal());
+            f = Vec3.atLowerCornerOf(Direction.getNearest(f.x, f.y, f.z).getNormal());
         }
         Vec3 worldUp = new Vec3(0, 1, 0);
         Vec3 forward, up;

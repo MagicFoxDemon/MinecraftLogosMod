@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:paper",
-    "logos:chalk",
-    "logos:adhesive"
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "logos:chalk"
+    },
+    {
+      "item": "logos:adhesive"
+    }
   ],
   "result": {
     "id": "logos:chalk_spell_page"

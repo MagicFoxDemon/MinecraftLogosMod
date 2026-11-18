@@ -6,7 +6,7 @@ import dev.logos.sage.SageServer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record SageAskPayload(int id, String lang, String history, String message, String current, int capacity, boolean emitter) implements CustomPacketPayload {
     public static final int MAX_HISTORY = 48_000;
 
-    public static final Type<SageAskPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "sage_ask"));
+    public static final Type<SageAskPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "sage_ask"));
     public static final StreamCodec<FriendlyByteBuf, SageAskPayload> CODEC = CustomPacketPayload.codec(SageAskPayload::write,
             b -> new SageAskPayload(b.readVarInt(), b.readUtf(16), b.readUtf(MAX_HISTORY), b.readUtf(SageAgent.MAX_MESSAGE), b.readUtf(SageAgent.MAX_SOURCE), b.readVarInt(), b.readBoolean()));
 

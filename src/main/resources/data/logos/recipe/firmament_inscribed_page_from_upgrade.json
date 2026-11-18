@@ -3,9 +3,15 @@
   "category": "misc",
   "group": "firmament_spell_page_upgrade",
   "ingredients": [
-    "logos:chalk_inscribed_page",
-    "logos:firmament_stone",
-    "logos:adhesive"
+    {
+      "item": "logos:chalk_inscribed_page"
+    },
+    {
+      "item": "logos:firmament_stone"
+    },
+    {
+      "item": "logos:adhesive"
+    }
   ],
   "result": {
     "id": "logos:firmament_inscribed_page"

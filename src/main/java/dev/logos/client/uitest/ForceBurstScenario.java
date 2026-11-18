@@ -14,12 +14,12 @@ import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.Vfx;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -104,7 +104,7 @@ public class ForceBurstScenario implements UIScenario {
 
         s.step("reset routing observation", ctx -> cache().clear())
                 .server("a cow to push and pull", sc -> {
-                    cow = EntityType.COW.create(sc.level(), EntitySpawnReason.COMMAND);
+                    cow = EntityType.COW.create(sc.level());
                     if (cow == null) throw new IllegalStateException("cow creation failed");
                     cow.setPos(.5, 101, 3);
                     sc.level().addFreshEntity(cow);
@@ -125,9 +125,9 @@ public class ForceBurstScenario implements UIScenario {
         s.runCommand("difficulty normal")
                 .step("reset routing observation", ctx -> cache().clear())
                 .server("a zombie holding a sword", sc -> {
-                    zombie = EntityType.ZOMBIE.create(sc.level(), EntitySpawnReason.COMMAND);
+                    zombie = EntityType.ZOMBIE.create(sc.level());
                     if (zombie == null) throw new IllegalStateException("zombie creation failed");
-                    zombie.snapTo(.5, 101, 3, 180, 0);
+                    zombie.moveTo(.5, 101, 3, 180, 0);
                     zombie.setNoAi(true);
                     zombie.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
                     sc.level().addFreshEntity(zombie);

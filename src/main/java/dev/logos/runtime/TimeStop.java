@@ -7,7 +7,7 @@ import java.util.WeakHashMap;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
@@ -34,7 +34,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class TimeStop {
-    private static final Identifier HOLD = Identifier.fromNamespaceAndPath(LogosMod.MODID, "time_stop");
+    private static final ResourceLocation HOLD = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "time_stop");
 
     private record Hit(DamageSource source, float amount) {}
 
@@ -104,7 +104,7 @@ public final class TimeStop {
         for (Hit h : s.hits) {
             if (!t.isAlive()) break;
             t.invulnerableTime = 0;
-            t.hurtServer(level, h.source, h.amount);
+            t.hurt(h.source, h.amount);
         }
     }
 

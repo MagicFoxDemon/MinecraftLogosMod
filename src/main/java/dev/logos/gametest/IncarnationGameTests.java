@@ -30,7 +30,7 @@ final class IncarnationGameTests {
         p.setGameMode(GameType.SURVIVAL);
         p.connection.markClientLoaded();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 4.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
@@ -94,7 +94,7 @@ final class IncarnationGameTests {
         h.assertTrue(Incarnation.start(p, EntityType.BLAZE, 30), "a blaze form should be taken");
         p.setGameMode(GameType.SURVIVAL); // creative takes no damage at all
         float health = p.getHealth();
-        p.hurtServer(level, level.damageSources().inFire(), 4);
+        p.hurt(level.damageSources().inFire(), 4);
         h.assertTrue(p.getHealth() == health, "a blaze should not burn");
 
         p.setGameMode(GameType.CREATIVE);
@@ -103,7 +103,7 @@ final class IncarnationGameTests {
         h.assertTrue(!pig.hands() && !pig.flies(), "a pig should have neither hands nor wings");
         p.setGameMode(GameType.SURVIVAL);
         health = p.getHealth();
-        p.hurtServer(level, level.damageSources().inFire(), 4);
+        p.hurt(level.damageSources().inFire(), 4);
         h.assertTrue(p.getHealth() < health, "a pig should burn");
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.DIAMOND_SWORD));
         var cow = h.spawn(EntityType.COW, new Vec3(5.5, 2, 4.5));
@@ -125,7 +125,7 @@ final class IncarnationGameTests {
         p.setGameMode(GameType.CREATIVE);
         @SuppressWarnings("removal")
         ServerPlayer other = h.makeMockServerPlayerInLevel();
-        other.snapTo(p.getX() + 2, p.getY(), p.getZ(), 0, 0);
+        other.moveTo(p.getX() + 2, p.getY(), p.getZ(), 0, 0);
         other.setGameMode(GameType.CREATIVE);
         h.assertTrue(Incarnation.start(p, EntityType.ZOMBIE, 100) && Incarnation.start(other, EntityType.ZOMBIE, 100), "both should become zombies");
         double left = Incarnation.remainingCost(p);
@@ -151,7 +151,7 @@ final class IncarnationGameTests {
         h.assertTrue(Incarnation.start(p, EntityType.BLAZE, 30) && Incarnation.skillOnUse(p), "a blaze's use button should be its skill");
         Incarnation.skill(p, null);
         Incarnation.skill(p, null);
-        var balls = level.getEntitiesOfClass(net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball.class, p.getBoundingBox().inflate(4));
+        var balls = level.getEntitiesOfClass(net.minecraft.world.entity.projectile.SmallFireball.class, p.getBoundingBox().inflate(4));
         h.assertTrue(balls.size() == 3 && balls.stream().allMatch(b -> b.getOwner() == p), "one volley of three fireballs of the player's, found " + balls.size());
         balls.forEach(net.minecraft.world.entity.Entity::discard);
 
@@ -186,26 +186,26 @@ final class IncarnationGameTests {
         h.assertTrue(Incarnation.start(p, EntityType.CAT, 30), "a cat form should be taken");
         p.setGameMode(GameType.SURVIVAL);
         float health = p.getHealth();
-        p.hurtServer(level, level.damageSources().fall(), 4);
+        p.hurt(level.damageSources().fall(), 4);
         h.assertTrue(p.getHealth() == health, "a cat should take no fall damage");
         p.setGameMode(GameType.CREATIVE);
         h.assertTrue(Incarnation.start(p, EntityType.PIG, 30), "a pig form should be taken");
         p.setGameMode(GameType.SURVIVAL);
         health = p.getHealth();
-        p.hurtServer(level, level.damageSources().fall(), 4);
+        p.hurt(level.damageSources().fall(), 4);
         h.assertTrue(p.getHealth() < health, "a pig should be hurt by a fall");
 
         p.setGameMode(GameType.CREATIVE);
         h.assertTrue(Incarnation.start(p, EntityType.STRIDER, 30) && Incarnation.walksOnLava(p), "a strider should walk on lava");
         net.minecraft.core.BlockPos lava = h.absolutePos(new net.minecraft.core.BlockPos(1, 1, 7));
         level.setBlockAndUpdate(lava, net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState());
-        p.snapTo(lava.getX() + 0.5, lava.getY() + 1.05, lava.getZ() + 0.5, 0, 0);
+        p.moveTo(lava.getX() + 0.5, lava.getY() + 1.05, lava.getZ() + 0.5, 0, 0);
         var surface = dev.logos.runtime.WaterWalking.withSurface(level.getBlockState(lava), level, lava,
                 net.minecraft.world.phys.shapes.CollisionContext.of(p), net.minecraft.world.phys.shapes.Shapes.empty());
         h.assertTrue(!surface.isEmpty(), "lava should hold a strider up");
 
         Vec3 home = h.absoluteVec(new Vec3(4.5, 2, 4.5));
-        p.snapTo(home.x, home.y, home.z, 0, 0);
+        p.moveTo(home.x, home.y, home.z, 0, 0);
         h.assertTrue(Incarnation.start(p, EntityType.COD, 30), "a cod form should be taken");
         p.setGameMode(GameType.SURVIVAL);
         int air = p.getAirSupply();
@@ -227,7 +227,7 @@ final class IncarnationGameTests {
 
         @SuppressWarnings("removal")
         ServerPlayer other = h.makeMockServerPlayerInLevel();
-        other.snapTo(p.getX() + 2, p.getY(), p.getZ(), 0, 0);
+        other.moveTo(p.getX() + 2, p.getY(), p.getZ(), 0, 0);
         other.setGameMode(GameType.CREATIVE);
         h.assertTrue(Incarnation.start(other, EntityType.IRON_GOLEM, 100), "the other player should become an iron golem");
         Incarnation.Form f = Incarnation.form(other);

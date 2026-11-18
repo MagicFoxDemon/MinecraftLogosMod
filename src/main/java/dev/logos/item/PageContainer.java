@@ -93,7 +93,7 @@ public final class PageContainer extends SimpleContainer {
     /** The pages stored on {@code holder}, without opening a container. */
     public static List<ItemStack> pages(ItemStack holder) {
         List<ItemStack> out = new ArrayList<>();
-        holder.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).nonEmptyItemCopyStream().forEach(out::add);
+        holder.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).nonEmptyItemsCopy().forEach(out::add);
         return out;
     }
 }

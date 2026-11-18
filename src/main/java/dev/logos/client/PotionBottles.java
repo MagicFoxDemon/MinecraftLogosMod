@@ -2,7 +2,7 @@ package dev.logos.client;
 
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.alchemy.BuffPotions;
@@ -10,7 +10,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -26,8 +26,8 @@ import net.neoforged.neoforge.client.event.ModelEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class PotionBottles implements ItemModel {
-    private static final Identifier POTION = Identifier.withDefaultNamespace("potion");
-    private static final Identifier LOGOS_POTION = Identifier.fromNamespaceAndPath(LogosMod.MODID, "potion");
+    private static final ResourceLocation POTION = ResourceLocation.withDefaultNamespace("potion");
+    private static final ResourceLocation LOGOS_POTION = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "potion");
 
     private final ItemModel others;
     private final ItemModel logos;
@@ -39,7 +39,7 @@ public final class PotionBottles implements ItemModel {
 
     @SubscribeEvent
     static void wrap(ModelEvent.ModifyBakingResult event) {
-        Map<Identifier, ItemModel> models = event.getBakingResult().itemStackModels();
+        Map<ResourceLocation, ItemModel> models = event.getBakingResult().itemStackModels();
         ItemModel others = models.get(POTION);
         ItemModel logos = models.get(LOGOS_POTION);
         if (others != null && logos != null) models.put(POTION, new PotionBottles(others, logos));

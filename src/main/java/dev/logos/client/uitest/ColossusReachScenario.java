@@ -12,7 +12,7 @@ import dev.logos.runtime.Colossi;
 import dev.logos.runtime.Familiars;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -94,9 +94,9 @@ public class ColossusReachScenario implements UIScenario {
     }
 
     private static void offer(ServerContext sc, EntityType<? extends Mob> type) {
-        Mob m = type.create(sc.level(), EntitySpawnReason.COMMAND);
+        Mob m = type.create(sc.level());
         // Just within its hand's reach (its edge 0.15 from the colossus's, clear of its feet), so it reaches at once.
-        m.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5 + 0.95 + m.getBbWidth() / 2 + 0.15, 180, 0);
+        m.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5 + 0.95 + m.getBbWidth() / 2 + 0.15, 180, 0);
         m.setNoAi(true);
         sc.level().addFreshEntity(m);
         victimId = m.getId();

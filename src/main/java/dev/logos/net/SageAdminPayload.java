@@ -5,7 +5,7 @@ import dev.logos.sage.SageServer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -16,7 +16,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  */
 public record SageAdminPayload(boolean save, boolean offered, String url, String model, String key, boolean clearKey,
                                int cooldownSeconds, int dailyLimit, int maxConcurrent) implements CustomPacketPayload {
-    public static final Type<SageAdminPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "sage_admin"));
+    public static final Type<SageAdminPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "sage_admin"));
     public static final StreamCodec<FriendlyByteBuf, SageAdminPayload> CODEC = CustomPacketPayload.codec(SageAdminPayload::write,
             b -> new SageAdminPayload(b.readBoolean(), b.readBoolean(), b.readUtf(512), b.readUtf(128), b.readUtf(512), b.readBoolean(),
                     b.readVarInt(), b.readVarInt(), b.readVarInt()));

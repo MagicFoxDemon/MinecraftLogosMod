@@ -20,8 +20,21 @@ public class PotionPowderItem extends Item {
     @Override
     public Component getName(ItemStack stack) {
         PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
-        if (contents == null || (contents.potion().isEmpty() && contents.customName().isEmpty())) return super.getName(stack);
-        return Component.translatable("item.logos.potion_powder.of", contents.getName("item.minecraft.potion.effect."));
+        if (contents == null || contents.potion().isEmpty()) return super.getName(stack);
+        return Component.translatable("item.logos.potion_powder.of",
+                Component.translatable(net.minecraft.world.item.alchemy.Potion.getName(contents.potion(), "item.minecraft.potion.effect.")));
+    }
+
+    /** Eaten: the potion's effects, as drinking it gives them. */
+    @Override
+    public ItemStack finishUsingItem(ItemStack stack, net.minecraft.world.level.Level level, net.minecraft.world.entity.LivingEntity entity) {
+        if (!level.isClientSide) {
+            stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).forEachEffect(effect -> {
+                if (effect.getEffect().value().isInstantenous()) effect.getEffect().value().applyInstantenousEffect(entity, entity, entity, effect.getAmplifier(), 1.0);
+                else entity.addEffect(effect);
+            });
+        }
+        return super.finishUsingItem(stack, level, entity);
     }
 
     /** A powder holding {@code contents}, {@code count} of it. */

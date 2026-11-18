@@ -10,12 +10,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 
-/** Inside an area weather zone, what falls is the zone's, whatever the world's weather (both sides). */
+/**
+ * Inside an area weather zone, what falls is the zone's, whatever the world's weather (both sides). 26.1 asks
+ * {@code precipitationAt}; 1.21.1 asks whether it rains at a place, which is what fire, cauldrons and the rest go by.
+ */
 @Mixin(Level.class)
 abstract class LevelMixin {
-    @Inject(method = "precipitationAt", at = @At("HEAD"), cancellable = true)
-    private void logos$areaWeather(BlockPos pos, CallbackInfoReturnable<Biome.Precipitation> cir) {
-        Biome.Precipitation p = AreaWeather.precipitationAt((Level) (Object) this, pos);
-        if (p != null) cir.setReturnValue(p);
+    @Inject(method = "isRainingAt", at = @At("HEAD"), cancellable = true)
+    private void logos$areaWeather(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+        Level level = (Level) (Object) this;
+        Biome.Precipitation p = AreaWeather.precipitationAt(level, pos);
+        if (p != null) cir.setReturnValue(p == Biome.Precipitation.RAIN && level.canSeeSky(pos));
     }
 }

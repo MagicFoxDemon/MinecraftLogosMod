@@ -1,6 +1,6 @@
 package dev.logos.runtime;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
@@ -34,6 +34,11 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class Charging {
     private Charging() {}
+
+    /** Whether using {@code stack} leaves its user walking and sprinting at full speed: a wand or staff (dev.logos.mixin.LocalPlayerMixin). */
+    public static boolean keepsPace(net.minecraft.world.item.ItemStack stack) {
+        return stack.getItem() instanceof dev.logos.item.WandItem;
+    }
 
     /** A cast being charged: what it will inject, how fast, and how far it has got. */
     public static final class Charge {
@@ -163,7 +168,7 @@ public final class Charging {
         m.charge = new Charge(entry, wand.getOrDefault(LogosMod.SELECTED.get(), 0), in, rate.flow(), rate.surge(),
                 WandCharmItem.on(wand, LogosMod.CHANT_CHARM.get()));
         sync(player, m.charge);
-        Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
+        Vfx.sound(player.serverLevel(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
         return true;
     }
 
@@ -191,7 +196,7 @@ public final class Charging {
      * The spell {@code wand} would cast from {@code hand}: its selected page, if the wand is in the main hand
      * and the spell is not passive. Null (and tells the player why) otherwise.
      */
-    static SpellBag.@Nullable Entry castable(ServerPlayer player, ItemStack wand, InteractionHand hand) {
+    static @Nullable SpellBag.Entry castable(ServerPlayer player, ItemStack wand, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND) {
             PlayerMagic.alert(player, Component.translatable("logos.cast.main_hand").withStyle(ChatFormatting.YELLOW));
             return null;
@@ -230,7 +235,7 @@ public final class Charging {
             player.stopUsingItem();
             return;
         }
-        ServerLevel level = player.level();
+        ServerLevel level = player.serverLevel();
         Vec3 tip = tip(player);
         if (!c.full()) {
             PlayerMagic m = PlayerMagic.of(player);
@@ -301,8 +306,8 @@ public final class Charging {
         m.charge = null;
         hide(player);
         if (c.injected <= 0) return;
-        FreeManaEntity.release(player.level(), player.getEyePosition().add(player.getLookAngle().scale(0.8)), c.injected);
-        Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.FIRE_EXTINGUISH, 0.4f, 1.6f);
+        FreeManaEntity.release(player.serverLevel(), player.getEyePosition().add(player.getLookAngle().scale(0.8)), c.injected);
+        Vfx.sound(player.serverLevel(), player.getEyePosition(), SoundEvents.FIRE_EXTINGUISH, 0.4f, 1.6f);
         PlayerMagic.alert(player, Component.translatable("logos.cast.charge_broken", Node.fmt(c.injected)).withStyle(ChatFormatting.GRAY));
     }
 

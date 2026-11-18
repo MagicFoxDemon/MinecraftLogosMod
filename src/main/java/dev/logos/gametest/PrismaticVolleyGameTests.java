@@ -21,7 +21,7 @@ final class PrismaticVolleyGameTests {
         @SuppressWarnings("removal")
         var caster = h.makeMockServerPlayerInLevel();
         Vec3 at = h.absoluteVec(new Vec3(4.5, 4, 1.5));
-        caster.snapTo(at.x, at.y, at.z, 0, 0);
+        caster.moveTo(at.x, at.y, at.z, 0, 0);
         caster.setYHeadRot(0);
         PlayerMagic.of(caster).baseMaxMana = PlayerMagic.of(caster).mana = 10000;
         PlayerMagic.of(caster).trace = false;

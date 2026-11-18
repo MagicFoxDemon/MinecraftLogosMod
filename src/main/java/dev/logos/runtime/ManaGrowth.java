@@ -2,7 +2,7 @@ package dev.logos.runtime;
 
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -32,11 +32,11 @@ public final class ManaGrowth {
         TOUGHNESS("toughness", "盔甲韧性"),
         PRACTICE("practice", "修行（累计耗魔）");
 
-        public final Identifier id;
+        public final ResourceLocation id;
         public final String zh;
 
         Term(String id, String zh) {
-            this.id = Identifier.fromNamespaceAndPath(LogosMod.MODID, "growth_" + id);
+            this.id = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "growth_" + id);
             this.zh = zh;
         }
     }

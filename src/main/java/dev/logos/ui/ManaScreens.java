@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.BindableValue;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
+import dev.logos.client.port.DrawerHelperClient;
 
 import dev.logos.runtime.ManaField;
 import dev.vfyjxf.taffy.style.TaffyPosition;
@@ -17,7 +17,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 
 /**
  * The drawn parts of the mana spreader's and collector's screens, in the bench's pixel style: the map

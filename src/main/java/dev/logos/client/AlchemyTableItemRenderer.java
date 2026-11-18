@@ -1,17 +1,17 @@
 package dev.logos.client;
 
-import com.geckolib.model.DefaultedBlockGeoModel;
-import com.geckolib.renderer.GeoItemRenderer;
+import software.bernie.geckolib.model.DefaultedBlockGeoModel;
+import software.bernie.geckolib.renderer.GeoItemRenderer;
 import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
-import com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
 import dev.logos.LogosMod;
 import dev.logos.item.AlchemyTableItem;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * The alchemy table item, drawn from the block's own model as a freshly placed table looks: no
@@ -26,7 +26,7 @@ public class AlchemyTableItemRenderer extends GeoItemRenderer<AlchemyTableItem> 
     private static final float HALF_HEIGHT = 23.5f / 2 / 16;
 
     public AlchemyTableItemRenderer() {
-        super(new DefaultedBlockGeoModel<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "alchemy_table")));
+        super(new DefaultedBlockGeoModel<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "alchemy_table")));
         withScale(SCALE);
         withRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
@@ -45,7 +45,7 @@ public class AlchemyTableItemRenderer extends GeoItemRenderer<AlchemyTableItem> 
 
     /** Glass is see-through. */
     @Override
-    public RenderType getRenderType(GeoRenderState state, Identifier texture) {
-        return RenderTypes.entityTranslucent(texture);
+    public RenderType getRenderType(GeoRenderState state, ResourceLocation texture) {
+        return RenderType.entityTranslucent(texture);
     }
 }

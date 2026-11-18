@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:mandrake_seed",
+  "seed": {
+    "item": "logos:mandrake_seed"
+  },
   "plant": "logos:mandrake_crop",
   "growth": 0.35
 }

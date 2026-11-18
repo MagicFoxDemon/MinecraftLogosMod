@@ -3,9 +3,15 @@
   "category": "misc",
   "group": "chalk_spell_page_upgrade",
   "ingredients": [
-    "logos:transmuted_inscribed_page",
-    "logos:chalk",
-    "logos:adhesive"
+    {
+      "item": "logos:transmuted_inscribed_page"
+    },
+    {
+      "item": "logos:chalk"
+    },
+    {
+      "item": "logos:adhesive"
+    }
   ],
   "result": {
     "id": "logos:chalk_inscribed_page"

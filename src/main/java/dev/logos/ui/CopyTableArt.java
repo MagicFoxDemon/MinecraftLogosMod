@@ -2,11 +2,11 @@ package dev.logos.ui;
 
 import java.util.function.BooleanSupplier;
 
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
+import dev.logos.client.port.DrawerHelperClient;
 
 /**
  * The copy table's screen drawn like the table itself, in the inscription table's red walnut, gilt

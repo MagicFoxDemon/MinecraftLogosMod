@@ -7,7 +7,7 @@ import dev.logos.runtime.Familiars;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
@@ -22,7 +22,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
  */
 final class SummonedMaids {
     /** What tames a wild maid in the maid mod; its own tag, looked up by name. */
-    private static final TagKey<Item> TAMING = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("touhou_little_maid", "maid_tamed_item"));
+    private static final TagKey<Item> TAMING = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("touhou_little_maid", "maid_tamed_item"));
 
     private SummonedMaids() {}
 
@@ -34,7 +34,7 @@ final class SummonedMaids {
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.FAIL);
         if (!event.getLevel().isClientSide()) {
-            event.getEntity().sendOverlayMessage(Component.translatable("logos.maid.summoned_untameable").withStyle(ChatFormatting.YELLOW));
+            event.getEntity().displayClientMessage(Component.translatable("logos.maid.summoned_untameable").withStyle(ChatFormatting.YELLOW), true);
         }
     }
 }

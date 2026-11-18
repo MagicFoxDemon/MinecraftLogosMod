@@ -29,7 +29,7 @@ import dev.vfyjxf.taffy.style.FlexDirection;
 import dev.vfyjxf.taffy.style.TaffyDisplay;
 import dev.logos.ui.ManuscriptControls;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -326,7 +326,7 @@ final class SagePanel extends UIElement {
             settingsView.clearAllChildren();
             settingsView.addChildren(tabs(), text(Component.translatable("logos.sage.settings.loading"), FADED));
             SageClient.adminListener = this::server;
-            ClientPacketDistributor.sendToServer(SageAdminPayload.read());
+            PacketDistributor.sendToServer(SageAdminPayload.read());
         }
         if (v == View.CHAT) {
             if (SageWork.busy()) busy();
@@ -396,10 +396,10 @@ final class SagePanel extends UIElement {
         TextField cooldown = number(s.cooldownSeconds(), 3600);
         TextField daily = number(s.dailyLimit(), 10_000);
         TextField concurrent = number(s.maxConcurrent(), 64);
-        Button save = button("logos.sage.settings.save", () -> ClientPacketDistributor.sendToServer(new SageAdminPayload(true, offered.getValue(),
+        Button save = button("logos.sage.settings.save", () -> PacketDistributor.sendToServer(new SageAdminPayload(true, offered.getValue(),
                 url.getValue(), model.getValue(), s.keyFromEnv() ? "" : key.getValue(), false,
                 parse(cooldown), parse(daily), parse(concurrent))));
-        Button clear = button("logos.sage.settings.clear_key", () -> ClientPacketDistributor.sendToServer(new SageAdminPayload(true, offered.getValue(),
+        Button clear = button("logos.sage.settings.clear_key", () -> PacketDistributor.sendToServer(new SageAdminPayload(true, offered.getValue(),
                 url.getValue(), model.getValue(), "", true, parse(cooldown), parse(daily), parse(concurrent))));
         UIElement actions = row();
         actions.addChildren(save, clear);

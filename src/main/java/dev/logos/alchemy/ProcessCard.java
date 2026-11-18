@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.Codec;
 
@@ -23,22 +23,22 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemStackTemplate;
+import dev.logos.port.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
-import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+import dev.logos.port.ResourceHandler;
+import dev.logos.port.FluidResource;
+import dev.logos.port.ItemResource;
+import dev.logos.port.ItemStacksResourceHandler;
+import dev.logos.port.Transaction;
+import dev.logos.port.TransactionContext;
 
 /**
  * A process card laid on an alchemy table: one process, nine input slots and nine output slots.
@@ -290,7 +290,7 @@ public final class ProcessCard {
     private List<AlchemyRecipe> recipes(AlchemyTableBlockEntity table, List<Source> sources) {
         List<AlchemyRecipe> recipes = new ArrayList<>();
         if (!(table.getLevel() instanceof ServerLevel level)) return recipes;
-        for (RecipeHolder<AlchemyRecipe> h : level.recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get())) {
+        for (RecipeHolder<AlchemyRecipe> h : level.getRecipeManager().getAllRecipesFor(LogosMod.ALCHEMY_RECIPE.get())) {
             if (h.value().process() == process) recipes.add(h.value());
         }
         recipes.addAll(SpecialRecipes.forThings(process, sources.stream().map(Source::resource).toList(), level));
@@ -352,8 +352,8 @@ public final class ProcessCard {
             if (left > 0) {
                 if (missing == null) return false;
                 ok = false;
-                var fluid = need.ingredient().fluids().stream().findFirst();
-                Component name = fluid.isPresent() ? new FluidStack(fluid.get(), 1).getHoverName() : Component.translatable("logos.alchemy_card.fluid");
+                var fluid = java.util.Arrays.stream(need.ingredient().getStacks()).findFirst();
+                Component name = fluid.isPresent() ? fluid.get().getHoverName() : Component.translatable("logos.alchemy_card.fluid");
                 missing.add(Component.translatable("logos.alchemy_card.missing_fluid", name, left));
             }
         }
@@ -372,7 +372,7 @@ public final class ProcessCard {
             if (left > 0) {
                 if (missing == null) return false;
                 ok = false;
-                Component name = need.ingredient().items().findFirst().map(i -> new ItemStack(i).getHoverName()).orElse(Component.literal("?"));
+                Component name = java.util.Arrays.stream(need.ingredient().getItems()).findFirst().map(ItemStack::getHoverName).orElse(Component.literal("?"));
                 missing.add(Component.translatable("logos.alchemy_card.missing_item", name, left));
             }
         }
@@ -521,7 +521,7 @@ public final class ProcessCard {
             int slot = i;
             // Tables saved before designations were exact kept just the item's id.
             in.read("designation" + i, ItemResource.CODEC).or(() -> in.getString("designated" + slot)
-                            .flatMap(id -> BuiltInRegistries.ITEM.getOptional(net.minecraft.resources.Identifier.tryParse(id))).map(ItemResource::of))
+                            .flatMap(id -> BuiltInRegistries.ITEM.getOptional(net.minecraft.resources.ResourceLocation.tryParse(id))).map(ItemResource::of))
                     .ifPresent(what -> card.designated[slot] = what);
         }
         in.child("inputs").ifPresent(card.inputs::deserialize);

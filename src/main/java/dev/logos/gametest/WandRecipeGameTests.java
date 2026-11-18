@@ -14,7 +14,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.SmithingMenu;
@@ -38,7 +38,7 @@ final class WandRecipeGameTests {
 
     private static ItemStack craft(GameTestHelper h, List<ItemStack> stacks) {
         var input = grid(stacks);
-        return h.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
+        return h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
                 .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
     }
 
@@ -67,7 +67,7 @@ final class WandRecipeGameTests {
     static void woodStaffs(GameTestHelper h) {
         for (int i = 0; i < LogosMod.WOOD_WANDS.size(); i++) {
             String wood = LogosMod.WOOD_WANDS.get(i).getId().getPath().replace("_wand", "");
-            Item log = BuiltInRegistries.ITEM.getValue(Identifier.withDefaultNamespace("stripped_" + wood + "_log"));
+            Item log = BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace("stripped_" + wood + "_log"));
             ItemStack old = equipped(h, LogosMod.WOOD_WANDS.get(i).get());
             ItemStack result = craft(h, List.of(new ItemStack(Items.GOLD_NUGGET), old, new ItemStack(log), new ItemStack(Items.GOLD_NUGGET)));
             h.assertTrue(result.is(LogosMod.WOOD_STAFFS.get(i).get()), "wrong staff for " + wood);
@@ -109,7 +109,7 @@ final class WandRecipeGameTests {
                 kept(h, old, result);
                 if (staff) h.assertTrue(StaffItem.stored(result) == 73, "upgrading refilled or lost staff mana");
                 var input = grid(ingredients);
-                var recipe = h.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel()).orElseThrow().value();
+                var recipe = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel()).orElseThrow().value();
                 if (tier == 1 || tier == 2) h.assertTrue(recipe.getRemainingItems(input).stream().filter(s -> s.is(Items.GLASS_BOTTLE)).count() == 1, "the alchemical core did not return its bottle");
                 old = result;
             }
@@ -149,9 +149,9 @@ final class WandRecipeGameTests {
                     && menu.getSlot(2).getItem().getCount() == 1, "smithing must consume one template, one base and one ingot");
             h.assertTrue(menu.getSlot(3).getItem().isEmpty(), "smithing left a second free result");
             var vanilla = new SmithingRecipeInput(new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE), base, new ItemStack(Items.NETHERITE_INGOT));
-            h.assertTrue(h.getLevel().recipeAccess().getRecipeFor(RecipeType.SMITHING, vanilla, h.getLevel()).isEmpty(), "vanilla template bypassed the philosopher's stone");
+            h.assertTrue(h.getLevel().getRecipeManager().getRecipeFor(RecipeType.SMITHING, vanilla, h.getLevel()).isEmpty(), "vanilla template bypassed the philosopher's stone");
             var missing = new SmithingRecipeInput(ItemStack.EMPTY, base, new ItemStack(Items.NETHERITE_INGOT));
-            h.assertTrue(h.getLevel().recipeAccess().getRecipeFor(RecipeType.SMITHING, missing, h.getLevel()).isEmpty(), "smithing needed no template");
+            h.assertTrue(h.getLevel().getRecipeManager().getRecipeFor(RecipeType.SMITHING, missing, h.getLevel()).isEmpty(), "smithing needed no template");
         }
         h.succeed();
     }
@@ -161,7 +161,7 @@ final class WandRecipeGameTests {
         h.assertTrue(craft(h, List.of(new ItemStack(LogosMod.ADEPT_WAND.get()), new ItemStack(Items.NETHER_STAR))).isEmpty(), "old recipe skips the chalk tier");
         h.assertTrue(craft(h, List.of(new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()), new ItemStack(LogosMod.ECHO_TINCTURE.get()), new ItemStack(Items.IRON_INGOT))).isEmpty(), "a wood wand skipped crystal");
         for (String id : List.of("principle_wand", "principle_staff")) {
-            h.assertTrue(h.getLevel().recipeAccess().byKey(ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath("logos", id))).isEmpty(), "creative tier has a survival recipe");
+            h.assertTrue(h.getLevel().getRecipeManager().byKey(ResourceKey.create(Registries.RECIPE, ResourceLocation.fromNamespaceAndPath("logos", id))).isEmpty(), "creative tier has a survival recipe");
         }
         h.succeed();
     }

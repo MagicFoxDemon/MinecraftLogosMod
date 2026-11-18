@@ -2,14 +2,36 @@
   "type": "logos:alchemy",
   "process": "ferment",
   "ingredients": [
-    { "ingredient": "#minecraft:meat" },
-    { "ingredient": "#c:eggs" },
-    { "ingredient": "logos:starter_culture" },
-    { "ingredient": "minecraft:sugar" },
-    { "ingredient": "minecraft:glass_bottle" }
+    {
+      "ingredient": {
+        "tag": "minecraft:meat"
+      }
+    },
+    {
+      "ingredient": {
+        "tag": "c:eggs"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:starter_culture"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:sugar"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass_bottle"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:foul_brine" }
+    {
+      "id": "logos:foul_brine"
+    }
   ],
   "mana": 2
 }

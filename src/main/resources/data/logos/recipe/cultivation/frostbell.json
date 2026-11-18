@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:frostbell_seed",
+  "seed": {
+    "item": "logos:frostbell_seed"
+  },
   "plant": "logos:frostbell_crop",
   "growth": 0.3
 }

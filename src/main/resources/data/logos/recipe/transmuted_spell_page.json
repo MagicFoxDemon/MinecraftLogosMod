@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "minecraft:paper",
-    "logos:raven_head",
-    "logos:adhesive"
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "logos:raven_head"
+    },
+    {
+      "item": "logos:adhesive"
+    }
   ],
   "result": {
     "id": "logos:transmuted_spell_page"

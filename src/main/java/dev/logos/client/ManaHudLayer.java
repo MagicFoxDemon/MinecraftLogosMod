@@ -3,7 +3,7 @@ package dev.logos.client;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
@@ -14,7 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -23,7 +23,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
+import dev.logos.port.RegisterClientPayloadHandlersEvent;
 
 /**
  * The mana HUD: a crystal and a brass-framed bar of ten cells in a corner of the screen (bottom left unless the
@@ -40,7 +40,7 @@ import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlers
  */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class ManaHudLayer {
-    private static final Identifier ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_hud");
+    private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "mana_hud");
     /** How long the HUD stays after the pool last changed. */
     static final int LINGER_TICKS = 60;
     /** Ticks to slide all the way in, and all the way out. */
@@ -62,15 +62,7 @@ public final class ManaHudLayer {
 
     private ManaHudLayer() {}
 
-    @SubscribeEvent
-    static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
-        event.register(ManaHudPayload.TYPE, (payload, ctx) -> receive(payload));
-    }
 
-    @SubscribeEvent
-    static void onRegisterLayers(RegisterGuiLayersEvent event) {
-        event.registerBelow(VanillaGuiLayers.CHAT, ID, ManaHudLayer::render);
-    }
 
     static void receive(ManaHudPayload p) {
         if (last == null) shownMana = shownManaBefore = p.mana();
@@ -205,5 +197,21 @@ public final class ManaHudLayer {
             g.text(font, held, cx + TEXT_X, gy - 2, ManaHudArt.AMBER_LIT, true);
         }
         if (spelled) g.text(font, spell, cx, cy + rows + 1, 0xFFFFFFFF, true);
+    }
+
+    /** Its listeners on the mod bus: on 1.21.1 a subscriber listens on one bus. */
+    @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    static final class ModBus {
+        private ModBus() {}
+
+        @SubscribeEvent
+        static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
+            event.register(ManaHudPayload.TYPE, (payload, ctx) -> receive(payload));
+        }
+
+        @SubscribeEvent
+        static void onRegisterLayers(RegisterGuiLayersEvent event) {
+            event.registerBelow(VanillaGuiLayers.CHAT, ID, ManaHudLayer::render);
+        }
     }
 }

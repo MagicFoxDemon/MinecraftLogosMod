@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.PlayerUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -22,12 +22,12 @@ import dev.logos.runtime.AlchemicalColossus.Hold;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -44,9 +44,9 @@ import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class Colossi {
-    public static final Identifier DEVICES_UI = Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossus_devices");
+    public static final ResourceLocation DEVICES_UI = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "colossus_devices");
     /** The hidden challenge 《这巨像魔了，是个魔像》, for everyone near a colossus when it goes berserk. */
-    public static final Identifier FRENZY_ADVANCEMENT = Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossus_frenzy");
+    public static final ResourceLocation FRENZY_ADVANCEMENT = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "colossus_frenzy");
     public static final int WITNESS_RANGE = 32;
 
     /** Drive-mode controls a rider sends. */
@@ -71,9 +71,9 @@ public final class Colossi {
      */
     public static @Nullable Component summon(ServerPlayer owner, ServerLevel level, Vec3 at, @Nullable String name) {
         if (LogosConfig.maxColossi() <= 0) return Component.translatable("logos.colossus.disabled");
-        AlchemicalColossus c = LogosMod.ALCHEMICAL_COLOSSUS.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        AlchemicalColossus c = LogosMod.ALCHEMICAL_COLOSSUS.get().create(level);
         if (c == null) return Component.translatable("logos.colossus.cannot_spawn");
-        c.snapTo(at.x, at.y, at.z, owner.getYRot() + 180, 0);
+        c.moveTo(at.x, at.y, at.z, owner.getYRot() + 180, 0);
         c.yBodyRot = c.yHeadRot = owner.getYRot() + 180;
         if (name != null && !name.isBlank()) {
             c.setCustomName(Component.literal(name.strip()));
@@ -187,7 +187,7 @@ public final class Colossi {
         switch (action) {
             case TOGGLE_DRIVE -> {
                 c.setDriven(!c.isDriven());
-                p.sendOverlayMessage(Component.translatable(c.isDriven() ? "logos.colossus.mode.drive" : "logos.colossus.mode.ride"));
+                p.displayClientMessage(Component.translatable(c.isDriven() ? "logos.colossus.mode.drive" : "logos.colossus.mode.ride"), true);
             }
             case STRIKE -> {
                 if (c.isDriven()) c.mind().driverStrike(p);

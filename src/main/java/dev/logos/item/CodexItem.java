@@ -1,5 +1,7 @@
 package dev.logos.item;
 
+import net.minecraft.world.InteractionResultHolder;
+import java.util.List;
 import java.util.function.Consumer;
 
 import com.lowdragmc.lowdraglib2.gui.factory.HeldItemUIMenuType;
@@ -14,7 +16,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 
 /**
@@ -29,7 +30,12 @@ public class CodexItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     }
 
     @Override
-    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        return new InteractionResultHolder<>(useItem(level, player, hand), player.getItemInHand(hand));
+    }
+
+    /** What {@link #use} does: the result alone, as 26.1's {@code use} returns it. */
+    protected InteractionResult useItem(Level level, Player player, InteractionHand hand) {
         if (!level.isClientSide() && player instanceof ServerPlayer sp) HeldItemUIMenuType.openUI(sp, hand);
         return InteractionResult.SUCCESS;
     }
@@ -41,7 +47,8 @@ public class CodexItem extends Item implements HeldItemUIMenuType.HeldItemUI {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
         long n = PageContainer.pages(stack).stream().filter(SpellPages::isInscribed).count();
         builder.accept(Component.translatable("logos.codex.count", n).withStyle(ChatFormatting.GRAY));
         builder.accept(Component.translatable("logos.codex.use_hint").withStyle(ChatFormatting.DARK_GRAY));

@@ -12,7 +12,7 @@ import dev.logos.runtime.Possession;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
@@ -44,8 +44,8 @@ public class PossessInventoryScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 0.5, 0, 10)
                 .server("go into a villager with things on it", sc -> {
                     var p = sc.player();
-                    var villager = EntityType.VILLAGER.create(p.level(), EntitySpawnReason.TRIGGERED);
-                    villager.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 3.5, 0, 0);
+                    var villager = EntityType.VILLAGER.create(p.level());
+                    villager.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 3.5, 0, 0);
                     villager.getInventory().setItem(0, new ItemStack(Items.WHEAT, 12));
                     villager.getInventory().setItem(1, new ItemStack(Items.CARROT, 5));
                     villager.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_HOE));

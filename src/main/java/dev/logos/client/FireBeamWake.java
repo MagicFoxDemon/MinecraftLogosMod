@@ -24,14 +24,14 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurve
 import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Box;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.lowdragmc.photon.client.render.FXCompositeMode;
+import com.lowdragmc.photon.client.gameobject.emitter.renderpipeline.FXCompositeMode;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.logos.runtime.Vfx;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;

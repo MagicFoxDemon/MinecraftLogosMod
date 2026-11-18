@@ -51,7 +51,7 @@ final class SpellEmitterGameTests {
     static void pulseCastsOnce(GameTestHelper h) {
         BlockPos pos = new BlockPos(1, 2, 1);
         SpellEmitterBlockEntity e = emitter(h, pos, SpecialNodes.EmitterMode.PULSE, 200);
-        h.assertTrue(h.getLevel().getBlockState(h.absolutePos(pos)).getAnalogOutputSignal(h.getLevel(), h.absolutePos(pos), Direction.WEST) == 3,
+        h.assertTrue(h.getLevel().getBlockState(h.absolutePos(pos)).getAnalogOutputSignal(h.getLevel(), h.absolutePos(pos)) == 3,
                 "200 of 1000 mana should read 3 on a comparator");
         h.startSequence()
                 .thenIdle(40)

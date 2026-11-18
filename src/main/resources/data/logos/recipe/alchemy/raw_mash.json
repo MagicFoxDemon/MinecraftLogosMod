@@ -2,12 +2,29 @@
   "type": "logos:alchemy",
   "process": "dissolve",
   "ingredients": [
-    { "ingredient": "logos:starter_culture" },
-    { "ingredient": "minecraft:glass_bottle", "count": 3 }
+    {
+      "ingredient": {
+        "item": "logos:starter_culture"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass_bottle"
+      },
+      "count": 3
+    }
   ],
-  "fluid": { "ingredient": "minecraft:water", "amount": 750 },
+  "fluid": {
+    "ingredient": {
+      "fluid": "minecraft:water"
+    },
+    "amount": 750
+  },
   "results": [
-    { "id": "logos:raw_mash", "count": 3 }
+    {
+      "id": "logos:raw_mash",
+      "count": 3
+    }
   ],
   "mana": 1
 }

@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * Compiled spells by source, failures included, so that reading a page does not parse it again. In

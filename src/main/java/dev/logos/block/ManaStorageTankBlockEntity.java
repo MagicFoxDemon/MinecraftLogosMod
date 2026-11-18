@@ -1,15 +1,19 @@
 package dev.logos.block;
 
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import java.util.Locale;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.ManaInfusion;
 import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringRepresentable;
@@ -19,12 +23,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.transfer.CombinedResourceHandler;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
+import dev.logos.port.CombinedResourceHandler;
+import dev.logos.port.ResourceHandler;
+import dev.logos.port.ItemResource;
+import dev.logos.port.ItemStacksResourceHandler;
 
 /**
  * 魔力存储罐: holds up to 5000 mana. Collectors, the infusing rune and mana items dropped in its input
@@ -250,8 +254,9 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueOutput output = TagValueOutput.of(tag, registries);
+        super.saveAdditional(tag, registries);
         input.serialize(output.child("input"));
         seed.serialize(output.child("seed"));
         this.output.serialize(output.child("output"));
@@ -261,8 +266,9 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
+        super.loadAdditional(tag, registries);
         input.child("input").ifPresent(this.input::deserialize);
         input.child("seed").ifPresent(seed::deserialize);
         input.child("output").ifPresent(output::deserialize);
@@ -281,7 +287,7 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     }
 
     @Override
-    protected void applyImplicitComponents(DataComponentGetter components) {
+    protected void applyImplicitComponents(net.minecraft.world.level.block.entity.BlockEntity.DataComponentInput components) {
         super.applyImplicitComponents(components);
         mana = Math.clamp(components.getOrDefault(LogosMod.STORED_MANA.get(), 0.0), 0, MAX_MANA);
     }

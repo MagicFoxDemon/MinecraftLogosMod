@@ -16,9 +16,9 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -49,9 +49,9 @@ public class StateLifecycleScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 3.5, 180, 0)
                 .server("a pig to hit, and mana in the air", sc -> {
                     ServerLevel level = (ServerLevel) sc.player().level();
-                    Pig pig = EntityType.PIG.create(level, EntitySpawnReason.TRIGGERED);
+                    Pig pig = EntityType.PIG.create(level);
                     pig.setNoAi(true);
-                    pig.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5, 0, 0);
+                    pig.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5, 0, 0);
                     level.addFreshEntity(pig);
                     for (int i = 0; i < 60; i++) {
                         ManaField.pour(level, ORIGIN, ManaField.CAP);
@@ -71,13 +71,13 @@ public class StateLifecycleScenario implements UIScenario {
                 .waitUntil("out of view, the chunk is forgotten", ctx -> known() == 0)
                 .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 3.5, 180, 0)
                 .waitUntil("back in view, the server tells it again", ctx -> known() > 0)
-                .server("off to the Nether", sc -> sc.player().teleportTo(sc.server().getLevel(Level.NETHER), 0.5, 120, 0.5, Set.of(), 0, 0, true))
+                .server("off to the Nether", sc -> sc.player().teleportTo(sc.server().getLevel(Level.NETHER), 0.5, 120, 0.5, Set.of(), 0, 0))
                 .waitUntil("the client is in the Nether", ctx -> Minecraft.getInstance().level.dimension() == Level.NETHER)
                 .check("nothing of the last level is held", ctx -> read(ManaField.class, "clientLevel") == null
                         && ((Map<?, ?>) read(ManaField.class, "CLIENT")).isEmpty());
         s.teardownServer("back, and the pig away", sc -> {
             ServerLevel overworld = sc.server().overworld();
-            sc.player().teleportTo(overworld, ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 3.5, Set.of(), 180, 0, true);
+            sc.player().teleportTo(overworld, ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 3.5, Set.of(), 180, 0);
             overworld.getEntitiesOfClass(Pig.class, new AABB(ORIGIN).inflate(6)).forEach(Entity::discard);
         });
     }

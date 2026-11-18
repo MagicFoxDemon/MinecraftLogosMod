@@ -18,9 +18,9 @@ import dev.logos.runtime.PlayerMagic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -95,7 +95,7 @@ public class FieldScenario implements UIScenario {
 
         // A field here: kept with its shape, laid on the ground, pulsing, noticing a cow, then ended and dropped.
         s.server("cast a field with a cow nearby", sc -> {
-                    cow = EntityType.COW.create(sc.level(), EntitySpawnReason.COMMAND);
+                    cow = EntityType.COW.create(sc.level());
                     if (cow == null) throw new IllegalStateException("cow creation failed");
                     cow.setPos(7.5, 101, .5);
                     cow.setNoAi(true);

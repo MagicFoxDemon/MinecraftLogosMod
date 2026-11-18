@@ -12,8 +12,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
-import net.minecraft.world.entity.monster.zombie.Husk;
-import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -35,7 +35,7 @@ final class ConstructGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0); // yaw 0 faces +Z
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0); // yaw 0 faces +Z
         p.setYHeadRot(0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1e9;
@@ -186,7 +186,7 @@ final class ConstructGameTests {
                     }
                 }
                 h.assertTrue(arrows.size() == 3, "expected the arrow and exactly two copies, got " + arrows.size());
-                h.assertTrue(arrows.stream().filter(x -> x != a).allMatch(x -> x.pickup == net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.CREATIVE_ONLY),
+                h.assertTrue(arrows.stream().filter(x -> x != a).allMatch(x -> x.pickup == net.minecraft.world.entity.projectile.AbstractArrow.Pickup.CREATIVE_ONLY),
                         "copies must not be pickable");
                 h.assertTrue(arrows.stream().allMatch(x -> relZ(h, x.position()) > 8), "all three should fly on through the wall");
                 h.succeed();

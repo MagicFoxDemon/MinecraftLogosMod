@@ -4,7 +4,7 @@ import dev.logos.LogosMod;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -17,9 +17,9 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
  * the spell's element colour, grows a pixel wider per charge tier, and once full glows steadily
  * with a pulse after a brief outward flash.
  */
-@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public final class ChargeRing {
-    private static final Identifier ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "charge_ring");
+    private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "charge_ring");
     /** Dots round the ring; each lights once its share of the charge is in. */
     private static final int DOTS = 40;
     private static final int FLASH_TICKS = 8;

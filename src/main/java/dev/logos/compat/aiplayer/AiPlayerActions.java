@@ -11,7 +11,7 @@ import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -44,13 +44,13 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.ProblemReporter;
+import dev.logos.port.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.TagValueOutput;
+import dev.logos.port.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -437,7 +437,7 @@ public final class AiPlayerActions {
         try {
             SpellGraph graph = GraphBuilder.build(spell);
             TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());
-            graph.graphModel.serialize(out);
+            dev.logos.port.Persisted.serialize(graph.graphModel, out);
             return out.buildResult();
         } catch (RuntimeException e) {
             LogosMod.LOGGER.warn("Could not draw the graph of an AI-written spell; the page keeps its source only: {}", e.toString());
@@ -826,7 +826,7 @@ public final class AiPlayerActions {
     /** Client thread. A hotbar slot with nothing in it, the selected one first, or null. */
     private static @Nullable Integer emptyHotbarSlot() {
         Inventory inventory = Minecraft.getInstance().player.getInventory();
-        if (inventory.getSelectedItem().isEmpty()) return inventory.getSelectedSlot();
+        if (inventory.getSelected().isEmpty()) return inventory.selected;
         for (int i = 0; i < 9; i++) if (inventory.getItem(i).isEmpty()) return i;
         return null;
     }

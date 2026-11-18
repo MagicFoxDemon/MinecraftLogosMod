@@ -13,7 +13,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.client.ChargeParts.View;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;

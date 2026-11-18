@@ -11,12 +11,12 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.transfer.item.ItemResource;
+import dev.logos.port.ItemResource;
 
 /**
  * Client → server, from the alchemy table's canvas: lay, move or take off a process card, designate
@@ -27,8 +27,8 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 public record AlchemyCardPayload(BlockPos table, Action action, int card, int x, int y, String item, ItemResource what) implements CustomPacketPayload {
     public enum Action { ADD, MOVE, REMOVE, DESIGNATE, CLEAR, ROUTE }
 
-    public static final Type<AlchemyCardPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "alchemy_card"));
-    public static final StreamCodec<RegistryFriendlyByteBuf, AlchemyCardPayload> CODEC = StreamCodec.composite(
+    public static final Type<AlchemyCardPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "alchemy_card"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, AlchemyCardPayload> CODEC = dev.logos.port.StreamCodecs.composite(
             BlockPos.STREAM_CODEC, AlchemyCardPayload::table, ByteBufCodecs.idMapper(i -> Action.values()[i], Action::ordinal), AlchemyCardPayload::action,
             ByteBufCodecs.VAR_INT, AlchemyCardPayload::card, ByteBufCodecs.VAR_INT, AlchemyCardPayload::x, ByteBufCodecs.VAR_INT, AlchemyCardPayload::y,
             ByteBufCodecs.STRING_UTF8, AlchemyCardPayload::item, ItemStack.OPTIONAL_STREAM_CODEC.map(ItemResource::of, what -> what.toStack(1)), AlchemyCardPayload::what, AlchemyCardPayload::new);
@@ -76,7 +76,7 @@ public record AlchemyCardPayload(BlockPos table, Action action, int card, int x,
         }
         if (p.card < 0 || p.card >= table.cards().size()) return;
         ProcessCard card = table.cards().get(p.card);
-        Item item = p.item.isEmpty() ? null : BuiltInRegistries.ITEM.getOptional(Identifier.tryParse(p.item)).orElse(null);
+        Item item = p.item.isEmpty() ? null : BuiltInRegistries.ITEM.getOptional(ResourceLocation.tryParse(p.item)).orElse(null);
         switch (p.action) {
             case MOVE -> card.moveTo(AlchemyTableUI.clampX(p.x), AlchemyTableUI.clampY(p.y));
             case REMOVE -> table.removeCard(p.card);

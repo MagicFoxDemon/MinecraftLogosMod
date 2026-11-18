@@ -15,7 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
-import net.neoforged.neoforge.transfer.item.ItemResource;
+import dev.logos.port.ItemResource;
 
 /**
  * Real-client look at mana storage tanks: the front row a quarter, half, three quarters and wholly full

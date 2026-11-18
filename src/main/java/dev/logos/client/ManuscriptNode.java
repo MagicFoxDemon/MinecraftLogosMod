@@ -2,17 +2,17 @@ package dev.logos.client;
 
 import java.util.Locale;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.Style;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElementRendererRegistry;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.GraphViewLod;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextElement;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
-import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import dev.logos.client.port.DrawerHelperClient;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.dependency.ModelUpdateVisitor;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.node.CollapsibleInOutNodeElement;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.node.CollapsibleNodeTitleElement;
@@ -174,7 +174,7 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
     private Manuscript.Plan circling;
     private float frameW = -1, frameH = -1, frameTitleTop = -1, frameTitle = -1;
     private @Nullable Element frameElement;
-    private Manuscript.@Nullable Plan sketch;
+    private @Nullable Manuscript.Plan sketch;
     private float sketchW = -1, sketchH = -1;
 
     ManuscriptNode(AbstractNodeModel model, LogosNode node) {
@@ -317,7 +317,7 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
 
     /** Off screen, nothing; zoomed out, a sketch of the figure rather than the toolkit's flat block. */
     @Override
-    protected void drawBackgroundTexture(IGUIContext context) {
+    public void drawBackgroundTexture(GUIContext context) {
         if (isCulled() || !(context instanceof GUIContext gui)) return;
         if (lod() != GraphViewLod.FULL) {
             drawSketch(gui);
@@ -355,7 +355,7 @@ final class ManuscriptNode extends CollapsibleInOutNodeElement {
     }
 
     @Override
-    protected void drawBackgroundAdditional(IGUIContext context) {
+    public void drawBackgroundAdditional(GUIContext context) {
         if (lod() == GraphViewLod.FULL) super.drawBackgroundAdditional(context);
     }
 

@@ -16,9 +16,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -90,14 +90,14 @@ public class LightningRayScenario implements UIScenario {
 
     private static void placeCow(ServerLevel level) {
         if (target == null || !target.isAlive()) {
-            target = EntityType.COW.create(level, EntitySpawnReason.COMMAND);
+            target = EntityType.COW.create(level);
             if (target == null) throw new IllegalStateException("cow creation failed");
             target.setNoAi(true);
             level.addFreshEntity(target);
         }
         target.setHealth(target.getMaxHealth());
         target.setDeltaMovement(0, 0, 0);
-        target.snapTo(.5, COW, 8.5, 180, 0);
+        target.moveTo(.5, COW, 8.5, 180, 0);
     }
 
     private static void lane(ScenarioBuilder s, int y) {

@@ -3,7 +3,7 @@ package dev.logos.client;
 import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegisterClient;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.CustomShaderMaterial;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.IMaterial;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Capsule's distorted spiral mapped onto a static annulus, with crisp white-gold edges.
@@ -12,7 +12,7 @@ import net.minecraft.resources.Identifier;
 @LDLRegisterClient(name = "logos_physical_impact_spiral", registry = "photon:material")
 public final class PhysicalProjectileImpactMaterial extends CustomShaderMaterial {
     public PhysicalProjectileImpactMaterial() {
-        super(Identifier.fromNamespaceAndPath("logos", "physical_impact_spiral"));
+        super(ResourceLocation.fromNamespaceAndPath("logos", "physical_impact_spiral"));
         PhotonShaderTextures.bind(this,
                 "SpiralNoise", "logos:textures/vfx/physical_impact/spiral_noise.png",
                 "SpiralDistortion", "logos:textures/vfx/physical_impact/spiral_distortion.png",

@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "G": "minecraft:gold_nugget",
-    "L": "#minecraft:acacia_logs",
-    "P": "minecraft:acacia_planks"
+    "G": {
+      "item": "minecraft:gold_nugget"
+    },
+    "L": {
+      "tag": "minecraft:acacia_logs"
+    },
+    "P": {
+      "item": "minecraft:acacia_planks"
+    }
   },
   "pattern": [
     "  G",

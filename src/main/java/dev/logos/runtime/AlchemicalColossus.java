@@ -1,20 +1,24 @@
 package dev.logos.runtime;
 
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.nbt.CompoundTag;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
-import com.geckolib.animatable.GeoEntity;
-import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
-import com.geckolib.animation.AnimationController;
-import com.geckolib.animation.RawAnimation;
-import com.geckolib.animation.object.PlayState;
-import com.geckolib.util.GeckoLibUtil;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import dev.logos.LogosMod;
 import net.minecraft.ChatFormatting;
@@ -51,8 +55,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -147,7 +151,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     static final EntityDataAccessor<Integer> SEAT_LEFT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
     static final EntityDataAccessor<Integer> SEAT_RIGHT = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
     /** What its cannon arm points at, relative to its feet; zero while it is not aiming. */
-    static final EntityDataAccessor<Vector3fc> AIM = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.VECTOR3);
+    static final EntityDataAccessor<org.joml.Vector3f> AIM = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.VECTOR3);
     /** What its hand reaches for (an entity id: to grab, or to strike), or -1. */
     static final EntityDataAccessor<Integer> REACH = SynchedEntityData.defineId(AlchemicalColossus.class, EntityDataSerializers.INT);
 
@@ -396,8 +400,9 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     // ---- body ------------------------------------------------------------------------------------
 
     @Override
-    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return super.hurtServer(level, source, amount);
+    public boolean hurt(DamageSource source, float amount) {
+        if (!(level() instanceof ServerLevel level)) return super.hurt(source, amount);
+        if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return super.hurt(source, amount);
         // Like the ender dragon's body: a quarter of the blow, and at least a little of any blow. Void damage meets neither that nor its devices.
         float taken = amount / 4 + Math.min(amount, 1);
         taken = source.is(Effects.VOID) ? amount : shieldedDamage(source, taken);
@@ -407,7 +412,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             burnOut();
             return true;
         }
-        boolean hurt = super.hurtServer(level, source, taken);
+        boolean hurt = super.hurt(source, taken);
         if (hurt && taken >= 15 && mind != null && mind.idleBody()) play(Act.HURT);
         return hurt;
     }
@@ -421,7 +426,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         UUID id = isBerserk() ? null : Familiars.masterOf(this);
         Player master = id == null ? null : level.getPlayerByUUID(id);
         DamageSource source = master == null ? damageSources().source(type, this) : damageSources().source(type, this, master);
-        boolean hurt = e.hurtServer(level, source, amount);
+        boolean hurt = e.hurt(source, amount);
         if (hurt && master != null && e.isAlive()) e.setLastHurtByMob(this);
         return hurt;
     }
@@ -439,14 +444,14 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         return isTempered() ? TEMPERED_DEVICES : DEVICES;
     }
 
-    /** A shield that blocks its fist is battered aside for five seconds. */
+    /** A shield that blocks its fist is battered aside (for five seconds, as an axe does on 1.21.1). */
     @Override
-    public float getSecondsToDisableBlocking() {
-        return 5f;
+    public boolean canDisableShield() {
+        return true;
     }
 
     @Override
-    public boolean causeFallDamage(double distance, float multiplier, DamageSource source) {
+    public boolean causeFallDamage(float distance, float multiplier, DamageSource source) {
         return false;
     }
 
@@ -499,7 +504,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         if (level() instanceof ServerLevel level) {
             // Driven, vanilla leaves its movement to the rider's client and skips its AI on the server
             // altogether; its mind must still run the blows and the cannon its rider asks for.
-            if (isClientAuthoritative() && mind != null && mind.canUse()) mind.tick();
+            if (isControlledByLocalInstance() && mind != null && mind.canUse()) mind.tick();
             if (!isDormant() && mind != null) mind.stomp();
             actTicks++;
             Act a = act();
@@ -664,9 +669,10 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
      * eases onto its facing (as the server sets it, body and facing together).
      */
     @Override
-    protected void tickHeadTurn(float bodyYaw) {
-        if (level().isClientSide()) yBodyRot += Mth.wrapDegrees(getYRot() - yBodyRot) * 0.3f;
-        else super.tickHeadTurn(bodyYaw);
+    protected float tickHeadTurn(float bodyYaw, float animStep) {
+        if (!level().isClientSide()) return super.tickHeadTurn(bodyYaw, animStep);
+        yBodyRot += Mth.wrapDegrees(getYRot() - yBodyRot) * 0.3f;
+        return animStep;
     }
 
     @Override
@@ -738,7 +744,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             mind.takeFlower(player);
             return InteractionResult.SUCCESS;
         }
-        Lifeforms.ManaFuel fuel = held.isEmpty() ? null : held.typeHolder().getData(LogosMod.MANA_FUEL);
+        Lifeforms.ManaFuel fuel = held.isEmpty() ? null : held.getItemHolder().getData(LogosMod.MANA_FUEL);
         if (fuel != null) {
             if (fuel.unstable() && !isTempered()) {
                 if (!player.getAbilities().instabuild) held.shrink(1);
@@ -750,7 +756,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             if (!player.getAbilities().instabuild) held.shrink(1);
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 0.7f);
             if (mind != null && !isBerserk()) mind.maybeOfferFlower(player, 0.3);
-            player.sendOverlayMessage(status());
+            player.displayClientMessage(status(), true);
             return InteractionResult.SUCCESS;
         }
         if (held.is(LogosMod.MAINTENANCE_KIT.get())) {
@@ -759,11 +765,11 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             entityData.set(SCORCHED, false);
             if (!player.getAbilities().instabuild) held.shrink(1);
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.ANVIL_USE, SoundSource.NEUTRAL, 0.8f, 0.9f);
-            player.sendOverlayMessage(status());
+            player.displayClientMessage(status(), true);
             return InteractionResult.SUCCESS;
         }
         if (isBerserk() || isDormant()) {
-            player.sendOverlayMessage(status());
+            player.displayClientMessage(status(), true);
             return InteractionResult.SUCCESS;
         }
         if (master && player.isShiftKeyDown()) {
@@ -771,7 +777,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             return InteractionResult.SUCCESS;
         }
         if (held.isEmpty() && mind != null && mind.requestBoarding(player)) return InteractionResult.SUCCESS;
-        player.sendOverlayMessage(status());
+        player.displayClientMessage(status(), true);
         return InteractionResult.SUCCESS;
     }
 
@@ -789,8 +795,9 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
     // ---- saving -----------------------------------------------------------------------------------
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput out) {
-        super.addAdditionalSaveData(out);
+    public void addAdditionalSaveData(CompoundTag tag) {
+        ValueOutput out = TagValueOutput.of(tag, registryAccess());
+        super.addAdditionalSaveData(tag);
         out.putDouble("mana", mana);
         out.putBoolean("berserk", isBerserk());
         out.putBoolean("scorched", isScorched());
@@ -798,12 +805,13 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         out.putBoolean("dormant", isDormant());
         NonNullList<ItemStack> items = NonNullList.withSize(TEMPERED_DEVICES, ItemStack.EMPTY);
         for (int i = 0; i < TEMPERED_DEVICES; i++) items.set(i, devices.getItem(i));
-        ContainerHelper.saveAllItems(out, items);
+        ContainerHelper.saveAllItems(tag, items, registryAccess());
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput in) {
-        super.readAdditionalSaveData(in);
+    public void readAdditionalSaveData(CompoundTag tag) {
+        ValueInput in = TagValueInput.create(ProblemReporter.DISCARDING, registryAccess(), tag);
+        super.readAdditionalSaveData(tag);
         entityData.set(BERSERK, in.getBooleanOr("berserk", false));
         entityData.set(SCORCHED, in.getBooleanOr("scorched", false));
         entityData.set(TEMPERED, in.getBooleanOr("tempered", false));
@@ -811,7 +819,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
         setMana(in.getDoubleOr("mana", 0));
         if (isDormant()) entityData.set(ACT, Act.DORMANT.ordinal());
         NonNullList<ItemStack> items = NonNullList.withSize(TEMPERED_DEVICES, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(in, items);
+        ContainerHelper.loadAllItems(tag, items, registryAccess());
         for (int i = 0; i < TEMPERED_DEVICES; i++) devices.setItem(i, items.get(i));
     }
 
@@ -819,7 +827,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<AlchemicalColossus>("body", 5, test -> {
+        controllers.add(new AnimationController<AlchemicalColossus>(this, "body", 5, test -> {
             test.setControllerSpeed(1f);
             if (isDeadOrDying()) return test.setAndContinue(DEATH);
             Act a = act();
@@ -829,7 +837,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
                 // that drops the pose to blend from, and GeckoLib then blends toward the model's rest pose
                 // (arms hanging) for the first few frames of every act. Only the same act again (a second
                 // punch), which GeckoLib sees as no change, is sent back to its first frame by hand.
-                if (seq != lastSeq && a == lastAct) test.controller().setAnimationTime(0);
+                if (seq != lastSeq && a == lastAct) test.getController().forceAnimationReset();
                 lastSeq = seq;
                 lastAct = a;
                 lastLoco = null;
@@ -850,7 +858,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             lastLoco = loco;
             return test.setAndContinue(loco);
         }));
-        controllers.add(new AnimationController<AlchemicalColossus>("core", 5, test -> {
+        controllers.add(new AnimationController<AlchemicalColossus>(this, "core", 5, test -> {
             if (isDeadOrDying() || isDormant() || act() == Act.DORMANT || act() == Act.POWER_DOWN) return PlayState.STOP;
             return test.setAndContinue(CORE);
         }));

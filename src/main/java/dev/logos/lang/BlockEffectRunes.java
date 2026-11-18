@@ -21,7 +21,7 @@ import dev.logos.runtime.TimeSkipObj;
 import dev.logos.runtime.Vfx;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -113,7 +113,7 @@ final class BlockEffectRunes {
                     Node itemNode = kw(n, "item");
                     net.minecraft.world.item.Item item = null;
                     if (itemNode != null && !(caster instanceof SpellEmitterBlockEntity.Shadow)) {
-                        Identifier id = Identifier.tryParse(text(itemNode, c));
+                        ResourceLocation id = ResourceLocation.tryParse(text(itemNode, c));
                         item = id == null ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
                         if (item == null) return null;
                     }
@@ -133,15 +133,16 @@ final class BlockEffectRunes {
                         }
                         // A stand-in clicks for them: it opens no screens, and hands back whatever it ends up holding.
                         FakePlayer hand = FakePlayerFactory.get(p.level(), caster.getGameProfile());
-                        hand.snapTo(caster.getX(), caster.getY(), caster.getZ(), caster.getYRot(), caster.getXRot());
+                        hand.moveTo(caster.getX(), caster.getY(), caster.getZ(), caster.getYRot(), caster.getXRot());
                         hand.setYHeadRot(caster.getYHeadRot());
                         if (hand.gameMode.getGameModeForPlayer() != GameType.SURVIVAL) hand.setGameMode(GameType.SURVIVAL);
                         hand.getInventory().clearContent();
                         ItemStack held = slot < 0 ? ItemStack.EMPTY : inventory.removeItemNoUpdate(slot);
                         hand.setItemInHand(InteractionHand.MAIN_HAND, held);
                         Vec3 centre = Vec3.atCenterOf(p.block());
-                        Direction face = Direction.getApproximateNearest(caster.getEyePosition().subtract(centre));
-                        BlockHitResult hit = new BlockHitResult(centre.add(face.getUnitVec3().scale(0.5)), face, p.block(), false);
+                        Vec3 toward = caster.getEyePosition().subtract(centre);
+                        Direction face = Direction.getNearest(toward.x, toward.y, toward.z);
+                        BlockHitResult hit = new BlockHitResult(centre.add(Vec3.atLowerCornerOf(face.getNormal()).scale(0.5)), face, p.block(), false);
                         InteractionResult result = hand.gameMode.useItemOn(hand, p.level(), held, InteractionHand.MAIN_HAND, hit);
                         ItemStack back = hand.getMainHandItem();
                         hand.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -197,7 +198,7 @@ final class BlockEffectRunes {
                         c.inst().terminate(Component.translatable("logos.spell.end.no_global_snow"));
                         return null;
                     }
-                    if (!c.level().canHaveWeather()) {
+                    if (!(c.level().dimensionType().hasSkyLight() && !c.level().dimensionType().hasCeiling())) {
                         c.inst().terminate(Component.translatable("logos.spell.end.no_weather"));
                         return null;
                     }
@@ -205,9 +206,9 @@ final class BlockEffectRunes {
                     if (!c.inst().spend(w == Weather.THUNDER ? 200 : 100, "world-weather")) return null;
                     var server = c.level().getServer();
                     switch (w) {
-                        case CLEAR -> server.setWeatherParameters(ticks, 0, false, false);
-                        case RAIN -> server.setWeatherParameters(0, ticks, true, false);
-                        default -> server.setWeatherParameters(0, ticks, true, true);
+                        case CLEAR -> c.level().setWeatherParameters(ticks, 0, false, false);
+                        case RAIN -> c.level().setWeatherParameters(0, ticks, true, false);
+                        default -> c.level().setWeatherParameters(0, ticks, true, true);
                     }
                     Vfx.sound(c.level(), c.inst().caster.getEyePosition(), net.minecraft.sounds.SoundEvents.BEACON_POWER_SELECT, 1f, 0.7f);
                     return null;
@@ -219,7 +220,7 @@ final class BlockEffectRunes {
                 .exec((n, c) -> {
                     Weather w = eval(n.arg(0), c) instanceof Weather x ? x : Weather.RAIN;
                     Place at = place(kw(n, "at"), c);
-                    if (!at.level().canHaveWeather()) {
+                    if (!(at.level().dimensionType().hasSkyLight() && !at.level().dimensionType().hasCeiling())) {
                         c.inst().terminate(Component.translatable("logos.spell.end.no_weather"));
                         return null;
                     }

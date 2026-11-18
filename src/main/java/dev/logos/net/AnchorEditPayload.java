@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * {@code name}, on the clicked face or into the block itself, or (with {@code remove}) pull up anchor {@code name}.
  */
 public record AnchorEditPayload(String name, BlockPos pos, Direction face, boolean into, boolean remove) implements CustomPacketPayload {
-    public static final Type<AnchorEditPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "anchor_edit"));
+    public static final Type<AnchorEditPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "anchor_edit"));
     public static final StreamCodec<RegistryFriendlyByteBuf, AnchorEditPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, AnchorEditPayload::name, BlockPos.STREAM_CODEC, AnchorEditPayload::pos,
             Direction.STREAM_CODEC, AnchorEditPayload::face, ByteBufCodecs.BOOL, AnchorEditPayload::into,
@@ -50,18 +50,18 @@ public record AnchorEditPayload(String name, BlockPos pos, Direction face, boole
     public static void handle(AnchorEditPayload p, IPayloadContext ctx) {
         if (!(ctx.player() instanceof ServerPlayer sp)) return;
         if (p.remove) {
-            if (Anchors.remove(sp, p.name)) sp.sendOverlayMessage(Component.translatable("logos.anchor.removed", p.name).withStyle(ChatFormatting.GOLD));
+            if (Anchors.remove(sp, p.name)) sp.displayClientMessage(Component.translatable("logos.anchor.removed", p.name).withStyle(ChatFormatting.GOLD), true);
             return;
         }
-        if (!sp.isWithinBlockInteractionRange(p.pos, 1.0)) return;
+        if (!sp.canInteractWithBlock(p.pos, 1.0)) return;
         BlockPos at = p.into ? p.pos : p.pos.relative(p.face);
-        Component why = Anchors.set(sp, p.name, sp.level(), place(p.pos, p.face, p.into));
+        Component why = Anchors.set(sp, p.name, sp.serverLevel(), place(p.pos, p.face, p.into));
         if (why != null) {
-            sp.sendOverlayMessage(Component.translatable("logos.anchor.refused", why).withStyle(ChatFormatting.RED));
+            sp.displayClientMessage(Component.translatable("logos.anchor.refused", why).withStyle(ChatFormatting.RED), true);
             return;
         }
         sp.level().playSound(null, at, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1f, 0.8f);
-        sp.sendOverlayMessage(Component.translatable(p.into ? "logos.anchor.set_into" : "logos.anchor.set_at", Anchors.clean(p.name), at.toShortString())
-                .withStyle(ChatFormatting.GOLD));
+        sp.displayClientMessage(Component.translatable(p.into ? "logos.anchor.set_into" : "logos.anchor.set_at", Anchors.clean(p.name), at.toShortString())
+                .withStyle(ChatFormatting.GOLD), true);
     }
 }

@@ -48,7 +48,7 @@ public final class StatusData {
         int ticks = (int) Math.round(seconds * 20);
         StatusData d = of(e);
         d.frozenUntil = Math.max(d.frozenUntil, e.level().getGameTime() + ticks);
-        e.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, ticks, 5, false, false));
+        e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, 5, false, false));
         e.setTicksFrozen(Math.max(e.getTicksFrozen(), e.getTicksRequiredToFreeze() + ticks));
     }
 }

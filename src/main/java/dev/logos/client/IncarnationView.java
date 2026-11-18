@@ -3,12 +3,12 @@ package dev.logos.client;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.runtime.Incarnation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
@@ -48,7 +48,7 @@ public final class IncarnationView {
             if (f == null || type == null) continue;
             Mob shell = SHELLS.get(p);
             if (shell == null || shell.getType() != type) {
-                if (!(type.create(mc.level, EntitySpawnReason.LOAD) instanceof Mob m)) continue;
+                if (!(type.create(mc.level) instanceof Mob m)) continue;
                 shell = m;
                 shell.setSilent(true);
                 shell.setPos(p.position());

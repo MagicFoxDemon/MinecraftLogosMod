@@ -16,8 +16,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import dev.logos.port.ItemResource;
+import dev.logos.port.Transaction;
 
 /** The mana field (ManaField), the spreader that fills it and the collector that draws on it. */
 final class ManaFieldGameTests {
@@ -178,11 +178,11 @@ final class ManaFieldGameTests {
     static void caputMortuumBlockCrafts(GameTestHelper h) {
         var nine = net.minecraft.world.item.crafting.CraftingInput.of(3, 3,
                 java.util.Collections.nCopies(9, new ItemStack(LogosMod.CAPUT_MORTUUM.get())));
-        ItemStack block = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, nine, h.getLevel())
+        ItemStack block = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, nine, h.getLevel())
                 .map(r -> r.value().assemble(nine)).orElse(ItemStack.EMPTY);
         h.assertTrue(block.is(LogosMod.CAPUT_MORTUUM_BLOCK_ITEM.get()), "nine caput mortuum made " + block);
         var one = net.minecraft.world.item.crafting.CraftingInput.of(1, 1, java.util.List.of(new ItemStack(LogosMod.CAPUT_MORTUUM_BLOCK_ITEM.get())));
-        ItemStack back = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, one, h.getLevel())
+        ItemStack back = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, one, h.getLevel())
                 .map(r -> r.value().assemble(one)).orElse(ItemStack.EMPTY);
         h.assertTrue(back.is(LogosMod.CAPUT_MORTUUM.get()) && back.getCount() == 9, "the block broke into " + back);
         h.succeed();

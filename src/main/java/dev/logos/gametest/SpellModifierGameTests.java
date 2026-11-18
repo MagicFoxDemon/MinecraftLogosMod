@@ -16,7 +16,7 @@ import dev.logos.runtime.SpellModifiers;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -29,7 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.player.Player;
@@ -43,7 +43,7 @@ import net.minecraft.world.phys.Vec3;
 
 /** In-world tests for the spell attributes buffs feed: damage, resistance, rune cost, charge speed and mana. */
 final class SpellModifierGameTests {
-    private static final Identifier BUFF = Identifier.fromNamespaceAndPath(LogosMod.MODID, "test_buff");
+    private static final ResourceLocation BUFF = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "test_buff");
 
     private SpellModifierGameTests() {}
 
@@ -52,7 +52,7 @@ final class SpellModifierGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(4.5, 2, 1.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1000;
         m.trace = false;
@@ -192,7 +192,7 @@ final class SpellModifierGameTests {
         ServerPlayer p = caster(h);
         Cow c = cow(h);
         buff(c, Attributes.ARMOR, 20);
-        c.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 4));
+        c.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 4));
         buff(c, SpellModifiers.SPELL_RESISTANCE, 0.9);
         buff(c, SpellModifiers.resistanceAttribute(Element.VOID), 0.9);
         Effects.shield(c, 4);
@@ -214,7 +214,7 @@ final class SpellModifierGameTests {
         ItemStack chest = new ItemStack(Items.DIAMOND_CHESTPLATE);
         chest.enchant(h.getLevel().registryAccess().getOrThrow(Enchantments.PROTECTION), 4);
         p.setItemSlot(EquipmentSlot.CHEST, chest);
-        p.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 4));
+        p.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 4));
         Cow c = cow(h);
         float health = p.getHealth();
         Effects.damage(c, p, 4, Element.VOID);
@@ -286,7 +286,7 @@ final class SpellModifierGameTests {
     static void executeIsVoid(GameTestHelper h) {
         ServerPlayer p = caster(h);
         Cow c = cow(h);
-        c.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 4));
+        c.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 4));
         Effects.shield(c, 4);
         cast(p, "(execute (nearest :radius 6))");
         h.assertTrue(!c.isAlive(), "execute should go through resistance V and absorption");
@@ -314,13 +314,14 @@ final class SpellModifierGameTests {
         ServerPlayer p = caster(h);
         Cow refusing = new Cow(EntityType.COW, h.getLevel()) {
             @Override
-            public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-                return !(source.getEntity() instanceof Player) && super.hurtServer(level, source, amount);
+            public boolean hurt(DamageSource source, float amount) {
+        if (!(level() instanceof ServerLevel level)) return super.hurt(source, amount);
+                return !(source.getEntity() instanceof Player) && super.hurt(source, amount);
             }
         };
         refusing.setNoAi(true);
         Vec3 at = h.absoluteVec(new Vec3(4.5, 2, 3.5));
-        refusing.snapTo(at.x, at.y, at.z, 0, 0);
+        refusing.moveTo(at.x, at.y, at.z, 0, 0);
         h.getLevel().addFreshEntity(refusing);
         cast(p, "(damage (nearest :radius 6) 2 void)");
         near(h, refusing.getHealth(), 10, "off, it refuses void from a player");

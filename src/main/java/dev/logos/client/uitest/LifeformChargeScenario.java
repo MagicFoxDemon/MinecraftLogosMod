@@ -17,9 +17,9 @@ import dev.logos.runtime.ManaLifeform;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
@@ -57,10 +57,10 @@ public class LifeformChargeScenario implements UIScenario {
                     Casting.cast(p, Casting.compile("(spell :mana 6000 (summon mana_lifeform :level 3 :at (pos-of caster)))"), null, null);
                     lf = (ManaLifeform) Familiars.latest(p, null);
                     if (lf == null) throw new AssertionError("no lifeform");
-                    lf.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1.5, ORIGIN.getZ() + 1.5, 180, 0);
+                    lf.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1.5, ORIGIN.getZ() + 1.5, 180, 0);
                     lf.core.setItem(0, SpellPages.inscribed(PageTier.CHALK, "(spell :name \"焰\" :intent strike :mana 800 (damage (foe) standard fire))", null));
-                    husk = EntityType.HUSK.create(p.level(), EntitySpawnReason.COMMAND);
-                    husk.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 6.5, 180, 0);
+                    husk = EntityType.HUSK.create(p.level());
+                    husk.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 6.5, 180, 0);
                     husk.setNoAi(true);
                     husk.setPersistenceRequired();
                     p.level().addFreshEntity(husk);

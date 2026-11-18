@@ -59,7 +59,7 @@ final class FxTrafficGameTests {
     private static ServerPlayer listener(GameTestHelper h, Vec3 at) {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
-        p.snapTo(at.x, at.y, at.z, 0, 0);
+        p.moveTo(at.x, at.y, at.z, 0, 0);
         var channels = ChannelAttributes.getOrCreateAdHocChannels(p.connection.getConnection());
         channels.add(FxPayload.Batch.TYPE.id());
         channels.add(AreaWeatherPayload.TYPE.id());
@@ -71,7 +71,7 @@ final class FxTrafficGameTests {
     private static ServerPlayer caster(GameTestHelper h, Vec3 at) {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
-        p.snapTo(at.x, at.y, at.z, 0, 0);
+        p.moveTo(at.x, at.y, at.z, 0, 0);
         PlayerMagic magic = PlayerMagic.of(p);
         magic.baseMaxMana = magic.mana = 100000;
         magic.trace = false;
@@ -353,7 +353,7 @@ final class FxTrafficGameTests {
         Casting.cast(caster, Casting.compile("(spell :mana 500 (weather clear :radius 2 :life 10 :follow))"), null, base);
         for (int t = 1; t <= WINDOW + 2; t++) {
             int step = t;
-            h.runAfterDelay(t, () -> caster.snapTo(base.x + step, base.y, base.z, 0, 0));
+            h.runAfterDelay(t, () -> caster.moveTo(base.x + step, base.y, base.z, 0, 0));
         }
         h.runAfterDelay(1, () -> sent(watcher));
         h.runAfterDelay(1 + WINDOW, () -> {

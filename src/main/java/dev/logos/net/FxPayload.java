@@ -7,7 +7,7 @@ import dev.logos.LogosMod;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * One spell visual to play, sent in a {@link Batch}. The server only says <em>what</em> happened (kind, element,
@@ -104,7 +104,7 @@ public record FxPayload(byte kind, byte element, byte variant, float x, float y,
      * from the one before it, since the bodies of a spell share most of theirs.
      */
     public record Batch(List<FxPayload> effects) implements CustomPacketPayload {
-        public static final Type<Batch> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "fx_batch"));
+        public static final Type<Batch> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "fx_batch"));
         public static final StreamCodec<RegistryFriendlyByteBuf, Batch> CODEC = StreamCodec.of(Batch::write, Batch::read);
 
         private static final int SAME_KIND = 1, SAME_VARIANT = 2, SAME_SIZE = 4, NO_AUX = 8, SAME_GUISE = 16;

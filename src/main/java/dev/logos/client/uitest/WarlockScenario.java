@@ -13,10 +13,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.npc.villager.VillagerDataHolder;
+import net.minecraft.world.entity.npc.VillagerDataHolder;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 
@@ -36,11 +36,11 @@ public class WarlockScenario implements UIScenario {
 
     /** A still warlock (or zombie warlock) at {@code x, z} facing {@code yaw}. */
     private static <T extends Mob & VillagerDataHolder> void stand(ServerLevel level, EntityType<T> type, double x, double z, float yaw) {
-        T mob = type.create(level, EntitySpawnReason.COMMAND);
+        T mob = type.create(level);
         if (mob == null) return;
         var warlock = level.registryAccess().lookupOrThrow(Registries.VILLAGER_PROFESSION).getOrThrow(LogosMod.WARLOCK.getKey());
         mob.setVillagerData(mob.getVillagerData().withProfession(warlock).withLevel(5));
-        mob.snapTo(x, ORIGIN.getY() + 1, z, yaw, 0);
+        mob.moveTo(x, ORIGIN.getY() + 1, z, yaw, 0);
         mob.setYHeadRot(yaw);
         mob.setYBodyRot(yaw);
         mob.setNoAi(true);
@@ -71,7 +71,7 @@ public class WarlockScenario implements UIScenario {
                 .screenshot("warlock_close")
                 .server("trade with the master", sc -> {
                     var player = sc.player();
-                    var villager = player.level().getEntitiesOfClass(net.minecraft.world.entity.npc.villager.Villager.class, player.getBoundingBox().inflate(6)).stream()
+                    var villager = player.level().getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class, player.getBoundingBox().inflate(6)).stream()
                             .filter(v -> v.getYRot() == 180).findFirst().orElseThrow();
                     villager.setNoAi(false);
                     villager.interact(player, InteractionHand.MAIN_HAND, villager.position());

@@ -3,7 +3,7 @@ package dev.logos.client;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * Number and proportion as Leonardo's circle knew them, one small picture per rune: Pacioli's
@@ -18,7 +18,7 @@ final class MathEmblems {
     private MathEmblems() {}
 
     /** The rune's own picture, or null when it has none and takes its family's. */
-    static String @Nullable [] of(String word) {
+    static @Nullable String[] of(String word) {
         return BY_WORD.get(word);
     }
 

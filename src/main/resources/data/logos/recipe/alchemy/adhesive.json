@@ -2,12 +2,25 @@
   "type": "logos:alchemy",
   "process": "dissolve",
   "ingredients": [
-    { "ingredient": "minecraft:clay_ball" },
-    { "ingredient": "logos:raw_mash" }
+    {
+      "ingredient": {
+        "item": "minecraft:clay_ball"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:raw_mash"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:adhesive", "count": 2 },
-    { "id": "minecraft:glass_bottle" }
+    {
+      "id": "logos:adhesive",
+      "count": 2
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
   ],
   "mana": 2
 }

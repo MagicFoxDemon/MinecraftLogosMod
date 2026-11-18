@@ -4,7 +4,7 @@ import dev.logos.LogosMod;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server → an operator's client: the server sage's settings for its settings page. The key itself
@@ -13,7 +13,7 @@ import net.minecraft.resources.Identifier;
  */
 public record SageAdminStatePayload(boolean offered, String url, String model, String keyHint, boolean urlFromEnv, boolean modelFromEnv,
                                     boolean keyFromEnv, int cooldownSeconds, int dailyLimit, int maxConcurrent) implements CustomPacketPayload {
-    public static final Type<SageAdminStatePayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "sage_admin_state"));
+    public static final Type<SageAdminStatePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "sage_admin_state"));
     public static final StreamCodec<FriendlyByteBuf, SageAdminStatePayload> CODEC = CustomPacketPayload.codec(SageAdminStatePayload::write,
             b -> new SageAdminStatePayload(b.readBoolean(), b.readUtf(512), b.readUtf(128), b.readUtf(16), b.readBoolean(), b.readBoolean(),
                     b.readBoolean(), b.readVarInt(), b.readVarInt(), b.readVarInt()));

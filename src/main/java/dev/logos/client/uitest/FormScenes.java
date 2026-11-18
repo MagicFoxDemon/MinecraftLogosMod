@@ -47,7 +47,7 @@ final class FormScenes {
     }
 
     static void teleport(ServerPlayer player, Vec3 pos, float yaw, float pitch) {
-        ServerLevel level = player.level();
+        ServerLevel level = player.serverLevel();
         level.getChunk(BlockPos.containing(pos));
         player.teleport(new TeleportTransition(level, pos, Vec3.ZERO, yaw, pitch, TeleportTransition.DO_NOTHING));
     }

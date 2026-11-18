@@ -46,7 +46,7 @@ public class ColossusRideScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 0.5, 0, 10)
                 .server("raise a colossus beside the player", sc -> {
                     var p = sc.player();
-                    Colossi.summon(p, p.level(), Vec3.atBottomCenterOf(ORIGIN.offset(0, 1, 3)), null);
+                    Colossi.summon(p, p.serverLevel(), Vec3.atBottomCenterOf(ORIGIN.offset(0, 1, 3)), null);
                     for (var m : Familiars.of(p)) if (m instanceof AlchemicalColossus c) colossus = c;
                 })
                 .ticks(70)

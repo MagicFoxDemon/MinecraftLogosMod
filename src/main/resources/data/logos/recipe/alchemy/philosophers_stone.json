@@ -2,13 +2,29 @@
   "type": "logos:alchemy",
   "process": "settle",
   "ingredients": [
-    { "ingredient": "logos:tincture_of_life" },
-    { "ingredient": "logos:red_lion" },
-    { "ingredient": "logos:quintessence" }
+    {
+      "ingredient": {
+        "item": "logos:tincture_of_life"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:red_lion"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:quintessence"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:philosophers_stone" },
-    { "id": "minecraft:glass_bottle" }
+    {
+      "id": "logos:philosophers_stone"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
   ],
   "mana": 80
 }

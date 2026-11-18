@@ -14,14 +14,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 /** The anchor nail's two screens: naming a new anchor, and the list of your anchors. */
 final class AnchorScreens {
-    static final Identifier ICON = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/misc/anchor.png");
+    static final ResourceLocation ICON = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/misc/anchor.png");
     private static final int GOLD = 0xFFE8B84A, TEXT = 0xFFE6E2D3, DIM = 0xFF9F9FAF;
 
     private AnchorScreens() {}
@@ -76,7 +76,7 @@ final class AnchorScreens {
         private void confirm() {
             String n = Anchors.clean(box.getValue());
             if (n == null) return;
-            ClientPacketDistributor.sendToServer(AnchorEditPayload.set(n, pos, face, into));
+            PacketDistributor.sendToServer(AnchorEditPayload.set(n, pos, face, into));
             onClose();
         }
 
@@ -135,7 +135,7 @@ final class AnchorScreens {
             int x = (width - W) / 2, y = top();
             for (int i = 0; i < Math.min(ROWS, all.size() - scroll); i++) {
                 String n = all.get(scroll + i).name();
-                addRenderableWidget(Button.builder(Component.translatable("logos.anchor.screen.remove"), b -> ClientPacketDistributor.sendToServer(AnchorEditPayload.remove(n)))
+                addRenderableWidget(Button.builder(Component.translatable("logos.anchor.screen.remove"), b -> PacketDistributor.sendToServer(AnchorEditPayload.remove(n)))
                         .bounds(x + W - 46, y + 28 + i * ROW, 40, 18).build());
             }
         }
@@ -167,7 +167,7 @@ final class AnchorScreens {
             g.text(font, I18n.get("logos.anchor.screen.list_heading", all.size()), x + 28, y + 11, GOLD);
             if (all.isEmpty()) g.text(font, I18n.get("logos.anchor.screen.none"), x + 12, y + 34, DIM);
             var player = Minecraft.getInstance().player;
-            String here = player == null ? "" : player.level().dimension().identifier().toString();
+            String here = player == null ? "" : player.level().dimension().location().toString();
             for (int i = 0; i < Math.min(ROWS, all.size() - scroll); i++) {
                 AnchorsPayload.Entry e = all.get(scroll + i);
                 int ry = y + 28 + i * ROW;

@@ -19,7 +19,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.ProblemReporter;
+import dev.logos.port.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -33,15 +33,15 @@ import net.minecraft.world.level.block.HopperBlock;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.level.storage.TagValueInput;
+import dev.logos.port.TagValueInput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.fluid.FluidResource;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.transaction.Transaction;
+import dev.logos.port.Capabilities;
+import dev.logos.port.ResourceHandler;
+import dev.logos.port.FluidResource;
+import dev.logos.port.ItemResource;
+import dev.logos.port.Transaction;
 
 /** In-world tests for alchemy materials and how they plug into vanilla brewing and crafting. */
 final class AlchemyGameTests {
@@ -65,7 +65,7 @@ final class AlchemyGameTests {
         for (var fuel : List.of(Items.COAL, Items.CHARCOAL)) {
             CraftingInput input = CraftingInput.of(3, 1, List.of(new ItemStack(LogosMod.SALTPETER.get()), new ItemStack(fuel),
                     new ItemStack(LogosMod.SULFUR_POWDER.get())));
-            ItemStack out = h.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
+            ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
                     .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
             h.assertTrue(out.is(Items.GUNPOWDER) && out.getCount() == 3, "sulfur, " + fuel + " and saltpeter made " + out);
         }
@@ -76,7 +76,7 @@ final class AlchemyGameTests {
     static void craftsMaintenanceKit(GameTestHelper h) {
         CraftingInput input = CraftingInput.of(2, 2, List.of(new ItemStack(LogosMod.CAPUT_MORTUUM.get()), new ItemStack(Items.COPPER_INGOT),
                 new ItemStack(LogosMod.ADHESIVE.get()), new ItemStack(LogosMod.CAPUT_MORTUUM.get())));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
                 .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(LogosMod.MAINTENANCE_KIT.get()), "caput mortuum, adhesive and copper made " + out);
         h.succeed();
@@ -89,7 +89,7 @@ final class AlchemyGameTests {
                 new ItemStack(Items.COPPER_INGOT), new ItemStack(Items.CAULDRON), new ItemStack(Items.COPPER_INGOT),
                 ItemStack.EMPTY, new ItemStack(Items.CRAFTING_TABLE), ItemStack.EMPTY);
         CraftingInput input = CraftingInput.of(3, 3, grid);
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, h.getLevel())
                 .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(LogosMod.ALCHEMY_TABLE_ITEM.get()) && out.getCount() == 1, "the recipe made " + out);
         h.succeed();
@@ -480,7 +480,7 @@ final class AlchemyGameTests {
             PotionContents contents = potion.get(DataComponents.POTION_CONTENTS);
             var effects = new java.util.ArrayList<net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>>();
             contents.getAllEffects().forEach(e -> effects.add(e.getEffect()));
-            h.assertTrue(effects.size() == 3 && effects.contains(net.minecraft.world.effect.MobEffects.SPEED) && effects.contains(net.minecraft.world.effect.MobEffects.STRENGTH)
+            h.assertTrue(effects.size() == 3 && effects.contains(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED) && effects.contains(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST)
                     && effects.contains(net.minecraft.world.effect.MobEffects.NIGHT_VISION), "the potion holds " + effects);
             h.assertTrue(contents.customName().equals(java.util.Optional.of(dev.logos.alchemy.SpecialRecipes.CONJUNCTION)), "the potion is not named a conjunction");
             h.assertTrue(count(card.inputs(), LogosMod.PHILOSOPHERS_MERCURY.get()) + count(card.inputs(), LogosMod.POTION_POWDER.get()) == 0, "the materials were not used up");
@@ -844,7 +844,7 @@ final class AlchemyGameTests {
         jar.randomTick(h.getLevel(), h.getLevel().getRandom());
         jar.randomTick(h.getLevel(), h.getLevel().getRandom());
         h.assertTrue(jar.isRipe(), "three random ticks left it at stage " + jar.age());
-        var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
+        var recipes = h.getLevel().getRecipeManager().getAllRecipesFor(LogosMod.ALCHEMY_RECIPE.get());
         h.assertTrue(recipes.stream().anyMatch(r -> r.value().process() == Process.FERMENT
                 && r.value().results().getFirst().create().is(LogosMod.VITAL_MASH.get())
                 && r.value().ingredients().stream().anyMatch(i -> i.count() == 4 && i.ingredient().test(new ItemStack(LogosMod.MANDRAKE_ROOT.get())))),
@@ -863,7 +863,7 @@ final class AlchemyGameTests {
      * (fermented, distilled) into the philosophers' stone.
      */
     static void reddeningRunsTheSevenProcesses(GameTestHelper h) {
-        var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
+        var recipes = h.getLevel().getRecipeManager().getAllRecipesFor(LogosMod.ALCHEMY_RECIPE.get());
         Object[][] steps = {
                 {Process.FERMENT, LogosMod.VITAL_MASH.get()},
                 {Process.DISTILL, LogosMod.TINCTURE_OF_LIFE.get()},
@@ -904,7 +904,7 @@ final class AlchemyGameTests {
         h.assertTrue(count(jar.outputs(), iron.pod.get()) == 1, "the jar should output one iron pod");
         h.assertTrue(count(jar.outputs(), iron.seed.get()) == 0, "the jar must reserve its only iron seed, not produce extras");
         h.assertTrue(jar.seed().is(iron.seed.get()) && jar.age() == 0, "the seed was not kept planted");
-        h.assertTrue(h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get()).stream().anyMatch(r ->
+        h.assertTrue(h.getLevel().getRecipeManager().getAllRecipesFor(LogosMod.ALCHEMY_RECIPE.get()).stream().anyMatch(r ->
                 r.value().process() == Process.CALCINE && r.value().ingredients().getFirst().ingredient().test(new ItemStack(iron.pod.get()))
                         && r.value().results().getFirst().create().is(Items.IRON_INGOT)), "no calcination of the iron pod");
         h.succeed();
@@ -920,7 +920,7 @@ final class AlchemyGameTests {
         m.trace = false;
         // South of the side half, facing north: two blocks ahead of the body is the side half.
         Vec3 at = h.absoluteVec(new Vec3(SIDE.getX() + 0.5, 2, SIDE.getZ() + 2.5));
-        p.snapTo(at.x, at.y, at.z, 180, 0);
+        p.moveTo(at.x, at.y, at.z, 180, 0);
         String src = "(spell :mana 100 (infuse-block (ahead 2 :from (pos-of caster)) 50))";
         var filling = dev.logos.runtime.Casting.cast(p, dev.logos.runtime.Casting.compile(src), null, null);
         h.assertTrue(filling != null, "the cast was refused");
@@ -933,9 +933,9 @@ final class AlchemyGameTests {
 
     /** A bottle of mercury is poison: drinking it poisons and sickens, and leaves the glass bottle. */
     static void mercuryIsPoison(GameTestHelper h) {
-        var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new Vec3(1.5, 2, 1.5), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+        var cow = h.spawn(net.minecraft.world.entity.EntityType.COW, new Vec3(1.5, 2, 1.5), net.minecraft.world.entity.MobSpawnType.COMMAND);
         ItemStack left = new ItemStack(LogosMod.MERCURY_BOTTLE.get()).finishUsingItem(h.getLevel(), cow);
-        h.assertTrue(cow.hasEffect(net.minecraft.world.effect.MobEffects.POISON) && cow.hasEffect(net.minecraft.world.effect.MobEffects.NAUSEA), "mercury did no harm");
+        h.assertTrue(cow.hasEffect(net.minecraft.world.effect.MobEffects.POISON) && cow.hasEffect(net.minecraft.world.effect.MobEffects.CONFUSION), "mercury did no harm");
         h.assertTrue(left.is(Items.GLASS_BOTTLE), "drinking mercury left " + left);
         h.succeed();
     }
@@ -1039,8 +1039,8 @@ final class AlchemyGameTests {
     static void bottlesAreDrinkable(GameTestHelper h) {
         record Drink(net.minecraft.world.item.Item item, List<net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>> effects) {}
         List<Drink> drinks = List.of(
-                new Drink(LogosMod.RAW_MASH.get(), List.of(net.minecraft.world.effect.MobEffects.STRENGTH, net.minecraft.world.effect.MobEffects.NAUSEA)),
-                new Drink(LogosMod.FOUL_BRINE.get(), List.of(net.minecraft.world.effect.MobEffects.POISON, net.minecraft.world.effect.MobEffects.NAUSEA,
+                new Drink(LogosMod.RAW_MASH.get(), List.of(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, net.minecraft.world.effect.MobEffects.CONFUSION)),
+                new Drink(LogosMod.FOUL_BRINE.get(), List.of(net.minecraft.world.effect.MobEffects.POISON, net.minecraft.world.effect.MobEffects.CONFUSION,
                         net.minecraft.world.effect.MobEffects.WEAKNESS)),
                 new Drink(LogosMod.NITER_MOTHER_LIQUOR.get(), List.of(net.minecraft.world.effect.MobEffects.POISON)));
         for (Drink d : drinks) {
@@ -1048,7 +1048,7 @@ final class AlchemyGameTests {
             ServerPlayer p = h.makeMockServerPlayerInLevel();
             p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
             ItemStack bottle = new ItemStack(d.item());
-            h.assertTrue(bottle.getUseAnimation() == net.minecraft.world.item.ItemUseAnimation.DRINK, d.item() + " is not drunk");
+            h.assertTrue(bottle.getUseAnimation() == net.minecraft.world.item.UseAnim.DRINK, d.item() + " is not drunk");
             p.setItemInHand(InteractionHand.MAIN_HAND, bottle);
             ItemStack left = bottle.finishUsingItem(h.getLevel(), p);
             for (var effect : d.effects()) h.assertTrue(p.hasEffect(effect), d.item() + " did not give " + effect.getRegisteredName());
@@ -1117,10 +1117,10 @@ final class AlchemyGameTests {
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         p.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
         ItemStack powder = dev.logos.item.PotionPowderItem.of(LogosMod.POTION_POWDER.get(), new PotionContents(Potions.SWIFTNESS), 2);
-        h.assertTrue(powder.getUseAnimation() == net.minecraft.world.item.ItemUseAnimation.EAT, "the powder is not eaten");
+        h.assertTrue(powder.getUseAnimation() == net.minecraft.world.item.UseAnim.EAT, "the powder is not eaten");
         p.setItemInHand(InteractionHand.MAIN_HAND, powder);
         ItemStack left = powder.finishUsingItem(h.getLevel(), p);
-        h.assertTrue(p.hasEffect(net.minecraft.world.effect.MobEffects.SPEED), "eating swiftness powder gave no speed");
+        h.assertTrue(p.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED), "eating swiftness powder gave no speed");
         h.assertTrue(left.is(LogosMod.POTION_POWDER.get()) && left.getCount() == 1, "eating left " + left);
         h.succeed();
     }
@@ -1360,7 +1360,7 @@ final class AlchemyGameTests {
 
     /** Each herb ferments as seeds and shares ground loot with jars, which reserve one seed to replant. */
     static void herbsGrowInJars(GameTestHelper h) {
-        var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
+        var recipes = h.getLevel().getRecipeManager().getAllRecipesFor(LogosMod.ALCHEMY_RECIPE.get());
         JarHerb[] herbs = JarHerb.values();
         for (int i = 0; i < herbs.length; i++) {
             JarHerb herb = herbs[i];

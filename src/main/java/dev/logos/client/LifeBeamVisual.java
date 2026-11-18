@@ -14,8 +14,8 @@ import java.util.Map;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -60,7 +60,7 @@ final class LifeBeamVisual {
         Vec3 delta = to.subtract(from);
         double len = delta.length();
         long tick = level.getGameTime();
-        double t = tick + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        double t = tick + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         if (born == Long.MIN_VALUE) { born = tick; lastTick = tick; lastT = t; }
         LAST.put(this, new Last(from, to, radius, motes));
         if (len < .05) return;

@@ -40,7 +40,7 @@ public class TableItemsScenario implements UIScenario {
                     p.getInventory().setItem(0, new ItemStack(LogosMod.ALCHEMY_TABLE_ITEM.get()));
                     p.getInventory().setItem(1, new ItemStack(LogosMod.INSCRIPTION_TABLE_ITEM.get()));
                     p.getInventory().setItem(2, new ItemStack(LogosMod.COPY_TABLE_ITEM.get()));
-                    p.getInventory().setSelectedSlot(0);
+                    p.getInventory().selected = 0;
                     var level = p.level();
                     ItemStack[] drops = {new ItemStack(LogosMod.ALCHEMY_TABLE_ITEM.get()),
                             new ItemStack(LogosMod.INSCRIPTION_TABLE_ITEM.get()), new ItemStack(LogosMod.COPY_TABLE_ITEM.get())};

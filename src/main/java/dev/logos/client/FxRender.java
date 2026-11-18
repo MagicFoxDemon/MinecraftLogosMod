@@ -14,15 +14,15 @@ import dev.logos.client.FxLive.Look;
 import dev.logos.client.FxLive.Trail;
 import dev.logos.runtime.AlchemicalColossus;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.world.item.ItemDisplayContext;
-import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
+import dev.logos.client.port.SubmitCustomGeometryEvent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -43,7 +43,7 @@ final class FxRender {
                 && !dev.logos.runtime.ConstructEntity.any() && !AnchorMarkers.showing())) return;
         CameraRenderState cam = event.getLevelRenderState().cameraRenderState;
         Quaternionf toCamera = new Quaternionf(cam.orientation).conjugate();
-        float pt = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        float pt = mc.getTimer().getGameTimeDeltaPartialTick(false);
         PoseStack pose = event.getPoseStack();
         SubmitNodeCollector vfx = ShaderPackOverlay.collector(event.getSubmitNodeCollector());
         for (Beam b : FxLive.BEAMS.values()) submitBeam(mc, level, b, cam, pt, pose,
@@ -175,8 +175,8 @@ final class FxRender {
         pose.mulPose(new Quaternionf().rotationTo(0, 1, 0, (float) d.x, (float) d.y, (float) d.z));
         Tube core = new Tube(len, taper, startFrac, r * 0.4f, 0xFF000000 | pal.bright(), flow, false);
         Tube glow = new Tube(len, taper, startFrac, r, (0x70 << 24) | (pal.core() & 0xFFFFFF), flow * 0.6f, true);
-        out.submitCustomGeometry(pose, RenderTypes.beaconBeam(BeaconRenderer.BEAM_LOCATION, false), core::render);
-        out.submitCustomGeometry(pose, RenderTypes.beaconBeam(BeaconRenderer.BEAM_LOCATION, true), glow::render);
+        out.submitCustomGeometry(pose, RenderType.beaconBeam(BeaconRenderer.BEAM_LOCATION, false), core::render);
+        out.submitCustomGeometry(pose, RenderType.beaconBeam(BeaconRenderer.BEAM_LOCATION, true), glow::render);
         pose.popPose();
     }
 

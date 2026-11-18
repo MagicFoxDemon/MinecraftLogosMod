@@ -37,7 +37,7 @@ final class WandTierGameTests {
     private static ServerPlayer player(GameTestHelper h) {
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         var pos = h.absoluteVec(new net.minecraft.world.phys.Vec3(4.5, 2, 4.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         var m = PlayerMagic.of(p);
         m.baseMaxMana = 1000;
         m.mana = 100000;

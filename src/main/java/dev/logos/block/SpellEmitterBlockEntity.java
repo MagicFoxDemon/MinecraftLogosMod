@@ -1,8 +1,13 @@
 package dev.logos.block;
 
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.authlib.GameProfile;
 
@@ -31,8 +36,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.neoforged.neoforge.common.util.FakePlayer;
@@ -100,14 +105,14 @@ public class SpellEmitterBlockEntity extends SyncedManaVesselBlockEntity {
 
     void setOwner(Player player) {
         owner = player.getUUID();
-        ownerName = player.getGameProfile().name();
+        ownerName = player.getGameProfile().getName();
         setChanged();
     }
 
     /** Whether {@code player} may change it: whoever placed it (anyone, if no one did). Tells anyone else whose it is. */
     public boolean mayChange(Player player) {
         if (owner == null || owner.equals(player.getUUID())) return true;
-        player.sendOverlayMessage(Component.translatable("logos.emitter.not_yours", ownerName).withStyle(ChatFormatting.YELLOW));
+        player.displayClientMessage(Component.translatable("logos.emitter.not_yours", ownerName).withStyle(ChatFormatting.YELLOW), true);
         return false;
     }
 
@@ -266,15 +271,16 @@ public class SpellEmitterBlockEntity extends SyncedManaVesselBlockEntity {
         /** As a player would: unless PvP is off or they are on one team without friendly fire. */
         @Override
         public boolean canHarmPlayer(Player other) {
-            if (!level().isPvpAllowed()) return false;
+            if (level().getServer() == null || !level().getServer().isPvpAllowed()) return false;
             PlayerTeam mine = getTeam(), theirs = other.getTeam();
             return mine == null || !mine.isAlliedTo(theirs) || mine.isAllowFriendlyFire();
         }
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueOutput output = TagValueOutput.of(tag, registries);
+        super.saveAdditional(tag, registries);
         if (!page.isEmpty()) output.store("page", ItemStack.CODEC, page);
         output.putDouble("mana", mana);
         output.putDouble("injected", injected);
@@ -288,8 +294,9 @@ public class SpellEmitterBlockEntity extends SyncedManaVesselBlockEntity {
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
+        super.loadAdditional(tag, registries);
         page = input.read("page", ItemStack.CODEC).orElse(ItemStack.EMPTY);
         heldAt = NOT_HELD;
         mana = input.getDoubleOr("mana", 0);

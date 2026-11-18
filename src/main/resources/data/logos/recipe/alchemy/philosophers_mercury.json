@@ -2,12 +2,26 @@
   "type": "logos:alchemy",
   "process": "dissolve",
   "ingredients": [
-    { "ingredient": "logos:mercury_bottle" },
-    { "ingredient": "logos:saltpeter" },
-    { "ingredient": "logos:sulfur_powder" }
+    {
+      "ingredient": {
+        "item": "logos:mercury_bottle"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:saltpeter"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:sulfur_powder"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:philosophers_mercury" }
+    {
+      "id": "logos:philosophers_mercury"
+    }
   ],
   "mana": 10
 }

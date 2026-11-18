@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,7 +20,7 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class SageToast {
-    private static final Identifier ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "sage_toast");
+    private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "sage_toast");
     private static final long SHOW_MS = 6000, SLIDE_MS = 250;
     private static final int PAPER = 0xF2E9DCC0, EDGE = 0xFF6B4E31, INK = 0xFF392719, FADED = 0xFF7A6248;
 
@@ -45,12 +45,6 @@ public final class SageToast {
         return System.currentTimeMillis() - shownAt < SHOW_MS;
     }
 
-    @SubscribeEvent
-    static void onRegisterLayers(RegisterGuiLayersEvent event) {
-        event.registerAboveAll(ID, (g, delta) -> {
-            if (Minecraft.getInstance().screen == null) draw(g);
-        });
-    }
 
     @SubscribeEvent
     static void onScreen(ScreenEvent.Render.Post event) {
@@ -72,5 +66,18 @@ public final class SageToast {
         g.outline(x, y, w, h, EDGE);
         g.text(font, title, x + 7, y + 5, INK, false);
         g.text(font, line, x + 7, y + 15, FADED, false);
+    }
+
+    /** Its listeners on the mod bus: on 1.21.1 a subscriber listens on one bus. */
+    @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    static final class ModBus {
+        private ModBus() {}
+
+        @SubscribeEvent
+        static void onRegisterLayers(RegisterGuiLayersEvent event) {
+            event.registerAboveAll(ID, (g, delta) -> {
+                if (Minecraft.getInstance().screen == null) draw(g);
+            });
+        }
     }
 }

@@ -6,7 +6,7 @@ import org.joml.Vector2f;
 
 import com.lowdragmc.lowdraglib2.gui.ui.elements.GraphViewLod;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.gui.WireElement;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.PortModel;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.wire.WireModel;
@@ -43,7 +43,7 @@ final class ManuscriptWire extends WireElement {
     }
 
     @Override
-    protected void drawBackgroundAdditional(IGUIContext guiContext) {
+    public void drawBackgroundAdditional(GUIContext guiContext) {
         if (!(guiContext instanceof GUIContext context)) return;
         GraphViewLod lod = effectiveLod();
         if (lod != lastLod) {

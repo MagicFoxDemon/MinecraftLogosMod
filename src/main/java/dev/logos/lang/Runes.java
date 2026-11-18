@@ -14,7 +14,7 @@ import dev.logos.runtime.Targeting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
@@ -101,11 +101,11 @@ public final class Runes {
 
     /** The nearest standable spot in the same column (searching up and down), so a blink never lands inside rock. */
     static Vec3 safeSpot(ServerLevel level, Vec3 at) {
-        BlockPos start = BlockPos.containing(at.x, Math.max(level.getMinY() + 1, Math.min(level.getMaxY() - 2, at.y)), at.z);
+        BlockPos start = BlockPos.containing(at.x, Math.max(level.getMinBuildHeight() + 1, Math.min(level.getMaxBuildHeight() - 1 - 2, at.y)), at.z);
         for (int d = 0; d < level.getHeight(); d++) {
             for (int sign : new int[] {1, -1}) {
                 BlockPos p = start.offset(0, d * sign, 0);
-                if (p.getY() <= level.getMinY() || p.getY() >= level.getMaxY() - 1) continue;
+                if (p.getY() <= level.getMinBuildHeight() || p.getY() >= level.getMaxBuildHeight() - 1 - 1) continue;
                 if (standable(level, p)) return Vec3.atBottomCenterOf(p);
             }
         }
@@ -114,7 +114,7 @@ public final class Runes {
 
     /** Small plants that decay destroys outright: flowers, saplings and grasses by default; packs and addons may add their own. */
     public static final TagKey<Block> FRAGILE_PLANTS = TagKey.create(Registries.BLOCK,
-            Identifier.fromNamespaceAndPath(LogosMod.MODID, "fragile_plants"));
+            ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "fragile_plants"));
 
     /** Rounded to the nearest whole number, halves away from zero (2.5 → 3, −2.5 → −3). */
     static double nearest(double x) {

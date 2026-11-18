@@ -9,7 +9,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /** Server → client: the player's anchors, for the editor's ⚓ list, the anchor screen and the in-world markers. */
 public record AnchorsPayload(List<Entry> anchors) implements CustomPacketPayload {
@@ -19,13 +19,13 @@ public record AnchorsPayload(List<Entry> anchors) implements CustomPacketPayload
                 ByteBufCodecs.DOUBLE, Entry::x, ByteBufCodecs.DOUBLE, Entry::y, ByteBufCodecs.DOUBLE, Entry::z, Entry::new);
     }
 
-    public static final Type<AnchorsPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "anchors"));
+    public static final Type<AnchorsPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "anchors"));
     public static final StreamCodec<RegistryFriendlyByteBuf, AnchorsPayload> CODEC = StreamCodec.composite(
             Entry.CODEC.apply(ByteBufCodecs.list()), AnchorsPayload::anchors, AnchorsPayload::new);
 
     public static AnchorsPayload of(Collection<Anchors.Anchor> all) {
         return new AnchorsPayload(all.stream()
-                .map(a -> new Entry(a.name(), a.dimension().identifier().toString(), a.pos().x, a.pos().y, a.pos().z)).toList());
+                .map(a -> new Entry(a.name(), a.dimension().location().toString(), a.pos().x, a.pos().y, a.pos().z)).toList());
     }
 
     @Override

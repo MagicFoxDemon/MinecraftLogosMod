@@ -3,16 +3,16 @@ package dev.logos.client;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * The void field's own materials, beside the shared {@link FieldParts#lines} (which has only the circle and
@@ -23,7 +23,7 @@ import net.minecraft.resources.Identifier;
 final class VoidFieldParts {
     private VoidFieldParts() {}
 
-    private static final Identifier PORTAL = Identifier.withDefaultNamespace("textures/entity/end_portal/end_portal.png");
+    private static final ResourceLocation PORTAL = ResourceLocation.withDefaultNamespace("textures/entity/end_portal/end_portal.png");
     private static final Map<String, RenderType> SLITS = new HashMap<>();
 
     /**
@@ -40,7 +40,7 @@ final class VoidFieldParts {
                     .withSampler("StarTex").withSampler("AuraTex")
                     .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
                     .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).build();
-            return RenderType.create("logos_void_field_slit_" + key, RenderSetup.builder(pipeline)
+            return dev.logos.client.port.RenderTypes.create("logos_void_field_slit_" + key, RenderSetup.builder(pipeline)
                     .withTexture("Sampler0", id("textures/vfx/" + c + ".png")).withTexture("StarTex", PORTAL)
                     .withTexture("AuraTex", id("textures/vfx/void_beam/aura.png")).sortOnUpload().createRenderSetup());
         });
@@ -56,10 +56,10 @@ final class VoidFieldParts {
                 .withSampler("StarTex")
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).build();
-        return RenderType.create("logos_void_field_curtain", RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_void_field_curtain", RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id("textures/vfx/void_beam/aura.png")).withTexture("StarTex", PORTAL).sortOnUpload()
                 .createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

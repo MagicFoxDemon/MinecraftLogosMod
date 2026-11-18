@@ -36,13 +36,13 @@ import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.PlayerChunkSender;
-import net.minecraft.util.ProblemReporter;
+import dev.logos.port.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.storage.TagValueOutput;
+import dev.logos.port.TagValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -77,7 +77,7 @@ final class StaffSyncGameTests {
         // What the player joined with (a new player's guide book) goes out now, before anything is counted.
         player.containerMenu.broadcastChanges();
         Vec3 pos = h.absoluteVec(new Vec3(x, 2, z));
-        player.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        player.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(player);
         m.baseMaxMana = m.mana = 1000;
         m.trace = false;
@@ -89,7 +89,7 @@ final class StaffSyncGameTests {
         ChunkMap chunks = h.getLevel().getChunkSource().chunkMap;
         chunks.move(observer);
         PlayerChunkSender sender = observer.connection.chunkSender;
-        long at = target.chunkPosition().pack();
+        long at = target.chunkPosition().toLong();
         for (int i = 0; i < 100 && sender.isPending(at); i++) {
             sender.sendNextChunks(observer);
             sender.onChunkBatchReceivedByClient(64);
@@ -100,7 +100,7 @@ final class StaffSyncGameTests {
 
     private static CompoundTag drawing(GameTestHelper h, String source) {
         TagValueOutput out = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, h.getLevel().registryAccess());
-        GraphBuilder.build(Compiler.compile(source)).graphModel.serialize(out);
+        dev.logos.port.Persisted.serialize(GraphBuilder.build(Compiler.compile(source)).graphModel, out);
         return out.buildResult();
     }
 
@@ -249,7 +249,7 @@ final class StaffSyncGameTests {
         ServerPlayer p = filling(h, 0);
         ItemStack first = p.getMainHandItem(), second = new ItemStack(LogosMod.WOOD_STAFFS.getFirst().get());
         p.getInventory().setItem(1, second);
-        p.getInventory().setSelectedSlot(1);
+        p.getInventory().selected = 1;
         fill(p, 1);
         near(h, StaffItem.stored(first), 42, "the first staff keeps what was paid into it");
         near(h, StaffCharging.held(p, second), 0, "none of it moves to the staff now in hand");
@@ -268,9 +268,9 @@ final class StaffSyncGameTests {
         for (ItemStack staff : List.of(first, second))
             staff.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(SpellPages.inscribed(PageTier.CRYSTAL, spell, null))));
         p.getInventory().setItem(1, second);
-        p.getInventory().setSelectedSlot(1);
+        p.getInventory().selected = 1;
         h.assertFalse(StaffCharging.cast(p, second, InteractionHand.MAIN_HAND), "a staff holding nothing cast on what was paid into another");
-        p.getInventory().setSelectedSlot(0);
+        p.getInventory().selected = 0;
         h.assertTrue(StaffCharging.cast(p, first, InteractionHand.MAIN_HAND), "a staff should cast on what is on its way into it");
         h.assertTrue(StatusData.stacks(p, new Status("#paid")) == 1, "the cast should have gone off");
         near(h, StaffItem.stored(first), 12, "42 paid in, 30 spent");

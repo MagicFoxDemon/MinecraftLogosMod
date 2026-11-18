@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Weather;
@@ -14,14 +14,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.attribute.WeatherAttributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
@@ -84,7 +83,7 @@ public final class AreaWeather {
     /** Tells the players there where {@code obj} has moved to, and nothing of the zones standing still. */
     static void moved(AreaWeatherObj obj) {
         Zone z = obj.zone();
-        var payload = new AreaWeatherPayload.Moved(obj.level().dimension().identifier().toString(), z.id(), z.x(), z.z());
+        var payload = new AreaWeatherPayload.Moved(obj.level().dimension().location().toString(), z.id(), z.x(), z.z());
         for (ServerPlayer p : obj.level().players()) send(p, payload);
     }
 
@@ -96,17 +95,17 @@ public final class AreaWeather {
     private static AreaWeatherPayload payload(ServerLevel level) {
         List<AreaWeatherPayload.Zone> zones = new ArrayList<>();
         for (Zone z : zones(level)) zones.add(new AreaWeatherPayload.Zone(z.id(), z.kind().ordinal(), z.x(), z.z(), (float) z.radius()));
-        return new AreaWeatherPayload(level.dimension().identifier().toString(), zones);
+        return new AreaWeatherPayload(level.dimension().location().toString(), zones);
     }
 
     @SubscribeEvent
     static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer p) send(p, payload(p.level()));
+        if (event.getEntity() instanceof ServerPlayer p) send(p, payload(p.serverLevel()));
     }
 
     @SubscribeEvent
     static void onChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
-        if (event.getEntity() instanceof ServerPlayer p) send(p, payload(p.level()));
+        if (event.getEntity() instanceof ServerPlayer p) send(p, payload(p.serverLevel()));
     }
 
     public static void clearServer() {
@@ -118,7 +117,7 @@ public final class AreaWeather {
     private static List<Zone> zones(Level level) {
         if (level.isClientSide()) {
             Map<String, List<Zone>> all = client;
-            return all.isEmpty() ? List.of() : all.getOrDefault(level.dimension().identifier().toString(), List.of());
+            return all.isEmpty() ? List.of() : all.getOrDefault(level.dimension().location().toString(), List.of());
         }
         List<AreaWeatherObj> objs = SERVER.get(level);
         if (objs == null) return List.of();
@@ -145,7 +144,7 @@ public final class AreaWeather {
     }
 
     /** What falls at {@code pos} by area weather, as {@code Level.precipitationAt} answers; null where no zone is. */
-    public static Biome.@Nullable Precipitation precipitationAt(Level level, BlockPos pos) {
+    public static @Nullable Biome.Precipitation precipitationAt(Level level, BlockPos pos) {
         Weather w = at(level, pos.getX() + 0.5, pos.getZ() + 0.5);
         if (w == null) return null;
         if (w == Weather.CLEAR || !level.canSeeSky(pos) || level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos).getY() > pos.getY()) {
@@ -158,14 +157,14 @@ public final class AreaWeather {
     private static Biome.Precipitation falling(Level level, BlockPos pos, Weather w) {
         if (w == Weather.CLEAR) return Biome.Precipitation.NONE;
         if (w == Weather.SNOW) return Biome.Precipitation.SNOW;
-        return level.getBiome(pos).value().coldEnoughToSnow(pos, level.getSeaLevel()) ? Biome.Precipitation.SNOW : Biome.Precipitation.RAIN;
+        return level.getBiome(pos).value().coldEnoughToSnow(pos) ? Biome.Precipitation.SNOW : Biome.Precipitation.RAIN;
     }
 
     /**
      * What the rain renderer draws in the column at {@code pos}: a zone's weather inside it; outside every
      * zone, nothing unless the world itself is raining (null: draw as vanilla would).
      */
-    public static Biome.@Nullable Precipitation renderedAt(Level level, BlockPos pos) {
+    public static @Nullable Biome.Precipitation renderedAt(Level level, BlockPos pos) {
         if (!any(level)) return null;
         Weather w = at(level, pos.getX() + 0.5, pos.getZ() + 0.5);
         if (w != null) return falling(level, pos, w);
@@ -188,7 +187,7 @@ public final class AreaWeather {
         if (w == Weather.SNOW ? still : biome.shouldFreeze(level, below)) level.setBlockAndUpdate(below, Blocks.ICE.defaultBlockState());
         if (w == Weather.CLEAR) return true;
         Biome.Precipitation p = falling(level, top, w);
-        int maxHeight = level.getGameRules().get(GameRules.MAX_SNOW_ACCUMULATION_HEIGHT);
+        int maxHeight = level.getGameRules().getInt(GameRules.RULE_SNOW_ACCUMULATION_HEIGHT);
         if (p == Biome.Precipitation.SNOW && maxHeight > 0 && level.getBrightness(LightLayer.BLOCK, top) < 10) {
             BlockState state = level.getBlockState(top);
             if (state.is(Blocks.SNOW)) {
@@ -272,21 +271,4 @@ public final class AreaWeather {
         return level.isClientSide() ? Math.max(world, render) : world;
     }
 
-    /**
-     * A client's weather layer (sky colour, light) sees the eased camera view; a server's sees the world's.
-     * Asked as each level is built, so the side is checked on every read, not here.
-     */
-    public static WeatherAttributes.WeatherAccess access(Level level, WeatherAttributes.WeatherAccess world) {
-        return new WeatherAttributes.WeatherAccess() {
-            @Override
-            public float rainLevel() {
-                return skyRain(level, world.rainLevel());
-            }
-
-            @Override
-            public float thunderLevel() {
-                return skyThunder(level, world.thunderLevel());
-            }
-        };
-    }
 }

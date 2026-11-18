@@ -3,9 +3,15 @@
   "category": "misc",
   "group": "transmuted_spell_page_upgrade",
   "ingredients": [
-    "logos:echo_spell_page",
-    "logos:raven_head",
-    "logos:adhesive"
+    {
+      "item": "logos:echo_spell_page"
+    },
+    {
+      "item": "logos:raven_head"
+    },
+    {
+      "item": "logos:adhesive"
+    }
   ],
   "result": {
     "id": "logos:transmuted_spell_page"

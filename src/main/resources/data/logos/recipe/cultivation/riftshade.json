@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:riftshade_seed",
+  "seed": {
+    "item": "logos:riftshade_seed"
+  },
   "plant": "logos:riftshade_crop",
   "growth": 0.25
 }

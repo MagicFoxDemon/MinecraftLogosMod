@@ -23,8 +23,8 @@ import dev.logos.item.SpellPages;
 import dev.logos.lang.Category;
 import dev.logos.lang.Compiler;
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.level.storage.TagValueOutput;
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueOutput;
 
 /** The equip rune uses the existing manuscript style and accepts a saved item catalogue connection. */
 @LDLRegisterClient(name = "logos_equip_rune", group = "logos", registry = UIScenario.REGISTRY,
@@ -44,7 +44,7 @@ public class EquipRuneScenario implements UIScenario {
                     graph.graphModel.createNodeModel(card, new Vector2f(500, 280));
                     graph.graphModel.createWire(equip.in("item"), card.out(RuneNode.OUT));
                     var output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, Platform.getFrozenRegistry());
-                    graph.graphModel.serialize(output);
+                    dev.logos.port.Persisted.serialize(graph.graphModel, output);
                     var page = SpellPages.fitting(source);
                     page.set(LogosMod.SPELL_GRAPH.get(), output.buildResult());
                     ClientHooks.openTableEditor(BlockPos.ZERO, page);

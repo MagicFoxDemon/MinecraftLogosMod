@@ -1,6 +1,6 @@
 package dev.logos.client;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -29,7 +29,7 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
  * trembling more as the charge fills and steadying once full. First person: the wand lifts in toward
  * the middle of the view and trembles the same way. Nothing else changes: no slowdown, no bow draw.
  */
-@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public final class WandPose {
     /** Ticks the arm takes to come up. */
     private static final float RAISE_TICKS = 5;
@@ -49,7 +49,7 @@ public final class WandPose {
         LogosMod.WOOD_STAFFS.forEach(s -> wands.add(s.get()));
         event.registerItem(new IClientItemExtensions() {
             @Override
-            public HumanoidModel.@Nullable ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
+            public @Nullable HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
                 if (charging(entity, hand)) return CHARGE.getValue();
                 return hand == castingHand(entity) ? CastPoses.armPose(entity) : null;
             }
@@ -84,7 +84,7 @@ public final class WandPose {
     }
 
     /** Tremble size: a little at first, growing with the charge, nearly still once full. */
-    private static float tremble(ClientCharges.@Nullable State c) {
+    private static float tremble(@Nullable ClientCharges.State c) {
         if (c == null) return 0;
         return c.full ? 0.15f : 0.3f + c.progress(0);
     }

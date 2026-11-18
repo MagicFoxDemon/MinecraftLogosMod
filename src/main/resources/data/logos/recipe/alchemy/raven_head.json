@@ -3,11 +3,15 @@
   "process": "ferment",
   "ingredients": [
     {
-      "ingredient": "logos:caput_mortuum",
+      "ingredient": {
+        "item": "logos:caput_mortuum"
+      },
       "count": 2
     },
     {
-      "ingredient": "logos:philosophers_mercury"
+      "ingredient": {
+        "item": "logos:philosophers_mercury"
+      }
     }
   ],
   "results": [

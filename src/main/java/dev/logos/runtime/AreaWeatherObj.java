@@ -75,7 +75,7 @@ public final class AreaWeatherObj extends SpellObject {
     private BlockPos randomColumn() {
         double r = radius * Math.sqrt(level.getRandom().nextDouble());
         double a = level.getRandom().nextDouble() * Math.PI * 2;
-        return BlockPos.containing(pos.x + r * Math.cos(a), level.getMinY(), pos.z + r * Math.sin(a));
+        return BlockPos.containing(pos.x + r * Math.cos(a), level.getMinBuildHeight(), pos.z + r * Math.sin(a));
     }
 
     private void strike() {

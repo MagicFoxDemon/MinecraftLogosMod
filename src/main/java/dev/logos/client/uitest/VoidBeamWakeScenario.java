@@ -15,7 +15,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
@@ -90,9 +90,9 @@ public class VoidBeamWakeScenario implements UIScenario {
                 .teleportPlayer(.5, 101, -3, 0, 0)
                 .server("hold a wand and place the side viewer", sc -> {
                     sc.player().setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()));
-                    ArmorStand stand = EntityType.ARMOR_STAND.create(sc.level(), EntitySpawnReason.COMMAND);
+                    ArmorStand stand = EntityType.ARMOR_STAND.create(sc.level());
                     if (stand == null) throw new AssertionError("no armor stand");
-                    stand.snapTo(-13.5, 100.6, 9, -90, 4);
+                    stand.moveTo(-13.5, 100.6, 9, -90, 4);
                     stand.setYHeadRot(-90);
                     stand.setYBodyRot(-90);
                     stand.setInvisible(true);

@@ -2,7 +2,7 @@ package dev.logos.runtime;
 
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.item.PageTier;
@@ -101,7 +101,7 @@ public final class Casting {
         SpellInstance inst = run(player, spell, in.mana(), tier.recovery(), target, here, charged);
         if (in.burns()) {
             entry.burn();
-            ServerLevel level = player.level();
+            ServerLevel level = player.serverLevel();
             Vfx.sound(level, player.getEyePosition(), SoundEvents.FIRECHARGE_USE, 0.8f, 0.8f);
             Vfx.burst(level, player.getEyePosition().add(player.getLookAngle().scale(0.6)), dev.logos.lang.Element.FIRE, 18);
             PlayerMagic.alert(player, Component.translatable("logos.cast.immolated", spell.name(), Node.fmt(in.mana()), tier.capacity(), Node.fmt(in.multiplier())).withStyle(ChatFormatting.GOLD));

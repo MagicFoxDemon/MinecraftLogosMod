@@ -84,7 +84,7 @@ public class ManaHudScenario implements UIScenario {
                     m.mana = 640;
                     m.trace = false;
                     sc.player().setItemInHand(InteractionHand.MAIN_HAND, holding(LogosMod.WOOD_WANDS.getFirst().get(), "(spell :name \"蓄\" :mana 100 (mark caster #hud))"));
-                    sc.player().sendOverlayMessage(Component.literal("来自其他模组的提示 · A message from another mod").withStyle(ChatFormatting.GOLD));
+                    sc.player().displayClientMessage(Component.literal("来自其他模组的提示 · A message from another mod").withStyle(ChatFormatting.GOLD), true);
                 })
                 .ticks(24)
                 .step("the HUD names mana and spell, all the way in", ctx -> {

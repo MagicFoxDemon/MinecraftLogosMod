@@ -7,7 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.item.SpellBag;
@@ -25,7 +25,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The client's half of 言出法随: the player's recordings, the microphone, and hearing them name a
@@ -157,7 +157,7 @@ public final class VoiceClient {
             if (casting) stopCasting();
         } else if (!casting && !heard) {
             casting = listen(VoiceClient::castHeard, () -> casting);
-            if (!casting) player.sendOverlayMessage(Component.translatable("logos.voice.no_microphone").withStyle(ChatFormatting.RED));
+            if (!casting) player.displayClientMessage(Component.translatable("logos.voice.no_microphone").withStyle(ChatFormatting.RED), true);
         }
         if (endpointer != null && !stillWanted.getAsBoolean()) stopListening();
         if (mic != null && endpointer == null && ++idle > KEEP_OPEN) {
@@ -181,11 +181,11 @@ public final class VoiceClient {
         withVoices(v -> v.recognize(audio, names)).thenAcceptAsync(r -> {
             if (!casting || heard) return;
             if (r == null) {
-                player.sendOverlayMessage(Component.translatable("logos.voice.not_recorded").withStyle(ChatFormatting.YELLOW));
+                player.displayClientMessage(Component.translatable("logos.voice.not_recorded").withStyle(ChatFormatting.YELLOW), true);
                 return;
             }
             if (!r.accepted()) {
-                player.sendOverlayMessage(Component.translatable("logos.voice.not_heard", r.name()).withStyle(ChatFormatting.GRAY));
+                player.displayClientMessage(Component.translatable("logos.voice.not_heard", r.name()).withStyle(ChatFormatting.GRAY), true);
                 return;
             }
             for (int i = 0; i < all.size(); i++) {
@@ -193,7 +193,7 @@ public final class VoiceClient {
                 if (!r.name().equals(e.page().get(LogosMod.VOICE.get())) || e.spell().isPassive()) continue;
                 heard = true;
                 stopCasting();
-                ClientPacketDistributor.sendToServer(new VoiceCastPayload(i, r.name()));
+                PacketDistributor.sendToServer(new VoiceCastPayload(i, r.name()));
                 return;
             }
         }, Minecraft.getInstance());

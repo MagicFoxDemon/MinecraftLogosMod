@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -21,15 +21,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -76,7 +75,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class Incarnation {
     public static final double MAX_SECONDS = 600;
-    private static final Identifier MODIFIER = Identifier.fromNamespaceAndPath(LogosMod.MODID, "incarnation");
+    private static final ResourceLocation MODIFIER = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "incarnation");
 
     /**
      * What a body is made of, as attributes a player has too. Only these are taken from the creature:
@@ -89,19 +88,19 @@ public final class Incarnation {
             Attributes.WATER_MOVEMENT_EFFICIENCY, Attributes.OXYGEN_BONUS, Attributes.BURNING_TIME);
 
     /** The creature a player is, since and until when (game time; {@code since} is {@link #UNKNOWN} if it was saved before it was kept), and what it can do that is not an attribute. */
-    public record Form(Identifier type, long since, long until, boolean flies, boolean gills, boolean hands) {
+    public record Form(ResourceLocation type, long since, long until, boolean flies, boolean gills, boolean hands) {
         /** The start of a form saved before its start was kept. */
         public static final long UNKNOWN = Long.MIN_VALUE;
-        public static final Form NONE = new Form(Identifier.fromNamespaceAndPath("minecraft", "player"), 0, 0, false, false, true);
+        public static final Form NONE = new Form(ResourceLocation.fromNamespaceAndPath("minecraft", "player"), 0, 0, false, false, true);
         public static final MapCodec<Form> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
-                Identifier.CODEC.fieldOf("type").forGetter(Form::type),
+                ResourceLocation.CODEC.fieldOf("type").forGetter(Form::type),
                 Codec.LONG.optionalFieldOf("since", UNKNOWN).forGetter(Form::since),
                 Codec.LONG.fieldOf("until").forGetter(Form::until),
                 Codec.BOOL.fieldOf("flies").forGetter(Form::flies),
                 Codec.BOOL.fieldOf("gills").forGetter(Form::gills),
                 Codec.BOOL.fieldOf("hands").forGetter(Form::hands)).apply(i, Form::new));
         public static final StreamCodec<ByteBuf, Form> STREAM_CODEC = StreamCodec.composite(
-                Identifier.STREAM_CODEC, Form::type, ByteBufCodecs.VAR_LONG, Form::since, ByteBufCodecs.VAR_LONG, Form::until,
+                ResourceLocation.STREAM_CODEC, Form::type, ByteBufCodecs.VAR_LONG, Form::since, ByteBufCodecs.VAR_LONG, Form::until,
                 ByteBufCodecs.BOOL, Form::flies, ByteBufCodecs.BOOL, Form::gills, ByteBufCodecs.BOOL, Form::hands, Form::new);
     }
 
@@ -109,7 +108,7 @@ public final class Incarnation {
      * The form each player had last tick, to resize them when it changes: one map per side, since a
      * player and their client copy are equal entities (same id) in a single-player game.
      */
-    private static final Map<Player, @Nullable Identifier> SIZED_SERVER = Collections.synchronizedMap(new WeakHashMap<>()),
+    private static final Map<Player, ResourceLocation> SIZED_SERVER = Collections.synchronizedMap(new WeakHashMap<>()),
             SIZED_CLIENT = Collections.synchronizedMap(new WeakHashMap<>());
 
     /**
@@ -118,13 +117,15 @@ public final class Incarnation {
      * #minecraft:fall_damage_immune), which other mods fill for their creatures.
      */
     public static final TagKey<EntityType<?>> CLIMBS = trait("climbs"), SLOW_FALLS = trait("slow_falls"), WALKS_ON_LAVA = trait("walks_on_lava"),
-            HURT_BY_WATER = trait("hurt_by_water"), NEEDS_WATER = trait("needs_water");
+            HURT_BY_WATER = trait("hurt_by_water"), NEEDS_WATER = trait("needs_water"),
+            /** 1.21.1 has no vanilla tag for the creatures daylight burns; this lists them. */
+            BURNS_IN_DAYLIGHT = trait("burns_in_daylight");
     private static final double CLIMB_SPEED = 0.2, SLOW_FALL = 0.6;
     /** A fish-form player's breath out of water, which vanilla would refill every tick. */
     private static final Map<java.util.UUID, Integer> DRY_AIR = new java.util.HashMap<>();
 
     private static TagKey<EntityType<?>> trait(String name) {
-        return TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "incarnation/" + name));
+        return TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "incarnation/" + name));
     }
 
     /** When each player's form skill may be used again (game time); not saved, as no cooldown outlasts much. */
@@ -220,7 +221,7 @@ public final class Incarnation {
         Component name = type.getDescription();
         if (Possession.possessing(p)) return Component.translatable("logos.incarnate.while_possessing");
         if (p.isSpectator() || p.isSleeping() || !p.isAlive()) return Component.translatable("logos.incarnate.not_now");
-        if (!(type.create(p.level(), EntitySpawnReason.TRIGGERED) instanceof Mob m) || m instanceof KeptFamiliar) return Component.translatable("logos.incarnate.not_a_form", name);
+        if (!(type.create(p.level()) instanceof Mob m) || m instanceof KeptFamiliar) return Component.translatable("logos.incarnate.not_a_form", name);
         Component locked = Familiars.locked(p, type);
         if (locked != null) return Component.translatable("logos.incarnate.locked", name, locked);
         if (!p.level().noCollision(p, type.getDimensions().makeBoundingBox(p.position()).deflate(1e-7))) return Component.translatable("logos.incarnate.no_room", name);
@@ -229,8 +230,8 @@ public final class Incarnation {
 
     /** Turns {@code p} into a {@code type} for {@code seconds} (or into another, if they already are one); false (nothing done) if they cannot. */
     public static boolean start(ServerPlayer p, EntityType<?> type, double seconds) {
-        if (refuse(p, type) != null || !(type.create(p.level(), EntitySpawnReason.TRIGGERED) instanceof Mob shell)) return false;
-        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
+        if (refuse(p, type) != null || !(type.create(p.level()) instanceof Mob shell)) return false;
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
         boolean flies = shell.isNoGravity() || shell instanceof FlyingAnimal || shell.getNavigation() instanceof FlyingPathNavigation
                 || LogosConfig.incarnationFlier(id.toString());
         long now = p.level().getGameTime();
@@ -243,7 +244,7 @@ public final class Incarnation {
         p.setHealth(share * p.getMaxHealth());
         p.refreshDimensions();
         fly(p, flies);
-        p.sendOverlayMessage(Component.translatable("logos.incarnate.start", type.getDescription(), (int) Math.round(seconds), Component.keybind("key.logos.revert")));
+        p.displayClientMessage(Component.translatable("logos.incarnate.start", type.getDescription(), (int) Math.round(seconds), Component.keybind("key.logos.revert")), true);
         return true;
     }
 
@@ -258,7 +259,7 @@ public final class Incarnation {
         p.setHealth(share * p.getMaxHealth());
         p.refreshDimensions();
         if (f.flies()) fly(p, false);
-        p.sendOverlayMessage(Component.translatable("logos.incarnate.end"));
+        p.displayClientMessage(Component.translatable("logos.incarnate.end"), true);
     }
 
     /** Incarnated players within {@code r} of {@code at}, nearest first. */
@@ -302,7 +303,7 @@ public final class Incarnation {
     static void onTick(PlayerTickEvent.Pre event) {
         Player p = event.getEntity();
         Form f = form(p);
-        Identifier now = f == null ? null : f.type();
+        ResourceLocation now = f == null ? null : f.type();
         if (!Objects.equals((p.level().isClientSide() ? SIZED_CLIENT : SIZED_SERVER).put(p, now), now)) p.refreshDimensions();
         EntityType<?> type = formType(p);
         if (type == null || p.getAbilities().flying) return;
@@ -350,10 +351,10 @@ public final class Incarnation {
         if (has(type, NEEDS_WATER)) breatheWater(sp);
         else if (f.gills()) sp.setAirSupply(sp.getMaxAirSupply());
         PossessionSkills.tick(sp, sp);
-        if (has(type, EntityTypeTags.BURN_IN_DAYLIGHT)) burnInDaylight(sp);
-        if (has(type, HURT_BY_WATER) && sp.isInWaterOrRain()) sp.hurtServer(sp.level(), sp.damageSources().drown(), 1);
+        if (has(type, BURNS_IN_DAYLIGHT)) burnInDaylight(sp);
+        if (has(type, HURT_BY_WATER) && sp.isInWaterOrRain()) sp.hurt(sp.damageSources().drown(), 1);
         if (type.fireImmune() && sp.isOnFire()) sp.clearFire();
-        if (left <= 100 && left % 20 == 0) sp.sendOverlayMessage(Component.translatable("logos.incarnate.ending", left / 20));
+        if (left <= 100 && left % 20 == 0) sp.displayClientMessage(Component.translatable("logos.incarnate.ending", left / 20), true);
     }
 
     /** Whether {@code type} is in {@code tag}. */
@@ -372,7 +373,7 @@ public final class Incarnation {
         int air = DRY_AIR.getOrDefault(sp.getUUID(), sp.getAirSupply()) - 1;
         if (air <= -20) {
             air = 0;
-            sp.hurtServer(sp.level(), sp.damageSources().dryOut(), 2);
+            sp.hurt(sp.damageSources().dryOut(), 2);
         }
         DRY_AIR.put(sp.getUUID(), air);
         sp.setAirSupply(Math.max(air, 0));
@@ -380,8 +381,8 @@ public final class Incarnation {
 
     /** Daylight sets an undead form alight as it does the creature (a helmet takes it instead and wears), unless rain, water or snow is on them or the sky is out of sight. */
     private static void burnInDaylight(ServerPlayer sp) {
-        ServerLevel level = sp.level();
-        if (!level.environmentAttributes().getValue(EnvironmentAttributes.MONSTERS_BURN, sp.position())) return;
+        ServerLevel level = sp.serverLevel();
+        if (!level.isDay()) return;
         float light = sp.getLightLevelDependentMagicValue();
         if (light <= 0.5f || sp.getRandom().nextFloat() * 30 >= (light - 0.4f) * 2 || sp.isInWaterOrRain() || sp.isInPowderSnow || sp.wasInPowderSnow
                 || !level.canSeeSky(BlockPos.containing(sp.getX(), sp.getEyeY(), sp.getZ()))) return;
@@ -418,7 +419,7 @@ public final class Incarnation {
         EntityType<?> type = formType(sp);
         float strength = sp.getAttackStrengthScale(0.5f);
         sp.resetAttackStrengthTicker();
-        if (type != null) t.hurtServer(sp.level(), sp.damageSources().playerAttack(sp), (float) formDamage(sp) * strength);
+        if (type != null) t.hurt(sp.damageSources().playerAttack(sp), (float) formDamage(sp) * strength);
     }
 
     // Without hands, nothing is used, placed, mined or handled.

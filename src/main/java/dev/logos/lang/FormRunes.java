@@ -26,7 +26,7 @@ import dev.logos.runtime.VeinObj;
 import dev.logos.runtime.Vfx;
 import dev.logos.runtime.WrapObj;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -120,12 +120,12 @@ final class FormRunes {
                     boolean snap = n.flags.contains("snap");
                     var g = dev.logos.runtime.ConstructGeometry.of(shape, at.pos(), facing, w, h, d, r, snap);
                     if (!c.inst().spend(ConstructObj.cost(g), "construct")) return null;
-                    ConstructEntity e = dev.logos.LogosMod.CONSTRUCT.get().create(at.level(), net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
+                    ConstructEntity e = dev.logos.LogosMod.CONSTRUCT.get().create(at.level());
                     if (e == null) return null;
                     Node look = kw(n, "look");
                     BlockState lookBlock = null;
                     if (look != null) {
-                        var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(Identifier.tryParse(text(look, c)));
+                        var item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(ResourceLocation.tryParse(text(look, c)));
                         Block b = item.map(Block::byItem).orElse(Blocks.AIR);
                         if (b != Blocks.AIR) lookBlock = b.defaultBlockState();
                     }

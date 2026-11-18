@@ -7,7 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * A dragon rider's keys, with the colossus's mode key (V by default). The rider always flies it with
@@ -27,7 +27,7 @@ final class DragonInput {
     }
 
     private static void send(byte action) {
-        ClientPacketDistributor.sendToServer(new DragonControlPayload(action));
+        PacketDistributor.sendToServer(new DragonControlPayload(action));
     }
 
     /** Each client tick, before the colossus's: the mode key while on a dragon, and the breath button's press and release. */

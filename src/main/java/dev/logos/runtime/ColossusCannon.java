@@ -2,7 +2,7 @@ package dev.logos.runtime;
 
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.lang.Element;
 import net.minecraft.core.particles.ParticleTypes;

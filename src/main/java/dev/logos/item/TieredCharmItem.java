@@ -13,14 +13,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 
 /**
  * 分级杖饰: a wand charm of a {@link Family} at a grade (1 up). Hung on the wand in the main hand, it gives its
@@ -49,8 +48,8 @@ public class TieredCharmItem extends WandCharmItem {
         }
 
         /** The modifier id of {@code bonus}: one per family and bonus, whatever the grade. */
-        Identifier modifier(int bonus) {
-            return Identifier.fromNamespaceAndPath(LogosMod.MODID, "charm_" + id + "_" + bonus);
+        ResourceLocation modifier(int bonus) {
+            return ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "charm_" + id + "_" + bonus);
         }
     }
 
@@ -102,8 +101,9 @@ public class TieredCharmItem extends WandCharmItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
-        super.appendHoverText(stack, context, display, builder, flag);
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
+        super.appendHoverText(stack, context, tooltip, flag);
         builder.accept(Component.translatable("logos.charm.tiered.highest_only", family.name()).withStyle(ChatFormatting.DARK_GRAY));
     }
 
@@ -141,7 +141,7 @@ public class TieredCharmItem extends WandCharmItem {
             for (int i = 0; i < f.bonuses().size(); i++) {
                 AttributeInstance attr = p.getAttribute(f.bonuses().get(i).attribute().get());
                 if (attr == null) continue;
-                Identifier id = f.modifier(i);
+                ResourceLocation id = f.modifier(i);
                 AttributeModifier old = attr.getModifier(id);
                 if (c == null || f.bonuses().get(i).carried()) {
                     if (old != null) attr.removeModifier(id);

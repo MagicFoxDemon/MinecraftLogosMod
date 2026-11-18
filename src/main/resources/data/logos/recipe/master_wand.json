@@ -2,9 +2,15 @@
   "type": "logos:wand_upgrade",
   "category": "equipment",
   "ingredients": [
-    "logos:chalk_wand",
-    "logos:firmament_stone",
-    "minecraft:diamond"
+    {
+      "item": "logos:chalk_wand"
+    },
+    {
+      "item": "logos:firmament_stone"
+    },
+    {
+      "item": "minecraft:diamond"
+    }
   ],
   "result": {
     "id": "logos:master_wand"

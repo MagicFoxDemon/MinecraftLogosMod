@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:mercury_spore",
+  "seed": {
+    "item": "logos:mercury_spore"
+  },
   "plant": "logos:mercury_mushroom_crop",
   "growth": 0.4
 }

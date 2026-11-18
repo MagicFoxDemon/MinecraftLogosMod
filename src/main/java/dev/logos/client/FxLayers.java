@@ -16,8 +16,8 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.shape.IShape;
 import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Sphere;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.mojang.blaze3d.platform.DestFactor;
-import com.mojang.blaze3d.platform.SourceFactor;
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
+import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
 
 import dev.logos.lang.Element;
 

@@ -2,12 +2,26 @@
   "type": "logos:alchemy",
   "process": "ferment",
   "ingredients": [
-    { "ingredient": "logos:raw_mash" },
-    { "ingredient": "logos:mana_shard" },
-    { "ingredient": "minecraft:amethyst_shard" }
+    {
+      "ingredient": {
+        "item": "logos:raw_mash"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:mana_shard"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:amethyst_shard"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:crystal_mana_elixir" }
+    {
+      "id": "logos:crystal_mana_elixir"
+    }
   ],
   "mana": 20
 }

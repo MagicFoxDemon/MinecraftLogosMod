@@ -4,7 +4,7 @@ import dev.logos.LogosMod;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server → client: a mana tornado wound up round someone. {@code entity} is who it follows (-1 to stay at
@@ -13,7 +13,7 @@ import net.minecraft.resources.Identifier;
  * the whole picture.
  */
 public record ManaTornadoPayload(int entity, double x, double y, double z, int ticks, float scale, int cycle) implements CustomPacketPayload {
-    public static final Type<ManaTornadoPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_tornado"));
+    public static final Type<ManaTornadoPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "mana_tornado"));
     public static final StreamCodec<RegistryFriendlyByteBuf, ManaTornadoPayload> CODEC = StreamCodec.of((b, p) -> {
         b.writeVarInt(p.entity); b.writeDouble(p.x); b.writeDouble(p.y); b.writeDouble(p.z);
         b.writeVarInt(p.ticks); b.writeFloat(p.scale); b.writeVarInt(p.cycle);

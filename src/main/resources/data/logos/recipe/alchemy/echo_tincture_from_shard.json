@@ -3,10 +3,14 @@
   "process": "dissolve",
   "ingredients": [
     {
-      "ingredient": "minecraft:echo_shard"
+      "ingredient": {
+        "item": "minecraft:echo_shard"
+      }
     },
     {
-      "ingredient": "logos:raw_mash",
+      "ingredient": {
+        "item": "logos:raw_mash"
+      },
       "count": 5
     }
   ],

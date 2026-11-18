@@ -1,6 +1,7 @@
 package dev.logos.block;
 
-import org.jspecify.annotations.Nullable;
+import net.minecraft.world.ItemInteractionResult;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -54,21 +55,21 @@ public class ManaStorageTankBlock extends BaseEntityBlock implements BlockUIMenu
 
     /** A mana item in hand goes into the input, as much as fits. */
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (AlchemyTableBlockEntity.fuelValue(stack) <= 0 || !(level.getBlockEntity(pos) instanceof ManaStorageTankBlockEntity tank)) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (!level.isClientSide()) {
             var in = tank.input();
-            var res = net.neoforged.neoforge.transfer.item.ItemResource.of(stack);
+            var res = dev.logos.port.ItemResource.of(stack);
             int held = in.getAmountAsInt(0);
-            if (held > 0 && !in.getResource(0).equals(res)) return InteractionResult.TRY_WITH_EMPTY_HAND;
+            if (held > 0 && !in.getResource(0).equals(res)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             int add = Math.min(stack.getCount(), stack.getMaxStackSize() - held);
-            if (add <= 0) return InteractionResult.TRY_WITH_EMPTY_HAND;
+            if (add <= 0) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             in.set(0, res, held + add);
             stack.consume(add, player);
         }
-        return InteractionResult.SUCCESS;
+        return ItemInteractionResult.SUCCESS;
     }
 
     @Override

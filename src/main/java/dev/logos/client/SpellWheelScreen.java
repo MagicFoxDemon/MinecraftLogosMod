@@ -15,7 +15,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The spell wheel: hold the wheel key, point at a spell, release (or click) to select it for the
@@ -148,7 +148,7 @@ public class SpellWheelScreen extends Screen {
     private void confirm() {
         if (hovered >= 0) {
             int global = page * PER_PAGE + hovered;
-            ClientPacketDistributor.sendToServer(new SelectSpellPayload(global == entries.size() ? SelectSpellPayload.VOICE : global));
+            PacketDistributor.sendToServer(new SelectSpellPayload(global == entries.size() ? SelectSpellPayload.VOICE : global));
         }
         onClose();
     }
@@ -162,7 +162,7 @@ public class SpellWheelScreen extends Screen {
         var entries = SpellBag.entries(mc.player, wand);
         ItemStack charm = dev.logos.item.PageContainer.pages(wand).stream().filter(s -> s.is(dev.logos.LogosMod.VOICE_CHARM.get())).findFirst().orElse(ItemStack.EMPTY);
         if (entries.isEmpty() && charm.isEmpty()) {
-            mc.player.sendOverlayMessage(Component.translatable("logos.cast.no_spell"));
+            mc.player.displayClientMessage(Component.translatable("logos.cast.no_spell"), true);
             return;
         }
         mc.setScreen(new SpellWheelScreen(entries, wand.getOrDefault(dev.logos.LogosMod.SELECTED.get(), 0), charm,

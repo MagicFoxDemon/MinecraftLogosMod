@@ -84,7 +84,7 @@ public final class StaffCharging {
         if (rate == null) return;
         m.fill = new Fill(staff, rate);
         sync(player, staff);
-        Vfx.sound(player.level(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
+        Vfx.sound(player.serverLevel(), player.getEyePosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.5f, 0.8f);
     }
 
     /** Left-click let go (or the staff left the hand): what went in stays in the staff. */
@@ -110,7 +110,7 @@ public final class StaffCharging {
             if (player.isAlive()) start(player);
             return;
         }
-        ServerLevel level = player.level();
+        ServerLevel level = player.serverLevel();
         double stored = held(player, staff);
         if (stored < item.capacity()) {
             double share = Math.min(item.capacity() - stored, f.rate.tick(f.done));

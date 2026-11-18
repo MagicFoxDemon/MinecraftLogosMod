@@ -1,10 +1,10 @@
 package dev.logos.runtime;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -15,7 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
+import net.minecraft.world.entity.boss.EnderDragonPart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -32,7 +32,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class FamiliarRiding {
-    public static final TagKey<EntityType<?>> RIDEABLE = TagKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "rideable_familiars"));
+    public static final TagKey<EntityType<?>> RIDEABLE = TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "rideable_familiars"));
 
     private FamiliarRiding() {}
 
@@ -117,7 +117,7 @@ public final class FamiliarRiding {
             }
             return;
         }
-        if (!p.level().isClientSide()) p.startRiding(mount, false, true);
+        if (!p.level().isClientSide()) p.startRiding(mount, false);
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
     }

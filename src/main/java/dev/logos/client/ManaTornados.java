@@ -7,11 +7,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.net.ManaTornadoPayload;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
+import dev.logos.client.port.SubmitCustomGeometryEvent;
 
 /**
  * The mana tornadoes whirling on this client ({@link dev.logos.runtime.ManaTornado}): made when the packet comes,
@@ -64,7 +64,7 @@ public final class ManaTornados {
     static void submit(SubmitCustomGeometryEvent event) {
         if (LIVE.isEmpty()) return;
         CameraRenderState camera = event.getLevelRenderState().cameraRenderState;
-        float pt = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         PoseStack pose = event.getPoseStack();
         SubmitNodeCollector raw = event.getSubmitNodeCollector(), out = ShaderPackOverlay.collector(raw);
         VfxParts.View view = VfxParts.View.of(camera);

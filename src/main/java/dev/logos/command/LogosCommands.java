@@ -107,32 +107,32 @@ public final class LogosCommands {
         d.register(Commands.literal("logos")
                 // Tools for building and testing spells (cast anything, hand out pages and kits, read and write spell files on the server,
                 // set mana, debug readouts) are for game masters; what only shows a player their own magic is for everyone.
-                .then(Commands.literal("cast").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("source", StringArgumentType.greedyString())
+                .then(Commands.literal("cast").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("source", StringArgumentType.greedyString())
                         .executes(c -> cast(c, StringArgumentType.getString(c, "source")))))
                 .then(Commands.literal("check").then(Commands.argument("source", StringArgumentType.greedyString())
                         .executes(c -> check(c, StringArgumentType.getString(c, "source")))))
-                .then(Commands.literal("book").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("example", StringArgumentType.word())
+                .then(Commands.literal("book").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("example", StringArgumentType.word())
                         .suggests((c, b) -> SharedSuggestionProvider.suggest(Examples.ALL.keySet(), b))
                         .executes(c -> book(c, StringArgumentType.getString(c, "example")))))
-                .then(Commands.literal("load").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("file", StringArgumentType.word())
+                .then(Commands.literal("load").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("file", StringArgumentType.word())
                         .suggests((c, b) -> SharedSuggestionProvider.suggest(spellFiles(), b))
                         .executes(c -> load(c, StringArgumentType.getString(c, "file")))))
-                .then(Commands.literal("source").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(c -> source(c, null))
+                .then(Commands.literal("source").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(c -> source(c, null))
                         .then(Commands.argument("file", StringArgumentType.word()).executes(c -> source(c, StringArgumentType.getString(c, "file")))))
                 .then(Commands.literal("examples").executes(LogosCommands::examples))
-                .then(Commands.literal("kit").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(LogosCommands::kit))
+                .then(Commands.literal("kit").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(LogosCommands::kit))
                 .then(Commands.literal("anchors").executes(LogosCommands::anchors))
-                .then(Commands.literal("mind").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(LogosCommands::mind))
-                .then(Commands.literal("stats").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(LogosCommands::stats))
+                .then(Commands.literal("mind").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(LogosCommands::mind))
+                .then(Commands.literal("stats").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(LogosCommands::stats))
                 // Until alchemy can build one: raise an alchemical colossus before you.
-                .then(Commands.literal("colossus").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(c -> colossus(c, null))
+                .then(Commands.literal("colossus").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(c -> colossus(c, null))
                         .then(Commands.argument("name", StringArgumentType.greedyString()).executes(c -> colossus(c, StringArgumentType.getString(c, "name")))))
                 .then(Commands.literal("runes").executes(c -> runes(c, null))
                         .then(Commands.argument("name", StringArgumentType.word())
                                 .suggests((c, b) -> SharedSuggestionProvider.suggest(Runes.all().stream().map(r -> r.name).toList(), b))
                                 .executes(c -> runes(c, StringArgumentType.getString(c, "name")))))
                 .then(Commands.literal("mana").executes(LogosCommands::manaInfo)
-                        .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0, Integer.MAX_VALUE)).requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(c -> {
+                        .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0, Integer.MAX_VALUE)).requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(c -> {
                             ServerPlayer p = c.getSource().getPlayerOrException();
                             PlayerMagic m = PlayerMagic.of(p);
                             m.mana = DoubleArgumentType.getDouble(c, "amount");
@@ -140,11 +140,11 @@ public final class LogosCommands {
                             m.baseMaxMana += Math.max(0, m.mana - PlayerMagic.maxMana(p));
                             return manaInfo(c);
                         })))
-                .then(Commands.literal("stability").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("capacity", IntegerArgumentType.integer(1, 10000)).executes(c -> {
+                .then(Commands.literal("stability").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("capacity", IntegerArgumentType.integer(1, 10000)).executes(c -> {
                     PlayerMagic.of(c.getSource().getPlayerOrException()).stability = IntegerArgumentType.getInteger(c, "capacity");
                     return manaInfo(c);
                 })))
-                .then(Commands.literal("trace").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("on", BoolArgumentType.bool()).executes(c -> {
+                .then(Commands.literal("trace").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(Commands.argument("on", BoolArgumentType.bool()).executes(c -> {
                     PlayerMagic.of(c.getSource().getPlayerOrException()).trace = BoolArgumentType.getBool(c, "on");
                     c.getSource().sendSuccess(() -> Component.translatable(BoolArgumentType.getBool(c, "on") ? "logos.command.trace.on" : "logos.command.trace.off"), false);
                     return 1;
@@ -152,11 +152,11 @@ public final class LogosCommands {
                 .then(Commands.literal("passives").executes(LogosCommands::passives))
                 // 符文解锁: anyone sees what they have learned; teaching and taking away is for game masters.
                 .then(Commands.literal("unlocks").executes(c -> unlocks(c, c.getSource().getPlayerOrException()))
-                        .then(Commands.argument("player", EntityArgument.player()).requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("player", EntityArgument.player()).requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .executes(c -> unlocks(c, EntityArgument.getPlayer(c, "player")))))
-                .then(Commands.literal("unlock").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("unlock").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("targets", EntityArgument.players()).then(unlockKey(true))))
-                .then(Commands.literal("lock").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("lock").requires(s -> s.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("targets", EntityArgument.players()).then(unlockKey(false)))));
     }
 
@@ -279,7 +279,7 @@ public final class LogosCommands {
     }
 
     /** Debug: the source text written on the page (or ember) in hand, shown click-to-copy and optionally saved for {@code /logos load}. */
-    private static int source(CommandContext<CommandSourceStack> c, @org.jspecify.annotations.Nullable String file) throws CommandSyntaxException {
+    private static int source(CommandContext<CommandSourceStack> c, @javax.annotation.Nullable String file) throws CommandSyntaxException {
         ServerPlayer p = c.getSource().getPlayerOrException();
         String src = null;
         for (InteractionHand hand : InteractionHand.values()) {
@@ -293,8 +293,8 @@ public final class LogosCommands {
         String text = src;
         c.getSource().sendSuccess(() -> Component.translatable("logos.command.source.head").withStyle(ChatFormatting.GOLD), false);
         c.getSource().sendSuccess(() -> Component.literal(text).withStyle(st -> st.withColor(ChatFormatting.WHITE)
-                .withClickEvent(new ClickEvent.CopyToClipboard(text))
-                .withHoverEvent(new HoverEvent.ShowText(Component.translatable("chat.copy.click")))), false);
+                .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, text))
+                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("chat.copy.click")))), false);
         if (file == null) return 1;
         Path path = spellDir().resolve(file + ".logos").normalize();
         if (!path.startsWith(spellDir())) {
@@ -323,10 +323,10 @@ public final class LogosCommands {
         return 1;
     }
 
-    private static int colossus(CommandContext<CommandSourceStack> c, @org.jspecify.annotations.Nullable String name) throws CommandSyntaxException {
+    private static int colossus(CommandContext<CommandSourceStack> c, @javax.annotation.Nullable String name) throws CommandSyntaxException {
         var p = c.getSource().getPlayerOrException();
         var at = p.position().add(p.getLookAngle().multiply(1, 0, 1).normalize().scale(3));
-        Component why = dev.logos.runtime.Colossi.summon(p, p.level(), at, name);
+        Component why = dev.logos.runtime.Colossi.summon(p, p.serverLevel(), at, name);
         if (why != null) {
             c.getSource().sendFailure(why);
             return 0;
@@ -372,7 +372,7 @@ public final class LogosCommands {
         }
         c.getSource().sendSuccess(() -> Component.translatable("logos.command.anchors.head", all.size(), dev.logos.LogosConfig.maxAnchors()), false);
         for (var a : all) {
-            String line = String.format("  ^%s  %.0f, %.0f, %.0f  %s", a.name(), a.pos().x, a.pos().y, a.pos().z, a.dimension().identifier());
+            String line = String.format("  ^%s  %.0f, %.0f, %.0f  %s", a.name(), a.pos().x, a.pos().y, a.pos().z, a.dimension().location());
             c.getSource().sendSuccess(() -> Component.literal(line), false);
         }
         return all.size();

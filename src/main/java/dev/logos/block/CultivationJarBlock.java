@@ -1,6 +1,7 @@
 package dev.logos.block;
 
-import org.jspecify.annotations.Nullable;
+import net.minecraft.world.ItemInteractionResult;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -68,22 +69,22 @@ public class CultivationJarBlock extends BaseEntityBlock implements Bonemealable
     }
 
     @Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!(level.getBlockEntity(pos) instanceof CultivationJarBlockEntity jar)) return InteractionResult.TRY_WITH_EMPTY_HAND;
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!(level.getBlockEntity(pos) instanceof CultivationJarBlockEntity jar)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         // Bone meal is the item's own use.
-        if (stack.is(Items.BONE_MEAL)) return InteractionResult.PASS;
+        if (stack.is(Items.BONE_MEAL)) return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
         // The client swings in useWithoutItem; the server decides what the hand does.
-        if (level.isClientSide()) return InteractionResult.TRY_WITH_EMPTY_HAND;
+        if (level.isClientSide()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (jar.seed().isEmpty() && jar.plant(stack)) {
             stack.consume(1, player);
             level.playSound(null, pos, SoundEvents.CROP_PLANTED, SoundSource.BLOCKS, 1, 1);
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
         if (jar.pour(stack, player)) {
             level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1, 1);
-            return InteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
-        return InteractionResult.TRY_WITH_EMPTY_HAND;
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     @Override

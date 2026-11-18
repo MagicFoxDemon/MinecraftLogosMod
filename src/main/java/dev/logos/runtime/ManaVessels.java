@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import net.minecraft.world.entity.Entity;
 
@@ -14,12 +14,12 @@ import net.minecraft.world.entity.Entity;
  * and mana potions fill it, the same way for both.
  */
 public final class ManaVessels {
-    private static final List<Function<Entity, @Nullable ManaVessel>> LOOKUPS = new CopyOnWriteArrayList<>();
+    private static final List<Function<Entity, ManaVessel>> LOOKUPS = new CopyOnWriteArrayList<>();
 
     private ManaVessels() {}
 
     /** Lets a compat give creatures that are not vessels themselves a pool; asked in the order registered, null for none. */
-    public static void register(Function<Entity, @Nullable ManaVessel> lookup) {
+    public static void register(Function<Entity, ManaVessel> lookup) {
         LOOKUPS.add(lookup);
     }
 
@@ -27,7 +27,7 @@ public final class ManaVessels {
     public static @Nullable ManaVessel of(@Nullable Entity e) {
         if (e instanceof ManaVessel v) return v;
         if (e == null) return null;
-        for (Function<Entity, @Nullable ManaVessel> lookup : LOOKUPS) {
+        for (Function<Entity, ManaVessel> lookup : LOOKUPS) {
             ManaVessel v = lookup.apply(e);
             if (v != null) return v;
         }

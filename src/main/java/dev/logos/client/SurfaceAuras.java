@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -19,12 +19,12 @@ import dev.logos.runtime.ManaWrap;
 import dev.logos.runtime.SurfaceAura;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Sheets;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -38,9 +38,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
-import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
+import dev.logos.client.port.SubmitCustomGeometryEvent;
 
 /**
  * The effects on items that wear a {@link SurfaceAura}. Every time such an item is drawn (held, in first person,
@@ -160,7 +160,7 @@ public final class SurfaceAuras {
         Vector3f up = context.firstPerson() ? new Vector3f(0, 1, 0) : camera.rotation().transform(new Vector3f(0, 1, 0));
         VfxParts.View view = new VfxParts.View(new Vec3(inverse.transformPosition(new Vector3f())),
                 new Vec3(inverse.transformDirection(right).normalize()), new Vec3(inverse.transformDirection(up).normalize()));
-        float t = ticks + mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        float t = ticks + mc.getTimer().getGameTimeDeltaPartialTick(false);
         long seed = owner * 0x9E3779B97F4A7C15L + context.ordinal();
         // Under a shader pack the layers are drawn over the finished frame, so over the item already.
         SubmitNodeCollector out = ShaderPackOverlay.item(collector, context.firstPerson());
@@ -179,7 +179,7 @@ public final class SurfaceAuras {
     private static final RenderType FLUSH = VfxParts.add("surface/fire_loop");
     /** The item sheets and glints, which hold the vertices of every item drawn so far this pass. */
     private static final RenderType[] ITEMS = {Sheets.cutoutBlockItemSheet(), Sheets.translucentBlockItemSheet(), Sheets.cutoutItemSheet(),
-            Sheets.translucentItemSheet(), RenderTypes.glint(), RenderTypes.glintTranslucent(), RenderTypes.entityGlint()};
+            Sheets.translucentItemSheet(), RenderType.glint(), RenderType.glintTranslucent(), RenderType.entityGlint()};
 
     /**
      * Draws the held items now, so a wrap's layers land on their item rather than under it. Items go into fixed
@@ -252,10 +252,6 @@ public final class SurfaceAuras {
 
     // ---- events --------------------------------------------------------------------------------
 
-    @SubscribeEvent
-    static void onReload(AddClientReloadListenersEvent event) {
-        event.addListener(Identifier.fromNamespaceAndPath(LogosMod.MODID, "surface_aura"), (ResourceManagerReloadListener) rm -> ItemSurface.clear());
-    }
 
     @SubscribeEvent
     static void onFrame(RenderFrameEvent.Pre event) {
@@ -284,7 +280,7 @@ public final class SurfaceAuras {
     static void submit(SubmitCustomGeometryEvent event) {
         if (motes() == 0) return;
         CameraRenderState camera = event.getLevelRenderState().cameraRenderState;
-        float pt = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         PoseStack pose = event.getPoseStack();
         SubmitNodeCollector raw = event.getSubmitNodeCollector(), out = ShaderPackOverlay.collector(raw);
         var layers = VfxParts.layered(raw, out);
@@ -301,5 +297,16 @@ public final class SurfaceAuras {
         MOTES.clear();
         EMITTERS.clear();
         for (WrapVisual w : WrapVisual.all()) w.clear();
+    }
+
+    /** Its listeners on the mod bus: on 1.21.1 a subscriber listens on one bus. */
+    @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    static final class ModBus {
+        private ModBus() {}
+
+        @SubscribeEvent
+        static void onReload(RegisterClientReloadListenersEvent event) {
+            event.registerReloadListener((ResourceManagerReloadListener) rm -> ItemSurface.clear());
+        }
     }
 }

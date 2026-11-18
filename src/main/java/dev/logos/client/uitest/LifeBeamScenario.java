@@ -15,9 +15,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
@@ -90,9 +90,9 @@ public class LifeBeamScenario implements UIScenario {
     private static void view(boolean side) { view(side ? watcher : null, -90, 6); }
 
     private static ArmorStand stand(net.minecraft.server.level.ServerLevel level, double x, double y, double z) {
-        ArmorStand a = EntityType.ARMOR_STAND.create(level, EntitySpawnReason.COMMAND);
+        ArmorStand a = EntityType.ARMOR_STAND.create(level);
         if (a == null) throw new IllegalStateException("armor stand creation failed");
-        a.snapTo(x, y, z, 0, 0);
+        a.moveTo(x, y, z, 0, 0);
         a.setInvisible(true);
         a.setNoGravity(true);
         level.addFreshEntity(a);
@@ -161,7 +161,7 @@ public class LifeBeamScenario implements UIScenario {
                 .fill(new BlockPos(-3, 101, 12), new BlockPos(4, 106, 12), Blocks.AIR.defaultBlockState());
         s.step("clear", ctx -> LogosFx.clearRays())
                 .server("a cow", sc -> {
-                    target = EntityType.COW.create(sc.level(), EntitySpawnReason.COMMAND);
+                    target = EntityType.COW.create(sc.level());
                     if (target == null) throw new IllegalStateException("cow creation failed");
                     target.setPos(.5, 101, 7);
                     target.setNoAi(true);

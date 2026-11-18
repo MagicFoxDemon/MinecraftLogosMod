@@ -2,12 +2,27 @@
   "type": "logos:alchemy",
   "process": "ferment",
   "ingredients": [
-    { "ingredient": "minecraft:sugar" },
-    { "ingredient": "#c:mushrooms" },
-    { "ingredient": "minecraft:wheat" }
+    {
+      "ingredient": {
+        "item": "minecraft:sugar"
+      }
+    },
+    {
+      "ingredient": {
+        "tag": "c:mushrooms"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:wheat"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:starter_culture", "count": 3 }
+    {
+      "id": "logos:starter_culture",
+      "count": 3
+    }
   ],
   "mana": 1
 }

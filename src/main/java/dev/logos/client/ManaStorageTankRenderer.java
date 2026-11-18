@@ -1,13 +1,13 @@
 package dev.logos.client;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.LogosMod;
 import dev.logos.block.ManaStorageTankBlock;
 import dev.logos.block.ManaStorageTankBlockEntity;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.BlockModelResolver;
 import net.minecraft.client.renderer.block.model.BlockDisplayContext;
@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.phys.Vec3;
 
@@ -52,7 +52,7 @@ public class ManaStorageTankRenderer implements BlockEntityRenderer<ManaStorageT
 
     @Override
     public void extractRenderState(ManaStorageTankBlockEntity tank, State state, float partialTicks, Vec3 cameraPosition,
-            ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+            @Nullable ModelFeatureRenderer.CrumblingOverlay breakProgress) {
         BlockEntityRenderer.super.extractRenderState(tank, state, partialTicks, cameraPosition, breakProgress);
         int level = (int) Math.ceil(tank.mana() / ManaStorageTankBlockEntity.MAX_MANA * 10);
         if (level <= 0) state.fog.clear();

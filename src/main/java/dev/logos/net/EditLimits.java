@@ -66,13 +66,13 @@ public final class EditLimits {
     public static boolean admit(ServerPlayer player, BlockPos pos) {
         // Reach first: everything after it reads the block, which would load a far chunk.
         if (inReach(player, pos) && interfaceOpen(player, pos) && Targeting.mayEdit(player, player.level(), pos)) return true;
-        player.sendOverlayMessage(Component.translatable("logos.editor.edit_refused").withStyle(ChatFormatting.YELLOW));
+        player.displayClientMessage(Component.translatable("logos.editor.edit_refused").withStyle(ChatFormatting.YELLOW), true);
         return false;
     }
 
     /** The larger of the drift allowance and the player's own reach, so no one can open what they cannot then save to. */
     private static boolean inReach(ServerPlayer player, BlockPos pos) {
-        return player.distanceToSqr(pos.getCenter()) <= DRIFT_SQR || player.isWithinBlockInteractionRange(pos, 1.0);
+        return player.distanceToSqr(pos.getCenter()) <= DRIFT_SQR || player.canInteractWithBlock(pos, 1.0);
     }
 
     /** A server-side menu on that block, or a client-only editor last opened on the very block now there. */
@@ -97,16 +97,16 @@ public final class EditLimits {
     /** Whether an edit carrying {@code graph} goes ahead; if not, {@code player} is told why. */
     static boolean admit(ServerPlayer player, CompoundTag graph) {
         if (!SPELL_EDITS.allow(player)) {
-            player.sendOverlayMessage(Component.translatable("logos.editor.saving_too_fast").withStyle(ChatFormatting.YELLOW));
+            player.displayClientMessage(Component.translatable("logos.editor.saving_too_fast").withStyle(ChatFormatting.YELLOW), true);
             return false;
         }
         if (fits(graph)) return true;
-        player.sendOverlayMessage(tooLarge(graph));
+        player.displayClientMessage(tooLarge(graph), true);
         return false;
     }
 
     private static int nodes(CompoundTag graph) {
-        return graph.getCompound("_additional").flatMap(a -> a.getList("nodes")).map(ListTag::size).orElse(0);
+        return graph.getCompound("_additional").getList("nodes", net.minecraft.nbt.Tag.TAG_COMPOUND).size();
     }
 
     private static int bytes(CompoundTag graph) {

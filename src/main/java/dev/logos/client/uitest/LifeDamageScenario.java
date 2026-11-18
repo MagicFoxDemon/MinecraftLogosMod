@@ -12,9 +12,9 @@ import dev.logos.net.FxPayload;
 import dev.logos.runtime.Effects;
 import dev.logos.runtime.Vfx;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -72,7 +72,7 @@ public class LifeDamageScenario implements UIScenario {
 
         s.step("reset routing observation", ctx -> cache().clear())
                 .server("real life damage on a cow", sc -> {
-                    target = EntityType.COW.create(sc.level(), EntitySpawnReason.COMMAND);
+                    target = EntityType.COW.create(sc.level());
                     if (target == null) throw new IllegalStateException("cow creation failed");
                     target.setPos(.5, 101, 3);
                     target.setNoAi(true);

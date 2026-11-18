@@ -2,12 +2,24 @@
   "type": "logos:alchemy",
   "process": "settle",
   "ingredients": [
-    { "ingredient": "minecraft:gold_ingot" },
-    { "ingredient": "logos:philosophers_mercury" }
+    {
+      "ingredient": {
+        "item": "minecraft:gold_ingot"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:philosophers_mercury"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:gold_embryo" },
-    { "id": "minecraft:glass_bottle" }
+    {
+      "id": "logos:gold_embryo"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
   ],
   "mana": 15
 }

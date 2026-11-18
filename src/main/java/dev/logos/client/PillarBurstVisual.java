@@ -12,8 +12,8 @@ import org.joml.Quaternionf;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.client.VfxParts.View;
-import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.OrderedSubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -46,9 +46,9 @@ public final class PillarBurstVisual {
      * 0 for none). As in M_FlamePillar_main, bright veins alternate with opaque dark cells (main1's dark red-brown),
      * which hide the bright layers behind them and make the rush read faster.
      */
-    private record Layer(net.minecraft.client.renderer.rendertype.RenderType material, float radius, float alpha, float speed, int rgb,
+    private record Layer(net.minecraft.client.renderer.RenderType material, float radius, float alpha, float speed, int rgb,
             float tile, float tall, float stretch) {
-        Layer(net.minecraft.client.renderer.rendertype.RenderType material, float radius, float alpha, float speed, int rgb) {
+        Layer(net.minecraft.client.renderer.RenderType material, float radius, float alpha, float speed, int rgb) {
             this(material, radius, alpha, speed, rgb, TILE, TALL, 0);
         }
     }

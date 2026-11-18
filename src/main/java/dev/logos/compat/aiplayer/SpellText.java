@@ -2,7 +2,7 @@ package dev.logos.compat.aiplayer;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

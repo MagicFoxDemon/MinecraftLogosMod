@@ -2,12 +2,24 @@
   "type": "logos:alchemy",
   "process": "settle",
   "ingredients": [
-    { "ingredient": "minecraft:netherite_ingot" },
-    { "ingredient": "logos:firmament_liquid" }
+    {
+      "ingredient": {
+        "item": "minecraft:netherite_ingot"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:firmament_liquid"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:netherite_embryo" },
-    { "id": "minecraft:glass_bottle" }
+    {
+      "id": "logos:netherite_embryo"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
   ],
   "mana": 40
 }

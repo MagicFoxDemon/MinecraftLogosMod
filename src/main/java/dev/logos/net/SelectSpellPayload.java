@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record SelectSpellPayload(int index) implements CustomPacketPayload {
     /** The wheel's 言出法随 entry, offered by a 言灵坠 on the wand. */
     public static final int VOICE = -1;
-    public static final Type<SelectSpellPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "select_spell"));
+    public static final Type<SelectSpellPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "select_spell"));
     public static final StreamCodec<RegistryFriendlyByteBuf, SelectSpellPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, SelectSpellPayload::index, SelectSpellPayload::new);
 
@@ -33,13 +33,13 @@ public record SelectSpellPayload(int index) implements CustomPacketPayload {
         if (p.index == VOICE) {
             if (!WandCharmItem.on(wand, LogosMod.VOICE_CHARM.get())) return;
             wand.set(LogosMod.VOICE_SELECTED.get(), true);
-            sp.sendOverlayMessage(Component.translatable("logos.wheel.selected_voice").withStyle(ChatFormatting.LIGHT_PURPLE));
+            sp.displayClientMessage(Component.translatable("logos.wheel.selected_voice").withStyle(ChatFormatting.LIGHT_PURPLE), true);
             return;
         }
         var entries = SpellBag.entries(sp, wand);
         if (p.index < 0 || p.index >= entries.size()) return;
         wand.remove(LogosMod.VOICE_SELECTED.get());
         wand.set(LogosMod.SELECTED.get(), p.index);
-        sp.sendOverlayMessage(Component.translatable("logos.wheel.selected", entries.get(p.index).spell().name()).withStyle(ChatFormatting.LIGHT_PURPLE));
+        sp.displayClientMessage(Component.translatable("logos.wheel.selected", entries.get(p.index).spell().name()).withStyle(ChatFormatting.LIGHT_PURPLE), true);
     }
 }

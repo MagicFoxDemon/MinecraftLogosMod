@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.sync.bindings.impl.DataBindingBuilder;
@@ -26,7 +26,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.inventory.InventorySlots;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
-import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.gui.ui.utils.UIElementProvider;
 
@@ -39,15 +39,15 @@ import dev.vfyjxf.taffy.style.AlignContent;
 import dev.vfyjxf.taffy.style.TaffyPosition;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.transfer.IndexModifier;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
-import net.neoforged.neoforge.transfer.transaction.TransactionContext;
+import dev.logos.port.IndexModifier;
+import dev.logos.port.ResourceHandler;
+import dev.logos.port.ItemResource;
+import dev.logos.port.ResourceHandlerSlot;
+import dev.logos.port.TransactionContext;
 
 /**
  * The alchemy table's screen, one page drawn like the table itself (see {@code client.AlchemyArt}):
@@ -78,7 +78,7 @@ public final class AlchemyTableUI {
     /** The storage ledger beside the board: nine slots, its margins and room for a scrollbar. */
     private static final int STORAGE_W = 9 * 18 + 22;
     /** Ink and paper for the ledger and the controls, shared with the spell workbench. */
-    private static final Identifier MANUSCRIPT = Identifier.fromNamespaceAndPath(dev.logos.LogosMod.MODID, "lss/manuscript.lss");
+    private static final ResourceLocation MANUSCRIPT = ResourceLocation.fromNamespaceAndPath(dev.logos.LogosMod.MODID, "lss/manuscript.lss");
     /** A card's title row, which its apparatus's brass nameplate sits under. */
     private static final int TITLE_H = 16;
 
@@ -227,7 +227,7 @@ public final class AlchemyTableUI {
         UIElement manaRow = row(fuel, column(manaText, manaGauge));
 
         // The tank slot (buckets and bottles can be clicked on it) beside the fluid gauge and the button that empties it.
-        FluidSlot tank = new FluidSlot().bind(table.tank(), 0).setCapacity(AlchemyTableBlockEntity.TANK_CAPACITY);
+        FluidSlot tank = new FluidSlot().bind(new dev.logos.port.FluidHandlerView(table.tank()), 0).setCapacity(AlchemyTableBlockEntity.TANK_CAPACITY);
         tank.setAllowClickFilled(true).setAllowClickDrained(true);
         Label fluidText = new Label();
         fluidText.bind(DataBindingBuilder.componentS2C(() -> {
@@ -324,7 +324,7 @@ public final class AlchemyTableUI {
         private float mouseX, mouseY;
         private @Nullable WireDrag drawing;
         /** Where the mouse was while an empty spot of the board is dragged to pan it; null otherwise. */
-        private float @Nullable [] panFrom;
+        private @Nullable float[] panFrom;
         /** The overview: the board at half size, each card a small apparatus showing what it holds and has made. */
         private boolean overview;
         private java.util.function.Consumer<Boolean> overviewChanged = on -> {};
@@ -425,7 +425,7 @@ public final class AlchemyTableUI {
         }
 
         @Override
-        protected void drawBackgroundAdditional(IGUIContext ctx) {
+        public void drawBackgroundAdditional(GUIContext ctx) {
             super.drawBackgroundAdditional(ctx);
             pipes(ctx, false);
             if (drawing != null && drawing.card < panels.size()) {
@@ -439,7 +439,7 @@ public final class AlchemyTableUI {
          * The stretch of each pipe to the product crate beyond the board's edge: the board is clipped
          * to {@code view}, so the crate draws this part, from the view's edge to its funnel.
          */
-        void cratePipes(IGUIContext ctx, UIElement view) {
+        void cratePipes(GUIContext ctx, UIElement view) {
             float left = view instanceof ScrollerView scroller && scroller.verticalScroller.isDisplayed()
                     ? scroller.verticalScroller.getPositionX() : view.getPositionX() + view.getSizeWidth();
             dev.logos.ui.AlchemyArt.clipped(ctx, left, view.getPositionY(), productsNode.getPositionX() - left, view.getSizeHeight(),
@@ -447,7 +447,7 @@ public final class AlchemyTableUI {
         }
 
         /** The laid pipes: between apparatus and to the crate, or ({@code crateOnly}) only those to the crate. */
-        private void pipes(IGUIContext ctx, boolean crateOnly) {
+        private void pipes(GUIContext ctx, boolean crateOnly) {
             long now = System.currentTimeMillis();
             for (int i = 0; i < Math.min(panels.size(), table.cards().size()); i++) {
                 ProcessCard card = table.cards().get(i);

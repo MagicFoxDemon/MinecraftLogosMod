@@ -3,8 +3,8 @@ package dev.logos.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
@@ -34,7 +34,7 @@ final class FrostBeamVisual {
         Line line = new Line(from, to);
         double length = line.length;
         if (length < .05) return;
-        double time = level.getGameTime() + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        double time = level.getGameTime() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
 
         // The public reach races the end out; the hit at the end waits until it holds still.
         if (Double.isNaN(lastGrowth)) lastGrowth = time;

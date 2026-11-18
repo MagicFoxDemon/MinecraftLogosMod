@@ -3,7 +3,7 @@ package dev.logos.compat.tlm;
 import java.util.List;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 
@@ -40,7 +40,7 @@ final class CastSpells extends Behavior<EntityMaid> {
     /** Share of her pool a combo must leave, as a lifeform keeps. */
     static final double COMBO_RESERVE = 0.3;
 
-    private MaidSpells.@Nullable Page casting, combo;
+    private @Nullable MaidSpells.Page casting, combo;
     private @Nullable LivingEntity at;
     private double chargeTarget, chargeIn, flow, surge;
     private int chargeDone, chargeTicks, chargeTier, cooldown;
@@ -120,7 +120,7 @@ final class CastSpells extends Behavior<EntityMaid> {
     }
 
     /** Starts charging {@code page} (and {@code with} after it) at {@code target}: what they inject, or all her pool holds if less. */
-    private void begin(EntityMaid maid, CreatureMana pool, MaidSpells.Page page, MaidSpells.@Nullable Page with, LivingEntity target) {
+    private void begin(EntityMaid maid, CreatureMana pool, MaidSpells.Page page, @Nullable MaidSpells.Page with, LivingEntity target) {
         double total = Math.min(page.injection() + (with == null ? 0 : with.injection()), pool.mana());
         flow = MaidSpells.flow(maid);
         surge = MaidSpells.surge(maid, pool);

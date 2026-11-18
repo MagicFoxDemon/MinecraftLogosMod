@@ -10,7 +10,7 @@ import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Quaternionfc;
 import org.joml.Vector3f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -24,7 +24,7 @@ import dev.logos.mixin.LayerRenderStateAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
@@ -34,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
 /**
  * Where a held wand's head is in the world. Each wand model names its head with a {@code wand_tip}
@@ -42,7 +42,7 @@ import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
  * hand, the hand renderers report the pose they draw it with, and this turns the tip into a world
  * position, first person and third person alike; {@link CastPoints} starts charges, beams and rays there.
  */
-@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public final class WandTips {
     public static final String GROUP = "wand_tip";
     /** A pose reported this many client ticks ago or less still counts. */
@@ -57,8 +57,8 @@ public final class WandTips {
     private WandTips() {}
 
     @SubscribeEvent
-    static void onReload(AddClientReloadListenersEvent event) {
-        event.addListener(Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_tips"), (ResourceManagerReloadListener) rm -> TIPS.clear());
+    static void onReload(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((ResourceManagerReloadListener) rm -> TIPS.clear());
     }
 
     /** Forgets wand heads not drawn for a while (their holders out of sight, or gone). */
@@ -135,39 +135,39 @@ public final class WandTips {
     }
 
     private static Vector3f load(Item item) {
-        Identifier id = BuiltInRegistries.ITEM.getKey(item);
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
         @Nullable JsonObject model = null;
-        Identifier modelId = modelOf(id);
+        ResourceLocation modelId = modelOf(id);
         Vector3f top = null;
         for (int depth = 0; modelId != null && depth < 6; depth++) {
-            model = read(Identifier.fromNamespaceAndPath(modelId.getNamespace(), "models/" + modelId.getPath() + ".json"));
+            model = read(ResourceLocation.fromNamespaceAndPath(modelId.getNamespace(), "models/" + modelId.getPath() + ".json"));
             if (model == null) break;
             Vector3f found = findGroup(model.get("groups"));
             if (found != null) return found;
             if (top == null) top = topOf(model);
-            modelId = model.has("parent") ? Identifier.tryParse(model.get("parent").getAsString()) : null;
+            modelId = model.has("parent") ? ResourceLocation.tryParse(model.get("parent").getAsString()) : null;
         }
         if (WARNED.add(item)) LogosMod.LOGGER.warn("Wand model for {} has no '{}' group; guessing its head at the top", id, GROUP);
         return top != null ? top : new Vector3f(12, 14, 8);
     }
 
     /** The base model drawn by an item definition; composite staffs keep their solid body first. */
-    private static @Nullable Identifier modelOf(Identifier item) {
-        JsonObject def = read(Identifier.fromNamespaceAndPath(item.getNamespace(), "items/" + item.getPath() + ".json"));
+    private static @Nullable ResourceLocation modelOf(ResourceLocation item) {
+        JsonObject def = read(ResourceLocation.fromNamespaceAndPath(item.getNamespace(), "items/" + item.getPath() + ".json"));
         if (def == null || !def.has("model")) return null;
         return firstModel(def.get("model"), 0);
     }
 
-    private static @Nullable Identifier firstModel(@Nullable JsonElement element, int depth) {
+    private static @Nullable ResourceLocation firstModel(@Nullable JsonElement element, int depth) {
         if (element == null || !element.isJsonObject() || depth >= 16) return null;
         JsonObject model = element.getAsJsonObject();
         if (model.has("model") && model.get("model").isJsonPrimitive()) {
-            return Identifier.tryParse(model.get("model").getAsString());
+            return ResourceLocation.tryParse(model.get("model").getAsString());
         }
         if (model.has("type") && "minecraft:composite".equals(model.get("type").getAsString())
                 && model.has("models") && model.get("models").isJsonArray()) {
             for (JsonElement child : model.getAsJsonArray("models")) {
-                Identifier found = firstModel(child, depth + 1);
+                ResourceLocation found = firstModel(child, depth + 1);
                 if (found != null) return found;
             }
         }
@@ -205,7 +205,7 @@ public final class WandTips {
         return maxY < 0 ? null : new Vector3f((minX + maxX) / 2, maxY, (minZ + maxZ) / 2);
     }
 
-    private static @Nullable JsonObject read(Identifier location) {
+    private static @Nullable JsonObject read(ResourceLocation location) {
         var resource = Minecraft.getInstance().getResourceManager().getResource(location);
         if (resource.isEmpty()) return null;
         try (Reader r = resource.get().openAsReader()) {

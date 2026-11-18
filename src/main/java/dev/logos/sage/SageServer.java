@@ -24,7 +24,6 @@ import dev.logos.net.SageReplyPayload;
 import dev.logos.net.SageStatusPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.Permissions;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -58,7 +57,7 @@ public final class SageServer {
 
     /** Operators may set the server's sage up; so may the owner of a singleplayer world, cheats or not. */
     public static boolean admin(ServerPlayer sp) {
-        return sp.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER) || sp.level().getServer().isSingleplayerOwner(sp.nameAndId());
+        return sp.hasPermissions(net.minecraft.commands.Commands.LEVEL_GAMEMASTERS) || sp.getServer().isSingleplayerOwner(sp.getGameProfile());
     }
 
     private static boolean offered(SageSettings.Server s) {
@@ -138,7 +137,7 @@ public final class SageServer {
             String key = p.clearKey() ? "" : p.key().isBlank() ? old.endpoint().apiKey() : p.key();
             SageSettings.saveServer(new SageSettings.Server(p.offered(), p.cooldownSeconds(), p.dailyLimit(), p.maxConcurrent(),
                     new SageEndpoint(p.url(), p.model(), key)));
-            LogosMod.LOGGER.info("{} changed the server sage settings", sp.getPlainTextName());
+            LogosMod.LOGGER.info("{} changed the server sage settings", sp.getGameProfile().getName());
             for (ServerPlayer other : sp.level().getServer().getPlayerList().getPlayers()) syncStatus(other);
         }
         SageSettings.Server s = SageSettings.server();

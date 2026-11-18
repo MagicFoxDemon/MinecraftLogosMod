@@ -1,5 +1,9 @@
 package dev.logos.block;
 
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.core.HolderLookup;
 import dev.logos.LogosMod;
 import dev.logos.item.SpellPages;
 import net.minecraft.core.BlockPos;
@@ -12,14 +16,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 
 /**
  * 术式拓印台: the original (a written page or an ember) and the empty pages to copy onto. The
  * copy itself is never stored; {@link #result} works it out from what lies here.
  */
-public class CopyTableBlockEntity extends BlockEntity {
+public class CopyTableBlockEntity extends BlockEntity implements dev.logos.port.RemovalSideEffects {
     public static final int ORIGINAL = 0, BLANK = 1;
 
     private final SimpleContainer inputs = new SimpleContainer(2) {
@@ -119,8 +123,9 @@ public class CopyTableBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueOutput output = TagValueOutput.of(tag, registries);
+        super.saveAdditional(tag, registries);
         for (int i = 0; i < inputs.getContainerSize(); i++) {
             ItemStack s = inputs.getItem(i);
             if (!s.isEmpty()) output.store("slot" + i, ItemStack.CODEC, s);
@@ -128,8 +133,9 @@ public class CopyTableBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
+        super.loadAdditional(tag, registries);
         for (int i = 0; i < inputs.getContainerSize(); i++) inputs.setItem(i, input.read("slot" + i, ItemStack.CODEC).orElse(ItemStack.EMPTY));
     }
 

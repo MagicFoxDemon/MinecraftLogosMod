@@ -7,15 +7,14 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import dev.logos.LogosMod;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemStackTemplate;
-import net.minecraft.world.item.crafting.PlacementInfo;
+import dev.logos.port.ItemStackTemplate;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -44,7 +43,7 @@ public record AlchemyRecipe(Process process, List<SizedIngredient> ingredients, 
     public static final MapCodec<AlchemyRecipe> MAP_CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
             Process.CODEC.fieldOf("process").forGetter(AlchemyRecipe::process),
             SizedIngredient.NESTED_CODEC.listOf(1, 9).fieldOf("ingredients").forGetter(AlchemyRecipe::ingredients),
-            SizedFluidIngredient.CODEC.optionalFieldOf("fluid").forGetter(AlchemyRecipe::fluid),
+            SizedFluidIngredient.NESTED_CODEC.optionalFieldOf("fluid").forGetter(AlchemyRecipe::fluid),
             ItemStackTemplate.CODEC.listOf(1, 9).fieldOf("results").forGetter(AlchemyRecipe::results),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("mana", DEFAULT_MANA).forGetter(AlchemyRecipe::mana)).apply(i, AlchemyRecipe::new));
     public static final StreamCodec<RegistryFriendlyByteBuf, AlchemyRecipe> STREAM_CODEC = StreamCodec.composite(
@@ -54,7 +53,7 @@ public record AlchemyRecipe(Process process, List<SizedIngredient> ingredients, 
             ItemStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), AlchemyRecipe::results,
             ByteBufCodecs.VAR_INT, AlchemyRecipe::mana,
             AlchemyRecipe::new);
-    public static final RecipeSerializer<AlchemyRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
+    public static final RecipeSerializer<AlchemyRecipe> SERIALIZER = new dev.logos.port.SimpleRecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
 
     /** A recipe taking the default mana a craft. */
     public AlchemyRecipe(Process process, List<SizedIngredient> ingredients, Optional<SizedFluidIngredient> fluid, List<ItemStackTemplate> results) {
@@ -93,8 +92,14 @@ public record AlchemyRecipe(Process process, List<SizedIngredient> ingredients, 
     }
 
     @Override
-    public ItemStack assemble(Input input) {
+    public ItemStack assemble(Input input, HolderLookup.Provider registries) {
         return results.getFirst().create();
+    }
+
+    /** Made by process cards, never crafted: kept out of the recipe book. */
+    @Override
+    public boolean isSpecial() {
+        return true;
     }
 
     @Override
@@ -103,7 +108,7 @@ public record AlchemyRecipe(Process process, List<SizedIngredient> ingredients, 
     }
 
     @Override
-    public String group() {
+    public String getGroup() {
         return "";
     }
 
@@ -117,15 +122,15 @@ public record AlchemyRecipe(Process process, List<SizedIngredient> ingredients, 
         return LogosMod.ALCHEMY_RECIPE.get();
     }
 
-    /** Not made in a crafting grid, so not placeable by the recipe book. */
+    /** Not made in a crafting grid. */
     @Override
-    public PlacementInfo placementInfo() {
-        return PlacementInfo.NOT_PLACEABLE;
+    public boolean canCraftInDimensions(int width, int height) {
+        return false;
     }
 
     @Override
-    public RecipeBookCategory recipeBookCategory() {
-        return LogosMod.ALCHEMY_BOOK_CATEGORY.get();
+    public ItemStack getResultItem(HolderLookup.Provider registries) {
+        return results.getFirst().create();
     }
 
     /** How many kinds of thing it takes; when several recipes could run, the richest one wins. */

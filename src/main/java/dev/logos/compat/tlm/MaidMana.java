@@ -1,6 +1,6 @@
 package dev.logos.compat.tlm;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 

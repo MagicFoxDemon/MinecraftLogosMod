@@ -1,8 +1,8 @@
 package dev.logos.client;
 
-import com.geckolib.constant.dataticket.DataTicket;
-import com.geckolib.model.DefaultedEntityGeoModel;
-import com.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.constant.dataticket.DataTicket;
+import software.bernie.geckolib.model.DefaultedEntityGeoModel;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
 
@@ -10,10 +10,10 @@ import dev.logos.LogosMod;
 import dev.logos.runtime.ManaLifeform;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * The mana lifeform's GeckoLib model (assets/logos/geckolib/…/mana_lifeform). Awake it is mana and
@@ -26,7 +26,7 @@ public class ManaLifeformRenderer<R extends LivingEntityRenderState & GeoRenderS
     private static final DataTicket<Integer> ENTITY = DataTicket.create("logos_lifeform_entity", Integer.class);
 
     public ManaLifeformRenderer(EntityRendererProvider.Context context) {
-        super(context, new DefaultedEntityGeoModel<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "mana_lifeform")));
+        super(context, new DefaultedEntityGeoModel<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "mana_lifeform")));
         this.shadowRadius = 0.2f;
     }
 
@@ -55,8 +55,8 @@ public class ManaLifeformRenderer<R extends LivingEntityRenderState & GeoRenderS
     }
 
     @Override
-    public RenderType getRenderType(R state, Identifier texture) {
-        return RenderTypes.entityCutoutCull(texture);
+    public RenderType getRenderType(R state, ResourceLocation texture) {
+        return RenderType.entityCutoutCull(texture);
     }
 
     @Override

@@ -12,8 +12,8 @@ import dev.logos.client.ClientCharges;
 import dev.logos.runtime.CastPose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.Mannequin;
@@ -46,7 +46,7 @@ public class CastGestureScenario implements UIScenario {
      * Plays {@code gesture} on the mannequin and screenshots it {@code at} ticks into it, by the pose's own
      * clock (a scenario tick is not a client tick), which stops for each screenshot.
      */
-    private static void play(ScenarioBuilder s, String name, Identifier gesture, int length, int... at) {
+    private static void play(ScenarioBuilder s, String name, ResourceLocation gesture, int length, int... at) {
         s.server("play " + name, sc -> sc.player().level().getEntitiesOfClass(Mannequin.class, new AABB(ORIGIN).inflate(8))
                 .forEach(b -> CastPose.play(b, gesture)));
         for (int t : at) {
@@ -56,7 +56,7 @@ public class CastGestureScenario implements UIScenario {
         s.waitUntil(name + " is over", ctx -> mannequinPose() == null);
     }
 
-    private static CastPoses.@org.jspecify.annotations.Nullable Active mannequinPose() {
+    private static @javax.annotation.Nullable CastPoses.Active mannequinPose() {
         for (var e : Minecraft.getInstance().level.entitiesForRendering()) {
             if (e instanceof Mannequin) return CastPoses.of(e, 0);
         }
@@ -64,7 +64,7 @@ public class CastGestureScenario implements UIScenario {
     }
 
     /** Stops the pose clock once the mannequin's {@code gesture} is {@code t} ticks in. */
-    static boolean stopAt(Identifier gesture, int t) {
+    static boolean stopAt(ResourceLocation gesture, int t) {
         var a = mannequinPose();
         if (a == null || !a.pose().equals(gesture) || a.age() < t) return false;
         ClientCharges.freeze(true);
@@ -81,8 +81,8 @@ public class CastGestureScenario implements UIScenario {
                 .fill(ORIGIN.offset(-8, 0, -6), ORIGIN.offset(8, 0, 16), Blocks.SMOOTH_STONE.defaultBlockState())
                 .server("a mannequin facing east", sc -> {
                     var level = sc.player().level();
-                    Mannequin body = EntityType.MANNEQUIN.create(level, EntitySpawnReason.TRIGGERED);
-                    body.snapTo(0.5, 101, 4.5, -90, 0);
+                    Mannequin body = EntityType.MANNEQUIN.create(level);
+                    body.moveTo(0.5, 101, 4.5, -90, 0);
                     body.setYHeadRot(-90);
                     body.setYBodyRot(-90);
                     level.addFreshEntity(body);

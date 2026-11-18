@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.client.font.LDFonts;
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.ItemStackTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.SpriteTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
@@ -15,7 +15,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
-import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
+import dev.logos.client.port.DrawerHelperClient;
 import com.lowdragmc.lowdraglib2.utils.TextUtilities;
 
 import dev.logos.LogosMod;
@@ -37,7 +37,7 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -53,7 +53,7 @@ import net.minecraft.world.item.crafting.display.SmithingRecipeDisplay;
  */
 public final class GuidePage {
     /** What a link carries in its text's style: clicking it follows {@link GuideDoc.Span#link()}. */
-    static final Identifier LINK = Identifier.fromNamespaceAndPath(LogosMod.MODID, "guide");
+    static final ResourceLocation LINK = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "guide");
     /** Rune words written as code, in the teal of the workbench's mercury. */
     private static final int CODE = 0xFF1F5E66;
     private static final int GOLD = 0xFF8A6418;
@@ -322,7 +322,7 @@ public final class GuidePage {
 
     /** {@code {{image <texture> <width> <height>}}}: a picture from a texture, at its size in GUI pixels. */
     private static UIElement image(List<String> args) {
-        Identifier texture = args.isEmpty() ? null : Identifier.tryParse(args.getFirst());
+        ResourceLocation texture = args.isEmpty() ? null : ResourceLocation.tryParse(args.getFirst());
         int width = args.size() > 1 ? number(args.get(1), 64) : 64, height = args.size() > 2 ? number(args.get(2), width) : width;
         UIElement image = new UIElement().layout(l -> l.width(width).height(height).maxWidthPercent(100).alignSelf(AlignItems.CENTER).marginVertical(2));
         if (texture != null) image.style(s -> s.backgroundTexture(SpriteTexture.of(texture.toString())));
@@ -456,7 +456,7 @@ public final class GuidePage {
 
     /** The item named by {@code id}, or nothing when no item has that id. */
     static ItemStack stack(String id) {
-        Identifier key = Identifier.tryParse(id);
+        ResourceLocation key = ResourceLocation.tryParse(id);
         if (key == null) return ItemStack.EMPTY;
         Optional<Item> item = BuiltInRegistries.ITEM.getOptional(key);
         return item.map(ItemStack::new).orElse(ItemStack.EMPTY);

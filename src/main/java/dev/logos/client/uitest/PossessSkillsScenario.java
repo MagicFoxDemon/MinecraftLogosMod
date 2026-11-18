@@ -12,7 +12,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.GameType;
@@ -43,8 +43,8 @@ public class PossessSkillsScenario implements UIScenario {
         var last = p.getVehicle();
         Possession.end(p, false);
         if (last != null) last.discard();
-        Mob mob = type.create(p.level(), EntitySpawnReason.TRIGGERED);
-        mob.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + z, 0, 0);
+        Mob mob = type.create(p.level());
+        mob.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + z, 0, 0);
         p.level().addFreshEntity(mob);
         if (!Possession.start(p, mob, 60)) throw new AssertionError("the " + type + " possession did not start");
     }

@@ -13,7 +13,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -32,7 +32,7 @@ final class FamiliarGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(1.5, 2, 1.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         p.setGameMode(GameType.SURVIVAL);
         // A mock connection never reports a loaded client, and such players take no damage at all.
         p.connection.markClientLoaded();
@@ -80,7 +80,7 @@ final class FamiliarGameTests {
         z.setTarget(husk);
         h.assertTrue(z.getTarget() == null, "nor pick a target of its own before its master fights");
         // Magic: damage from mob attacks scales with difficulty and is nothing in peaceful.
-        p.hurtServer(h.getLevel(), p.damageSources().indirectMagic(husk, husk), 1);
+        p.hurt(p.damageSources().indirectMagic(husk, husk), 1);
         h.assertTrue(z.getTarget() == husk, "it should turn on what attacked its master, has " + z.getTarget());
         h.succeed();
     }
@@ -92,13 +92,13 @@ final class FamiliarGameTests {
         Mob z = summon(h, p, "zombie");
         p.setGameMode(GameType.SURVIVAL);
         float before = p.getHealth();
-        p.hurtServer(h.getLevel(), p.damageSources().indirectMagic(z, z), 6);
+        p.hurt(p.damageSources().indirectMagic(z, z), 6);
         h.assertTrue(p.getHealth() == before, "a familiar must not hurt its master");
         Husk husk = h.spawn(EntityType.HUSK, new Vec3(5.5, 2, 5.5));
         husk.setNoAi(true);
         int total = p.getStats().getValue(Stats.CUSTOM.get(Stats.MOB_KILLS));
         int husks = p.getStats().getValue(Stats.ENTITY_KILLED.get(EntityType.HUSK));
-        husk.hurtServer(h.getLevel(), husk.damageSources().mobAttack(z), 1000);
+        husk.hurt(husk.damageSources().mobAttack(z), 1000);
         h.assertTrue(!husk.isAlive(), "the husk should be dead");
         h.assertTrue(husk.getKillCredit() == p, "the kill should be credited to the master, like a tamed wolf's");
         h.assertTrue(p.getStats().getValue(Stats.CUSTOM.get(Stats.MOB_KILLS)) == total + 1, "it should count in the master's mob kills");
@@ -116,7 +116,7 @@ final class FamiliarGameTests {
         z.setGuaranteedDrop(EquipmentSlot.MAINHAND); // what picking it up does
         z.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET)); // spawn gear: not its to give
         Vec3 at = z.position();
-        z.hurtServer(h.getLevel(), h.getLevel().damageSources().genericKill(), Float.MAX_VALUE);
+        z.hurt(h.getLevel().damageSources().genericKill(), Float.MAX_VALUE);
         AABB around = new AABB(at, at).inflate(3);
         var items = h.getLevel().getEntitiesOfClass(ItemEntity.class, around);
         h.assertTrue(items.size() == 1 && items.getFirst().getItem().is(Items.DIAMOND),
@@ -160,7 +160,7 @@ final class FamiliarGameTests {
             }
             Vec3 at = dragon.position();
             // Only players (and a few damage types) can hurt a dragon at all, as in vanilla.
-            dragon.hurtServer(h.getLevel(), h.getLevel().damageSources().playerAttack(p), Float.MAX_VALUE);
+            dragon.hurt(h.getLevel().damageSources().playerAttack(p), Float.MAX_VALUE);
             h.assertTrue(dragon.isRemoved(), "a familiar dragon should vanish at once, not play its death");
             h.assertTrue(h.getLevel().getEntitiesOfClass(ExperienceOrb.class, new AABB(at, at).inflate(16)).isEmpty(), "and give no experience");
             h.succeed();
@@ -173,8 +173,8 @@ final class FamiliarGameTests {
         p.setGameMode(GameType.CREATIVE);
         forceAround(h, 2);
         var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
-        dragon.snapTo(p.getX(), p.getY() + 40, p.getZ(), 0, 0);
-        net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball[] shot = {null};
+        dragon.moveTo(p.getX(), p.getY() + 40, p.getZ(), 0, 0);
+        net.minecraft.world.entity.projectile.DragonFireball[] shot = {null};
         long[] firedAt = {0};
         h.succeedWhen(() -> {
             if (shot[0] == null) {
@@ -184,8 +184,8 @@ final class FamiliarGameTests {
                 // Held still, with the fireball dropping straight through its head, that meeting is certain.
                 dragon.setNoAi(true);
                 Vec3 from = dragon.head.getBoundingBox().getCenter().add(0, 2, 0), dir = new Vec3(0, -1, 0);
-                var f = new net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball(h.getLevel(), dragon, dir);
-                f.snapTo(from.x, from.y, from.z, 0, 0);
+                var f = new net.minecraft.world.entity.projectile.DragonFireball(h.getLevel(), dragon, dir);
+                f.moveTo(from.x, from.y, from.z, 0, 0);
                 h.getLevel().addFreshEntity(f);
                 shot[0] = f;
                 firedAt[0] = h.getLevel().getGameTime();
@@ -216,17 +216,17 @@ final class FamiliarGameTests {
         // A false dragon in the End, then the true one returns.
         BlockPos spot = new BlockPos(2000, 120, 2000);
         end.setChunkForced(spot.getX() >> 4, spot.getZ() >> 4, true);
-        var fake = net.minecraft.world.entity.EntityType.ENDER_DRAGON.create(end, net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
+        var fake = net.minecraft.world.entity.EntityType.ENDER_DRAGON.create(end);
         h.assertTrue(fake != null, "could not make a dragon");
-        fake.snapTo(spot.getX(), spot.getY(), spot.getZ(), 0, 0);
+        fake.moveTo(spot.getX(), spot.getY(), spot.getZ(), 0, 0);
         Familiars.bindForTest(fake, p);
         end.addFreshEntity(fake);
         if (end.getDragonFight() == null) {
             h.succeed(); // no End fight in this world: nothing can reclaim the throne
             return;
         }
-        var trueDragon = net.minecraft.world.entity.EntityType.ENDER_DRAGON.create(end, net.minecraft.world.entity.EntitySpawnReason.EVENT);
-        trueDragon.snapTo(spot.getX() + 40, spot.getY(), spot.getZ(), 0, 0);
+        var trueDragon = net.minecraft.world.entity.EntityType.ENDER_DRAGON.create(end);
+        trueDragon.moveTo(spot.getX() + 40, spot.getY(), spot.getZ(), 0, 0);
         end.addFreshEntity(trueDragon);
         h.assertTrue(fake.isRemoved(), "when the true dragon returns, the summoned one must be unmade");
         trueDragon.discard();
@@ -298,7 +298,7 @@ final class FamiliarGameTests {
         p.setGameMode(GameType.CREATIVE);
         forceAround(h, 2);
         var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
-        dragon.snapTo(p.getX(), p.getY() + 60, p.getZ(), 0, 0);
+        dragon.moveTo(p.getX(), p.getY() + 60, p.getZ(), 0, 0);
         h.assertTrue(p.startRiding(dragon, false, true), "the master should mount the dragon");
         dragon.positionRider(p);
         p.setXRot(60); // looking down must not defeat the climb key
@@ -324,7 +324,7 @@ final class FamiliarGameTests {
         p.setGameMode(GameType.CREATIVE);
         forceAround(h, 2);
         var dragon = (net.minecraft.world.entity.boss.enderdragon.EnderDragon) summon(h, p, "ender_dragon");
-        dragon.snapTo(p.getX(), p.getY() + 60, p.getZ(), 180, 0);
+        dragon.moveTo(p.getX(), p.getY() + 60, p.getZ(), 180, 0);
         h.assertTrue(p.startRiding(dragon, false, true), "the master should mount the dragon");
         dragon.positionRider(p);
         p.setYRot(0);
@@ -374,7 +374,7 @@ final class FamiliarGameTests {
             h.assertTrue(dragon.tickCount > 3, "the dragon has not ticked yet");
             dev.logos.runtime.DragonFamiliar.control(p, dev.logos.runtime.DragonFamiliar.FIRE);
             dev.logos.runtime.DragonFamiliar.control(p, dev.logos.runtime.DragonFamiliar.FIRE);
-            var shots = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball.class,
+            var shots = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.projectile.DragonFireball.class,
                     dragon.getBoundingBox().inflate(24), f -> f.getOwner() == dragon);
             h.assertTrue(shots.size() == 1, "two clicks at once should fire one fireball (it cools down), fired " + shots.size());
             h.assertTrue(shots.getFirst().getDeltaMovement().z > 0.5, "the fireball should fly where its rider looks (+z), " + shots.getFirst().getDeltaMovement());
@@ -392,8 +392,8 @@ final class FamiliarGameTests {
             if (foe[0] == null) {
                 h.assertTrue(dragon.tickCount > 3, "the dragon has not ticked yet");
                 Vec3 at = dragon.head.getBoundingBox().getCenter().add(0, -1, 6);
-                Husk husk = EntityType.HUSK.create(h.getLevel(), net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
-                husk.snapTo(at.x, at.y, at.z, 0, 0);
+                Husk husk = EntityType.HUSK.create(h.getLevel());
+                husk.moveTo(at.x, at.y, at.z, 0, 0);
                 husk.setNoAi(true);
                 husk.setNoGravity(true);
                 h.getLevel().addFreshEntity(husk);
@@ -412,7 +412,7 @@ final class FamiliarGameTests {
         ServerPlayer p = master(h);
         p.setGameMode(GameType.CREATIVE);
         forceAround(h, 1);
-        var v = (net.minecraft.world.entity.npc.villager.Villager) summon(h, p, "villager");
+        var v = (net.minecraft.world.entity.npc.Villager) summon(h, p, "villager");
         v.setAge(-24000);
         h.runAfterDelay(20, () -> {
             // The freeze takes hold from its next tick: one step at most, not twenty.
@@ -457,7 +457,7 @@ final class FamiliarGameTests {
             if (dx != 0 || dy != 0 || dz != 0) h.setBlock(pocket.offset(dx, dy, dz), Blocks.STONE);
         }
         Mob z = named(h, p, "zombie", "跑腿");
-        z.snapTo(h.absoluteVec(new Vec3(6.5, 2, 8.5)));
+        z.moveTo(h.absoluteVec(new Vec3(6.5, 2, 8.5)));
         Casting.cast(p, Casting.compile("(gather)"), null, null);
         h.assertTrue(Familiars.hasOrders(z), "gather should give it an errand");
         // Polled, not timed: a freshly forced chunk takes a variable few ticks before its entities tick.
@@ -487,7 +487,7 @@ final class FamiliarGameTests {
         p.setGameMode(GameType.SURVIVAL);
         Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
         husk.setNoAi(true);
-        husk.hurtServer(h.getLevel(), husk.damageSources().playerAttack(p), 1); // the master strikes first
+        husk.hurt(husk.damageSources().playerAttack(p), 1); // the master strikes first
         h.assertTrue(w.getTarget() == husk, "the warden should take its master's foe at once, has " + w.getTarget());
         h.assertTrue(w.getAngerLevel().isAngry(), "and be furious at it at once, not merely listening");
         h.runAfterDelay(40, () -> {
@@ -508,7 +508,7 @@ final class FamiliarGameTests {
         wild.setNoAi(true);
         h.assertTrue(!wild.canTargetEntity(w), "a wild warden still never targets a warden");
         h.assertTrue(!w.canTargetEntity(wild), "nor does a familiar warden pick one by itself");
-        wild.hurtServer(h.getLevel(), wild.damageSources().playerAttack(p), 1); // the master strikes it
+        wild.hurt(wild.damageSources().playerAttack(p), 1); // the master strikes it
         h.assertTrue(w.getTarget() == wild && w.getAngerLevel().isAngry(), "the familiar warden should turn furious on the warden its master fights, has "
                 + w.getTarget() + " / " + w.getAngerLevel());
         h.runAfterDelay(40, () -> {

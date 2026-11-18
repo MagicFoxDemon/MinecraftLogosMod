@@ -7,26 +7,26 @@ import java.util.function.IntFunction;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.LogosMod;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.OrderedSubmitNodeCollector;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.OrderedSubmitNodeCollector;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RenderShape;
@@ -43,9 +43,9 @@ import net.minecraft.world.phys.Vec3;
 public final class VfxParts {
     private VfxParts() {}
 
-    private static final Map<Identifier, RenderType> ADD = new HashMap<>();
-    private static final Map<Identifier, RenderType> BLEND = new HashMap<>();
-    private static final Map<Identifier, RenderType> CUT = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> ADD = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> BLEND = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> CUT = new HashMap<>();
 
     /** Additive glow over {@code logos:textures/vfx/<texture>.png}. */
     public static RenderType add(String texture) {
@@ -53,7 +53,7 @@ public final class VfxParts {
     }
 
     /** Additive glow over any texture (an addon's own, say). */
-    public static RenderType add(Identifier texture) {
+    public static RenderType add(ResourceLocation texture) {
         return ADD.computeIfAbsent(texture, k -> material(texture, true));
     }
 
@@ -62,7 +62,7 @@ public final class VfxParts {
         return blend(vfx(texture));
     }
 
-    public static RenderType blend(Identifier texture) {
+    public static RenderType blend(ResourceLocation texture) {
         return BLEND.computeIfAbsent(texture, k -> material(texture, false));
     }
 
@@ -76,45 +76,45 @@ public final class VfxParts {
         return cut(vfx(texture));
     }
 
-    public static RenderType cut(Identifier texture) {
+    public static RenderType cut(ResourceLocation texture) {
         return CUT.computeIfAbsent(texture, k -> {
             String key = "cut_" + key(texture);
             var pipeline = RenderPipeline.builder(RenderPipelines.PARTICLE_SNIPPET)
                     .withLocation(id("pipeline/vfx_" + key)).withCull(false)
                     .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
                     .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).build();
-            return RenderType.create("logos_vfx_" + key, RenderSetup.builder(pipeline)
+            return dev.logos.client.port.RenderTypes.create("logos_vfx_" + key, RenderSetup.builder(pipeline)
                     .withTexture("Sampler0", texture).useLightmap().sortOnUpload().createRenderSetup());
         });
     }
 
     /** Translucent over the block atlas: debris wearing the ground blocks' own textures, writing depth so pieces hide each other. */
-    public static final RenderType BLOCKS = RenderType.create("logos_vfx_blocks", RenderSetup.builder(
+    public static final RenderType BLOCKS = dev.logos.client.port.RenderTypes.create("logos_vfx_blocks", RenderSetup.builder(
             RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET).withLocation(id("pipeline/vfx_blocks")).withCull(false)
                     .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
                     .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).build())
-            .withTexture("Sampler0", Identifier.withDefaultNamespace("textures/atlas/blocks.png")).sortOnUpload().createRenderSetup());
+            .withTexture("Sampler0", ResourceLocation.withDefaultNamespace("textures/atlas/blocks.png")).sortOnUpload().createRenderSetup());
 
-    private static RenderType material(Identifier texture, boolean additive) {
+    private static RenderType material(ResourceLocation texture, boolean additive) {
         String key = (additive ? "add_" : "blend_") + key(texture);
         var pipeline = RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET)
                 .withLocation(id("pipeline/vfx_" + key)).withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(additive ? BlendFunction.LIGHTNING : BlendFunction.TRANSLUCENT)).build();
-        return RenderType.create("logos_vfx_" + key, RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_vfx_" + key, RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", texture).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(LogosMod.MODID, path);
+    private static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, path);
     }
 
-    private static Identifier vfx(String texture) {
+    private static ResourceLocation vfx(String texture) {
         return id("textures/vfx/" + texture + ".png");
     }
 
     /** A name for a texture's pipeline: its path, prefixed by its namespace unless that is {@code logos}. */
-    private static String key(Identifier texture) {
+    private static String key(ResourceLocation texture) {
         String path = texture.getPath().replace("textures/vfx/", "").replace(".png", "").replace('/', '_');
         return texture.getNamespace().equals(LogosMod.MODID) ? path : texture.getNamespace() + "_" + path;
     }

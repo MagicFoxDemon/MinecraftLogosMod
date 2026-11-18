@@ -26,12 +26,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
-import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
+import dev.logos.port.ItemStacksResourceHandler;
+import dev.logos.port.ResourceHandlerSlot;
 
 /**
  * The screens of the mana spreader and the mana collector: a ledger page on the bench, as the alchemy
@@ -41,7 +41,7 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
  */
 public final class ManaDeviceUI {
     private static final int MANA_COLOUR = 0xFF9FD3EE;
-    private static final Identifier MANUSCRIPT = Identifier.fromNamespaceAndPath(dev.logos.LogosMod.MODID, "lss/manuscript.lss");
+    private static final ResourceLocation MANUSCRIPT = ResourceLocation.fromNamespaceAndPath(dev.logos.LogosMod.MODID, "lss/manuscript.lss");
 
     private ManaDeviceUI() {}
 

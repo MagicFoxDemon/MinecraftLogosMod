@@ -8,9 +8,9 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.Curve;
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.curve.ECBCurves;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.mojang.blaze3d.platform.DestFactor;
-import com.mojang.blaze3d.platform.SourceFactor;
-import net.minecraft.resources.Identifier;
+import com.mojang.blaze3d.platform.GlStateManager.DestFactor;
+import com.mojang.blaze3d.platform.GlStateManager.SourceFactor;
+import net.minecraft.resources.ResourceLocation;
 
 /** Shared RGBA-mask defaults; element colors, rates, sizes and texture choices belong to each visual. */
 final class ProjectileParticles {
@@ -24,7 +24,7 @@ final class ProjectileParticles {
         c.sizeOverLifetime.setSize(new NumberFunction3(taper, taper, taper));
         c.setMaxParticles(48);
         for (var material : c.renderer.getMaterials()) {
-            TextureMaterial image = new TextureMaterial(Identifier.fromNamespaceAndPath("logos", "textures/vfx/" + texture + ".png"));
+            TextureMaterial image = new TextureMaterial(ResourceLocation.fromNamespaceAndPath("logos", "textures/vfx/" + texture + ".png"));
             image.setDiscardThreshold(.005f);
             material.setMaterial(image);
             material.getBlendMode().setSrcColorFactor(SourceFactor.SRC_ALPHA);

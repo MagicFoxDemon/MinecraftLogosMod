@@ -1,6 +1,6 @@
 package dev.logos.client;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.runtime.Possession;
 import net.minecraft.client.Camera;

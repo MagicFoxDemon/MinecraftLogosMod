@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "L": "minecraft:lectern",
-    "P": "logos:spell_page",
-    "W": "minecraft:writable_book"
+    "L": {
+      "item": "minecraft:lectern"
+    },
+    "P": {
+      "item": "logos:spell_page"
+    },
+    "W": {
+      "item": "minecraft:writable_book"
+    }
   },
   "pattern": [
     "PW",

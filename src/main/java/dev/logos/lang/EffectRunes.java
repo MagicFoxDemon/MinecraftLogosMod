@@ -25,13 +25,12 @@ import dev.logos.runtime.TimeStop;
 import dev.logos.runtime.Vfx;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -238,10 +237,10 @@ final class EffectRunes {
                         if (!c.inst().spend(8, "disarm")) return null;
                         ItemStack stack = t.getItemBySlot(slot);
                         t.setItemSlot(slot, ItemStack.EMPTY);
-                        ItemEntity drop = t.spawnAtLocation(lv(t), stack, (float) (t.getBbHeight() * 0.6));
+                        ItemEntity drop = t.spawnAtLocation(stack, (float) (t.getBbHeight() * 0.6));
                         if (drop != null) drop.setPickUpDelay(40);
                         c.inst().affected.add(t.getUUID());
-                        Vfx.sound(lv(t), Targeting.center(t), SoundEvents.ITEM_BREAK.value(), 0.6f, 1.6f);
+                        Vfx.sound(lv(t), Targeting.center(t), SoundEvents.ITEM_BREAK, 0.6f, 1.6f);
                         Vfx.burst(lv(t), t, c.inst().caster.level() == t.level() ? c.inst().caster.getEyePosition() : null, Element.PHYSICAL, Vfx.Burst.FORCE);
                     }
                     return null;
@@ -253,7 +252,7 @@ final class EffectRunes {
                         + "没有空位、没有材料或施法者不是玩家时跳过，不消耗魔力")
                 .exec((n, c) -> {
                     if (!(c.inst().caster instanceof ServerPlayer caster)) return null;
-                    Identifier id = Identifier.tryParse(text(n.arg(1), c));
+                    ResourceLocation id = ResourceLocation.tryParse(text(n.arg(1), c));
                     var item = id == null ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
                     if (item == null) return null;
                     for (LivingEntity t : living(n.arg(0), c)) {
@@ -274,7 +273,7 @@ final class EffectRunes {
                 .doc("药水效果：按注册名施加，原版和模组的都可以（如 speed、minecraft:regeneration、模组id:效果名）。"
                         + "等级从 1 开始，最高 10。持续效果每秒每级 0.8 魔力，最长 600 秒；瞬间效果（instant_health 等）每级 6 魔力")
                 .exec((n, c) -> {
-                    var effect = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.get(Identifier.parse((String) n.arg(1).value)).orElse(null);
+                    var effect = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.getHolder(ResourceLocation.parse((String) n.arg(1).value)).orElse(null);
                     if (effect == null) return null;
                     double s = clamp(num(n.arg(2), c), 0, 600);
                     int level = (int) clamp(Math.round(num(n.arg(3), c)), 1, 10);
@@ -350,7 +349,7 @@ final class EffectRunes {
                         + "魔力 = 它的最大生命值 ÷ 5 × √秒数")
                 .exec((n, c) -> {
                     if (!(c.inst().caster instanceof ServerPlayer p) || p instanceof FakePlayer) return null;
-                    var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.tryParse((String) n.arg(0).value)).orElse(null);
+                    var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.tryParse((String) n.arg(0).value)).orElse(null);
                     Component why = dev.logos.runtime.Incarnation.refuse(p, type);
                     if (why != null) {
                         c.inst().terminate(why);
@@ -423,7 +422,7 @@ final class EffectRunes {
                         Vfx.burst(lv(t), t.position().add(0, t.getBbHeight() / 2, 0), Element.VOID, 20);
                         // The one rune that still loads a chunk, whatever spellsLoadChunks says: whoever lands there needs it, and a far blink pays by the block.
                         Vec3 to = cross || !standable(p.level(), BlockPos.containing(p.pos())) ? safeSpot(p.level(), p.pos()) : p.pos();
-                        Entity moved = t.teleport(new TeleportTransition(p.level(), to, Vec3.ZERO, t.getYRot(), t.getXRot(), TeleportTransition.DO_NOTHING));
+                        Entity moved = t.changeDimension(new net.minecraft.world.level.portal.DimensionTransition(p.level(), to, Vec3.ZERO, t.getYRot(), t.getXRot(), net.minecraft.world.level.portal.DimensionTransition.DO_NOTHING));
                         if (moved != null) moved.resetFallDistance();
                         Vfx.sound(p.level(), to, SoundEvents.ENDERMAN_TELEPORT, 0.6f, 1.2f);
                     }
@@ -439,7 +438,7 @@ final class EffectRunes {
                         + "默认把术式剩下的魔力全部（最多 1000×等级^1.5）凝成它的魔力，:mana 可以指定多少。它一直存在，靠自己的魔力和心核里的载页行动")
                 .exec((n, c) -> {
                     if (!(c.inst().caster instanceof ServerPlayer sp)) return null;
-                    var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.tryParse((String) n.arg(0).value));
+                    var type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.tryParse((String) n.arg(0).value));
                     Place at = place(kw(n, "at"), c);
                     Node name = kw(n, "name");
                     Node hunt = kw(n, "hunt"), radius = kw(n, "radius");
@@ -656,7 +655,7 @@ final class EffectRunes {
                         case null -> "空";
                         case Double d -> Node.fmt(d);
                         case Entity e -> e.getName().getString();
-                        case Place p -> String.format("(%.1f, %.1f, %.1f) @%s", p.pos().x, p.pos().y, p.pos().z, p.level().dimension().identifier());
+                        case Place p -> String.format("(%.1f, %.1f, %.1f) @%s", p.pos().x, p.pos().y, p.pos().z, p.level().dimension().location());
                         case List<?> l -> l.size() + " 个";
                         case Vec3 p -> String.format("(%.1f, %.1f, %.1f)", p.x, p.y, p.z);
                         default -> v.toString();
@@ -693,7 +692,7 @@ final class EffectRunes {
         Fact broken = ExecuteCost.firstBroken(t, proof);
         if (broken != null) {
             // The premise no longer holds: the world rejects the proof and the spell collapses on its author.
-            inst.caster.hurtServer(casterLevel, inst.caster.damageSources().magic(), 4);
+            inst.caster.hurt(inst.caster.damageSources().magic(), 4);
             Vfx.burst(casterLevel, inst.caster, null, Element.VOID, Vfx.Burst.DAMAGE);
             inst.terminate(Component.translatable("logos.spell.end.paradox", broken.describe()));
             return null;
@@ -717,7 +716,7 @@ final class EffectRunes {
     }
 
     /** The body a slot names, if this spell made it: a form's own value, or a construct's entity (self). */
-    private static @org.jspecify.annotations.Nullable SpellObject ownForm(Node n, Ctx c) {
+    private static @javax.annotation.Nullable SpellObject ownForm(Node n, Ctx c) {
         SpellObject f = switch (eval(n, c)) {
             case SpellObject o -> o;
             case ConstructEntity ce -> ce.owner();

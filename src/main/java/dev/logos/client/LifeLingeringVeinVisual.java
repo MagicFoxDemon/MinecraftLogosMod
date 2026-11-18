@@ -3,22 +3,22 @@ package dev.logos.client;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Element;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -249,13 +249,13 @@ final class LifeLingeringVeinVisual implements VeinVisual {
      * {@code core/vein_vine}, which cuts the texture by its alpha and shades by it. Both faces drawn; writes depth.
      */
     private static RenderType material(String texture) {
-        Identifier id = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/vfx/" + texture + ".png");
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/vfx/" + texture + ".png");
         String key = texture.replace('/', '_');
         var pipeline = RenderPipeline.builder(RenderPipelines.PARTICLE_SNIPPET)
-                .withLocation(Identifier.fromNamespaceAndPath(LogosMod.MODID, "pipeline/vein_vine_" + key))
-                .withFragmentShader(Identifier.fromNamespaceAndPath(LogosMod.MODID, "core/vein_vine")).withCull(false)
+                .withLocation(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "pipeline/vein_vine_" + key))
+                .withFragmentShader(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "core/vein_vine")).withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true)).build();
-        return RenderType.create("logos_vein_vine_" + key, RenderSetup.builder(pipeline).withTexture("Sampler0", id).useLightmap()
+        return dev.logos.client.port.RenderTypes.create("logos_vein_vine_" + key, RenderSetup.builder(pipeline).withTexture("Sampler0", id).useLightmap()
                 .createRenderSetup());
     }
 

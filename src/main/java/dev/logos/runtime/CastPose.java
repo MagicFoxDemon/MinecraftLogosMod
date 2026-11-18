@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.Category;
@@ -13,7 +13,7 @@ import dev.logos.lang.Node;
 import dev.logos.lang.Spell;
 import dev.logos.net.CastPosePayload;
 import dev.logos.net.Net;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -31,11 +31,11 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class CastPose {
     /** Beam (光柱): the wand held out along the gaze until the beam ends. */
-    public static final Identifier BEAM = Identifier.fromNamespaceAndPath(LogosMod.MODID, "beam");
+    public static final ResourceLocation BEAM = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "beam");
     /** One-shot gestures a cast plays by the form it leads with ({@link #gesture}); {@link #CAST} when it leads with no form. */
-    public static final Identifier CAST = id("cast"), PROJECTILE = id("projectile"), RAY = id("ray"), FIELD = id("field"),
+    public static final ResourceLocation CAST = id("cast"), PROJECTILE = id("projectile"), RAY = id("ray"), FIELD = id("field"),
             CONSTRUCT = id("construct"), VEIN = id("vein"), IMBUE = id("imbue");
-    private static final Map<String, Identifier> GESTURES = Map.of("projectile", PROJECTILE, "ray", RAY, "field", FIELD,
+    private static final Map<String, ResourceLocation> GESTURES = Map.of("projectile", PROJECTILE, "ray", RAY, "field", FIELD,
             "construct", CONSTRUCT, "vein", VEIN, "imbue", IMBUE);
     /** How often a lasting hold is sent again, for players who came close after it began. */
     public static final int REFRESH_TICKS = 10;
@@ -49,16 +49,16 @@ public final class CastPose {
     public static final class Hold {
         private final int id;
         private final LivingEntity caster;
-        private final Identifier pose;
+        private final ResourceLocation pose;
         private boolean released;
 
-        private Hold(int id, LivingEntity caster, Identifier pose) {
+        private Hold(int id, LivingEntity caster, ResourceLocation pose) {
             this.id = id;
             this.caster = caster;
             this.pose = pose;
         }
 
-        public Identifier pose() {
+        public ResourceLocation pose() {
             return pose;
         }
 
@@ -75,7 +75,7 @@ public final class CastPose {
     }
 
     /** Starts holding {@code pose} on {@code caster} until the returned hold is released. */
-    public static Hold hold(LivingEntity caster, Identifier pose) {
+    public static Hold hold(LivingEntity caster, ResourceLocation pose) {
         Hold h = new Hold(nextId++, caster, pose);
         HOLDS.put(h.id, h);
         send(caster, new CastPosePayload(caster.getId(), h.id, pose, true));
@@ -86,7 +86,7 @@ public final class CastPose {
      * Plays {@code pose} once on {@code caster}: the client gives it the length its drawing says, and it
      * ends by itself, so there is nothing to release. It shows over a held pose while it plays.
      */
-    public static void play(LivingEntity caster, Identifier pose) {
+    public static void play(LivingEntity caster, ResourceLocation pose) {
         send(caster, new CastPosePayload(caster.getId(), nextId++, pose, true));
     }
 
@@ -94,19 +94,19 @@ public final class CastPose {
      * The gesture a cast of {@code spell} plays: its leading form's ({@link #lead}), or {@link #CAST} when it
      * leads with no form. Null for a beam, which holds {@link #BEAM} for as long as it lasts instead.
      */
-    public static @Nullable Identifier gesture(Spell spell) {
+    public static @Nullable ResourceLocation gesture(Spell spell) {
         Node lead = lead(spell);
         if (lead == null) return CAST;
         return lead.rune.name.equals("beam") ? null : GESTURES.getOrDefault(lead.rune.name, CAST);
     }
 
-    private static Identifier id(String path) {
-        return Identifier.fromNamespaceAndPath(LogosMod.MODID, path);
+    private static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, path);
     }
 
     /** The poses {@code caster} is holding now, oldest first (the tests read it). */
-    public static List<Identifier> holding(LivingEntity caster) {
-        List<Identifier> out = new ArrayList<>();
+    public static List<ResourceLocation> holding(LivingEntity caster) {
+        List<ResourceLocation> out = new ArrayList<>();
         for (Hold h : HOLDS.values()) if (h.caster == caster) out.add(h.pose);
         return out;
     }

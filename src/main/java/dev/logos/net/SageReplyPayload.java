@@ -5,7 +5,7 @@ import dev.logos.sage.SageAgent;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server → client: progress on question {@code id}, or its answer. While working, {@code key} is a
@@ -15,7 +15,7 @@ import net.minecraft.resources.Identifier;
 public record SageReplyPayload(int id, boolean done, String key, String arg, String text, String source) implements CustomPacketPayload {
     public static final int MAX_TEXT = 16_000, MAX_ARG = 1_024;
 
-    public static final Type<SageReplyPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "sage_reply"));
+    public static final Type<SageReplyPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "sage_reply"));
     public static final StreamCodec<FriendlyByteBuf, SageReplyPayload> CODEC = CustomPacketPayload.codec(SageReplyPayload::write,
             b -> new SageReplyPayload(b.readVarInt(), b.readBoolean(), b.readUtf(64), b.readUtf(MAX_ARG), b.readUtf(MAX_TEXT), b.readUtf(SageAgent.MAX_SOURCE)));
 

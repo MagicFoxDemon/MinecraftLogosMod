@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.gui.factory.PlayerUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -26,20 +26,20 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.level.saveddata.SavedDataType;
+import dev.logos.port.SavedDataType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -58,7 +58,7 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
  */
 @EventBusSubscriber(modid = LogosMod.MODID)
 public final class Lifeforms {
-    public static final Identifier CORE_UI = Identifier.fromNamespaceAndPath(LogosMod.MODID, "lifeform_core");
+    public static final ResourceLocation CORE_UI = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "lifeform_core");
 
     /**
      * A {@code logos:mana_fuel} data map entry: how much mana one of this item gives a lifeform or a
@@ -78,10 +78,15 @@ public final class Lifeforms {
             m.forEach((owner, list) -> r.owned.put(owner, new ArrayList<>(list)));
             return r;
         }, r -> r.owned);
-        static final SavedDataType<Registry> LIFEFORMS = new SavedDataType<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "lifeforms"), Registry::new, CODEC);
-        static final SavedDataType<Registry> COLOSSI = new SavedDataType<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "colossi"), Registry::new, CODEC);
+        static final SavedDataType<Registry> LIFEFORMS = new SavedDataType<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "lifeforms"), Registry::new, CODEC);
+        static final SavedDataType<Registry> COLOSSI = new SavedDataType<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "colossi"), Registry::new, CODEC);
 
         final Map<UUID, List<UUID>> owned = new HashMap<>();
+
+        @Override
+        public net.minecraft.nbt.CompoundTag save(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+            return LIFEFORMS.save(this, tag, registries);
+        }
 
         List<UUID> of(UUID owner) {
             return owned.computeIfAbsent(owner, k -> new ArrayList<>());
@@ -118,7 +123,7 @@ public final class Lifeforms {
 
     /** The registry for {@code m}'s kind: colossi and lifeforms are counted apart. */
     private static Registry registry(MinecraftServer server, Mob m) {
-        return server.getDataStorage().computeIfAbsent(m instanceof AlchemicalColossus ? Registry.COLOSSI : Registry.LIFEFORMS);
+        return (m instanceof AlchemicalColossus ? Registry.COLOSSI : Registry.LIFEFORMS).computeIfAbsent(server);
     }
 
     /** Whether {@code m} is still one of its master's made familiars (one unmade while it lay unloaded is not). */
@@ -164,10 +169,10 @@ public final class Lifeforms {
                     ? Component.translatable("logos.lifeform.too_little_asked", lifeLevel, Math.round(min), Math.round(inst.mana), Math.round(wanted))
                     : Component.translatable("logos.lifeform.too_little", lifeLevel, Math.round(min), Math.round(inst.mana));
         }
-        ManaLifeform lf = LogosMod.MANA_LIFEFORM.get().create(level, EntitySpawnReason.MOB_SUMMONED);
+        ManaLifeform lf = LogosMod.MANA_LIFEFORM.get().create(level);
         if (lf == null) return Component.translatable("logos.lifeform.cannot_spawn");
         if (!inst.spend(amount, "gather lifeform")) return null; // the spell itself reports running dry
-        lf.snapTo(at.x, at.y, at.z, owner.getYRot(), 0);
+        lf.moveTo(at.x, at.y, at.z, owner.getYRot(), 0);
         lf.setLifeLevel(lifeLevel);
         lf.setMana(amount);
         if (nickname != null && !nickname.isBlank()) {

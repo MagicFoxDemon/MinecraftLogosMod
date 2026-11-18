@@ -51,7 +51,7 @@ final class StateLifecycleGameTests {
         p.setGameMode(GameType.SURVIVAL);
         p.connection.markClientLoaded();
         Vec3 pos = h.absoluteVec(STANDS);
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
@@ -133,7 +133,7 @@ final class StateLifecycleGameTests {
         h.assertTrue(Possession.start(p, pig, 30), "the possession should start");
         Mannequin body = level.getEntitiesOfClass(Mannequin.class, new AABB(start, start).inflate(1)).getFirst();
         ChunkPos from = body.chunkPosition();
-        body.snapTo(body.getX() + 16, body.getY(), body.getZ(), body.getYRot(), 0);
+        body.moveTo(body.getX() + 16, body.getY(), body.getZ(), body.getYRot(), 0);
         ChunkPos to = body.chunkPosition();
         h.assertTrue(!to.equals(from), "the body should be in another chunk now");
         Possession.end(p, false);

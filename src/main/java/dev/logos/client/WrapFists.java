@@ -3,7 +3,7 @@ package dev.logos.client;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.common.reflect.TypeToken;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -15,13 +15,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.context.ContextKey;
 import net.minecraft.world.entity.HumanoidArm;
@@ -45,7 +45,7 @@ final class WrapFists {
     /** How long the fist is, in model pixels from the end of the arm. */
     private static final float FIST = 5;
     /** On a living entity's render state: who it is and the element of its wrap, when it wears one. */
-    private static final ContextKey<Fist> KEY = new ContextKey<>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "wrap_fist"));
+    private static final ContextKey<Fist> KEY = new ContextKey<>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "wrap_fist"));
     private static final Map<ModelPart.Cube, ItemSurface> SURFACES = new IdentityHashMap<>();
     private static final RandomSource RANDOM = RandomSource.create();
 

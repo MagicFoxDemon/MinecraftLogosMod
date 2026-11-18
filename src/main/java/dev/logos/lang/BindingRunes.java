@@ -18,7 +18,7 @@ import dev.logos.runtime.Spots;
 import dev.logos.runtime.StatusData;
 import dev.logos.runtime.Targeting;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -260,7 +260,7 @@ final class BindingRunes {
                     if (!c.inst().spend(2, "in-dimension")) return c.place();
                     double scale = from.level().dimensionType().coordinateScale() / target.dimensionType().coordinateScale();
                     Vec3 p = from.pos();
-                    double y = Math.max(target.getMinY(), Math.min(target.getMaxY(), p.y));
+                    double y = Math.max(target.getMinBuildHeight(), Math.min(target.getMaxBuildHeight() - 1, p.y));
                     return new Place(target, new Vec3(p.x * scale, y, p.z * scale));
                 });
         def("toward", BINDING, DIR).p("from", POS).p("to", POS).doc("从一点指向另一点的方向")
@@ -279,7 +279,7 @@ final class BindingRunes {
     }
 
     private static ServerLevel dimension(Ctx c, String id) {
-        Identifier key = Identifier.tryParse(id);
+        ResourceLocation key = ResourceLocation.tryParse(id);
         return key == null ? null : c.level().getServer().getLevel(ResourceKey.create(Registries.DIMENSION, key));
     }
 }

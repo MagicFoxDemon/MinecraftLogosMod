@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.photon.client.fx.FXRuntime;
 
@@ -196,7 +196,7 @@ final class FxLive {
             int creature = dev.logos.runtime.Vfx.creatureOf(p.look());
             if (creature >= 0) {
                 var type = BuiltInRegistries.ENTITY_TYPE.byId(creature);
-                Entity model = type == null ? null : type.create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+                Entity model = type == null ? null : type.create(level);
                 return model == null ? null : new Look(null, model, p.size(), p.spin(), pos, heading, now);
             }
             if (p.look() < 0) return null;

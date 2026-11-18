@@ -45,7 +45,7 @@ public class LogosMod {
     public static final String MODID = "logos";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
+    public static final dev.logos.port.ItemRegister ITEMS = new dev.logos.port.ItemRegister(MODID);
     public static final DeferredRegister.DataComponents COMPONENTS = DeferredRegister.createDataComponents(net.minecraft.core.registries.Registries.DATA_COMPONENT_TYPE, MODID);
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, MODID);
 
@@ -60,7 +60,7 @@ public class LogosMod {
      * staff holds, which keeps changing as it fills: the staff in hand is not lowered and raised again for it.
      */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> STORED_MANA = COMPONENTS.registerComponentType("stored_mana",
-            b -> b.persistent(Codec.DOUBLE).ignoreSwapAnimation().networkSynchronized(ByteBufCodecs.DOUBLE));
+            b -> b.persistent(Codec.DOUBLE).networkSynchronized(ByteBufCodecs.DOUBLE));
 
     /** Which spell (index into wand pages + off-hand codex pages) the wand will cast. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SELECTED = COMPONENTS.registerComponentType("selected",
@@ -81,7 +81,7 @@ public class LogosMod {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<dev.logos.runtime.SurfaceAura>> SURFACE_AURA = COMPONENTS.registerComponentType("surface_aura",
             b -> b.persistent(dev.logos.runtime.SurfaceAura.CODEC).networkSynchronized(dev.logos.runtime.SurfaceAura.STREAM_CODEC));
 
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
+    public static final dev.logos.port.BlockRegister BLOCKS = new dev.logos.port.BlockRegister(MODID);
     public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.BLOCK_ENTITY_TYPE, MODID);
     public static final DeferredRegister<net.minecraft.world.item.CreativeModeTab> TABS =
@@ -95,7 +95,14 @@ public class LogosMod {
                     key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ConstructEntity>of(dev.logos.runtime.ConstructEntity::new,
                                     net.minecraft.world.entity.MobCategory.MISC)
                             .sized(1, 1).noSave().noSummon().fireImmune().clientTrackingRange(10).updateInterval(1)
-                            .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+                            .build(key.toString()));
+
+    /** The body a possessing player leaves standing (dev.logos.runtime.PossessionBody); 26.1 uses its mannequin. Never saved. */
+    public static final net.neoforged.neoforge.registries.DeferredHolder<net.minecraft.world.entity.EntityType<?>,
+            net.minecraft.world.entity.EntityType<dev.logos.runtime.PossessionBody>> POSSESSION_BODY = ENTITY_TYPES.register("possession_body",
+                    key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.PossessionBody>of(dev.logos.runtime.PossessionBody::new,
+                                    net.minecraft.world.entity.MobCategory.MISC)
+                            .sized(0.6f, 1.8f).noSave().noSummon().clientTrackingRange(10).build(key.toString()));
 
     // new WandItem(slots, flow, surge, max mana, mana a second): see CONTRIBUTING.md, 法杖数值.
     /** Tiers 2, 4 and 6 keep their original registry ids so existing wands and their pages survive the new series. */
@@ -244,16 +251,18 @@ public class LogosMod {
         }
     }
 
-    public static final DeferredRegister<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.predicates.LootItemCondition>> LOOT_CONDITIONS =
+    public static final DeferredRegister<net.minecraft.world.level.storage.loot.predicates.LootItemConditionType> LOOT_CONDITIONS =
             DeferredRegister.create(net.minecraft.core.registries.Registries.LOOT_CONDITION_TYPE, MODID);
     /** Loot condition: the chest stands in an end city's ship, where the 虚空之书 is far likelier than in the city. */
-    public static final DeferredHolder<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.predicates.LootItemCondition>,
-            com.mojang.serialization.MapCodec<dev.logos.item.InEndShip>> IN_END_SHIP = LOOT_CONDITIONS.register("in_end_ship", () -> dev.logos.item.InEndShip.CODEC);
-    public static final DeferredRegister<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.functions.LootItemFunction>> LOOT_FUNCTIONS =
+    public static final DeferredHolder<net.minecraft.world.level.storage.loot.predicates.LootItemConditionType,
+            net.minecraft.world.level.storage.loot.predicates.LootItemConditionType> IN_END_SHIP = LOOT_CONDITIONS.register("in_end_ship",
+                    () -> new net.minecraft.world.level.storage.loot.predicates.LootItemConditionType(dev.logos.item.InEndShip.CODEC));
+    public static final DeferredRegister<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<?>> LOOT_FUNCTIONS =
             DeferredRegister.create(net.minecraft.core.registries.Registries.LOOT_FUNCTION_TYPE, MODID);
     /** Loot function: a random family book (not 形之书 nor an element's), as the warlock sells them. */
-    public static final DeferredHolder<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.storage.loot.functions.LootItemFunction>,
-            com.mojang.serialization.MapCodec<dev.logos.item.RandomFamilyBook>> RANDOM_FAMILY_BOOK = LOOT_FUNCTIONS.register("random_family_book", () -> dev.logos.item.RandomFamilyBook.CODEC);
+    public static final DeferredHolder<net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<?>,
+            net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<dev.logos.item.RandomFamilyBook>> RANDOM_FAMILY_BOOK = LOOT_FUNCTIONS.register("random_family_book",
+                    () -> new net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<>(dev.logos.item.RandomFamilyBook.CODEC));
 
     // Alchemical colossus materials. Placeholders for now: their alchemy (recipes, planting) comes later.
     /** 巨像之心: the flower a colossus offers its master. An alchemical material. */
@@ -280,29 +289,29 @@ public class LogosMod {
     // Alchemy materials: the fermentation line. The alchemy table's processes make most of them.
     /**
      * A bottled alchemy liquid one can drink like a potion (same animation and sound): it stacks to 16
-     * like a honey bottle, applies {@code effects} and leaves the glass bottle.
+     * like a honey bottle, applies {@code effects} and leaves the glass bottle. Registered as a {@link dev.logos.port.DrinkItem}, which is drunk rather than eaten.
      */
     private static net.minecraft.world.item.Item.Properties drinkable(net.minecraft.world.item.Item.Properties p,
             net.minecraft.world.effect.MobEffectInstance... effects) {
-        return p.stacksTo(16).usingConvertsTo(net.minecraft.world.item.Items.GLASS_BOTTLE).component(net.minecraft.core.component.DataComponents.CONSUMABLE,
-                net.minecraft.world.item.component.Consumables.defaultDrink()
-                        .onConsume(new net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect(List.of(effects))).build());
+        var food = new net.minecraft.world.food.FoodProperties.Builder().alwaysEdible().usingConvertsTo(net.minecraft.world.item.Items.GLASS_BOTTLE);
+        for (var effect : effects) food.effect(() -> new net.minecraft.world.effect.MobEffectInstance(effect), 1.0f);
+        return p.stacksTo(16).food(food.build());
     }
 
     /** 酵种: ferments; turns water into raw mash. */
     public static final DeferredItem<net.minecraft.world.item.Item> STARTER_CULTURE = ITEMS.registerSimpleItem("starter_culture");
     /** 初醪: the base of Logos potions, as the awkward potion is of vanilla ones. Its own item so it keeps its look; the brewing stand takes it. */
-    public static final DeferredItem<net.minecraft.world.item.Item> RAW_MASH = ITEMS.registerSimpleItem("raw_mash", p -> drinkable(p,
+    public static final DeferredItem<net.minecraft.world.item.Item> RAW_MASH = ITEMS.registerItem("raw_mash", dev.logos.port.DrinkItem::new, p -> drinkable(p,
             // Sour, a little like ale: a brief surge of strength, and a queasy stomach.
-            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.STRENGTH, 30 * 20),
-            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 10 * 20)));
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 30 * 20),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 10 * 20)));
     /** 臭卤: fermented meat, distilled into sulfur and niter mother liquor. */
-    public static final DeferredItem<net.minecraft.world.item.Item> FOUL_BRINE = ITEMS.registerSimpleItem("foul_brine", p -> drinkable(p,
+    public static final DeferredItem<net.minecraft.world.item.Item> FOUL_BRINE = ITEMS.registerItem("foul_brine", dev.logos.port.DrinkItem::new, p -> drinkable(p,
             new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 30 * 20, 2),
-            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 30 * 20),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 30 * 20),
             new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 90 * 20, 1)));
     /** 硝母: what is left of foul brine once distilled; it settles into saltpeter. */
-    public static final DeferredItem<net.minecraft.world.item.Item> NITER_MOTHER_LIQUOR = ITEMS.registerSimpleItem("niter_mother_liquor", p -> drinkable(p,
+    public static final DeferredItem<net.minecraft.world.item.Item> NITER_MOTHER_LIQUOR = ITEMS.registerItem("niter_mother_liquor", dev.logos.port.DrinkItem::new, p -> drinkable(p,
             new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 20 * 20)));
     public static final DeferredItem<net.minecraft.world.item.Item> SULFUR_POWDER = ITEMS.registerSimpleItem("sulfur_powder");
     public static final DeferredItem<net.minecraft.world.item.Item> SALTPETER = ITEMS.registerSimpleItem("saltpeter");
@@ -314,9 +323,9 @@ public class LogosMod {
 
     // The three principles: sulfur, salt (saltpeter) and mercury, joined into philosophers' mercury and settled into rebis.
     /** 水银瓶: distilled out of redstone, which gives sulfur besides. Raw mercury: poisonous to drink. */
-    public static final DeferredItem<net.minecraft.world.item.Item> MERCURY_BOTTLE = ITEMS.registerSimpleItem("mercury_bottle", p -> drinkable(p,
+    public static final DeferredItem<net.minecraft.world.item.Item> MERCURY_BOTTLE = ITEMS.registerItem("mercury_bottle", dev.logos.port.DrinkItem::new, p -> drinkable(p,
             new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 30 * 20, 1),
-            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 20 * 20)));
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 20 * 20)));
     /**
      * 哲人汞: mercury dissolved with sulfur and saltpeter, the three principles joined. It dissolves up
      * to three potion powders into one potion of all their effects, purifies tainted mana shards, and settles into rebis.
@@ -336,11 +345,11 @@ public class LogosMod {
      * 生机醪: mandrake roots fermented with raven head in raw mash, a mash teeming with the force of life.
      * Poured in a cultivation jar it makes things grow several stages a random tick; distilled, it gives the tincture of life.
      */
-    public static final DeferredItem<net.minecraft.world.item.Item> VITAL_MASH = ITEMS.registerSimpleItem("vital_mash", p -> drinkable(p,
+    public static final DeferredItem<net.minecraft.world.item.Item> VITAL_MASH = ITEMS.registerItem("vital_mash", dev.logos.port.DrinkItem::new, p -> drinkable(p,
             // Raw mash's kick, much stronger: the body mends and swells with strength, and the head swims.
             new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 20 * 20, 1),
-            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.STRENGTH, 90 * 20, 1),
-            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NAUSEA, 15 * 20)).rarity(net.minecraft.world.item.Rarity.RARE));
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 90 * 20, 1),
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.CONFUSION, 15 * 20)).rarity(net.minecraft.world.item.Rarity.RARE));
     /** 生命精酊: the force of life distilled out of vital mash, leaving dead ash behind; it gives its bottle back when used. */
     public static final DeferredItem<net.minecraft.world.item.Item> TINCTURE_OF_LIFE = ITEMS.registerSimpleItem("tincture_of_life",
             p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.EPIC).craftRemainder(net.minecraft.world.item.Items.GLASS_BOTTLE));
@@ -355,8 +364,8 @@ public class LogosMod {
                     .sound(net.minecraft.world.level.block.SoundType.SAND));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> CAPUT_MORTUUM_BLOCK_ITEM = ITEMS.registerSimpleBlockItem("caput_mortuum_block", CAPUT_MORTUUM_BLOCK);
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.CaputMortuumBlock.Marker>> CAPUT_MORTUUM_BLOCK_BE =
-            BLOCK_ENTITIES.register("caput_mortuum_block", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.CaputMortuumBlock.Marker::new, CAPUT_MORTUUM_BLOCK.get()));
+            BLOCK_ENTITIES.register("caput_mortuum_block", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.CaputMortuumBlock.Marker::new, CAPUT_MORTUUM_BLOCK.get()).build(null));
     /** 腐殖灵土: dead ash rotted with soul soil. A soil of its own; herbs may be grown in it later. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<net.minecraft.world.level.block.Block> SOUL_HUMUS = BLOCKS.registerSimpleBlock("soul_humus",
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.COLOR_BROWN).strength(0.5f)
@@ -369,14 +378,14 @@ public class LogosMod {
                     .sound(net.minecraft.world.level.block.SoundType.GLASS));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> CULTIVATION_JAR_ITEM = ITEMS.registerSimpleBlockItem("cultivation_jar", CULTIVATION_JAR);
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.CultivationJarBlockEntity>> CULTIVATION_JAR_BE =
-            BLOCK_ENTITIES.register("cultivation_jar", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.CultivationJarBlockEntity::new, CULTIVATION_JAR.get()));
+            BLOCK_ENTITIES.register("cultivation_jar", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.CultivationJarBlockEntity::new, CULTIVATION_JAR.get()).build(null));
 
     // What grows in a cultivation jar: seeds fermented on the alchemy table, and the plants the jar draws.
     /** A plant grown in a cultivation jar by default; add-ons can opt into ground substrates through its block tag. */
     public static net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.JarCropBlock> jarCrop(String name) {
         return BLOCKS.registerBlock(name, dev.logos.block.JarCropBlock::new,
-                p -> p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollision().instabreak()
+                p -> p.mapColor(net.minecraft.world.level.material.MapColor.PLANT).noCollission().instabreak()
                         .sound(net.minecraft.world.level.block.SoundType.CROP));
     }
 
@@ -428,7 +437,7 @@ public class LogosMod {
     public static final DeferredItem<net.minecraft.world.item.Item> INCANDESCENT_WHITE_STONE = ITEMS.registerSimpleItem("incandescent_white_stone",
             p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
     /** 天穹灵液: solar flakes and the white stone dissolved with starlight. Drunk, one rises softly and sees by night; settled, it becomes the firmament stone. */
-    public static final DeferredItem<net.minecraft.world.item.Item> FIRMAMENT_LIQUID = ITEMS.registerSimpleItem("firmament_liquid", p -> drinkable(p,
+    public static final DeferredItem<net.minecraft.world.item.Item> FIRMAMENT_LIQUID = ITEMS.registerItem("firmament_liquid", dev.logos.port.DrinkItem::new, p -> drinkable(p,
             new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NIGHT_VISION, 180 * 20),
             new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 60 * 20)).rarity(net.minecraft.world.item.Rarity.RARE));
     /** 天穹之石: the firmament liquor settled; it raises a page to the firmament grade. */
@@ -455,8 +464,7 @@ public class LogosMod {
     /** 药粉: a potion settled into powder; eaten for the potion's effects, and dissolved back into it. */
     public static final DeferredItem<dev.logos.item.PotionPowderItem> POTION_POWDER = ITEMS.registerItem("potion_powder", dev.logos.item.PotionPowderItem::new,
             p -> p.component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
-                    .component(net.minecraft.core.component.DataComponents.CONSUMABLE, net.minecraft.world.item.component.Consumable.builder().consumeSeconds(1.6f)
-                            .animation(net.minecraft.world.item.ItemUseAnimation.EAT).sound(net.minecraft.sounds.SoundEvents.GENERIC_EAT).build()));
+                    .food(new net.minecraft.world.food.FoodProperties.Builder().alwaysEdible().build()));
 
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.InscriptionTableBlock> INSCRIPTION_TABLE = BLOCKS.registerBlock(
             "inscription_table", dev.logos.block.InscriptionTableBlock::new,
@@ -464,8 +472,8 @@ public class LogosMod {
                     .sound(net.minecraft.world.level.block.SoundType.WOOD));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> INSCRIPTION_TABLE_ITEM = ITEMS.registerSimpleBlockItem("inscription_table", INSCRIPTION_TABLE);
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.InscriptionTableBlockEntity>> INSCRIPTION_TABLE_BE =
-            BLOCK_ENTITIES.register("inscription_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.InscriptionTableBlockEntity::new, INSCRIPTION_TABLE.get()));
+            BLOCK_ENTITIES.register("inscription_table", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.InscriptionTableBlockEntity::new, INSCRIPTION_TABLE.get()).build(null));
 
     /** 术式拓印台: copies the spell of a page (or ember) onto an empty page. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.CopyTableBlock> COPY_TABLE = BLOCKS.registerBlock(
@@ -480,28 +488,28 @@ public class LogosMod {
     public static final DeferredHolder<net.minecraft.world.entity.ai.village.poi.PoiType, net.minecraft.world.entity.ai.village.poi.PoiType> WARLOCK_POI =
             POI_TYPES.register("warlock", () -> new net.minecraft.world.entity.ai.village.poi.PoiType(
                     com.google.common.collect.ImmutableSet.copyOf(COPY_TABLE.get().getStateDefinition().getPossibleStates()), 1, 1));
-    public static final DeferredRegister<net.minecraft.world.entity.npc.villager.VillagerProfession> PROFESSIONS =
+    public static final DeferredRegister<net.minecraft.world.entity.npc.VillagerProfession> PROFESSIONS =
             DeferredRegister.create(net.minecraft.core.registries.Registries.VILLAGER_PROFESSION, MODID);
     /**
      * 术士: a villager at a copy table. Sells wands, staffs, pages and potions a tier higher each level, and from
      * journeyman on may offer a family book; buys alchemy herbs and materials. The trades are data
      * ({@code data/logos/villager_trade/warlock}, one trade set a level); the robe is {@code textures/entity/villager/profession/warlock.png}.
      */
-    public static final DeferredHolder<net.minecraft.world.entity.npc.villager.VillagerProfession, net.minecraft.world.entity.npc.villager.VillagerProfession> WARLOCK =
+    public static final DeferredHolder<net.minecraft.world.entity.npc.VillagerProfession, net.minecraft.world.entity.npc.VillagerProfession> WARLOCK =
             PROFESSIONS.register("warlock", () -> {
-                var levels = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<net.minecraft.resources.ResourceKey<net.minecraft.world.item.trading.TradeSet>>();
+                var levels = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<net.minecraft.resources.ResourceLocation>();
                 for (int level = 1; level <= 5; level++) {
-                    levels.put(level, net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.TRADE_SET,
-                            net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "warlock/level_" + level)));
+                    levels.put(level, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "warlock/level_" + level));
                 }
-                return new net.minecraft.world.entity.npc.villager.VillagerProfession(Component.translatable("entity.logos.villager.warlock"),
+                dev.logos.port.DataTrades.setsFor(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "warlock"), levels);
+                return new net.minecraft.world.entity.npc.VillagerProfession("warlock",
                         poi -> poi.is(WARLOCK_POI.getKey()), poi -> poi.is(WARLOCK_POI.getKey()),
                         com.google.common.collect.ImmutableSet.of(), com.google.common.collect.ImmutableSet.of(),
-                        net.minecraft.sounds.SoundEvents.VILLAGER_WORK_LIBRARIAN, levels);
+                        net.minecraft.sounds.SoundEvents.VILLAGER_WORK_LIBRARIAN);
             });
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.CopyTableBlockEntity>> COPY_TABLE_BE =
-            BLOCK_ENTITIES.register("copy_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.CopyTableBlockEntity::new, COPY_TABLE.get()));
+            BLOCK_ENTITIES.register("copy_table", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.CopyTableBlockEntity::new, COPY_TABLE.get()).build(null));
 
     /** 炼金术桌: a two-block table holding materials, products, mana and a fluid tank for the alchemical processes. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.AlchemyTableBlock> ALCHEMY_TABLE = BLOCKS.registerBlock(
@@ -509,10 +517,10 @@ public class LogosMod {
             p -> p.mapColor(net.minecraft.world.level.material.MapColor.WOOD).strength(2.5f).noOcclusion()
                     .sound(net.minecraft.world.level.block.SoundType.WOOD).pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK));
     public static final DeferredItem<dev.logos.item.AlchemyTableItem> ALCHEMY_TABLE_ITEM = ITEMS.registerItem("alchemy_table",
-            p -> new dev.logos.item.AlchemyTableItem(ALCHEMY_TABLE.get(), p), p -> p.useBlockDescriptionPrefix());
+            p -> new dev.logos.item.AlchemyTableItem(ALCHEMY_TABLE.get(), p));
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.AlchemyTableBlockEntity>> ALCHEMY_TABLE_BE =
-            BLOCK_ENTITIES.register("alchemy_table", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.AlchemyTableBlockEntity::new, ALCHEMY_TABLE.get()));
+            BLOCK_ENTITIES.register("alchemy_table", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.AlchemyTableBlockEntity::new, ALCHEMY_TABLE.get()).build(null));
 
     // Mana in the air (dev.logos.runtime.ManaField): spreaders pour it out, collectors take it in and pass it on.
     /** 魔力散布器: burns mana fuel into the air of its chunk. */
@@ -522,8 +530,8 @@ public class LogosMod {
                     .sound(net.minecraft.world.level.block.SoundType.WOOD));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> MANA_SPREADER_ITEM = ITEMS.registerSimpleBlockItem("mana_spreader", MANA_SPREADER);
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.ManaSpreaderBlockEntity>> MANA_SPREADER_BE =
-            BLOCK_ENTITIES.register("mana_spreader", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.ManaSpreaderBlockEntity::new, MANA_SPREADER.get()));
+            BLOCK_ENTITIES.register("mana_spreader", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.ManaSpreaderBlockEntity::new, MANA_SPREADER.get()).build(null));
     /** 魔力收集器: draws mana from the air and passes it to the block it faces. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaCollectorBlock> MANA_COLLECTOR = BLOCKS.registerBlock(
             "mana_collector", dev.logos.block.ManaCollectorBlock::new,
@@ -531,8 +539,8 @@ public class LogosMod {
                     .sound(net.minecraft.world.level.block.SoundType.WOOD));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> MANA_COLLECTOR_ITEM = ITEMS.registerSimpleBlockItem("mana_collector", MANA_COLLECTOR);
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.ManaCollectorBlockEntity>> MANA_COLLECTOR_BE =
-            BLOCK_ENTITIES.register("mana_collector", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.ManaCollectorBlockEntity::new, MANA_COLLECTOR.get()));
+            BLOCK_ENTITIES.register("mana_collector", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.ManaCollectorBlockEntity::new, MANA_COLLECTOR.get()).build(null));
     /** 魔力存储罐: holds 5000 mana; stores it, supplies its neighbours, or condenses it into solid mana. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaStorageTankBlock> MANA_STORAGE_TANK = BLOCKS.registerBlock(
             "mana_storage_tank", dev.logos.block.ManaStorageTankBlock::new,
@@ -540,13 +548,13 @@ public class LogosMod {
                     .sound(net.minecraft.world.level.block.SoundType.WOOD));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> MANA_STORAGE_TANK_ITEM = ITEMS.registerSimpleBlockItem("mana_storage_tank", MANA_STORAGE_TANK);
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.ManaStorageTankBlockEntity>> MANA_STORAGE_TANK_BE =
-            BLOCK_ENTITIES.register("mana_storage_tank", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.ManaStorageTankBlockEntity::new, MANA_STORAGE_TANK.get()));
+            BLOCK_ENTITIES.register("mana_storage_tank", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.ManaStorageTankBlockEntity::new, MANA_STORAGE_TANK.get()).build(null));
     /** The fog and the growing crystal drawn in a tank: never placed, no item, no loot. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaStorageTankBlock.Fog> MANA_FOG = BLOCKS.registerBlock(
-            "mana_fog", dev.logos.block.ManaStorageTankBlock.Fog::new, p -> p.noCollision().noOcclusion().noLootTable());
+            "mana_fog", dev.logos.block.ManaStorageTankBlock.Fog::new, p -> p.noCollission().noOcclusion().noLootTable());
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.ManaStorageTankBlock.Cluster> MANA_CLUSTER = BLOCKS.registerBlock(
-            "mana_cluster", dev.logos.block.ManaStorageTankBlock.Cluster::new, p -> p.noCollision().noOcclusion().noLootTable());
+            "mana_cluster", dev.logos.block.ManaStorageTankBlock.Cluster::new, p -> p.noCollission().noOcclusion().noLootTable());
     /** 术式发射器: charges the spell on the page it holds from its own mana, and casts it on a trigger. */
     public static final net.neoforged.neoforge.registries.DeferredBlock<dev.logos.block.SpellEmitterBlock> SPELL_EMITTER = BLOCKS.registerBlock(
             "spell_emitter", dev.logos.block.SpellEmitterBlock::new,
@@ -555,15 +563,13 @@ public class LogosMod {
                     .lightLevel(s -> s.getValue(dev.logos.block.ManaSpreaderBlock.ACTIVE) ? 6 : 0));
     public static final DeferredItem<net.minecraft.world.item.BlockItem> SPELL_EMITTER_ITEM = ITEMS.registerSimpleBlockItem("spell_emitter", SPELL_EMITTER);
     public static final Supplier<net.minecraft.world.level.block.entity.BlockEntityType<dev.logos.block.SpellEmitterBlockEntity>> SPELL_EMITTER_BE =
-            BLOCK_ENTITIES.register("spell_emitter", () -> new net.minecraft.world.level.block.entity.BlockEntityType<>(
-                    dev.logos.block.SpellEmitterBlockEntity::new, SPELL_EMITTER.get()));
+            BLOCK_ENTITIES.register("spell_emitter", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder.of(
+                    dev.logos.block.SpellEmitterBlockEntity::new, SPELL_EMITTER.get()).build(null));
 
     public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeType<?>> RECIPE_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.RECIPE_TYPE, MODID);
     public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeSerializer<?>> RECIPE_SERIALIZERS =
             DeferredRegister.create(net.minecraft.core.registries.Registries.RECIPE_SERIALIZER, MODID);
-    public static final DeferredRegister<net.minecraft.world.item.crafting.RecipeBookCategory> RECIPE_BOOK_CATEGORIES =
-            DeferredRegister.create(net.minecraft.core.registries.Registries.RECIPE_BOOK_CATEGORY, MODID);
     /** What an alchemy table's process cards make (data/…/recipe, type logos:alchemy). */
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeType<?>, net.minecraft.world.item.crafting.RecipeType<dev.logos.alchemy.AlchemyRecipe>> ALCHEMY_RECIPE =
             RECIPE_TYPES.register("alchemy", net.minecraft.world.item.crafting.RecipeType::simple);
@@ -579,28 +585,26 @@ public class LogosMod {
             RECIPE_SERIALIZERS.register("page_upgrade", () -> dev.logos.item.PageUpgradeRecipe.SERIALIZER);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.WandUpgradeRecipe>> WAND_UPGRADE_SERIALIZER =
             RECIPE_SERIALIZERS.register("wand_upgrade", () -> dev.logos.item.WandUpgradeRecipe.SERIALIZER);
-    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeBookCategory, net.minecraft.world.item.crafting.RecipeBookCategory> ALCHEMY_BOOK_CATEGORY =
-            RECIPE_BOOK_CATEGORIES.register("alchemy", net.minecraft.world.item.crafting.RecipeBookCategory::new);
 
     /** 游离魔力: mana a finished spell leaves in the world, gathered like experience. */
     public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.FreeManaEntity>> FREE_MANA =
             ENTITY_TYPES.register("free_mana", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.FreeManaEntity>of(
                             dev.logos.runtime.FreeManaEntity::new, net.minecraft.world.entity.MobCategory.MISC)
                     .sized(0.5f, 0.5f).clientTrackingRange(6).updateInterval(2)
-                    .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+                    .build(key.toString()));
 
     /** 魔力生命体: the most basic alchemical life, summoned from mana alone; its size grows with its level. */
     public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.ManaLifeform>> MANA_LIFEFORM =
             ENTITY_TYPES.register("mana_lifeform", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ManaLifeform>of(
                             dev.logos.runtime.ManaLifeform::new, net.minecraft.world.entity.MobCategory.MISC)
                     .sized(0.4f, 0.5f).clientTrackingRange(10)
-                    .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+                    .build(key.toString()));
 
     /** One full-mana egg for each of the five lifeform levels. */
     public static final List<DeferredItem<dev.logos.item.ManaLifeformSpawnEggItem>> MANA_LIFEFORM_SPAWN_EGGS =
             java.util.stream.IntStream.rangeClosed(1, dev.logos.runtime.ManaLifeform.MAX_LEVEL)
                     .mapToObj(lv -> ITEMS.registerItem("mana_lifeform_spawn_egg_" + lv,
-                            p -> new dev.logos.item.ManaLifeformSpawnEggItem(p, lv), p -> p.spawnEgg(MANA_LIFEFORM.get())))
+                            p -> new dev.logos.item.ManaLifeformSpawnEggItem(p, lv)))
                     .toList();
 
     /** 炼金术巨像: a built colossus; raised by command until alchemy can build one. */
@@ -608,30 +612,30 @@ public class LogosMod {
             ENTITY_TYPES.register("alchemical_colossus", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.AlchemicalColossus>of(
                             dev.logos.runtime.AlchemicalColossus::new, net.minecraft.world.entity.MobCategory.MISC)
                     .sized(1.9f, 3.4f).clientTrackingRange(10)
-                    .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+                    .build(key.toString()));
 
     /** A colossus egg: the same full, loyal guardian the command raises. */
     public static final DeferredItem<dev.logos.item.ColossusSpawnEggItem> ALCHEMICAL_COLOSSUS_SPAWN_EGG =
-            ITEMS.registerItem("alchemical_colossus_spawn_egg", dev.logos.item.ColossusSpawnEggItem::new,
-                    p -> p.spawnEgg(ALCHEMICAL_COLOSSUS.get()));
+            ITEMS.registerItem("alchemical_colossus_spawn_egg", dev.logos.item.ColossusSpawnEggItem::new);
 
     /** 汲魔蛭: a hostile arthropod that leaps onto the face of whoever holds the most mana and drinks it. Not yet spawned naturally. */
     public static final DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<dev.logos.runtime.ManaLeech>> MANA_LEECH =
             ENTITY_TYPES.register("mana_leech", key -> net.minecraft.world.entity.EntityType.Builder.<dev.logos.runtime.ManaLeech>of(
                             dev.logos.runtime.ManaLeech::new, net.minecraft.world.entity.MobCategory.MONSTER)
                     .sized(0.8f, 0.45f).clientTrackingRange(8)
-                    .build(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE, key)));
+                    .build(key.toString()));
     public static final DeferredItem<net.minecraft.world.item.SpawnEggItem> MANA_LEECH_SPAWN_EGG =
-            ITEMS.registerItem("mana_leech_spawn_egg", net.minecraft.world.item.SpawnEggItem::new, p -> p.spawnEgg(MANA_LEECH.get()));
+            ITEMS.registerItem("mana_leech_spawn_egg",
+            p -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(MANA_LEECH, 0xFFFFFF, 0xFFFFFF, p));
 
     /** Items that give a mana lifeform mana when it is fed with them (data/logos/data_maps/item/mana_fuel.json). */
     public static final net.neoforged.neoforge.registries.datamaps.DataMapType<net.minecraft.world.item.Item, dev.logos.runtime.Lifeforms.ManaFuel> MANA_FUEL =
-            net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "mana_fuel"),
+            net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "mana_fuel"),
                     net.minecraft.core.registries.Registries.ITEM, dev.logos.runtime.Lifeforms.ManaFuel.CODEC)
                     .synced(dev.logos.runtime.Lifeforms.ManaFuel.CODEC, false).build();
     /** The bottled liquids a cultivation jar takes as its medium (data_maps/item/cultivation_medium.json). */
     public static final net.neoforged.neoforge.registries.datamaps.DataMapType<net.minecraft.world.item.Item, dev.logos.alchemy.CultivationMedium> CULTIVATION_MEDIUM =
-            net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "cultivation_medium"),
+            net.neoforged.neoforge.registries.datamaps.DataMapType.builder(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "cultivation_medium"),
                     net.minecraft.core.registries.Registries.ITEM, dev.logos.alchemy.CultivationMedium.CODEC)
                     .synced(dev.logos.alchemy.CultivationMedium.CODEC, false).build();
 
@@ -666,7 +670,7 @@ public class LogosMod {
     /** 焚式: a data-driven enchantment (data/logos/enchantment/formula_immolation.json). */
     public static final net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> FORMULA_IMMOLATION =
             net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT,
-                    net.minecraft.resources.Identifier.fromNamespaceAndPath(MODID, "formula_immolation"));
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "formula_immolation"));
 
     // Four creative tabs: spell supplies, the example spells, the Great Work (alchemy) and spawn eggs.
     /** 术式用品: wands, pages and the tables and blocks that write, copy and cast them. */
@@ -794,7 +798,7 @@ public class LogosMod {
             .withTabsBefore(SPAWN_EGGS_TAB.getKey())
             .displayItems((params, out) -> {
                 var potions = params.holders().lookupOrThrow(net.minecraft.core.registries.Registries.POTION).listElements()
-                        .filter(p -> p.key().identifier().getNamespace().equals(MODID) && p.value().isEnabled(params.enabledFeatures())).toList();
+                        .filter(p -> p.key().location().getNamespace().equals(MODID) && p.value().isEnabled(params.enabledFeatures())).toList();
                 for (var item : List.of(net.minecraft.world.item.Items.POTION, net.minecraft.world.item.Items.SPLASH_POTION,
                         net.minecraft.world.item.Items.LINGERING_POTION, net.minecraft.world.item.Items.TIPPED_ARROW)) {
                     for (var potion : potions) out.accept(net.minecraft.world.item.alchemy.PotionContents.createItemStack(item, potion));
@@ -804,38 +808,38 @@ public class LogosMod {
     public static final Supplier<AttachmentType<StatusData>> STATUS_DATA = ATTACHMENTS.register("status",
             () -> AttachmentType.builder(StatusData::new).build());
     public static final Supplier<AttachmentType<PlayerMagic>> PLAYER_MAGIC = ATTACHMENTS.register("magic",
-            () -> AttachmentType.builder(() -> new PlayerMagic()).serialize(PlayerMagic.CODEC).copyOnDeath().build());
+            () -> AttachmentType.builder(() -> new PlayerMagic()).serialize(PlayerMagic.CODEC.codec()).copyOnDeath().build());
     /** On a player: the runes, elements and motions they have learned (符文解锁). Kept through death; sent to that player only, for the editor. */
     public static final Supplier<AttachmentType<dev.logos.runtime.RuneKnowledge>> RUNE_KNOWLEDGE = ATTACHMENTS.register("rune_knowledge",
-            () -> AttachmentType.builder(() -> new dev.logos.runtime.RuneKnowledge()).serialize(dev.logos.runtime.RuneKnowledge.CODEC).copyOnDeath()
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.RuneKnowledge()).serialize(dev.logos.runtime.RuneKnowledge.CODEC.codec()).copyOnDeath()
                     .sync((holder, to) -> holder == to, dev.logos.runtime.RuneKnowledge.STREAM_CODEC).build());
     /** On a player: whether they have been handed 逻各斯手记 (item/GuideBookItem#welcome). Kept through death, so it is handed once. */
     public static final Supplier<AttachmentType<Boolean>> GUIDE_GIVEN = ATTACHMENTS.register("guide_given",
-            () -> AttachmentType.builder(() -> false).serialize(com.mojang.serialization.Codec.BOOL.fieldOf("given"), given -> given).copyOnDeath().build());
+            () -> AttachmentType.builder(() -> false).serialize(com.mojang.serialization.Codec.BOOL.fieldOf("given").codec(), given -> given).copyOnDeath().build());
     /** On a summoned creature: whose familiar it is and until when. Saved only so a reloaded one is recognised and removed. */
     public static final Supplier<AttachmentType<dev.logos.runtime.Familiars.Bond>> FAMILIAR = ATTACHMENTS.register("familiar",
-            () -> AttachmentType.builder(() -> dev.logos.runtime.Familiars.Bond.NONE).serialize(dev.logos.runtime.Familiars.Bond.CODEC.fieldOf("bond"))
+            () -> AttachmentType.builder(() -> dev.logos.runtime.Familiars.Bond.NONE).serialize(dev.logos.runtime.Familiars.Bond.CODEC.fieldOf("bond").codec())
                     // Synced: clients must know who may ride a familiar and who steers it.
                     .sync(dev.logos.runtime.Familiars.Bond.STREAM_CODEC).build());
     /** On another mod's creature that holds mana through a compat (a Touhou Little Maid maid): its pool, saved with it. */
     public static final Supplier<AttachmentType<dev.logos.runtime.CreatureMana>> CREATURE_MANA = ATTACHMENTS.register("creature_mana",
-            () -> AttachmentType.builder(() -> new dev.logos.runtime.CreatureMana()).serialize(dev.logos.runtime.CreatureMana.CODEC).build());
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.CreatureMana()).serialize(dev.logos.runtime.CreatureMana.CODEC.codec()).build());
     public static final Supplier<AttachmentType<dev.logos.runtime.Anchors>> ANCHORS = ATTACHMENTS.register("anchors",
-            () -> AttachmentType.builder(() -> new dev.logos.runtime.Anchors()).serialize(dev.logos.runtime.Anchors.CODEC).copyOnDeath().build());
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.Anchors()).serialize(dev.logos.runtime.Anchors.CODEC.codec()).copyOnDeath().build());
     /** On a level, on either side: its constructs by where they stand (dev.logos.runtime.ConstructIndex); never saved, as they are not. */
     public static final Supplier<AttachmentType<dev.logos.runtime.ConstructIndex>> CONSTRUCT_INDEX = ATTACHMENTS.register("construct_index",
             () -> AttachmentType.builder(() -> new dev.logos.runtime.ConstructIndex()).build());
     public static final Supplier<AttachmentType<dev.logos.runtime.Attunement>> ATTUNEMENT = ATTACHMENTS.register("attunement",
-            () -> AttachmentType.builder(() -> new dev.logos.runtime.Attunement()).serialize(dev.logos.runtime.Attunement.CODEC).copyOnDeath().build());
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.Attunement()).serialize(dev.logos.runtime.Attunement.CODEC.codec()).copyOnDeath().build());
     /** On a chunk: the spread mana in its air (dev.logos.runtime.ManaField); saved only while there is some. */
     public static final Supplier<AttachmentType<dev.logos.runtime.ManaField.Air>> MANA_FIELD = ATTACHMENTS.register("mana_field",
-            () -> AttachmentType.builder(() -> new dev.logos.runtime.ManaField.Air(0)).serialize(dev.logos.runtime.ManaField.Air.CODEC, a -> a.mana() > 0).build());
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.ManaField.Air(0)).serialize(dev.logos.runtime.ManaField.Air.CODEC.codec(), a -> a.mana() > 0).build());
     /** On a level: the blocks of caput mortuum in each of its loaded chunks that has any (dev.logos.runtime.ManaField#insulation); never saved, their markers count themselves in as chunks load. */
     public static final Supplier<AttachmentType<Map<Long, Integer>>> CAPUT_MORTUUM_COUNTS = ATTACHMENTS.register("caput_mortuum_counts",
             () -> AttachmentType.<Map<Long, Integer>>builder(() -> new java.util.HashMap<>()).build());
     /** On a living entity: the mana wrap about its hand (dev.logos.runtime.ManaWrap), synced to everyone who sees it; only a plain wrap is saved, a spell's ends with its spell. */
     public static final Supplier<AttachmentType<dev.logos.runtime.ManaWrap>> MANA_WRAP = ATTACHMENTS.register("mana_wrap",
-            () -> AttachmentType.builder(() -> dev.logos.runtime.ManaWrap.NONE).serialize(dev.logos.runtime.ManaWrap.CODEC, w -> w.until() > 0 && w.amount() > 0)
+            () -> AttachmentType.builder(() -> dev.logos.runtime.ManaWrap.NONE).serialize(dev.logos.runtime.ManaWrap.CODEC.codec(), w -> w.until() > 0 && w.amount() > 0)
                     .sync(dev.logos.runtime.ManaWrap.STREAM_CODEC).build());
     /** On a mob: the UUID of the player possessing it (dev.logos.runtime.Possession), synced so their client steers it; never saved. */
     public static final Supplier<AttachmentType<java.util.UUID>> POSSESSOR = ATTACHMENTS.register("possessor",
@@ -846,7 +850,7 @@ public class LogosMod {
     /** On a player: the creature they have become (dev.logos.runtime.Incarnation), synced to everyone who sees them; saved, so leaving does not end it, but gone with their death. */
     public static final Supplier<AttachmentType<dev.logos.runtime.Incarnation.Form>> FORM = ATTACHMENTS.register("incarnation",
             () -> AttachmentType.builder(() -> dev.logos.runtime.Incarnation.Form.NONE)
-                    .serialize(dev.logos.runtime.Incarnation.Form.CODEC, f -> f.until() > 0).sync(dev.logos.runtime.Incarnation.Form.STREAM_CODEC).build());
+                    .serialize(dev.logos.runtime.Incarnation.Form.CODEC.codec(), f -> f.until() > 0).sync(dev.logos.runtime.Incarnation.Form.STREAM_CODEC).build());
 
     public static final DeferredRegister<net.minecraft.world.inventory.MenuType<?>> MENU_TYPES =
             DeferredRegister.create(net.minecraft.core.registries.Registries.MENU, MODID);
@@ -872,7 +876,6 @@ public class LogosMod {
         BLOCK_ENTITIES.register(modBus);
         RECIPE_TYPES.register(modBus);
         RECIPE_SERIALIZERS.register(modBus);
-        RECIPE_BOOK_CATEGORIES.register(modBus);
         ENTITY_TYPES.register(modBus);
         TABS.register(modBus);
         COMPONENTS.register(modBus);
@@ -894,11 +897,14 @@ public class LogosMod {
             }
             // Logos potions live in their own tab; search still finds them.
             if (e.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS || e.getTabKey() == CreativeModeTabs.COMBAT) {
-                e.removeIf(dev.logos.alchemy.BuffPotions::isLogosPotion, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
+                for (var stack : List.copyOf(e.getParentEntries())) {
+                    if (dev.logos.alchemy.BuffPotions.isLogosPotion(stack)) e.remove(stack, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_TAB_ONLY);
+                }
             }
         });
         modBus.addListener((net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent e) -> {
             e.put(MANA_LIFEFORM.get(), dev.logos.runtime.ManaLifeform.createAttributes().build());
+            e.put(POSSESSION_BODY.get(), net.minecraft.world.entity.LivingEntity.createLivingAttributes().build());
             e.put(ALCHEMICAL_COLOSSUS.get(), dev.logos.runtime.AlchemicalColossus.createAttributes().build());
             e.put(MANA_LEECH.get(), dev.logos.runtime.ManaLeech.createAttributes().build());
         });
@@ -906,22 +912,25 @@ public class LogosMod {
             e.register(MANA_FUEL);
             e.register(CULTIVATION_MEDIUM);
         });
+        dev.logos.port.Capabilities.register(modBus);
+        dev.logos.port.DataTrades.register();
+        dev.logos.port.DataTrades.function("logos:random_family_book", dev.logos.item.RandomFamilyBook::pick);
         // Either half of an alchemy table answers hoppers, pipes and tanks for the whole table.
         modBus.addListener((net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent e) -> {
-            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) -> {
+            e.registerBlock(dev.logos.port.Capabilities.Item.BLOCK, (level, pos, state, be, side) -> {
                 var table = dev.logos.block.AlchemyTableBlock.table(level, pos, state);
                 return table == null ? null : table.automation();
             }, ALCHEMY_TABLE.get());
             // A spreader's drawer takes fuel from hoppers and pipes.
-            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
+            e.registerBlock(dev.logos.port.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
                     be instanceof dev.logos.block.ManaSpreaderBlockEntity spreader ? spreader.fuel() : null, MANA_SPREADER.get());
             // A storage tank takes mana items and seeds from hoppers and pipes, and gives up grown crystals.
-            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
+            e.registerBlock(dev.logos.port.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
                     be instanceof dev.logos.block.ManaStorageTankBlockEntity tank ? tank.automation() : null, MANA_STORAGE_TANK.get());
             // A jar takes seeds and media from hoppers and pipes, and gives up its harvests.
-            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
+            e.registerBlock(dev.logos.port.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
                     be instanceof dev.logos.block.CultivationJarBlockEntity jar ? jar.automation() : null, CULTIVATION_JAR.get());
-            e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Fluid.BLOCK, (level, pos, state, be, side) -> {
+            e.registerBlock(dev.logos.port.Capabilities.Fluid.BLOCK, (level, pos, state, be, side) -> {
                 var table = dev.logos.block.AlchemyTableBlock.table(level, pos, state);
                 return table == null ? null : table.tank();
             }, ALCHEMY_TABLE.get());
@@ -937,23 +946,23 @@ public class LogosMod {
         });
         // ❖ looks (&mace…) must name an item the game actually has, modded items included.
         dev.logos.lang.Compiler.itemExists = id -> {
-            var key = net.minecraft.resources.Identifier.tryParse(id);
+            var key = net.minecraft.resources.ResourceLocation.tryParse(id);
             return key != null && net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(key);
         };
         // ✧ particles (%portal…) likewise; only option-less ones, since a spell has no way to give dust a colour yet.
         dev.logos.lang.Compiler.particleExists = id -> {
-            var key = net.minecraft.resources.Identifier.tryParse(id);
+            var key = net.minecraft.resources.ResourceLocation.tryParse(id);
             return key != null && net.minecraft.core.registries.BuiltInRegistries.PARTICLE_TYPE.getOptional(key)
                     .filter(t -> t instanceof net.minecraft.core.particles.SimpleParticleType).isPresent();
         };
         // ❦ creatures (summon zombie) must be entity types the game has, modded ones included.
         dev.logos.lang.Compiler.creatureExists = id -> {
-            var key = net.minecraft.resources.Identifier.tryParse(id);
+            var key = net.minecraft.resources.ResourceLocation.tryParse(id);
             return key != null && net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.containsKey(key);
         };
         // ⚗ effects (potion target speed …) likewise: any registered mob effect, modded ones included.
         dev.logos.lang.Compiler.effectExists = id -> {
-            var key = net.minecraft.resources.Identifier.tryParse(id);
+            var key = net.minecraft.resources.ResourceLocation.tryParse(id);
             return key != null && net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.containsKey(key);
         };
         // Spells are checked against the config's limits and those registries. The registries settle by the end of

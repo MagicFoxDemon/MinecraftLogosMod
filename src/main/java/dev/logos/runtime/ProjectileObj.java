@@ -132,7 +132,7 @@ public final class ProjectileObj extends SpellObject {
             if (bh.getType() != HitResult.Type.MISS) {
                 blockHit = bh.getLocation();
                 impactBlock = bh.getBlockPos();
-                outward = Vec3.atLowerCornerOf(bh.getDirection().getUnitVec3i());
+                outward = Vec3.atLowerCornerOf(bh.getDirection().getNormal());
             }
         }
         // Another spell's construct stops it like a wall of its own.

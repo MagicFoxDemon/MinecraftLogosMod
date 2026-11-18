@@ -16,11 +16,11 @@ import dev.logos.runtime.Casting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.util.ProblemReporter;
+import dev.logos.port.ProblemReporter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.TagValueInput;
+import dev.logos.port.TagValueInput;
 
 /** How the spell emitter reads its page: compiled once and kept, whether or not it compiled. */
 final class CompileCacheGameTests {

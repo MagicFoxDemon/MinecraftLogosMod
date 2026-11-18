@@ -9,14 +9,14 @@ import java.util.function.DoubleSupplier;
 
 import org.joml.Vector2f;
 
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture;
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import com.lowdragmc.lowdraglib2.gui.ui.rendering.IGUIContext;
-import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
+import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
+import dev.logos.client.port.DrawerHelperClient;
 
 import dev.logos.alchemy.Process;
 
@@ -550,7 +550,7 @@ public final class AlchemyArt {
 
     /** Something drawn on the screen's own terms, from code that must also load on a server. */
     public interface Drawing {
-        void draw(IGUIContext ctx);
+        void draw(GUIContext ctx);
     }
 
     /**
@@ -566,7 +566,7 @@ public final class AlchemyArt {
     }
 
     /** Draws {@code drawing} only within the given rectangle of the screen. */
-    public static void clipped(IGUIContext ctx, float x, float y, float w, float h, Drawing drawing) {
+    public static void clipped(GUIContext ctx, float x, float y, float w, float h, Drawing drawing) {
         if (!(ctx instanceof GUIContext context) || w <= 0 || h <= 0) return;
         context.enableScissor(x, y, w, h);
         try {
@@ -624,7 +624,7 @@ public final class AlchemyArt {
      * A pipe leaving (sx, sy) to the right and entering (tx, ty) from the left, with flanged ends;
      * what it carries runs along it as beads of {@code carried} (none while {@code now} is below 0).
      */
-    public static void pipe(IGUIContext ctx, float sx, float sy, float tx, float ty, Pipe kind, int carried, long now) {
+    public static void pipe(GUIContext ctx, float sx, float sy, float tx, float ty, Pipe kind, int carried, long now) {
         if (!(ctx instanceof GUIContext context)) return;
         String key = Math.round(sx) + "," + Math.round(sy) + "," + Math.round(tx) + "," + Math.round(ty) + "," + kind;
         Laid laid = LAID.get(key);

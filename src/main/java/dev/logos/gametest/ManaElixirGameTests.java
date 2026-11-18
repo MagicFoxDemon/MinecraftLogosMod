@@ -9,7 +9,7 @@ import dev.logos.item.ManaElixirItem;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -73,7 +73,7 @@ final class ManaElixirGameTests {
 
     /** Each brewed elixir ferments at the alchemy table; nothing brews an ancient one. */
     static void brewing(GameTestHelper h) {
-        var recipes = h.getLevel().recipeAccess().recipeMap().byType(LogosMod.ALCHEMY_RECIPE.get());
+        var recipes = h.getLevel().getRecipeManager().getAllRecipesFor(LogosMod.ALCHEMY_RECIPE.get());
         for (ManaElixirItem.Grade g : ManaElixirItem.Grade.values()) {
             Item brewed = LogosMod.MANA_ELIXIRS.get(g).get();
             Item ancient = LogosMod.ANCIENT_MANA_ELIXIRS.get(g).get();
@@ -91,7 +91,7 @@ final class ManaElixirGameTests {
      */
     static void chestLoot(GameTestHelper h) {
         LootTable table = h.getLevel().getServer().reloadableRegistries().getLootTable(
-                ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace("chests/ancient_city")));
+                ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.withDefaultNamespace("chests/ancient_city")));
         LootParams params = new LootParams.Builder(h.getLevel()).withParameter(LootContextParams.ORIGIN, h.absoluteVec(new net.minecraft.world.phys.Vec3(1, 1, 1)))
                 .create(LootContextParamSets.CHEST);
         Set<Item> found = new HashSet<>();

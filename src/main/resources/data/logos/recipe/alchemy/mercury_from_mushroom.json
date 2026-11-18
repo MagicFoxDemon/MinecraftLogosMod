@@ -2,11 +2,21 @@
   "type": "logos:alchemy",
   "process": "distill",
   "ingredients": [
-    { "ingredient": "logos:mercury_mushroom" },
-    { "ingredient": "minecraft:glass_bottle" }
+    {
+      "ingredient": {
+        "item": "logos:mercury_mushroom"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass_bottle"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:mercury_bottle" }
+    {
+      "id": "logos:mercury_bottle"
+    }
   ],
   "mana": 2
 }

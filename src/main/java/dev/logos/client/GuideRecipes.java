@@ -17,7 +17,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RecipesReceivedEvent;
 
-/** The crafting and smithing recipes the server sent (item/GuideRecipeSync), for 逻各斯手记 to draw. */
+/** The crafting and smithing recipes the server sent (1.21.1 sends them all), for 逻各斯手记 to draw. */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class GuideRecipes {
     private static RecipeMap recipes = RecipeMap.EMPTY;
@@ -35,7 +35,7 @@ public final class GuideRecipes {
     }
 
     /** What the recipes are drawn with: the level's registries and fuels; null outside a world. */
-    static @org.jspecify.annotations.Nullable ContextMap context() {
+    static @javax.annotation.Nullable ContextMap context() {
         var level = Minecraft.getInstance().level;
         return level == null ? null : SlotDisplayContext.fromLevel(level);
     }

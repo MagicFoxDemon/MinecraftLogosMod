@@ -2,10 +2,18 @@
   "type": "logos:wand_upgrade",
   "category": "equipment",
   "ingredients": [
-    "logos:crystal_staff",
-    "logos:echo_tincture",
-    "minecraft:iron_ingot",
-    "minecraft:iron_ingot"
+    {
+      "item": "logos:crystal_staff"
+    },
+    {
+      "item": "logos:echo_tincture"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    }
   ],
   "result": {
     "id": "logos:echo_staff"

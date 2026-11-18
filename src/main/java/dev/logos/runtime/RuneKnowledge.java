@@ -5,7 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -115,7 +115,7 @@ public final class RuneKnowledge {
         if (!bound(p)) return true;
         List<String> beyond = Unlocks.beyond(spell, compiled(before), key -> knows(p, key));
         if (beyond.isEmpty()) return true;
-        p.sendOverlayMessage(refusal(beyond.size()));
+        p.displayClientMessage(refusal(beyond.size()), true);
         return false;
     }
 

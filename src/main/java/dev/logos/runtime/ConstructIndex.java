@@ -54,7 +54,7 @@ public final class ConstructIndex {
             maxX = column(bounds.maxX);
             maxZ = column(bounds.maxZ);
             for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) {
-                long key = ChunkPos.pack(x, z);
+                long key = ChunkPos.asLong(x, z);
                 List<Entry> column = columns.get(key);
                 if (column == null) columns.put(key, column = new ArrayList<>(2));
                 column.add(this);
@@ -63,7 +63,7 @@ public final class ConstructIndex {
 
         private void unfile() {
             for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) {
-                long key = ChunkPos.pack(x, z);
+                long key = ChunkPos.asLong(x, z);
                 List<Entry> column = columns.get(key);
                 column.remove(this);
                 if (column.isEmpty()) columns.remove(key);
@@ -104,7 +104,7 @@ public final class ConstructIndex {
             for (Entry e : all) if (e.touches(area)) hits.add(e);
         } else {
             for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) {
-                List<Entry> column = columns.get(ChunkPos.pack(x, z));
+                List<Entry> column = columns.get(ChunkPos.asLong(x, z));
                 if (column == null) continue;
                 for (Entry e : column) {
                     // One filed under several of these columns is looked at in the first of them only.

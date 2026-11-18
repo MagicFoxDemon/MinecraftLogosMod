@@ -96,7 +96,7 @@ public class SpellEmitterScenario implements UIScenario {
                                 && e.page().getOrDefault(LogosMod.SPELL_SOURCE.get(), "").contains(":trigger cast"))
                 .server("hand the player dividers that measured forward 2, up 1, right 1", sc -> {
                     var dividers = new net.minecraft.world.item.ItemStack(LogosMod.DIVIDERS_ITEM.get());
-                    dividers.set(LogosMod.DIVIDERS.get(), new dev.logos.item.DividersItem.Measure(EDITED, net.minecraft.resources.Identifier.withDefaultNamespace("overworld"),
+                    dividers.set(LogosMod.DIVIDERS.get(), new dev.logos.item.DividersItem.Measure(EDITED, net.minecraft.resources.ResourceLocation.withDefaultNamespace("overworld"),
                             Direction.EAST, true, 2, 1, 1));
                     sc.player().getInventory().setItem(8, dividers);
                 })

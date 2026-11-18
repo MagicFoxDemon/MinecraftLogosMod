@@ -16,7 +16,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -112,7 +112,7 @@ final class LifeformGameTests {
         FamiliarGameTests.forceAround(h, 1);
         ManaLifeform lf = summon(h, p, "(spell :mana 200 (summon mana_lifeform :at (pos-of caster)))");
         Vec3 start = h.absoluteVec(new Vec3(7.5, 2, 7.5));
-        lf.snapTo(start.x, start.y, start.z, 0, 0);
+        lf.moveTo(start.x, start.y, start.z, 0, 0);
         double floor = h.absoluteVec(new Vec3(0, 2, 0)).y;
         h.succeedWhen(() -> {
             h.assertTrue(lf.distanceTo(p) < 3.5, "it should come to its master, " + lf.distanceTo(p) + " away");
@@ -135,7 +135,7 @@ final class LifeformGameTests {
         FamiliarGameTests.forceAround(h, 1);
         ManaLifeform lf = summon(h, p, "(spell :mana 200 (summon mana_lifeform :at (pos-of caster)))");
         Vec3 start = h.absoluteVec(new Vec3(7.5, 4, 7.5));
-        lf.snapTo(start.x, start.y, start.z, 0, 0);
+        lf.moveTo(start.x, start.y, start.z, 0, 0);
         double floor = h.absoluteVec(new Vec3(0, 2, 0)).y;
         int[] stage = {0};
         h.succeedWhen(() -> {
@@ -257,7 +257,7 @@ final class LifeformGameTests {
         FamiliarGameTests.forceAround(h, 1);
         ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
         lf.setNoAi(true);
-        lf.snapTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0); // faces +Z; its master is to its -X
+        lf.moveTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0); // faces +Z; its master is to its -X
         lf.core.setItem(0, page("(spell :name \"愈\" :players true :mana 30 (beam (on-hit (heal target 4))))"));
         p.getFoodData().setFoodLevel(10);
         p.setHealth(6);
@@ -273,7 +273,7 @@ final class LifeformGameTests {
         lf.setNoAi(true);
         Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
         husk.setNoAi(true);
-        lf.snapTo(husk.getX(), husk.getY() + 1, husk.getZ() + 4, 0, 0); // faces +Z; the husk is behind it
+        lf.moveTo(husk.getX(), husk.getY() + 1, husk.getZ() + 4, 0, 0); // faces +Z; the husk is behind it
         lf.core.setItem(0, page("(spell :name \"灼\" :mana 30 (beam (on-hit (damage target 2))))"));
         h.assertTrue(lf.castSlot(0, husk), "it should cast its attack page");
         h.succeedWhen(() -> h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "the beam should strike the husk: " + husk.getHealth()));
@@ -285,7 +285,7 @@ final class LifeformGameTests {
         FamiliarGameTests.forceAround(h, 1);
         ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
         lf.setNoAi(true);
-        lf.snapTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0);
+        lf.moveTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0);
         // Void damage is the same at every difficulty, so the test does not depend on the server's.
         lf.core.setItem(0, page("(spell :name \"灼\" :mana 30 (projectile :dir (toward here (pos-of (master))) (on-hit (mark target #struck) (damage target 2 void))))"));
         float before = p.getHealth();
@@ -301,7 +301,7 @@ final class LifeformGameTests {
         FamiliarGameTests.forceAround(h, 1);
         ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
         lf.setNoAi(true);
-        lf.snapTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0);
+        lf.moveTo(p.getX() + 3, p.getY() + 1, p.getZ(), 0, 0);
         lf.core.setItem(0, page("(spell :name \"愈\" :players true :mana 30 (" + form + " :dir (toward here (pos-of (master))) (on-hit (heal target 4))))"));
         // Too hungry to regenerate on its own, so only the heal can raise its health.
         p.getFoodData().setFoodLevel(10);

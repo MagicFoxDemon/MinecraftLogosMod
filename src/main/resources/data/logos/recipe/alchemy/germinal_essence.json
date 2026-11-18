@@ -2,13 +2,30 @@
   "type": "logos:alchemy",
   "process": "ferment",
   "ingredients": [
-    { "ingredient": "minecraft:wheat_seeds", "count": 2 },
-    { "ingredient": "#minecraft:saplings" },
-    { "ingredient": "logos:raw_mash" }
+    {
+      "ingredient": {
+        "item": "minecraft:wheat_seeds"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "tag": "minecraft:saplings"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:raw_mash"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:germinal_essence" },
-    { "id": "minecraft:glass_bottle" }
+    {
+      "id": "logos:germinal_essence"
+    },
+    {
+      "id": "minecraft:glass_bottle"
+    }
   ],
   "mana": 3
 }

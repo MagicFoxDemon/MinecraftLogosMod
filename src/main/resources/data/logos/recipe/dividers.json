@@ -6,8 +6,12 @@
     "C C"
   ],
   "key": {
-    "G": "minecraft:gold_nugget",
-    "C": "minecraft:copper_ingot"
+    "G": {
+      "item": "minecraft:gold_nugget"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    }
   },
   "result": {
     "id": "logos:dividers"

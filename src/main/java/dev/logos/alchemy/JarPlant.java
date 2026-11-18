@@ -2,23 +2,23 @@ package dev.logos.alchemy;
 
 import java.util.Collections;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.StemBlock;
-import net.minecraft.world.level.block.VegetationBlock;
+import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 
 /**
  * A plant that grows in one block of a cultivation jar, stage by stage on its {@code age} property:
- * any {@link VegetationBlock} with one (crops, sweet berry bushes, nether wart, and most modded crops and
+ * any {@link BushBlock} with one (crops, sweet berry bushes, nether wart, and most modded crops and
  * bushes), except stems, whose fruit grows beside them, and two-block plants. No tag names such plants,
  * so they are told by their shape; the block tags below add or remove ones the shape gets wrong.
  * <p>
@@ -35,7 +35,7 @@ public record JarPlant(Block block, IntegerProperty age) {
     public static final TagKey<Block> REPLANTED = tag("replanted_in_cultivation_jar");
 
     private static TagKey<Block> tag(String name) {
-        return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(LogosMod.MODID, name));
+        return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, name));
     }
 
     /** {@code block} as a plant of a jar, or null if it does not grow in one. */
@@ -43,7 +43,7 @@ public record JarPlant(Block block, IntegerProperty age) {
         if (block == null) return null;
         BlockState state = block.defaultBlockState();
         if (state.is(EXCLUDED) || !(block.getStateDefinition().getProperty("age") instanceof IntegerProperty age)) return null;
-        boolean shaped = block instanceof VegetationBlock && !(block instanceof StemBlock) && !(block instanceof DoublePlantBlock);
+        boolean shaped = block instanceof BushBlock && !(block instanceof StemBlock) && !(block instanceof DoublePlantBlock);
         return shaped || state.is(GROWS) ? new JarPlant(block, age) : null;
     }
 

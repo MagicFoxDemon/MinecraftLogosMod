@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.MapCodec;
 

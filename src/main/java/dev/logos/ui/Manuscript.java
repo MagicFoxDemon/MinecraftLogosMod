@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.lowdragmc.lowdraglib2.gui.ui.rendering.GUIContext;
-import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient;
+import dev.logos.client.port.DrawerHelperClient;
 
 /**
  * The workbench's manuscript hand: iron-gall ink, red chalk and watercolour washes laid down in
@@ -21,7 +21,7 @@ public final class Manuscript {
     private Manuscript() {}
 
     /** The frame being drawn, and marks laid in it and in the last finished one: the workbench's draw budget. */
-    private static @org.jspecify.annotations.Nullable GUIContext frame;
+    private static @javax.annotation.Nullable GUIContext frame;
     private static int counting, lastFrame;
 
     private static void count(GUIContext context, int marks) {

@@ -3,7 +3,7 @@ package dev.logos.graph;
 import java.util.List;
 
 import org.joml.Vector2f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.PortModel;
 

@@ -18,7 +18,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -41,7 +41,7 @@ final class WorldGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(0.5, 2, 0.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
@@ -166,26 +166,26 @@ final class WorldGameTests {
         var level = h.getLevel();
         BlockPos water = h.absolutePos(new BlockPos(5, 3, 5));
         p.addEffect(new net.minecraft.world.effect.MobEffectInstance(LogosMod.WATER_WALKING, 200));
-        p.snapTo(water.getX() + 0.5, surface + 0.05, water.getZ() + 0.5);
+        p.moveTo(water.getX() + 0.5, surface + 0.05, water.getZ() + 0.5);
         h.assertTrue(Math.abs(top(level, water, p) - 8 / 9.0) < 1e-4, "still water should hold the player up at its surface");
         p.setShiftKeyDown(true);
         h.assertTrue(top(level, water, p) < 0, "sneaking should sink through");
         p.setShiftKeyDown(false);
-        p.snapTo(water.getX() + 0.5, surface - 0.3, water.getZ() + 0.5);
+        p.moveTo(water.getX() + 0.5, surface - 0.3, water.getZ() + 0.5);
         h.assertTrue(top(level, water, p) < 0, "from under the surface there is nothing to stand on");
         BlockPos lava = h.absolutePos(new BlockPos(9, 3, 5));
-        p.snapTo(lava.getX() + 0.5, surface + 0.05, lava.getZ() + 0.5);
+        p.moveTo(lava.getX() + 0.5, surface + 0.05, lava.getZ() + 0.5);
         h.assertTrue(Math.abs(top(level, lava, p) - 8 / 9.0) < 1e-4, "lava should hold the player up too");
         BlockPos flowing = h.absolutePos(new BlockPos(8, 2, 8));
         h.setBlock(new BlockPos(8, 2, 8), Blocks.WATER.defaultBlockState().setValue(net.minecraft.world.level.block.LiquidBlock.LEVEL, 4));
-        p.snapTo(flowing.getX() + 0.5, flowing.getY() + 0.5, flowing.getZ() + 0.5);
+        p.moveTo(flowing.getX() + 0.5, flowing.getY() + 0.5, flowing.getZ() + 0.5);
         h.assertTrue(Math.abs(top(level, flowing, p) - 4 / 9.0) < 1e-4, "flowing water should hold the player up at its lower surface, got " + top(level, flowing, p));
         BlockPos slab = h.absolutePos(new BlockPos(6, 2, 8));
         h.setBlock(new BlockPos(6, 2, 8), Blocks.OAK_SLAB.defaultBlockState().setValue(net.minecraft.world.level.block.SlabBlock.WATERLOGGED, true));
-        p.snapTo(slab.getX() + 0.5, slab.getY() + 0.95, slab.getZ() + 0.5);
+        p.moveTo(slab.getX() + 0.5, slab.getY() + 0.95, slab.getZ() + 0.5);
         h.assertTrue(Math.abs(top(level, slab, p) - 8 / 9.0) < 1e-4, "the water in a waterlogged slab should hold the player up above the slab");
         p.removeEffect(LogosMod.WATER_WALKING);
-        p.snapTo(water.getX() + 0.5, surface + 0.05, water.getZ() + 0.5);
+        p.moveTo(water.getX() + 0.5, surface + 0.05, water.getZ() + 0.5);
         h.assertTrue(top(level, water, p) < 0, "without the effect water holds nobody up");
 
         // The pigs keep their AI, and to them the water is now ground to wander on (or to panic across
@@ -296,7 +296,7 @@ final class WorldGameTests {
         @SuppressWarnings("removal")
         ServerPlayer other = h.makeMockServerPlayerInLevel();
         Vec3 near = h.absoluteVec(new Vec3(2.5, 2, 2.5));
-        other.snapTo(near.x, near.y, near.z, 0, 0);
+        other.moveTo(near.x, near.y, near.z, 0, 0);
         Status mark = new Status("#seen");
         castAt(h, p, "(mark (enemies :radius 6) #seen)", new BlockPos(0, 2, 0));
         h.assertTrue(StatusData.stacks(other, mark) == 0, "a spell without :players must not touch other players");
@@ -315,8 +315,8 @@ final class WorldGameTests {
         @SuppressWarnings("removal")
         ServerPlayer far = h.makeMockServerPlayerInLevel();
         Vec3 a = h.absoluteVec(new Vec3(2.5, 2, 0.5)), b = h.absoluteVec(new Vec3(6.5, 2, 0.5));
-        near.snapTo(a.x, a.y, a.z, 0, 0);
-        far.snapTo(b.x, b.y, b.z, 0, 0);
+        near.moveTo(a.x, a.y, a.z, 0, 0);
+        far.moveTo(b.x, b.y, b.z, 0, 0);
         Status mark = new Status("#seen");
         SpellInstance off = castAt(h, p, "(spell :mana 20 (mark (nearest-player :radius 8) #seen))", new BlockPos(0, 2, 0));
         h.assertTrue(StatusData.stacks(near, mark) == 0 && StatusData.stacks(far, mark) == 0, "without :players nearest-player must be empty");
@@ -350,7 +350,7 @@ final class WorldGameTests {
     static void filterKinds(GameTestHelper h) {
         ServerPlayer p = caster(h);
         Vec3 at = h.absoluteVec(new Vec3(5.5, 2.5, 5.5));
-        var arrow = new net.minecraft.world.entity.projectile.arrow.Arrow(h.getLevel(), at.x, at.y, at.z, new ItemStack(Items.ARROW), null);
+        var arrow = new net.minecraft.world.entity.projectile.Arrow(h.getLevel(), at.x, at.y, at.z, new ItemStack(Items.ARROW), null);
         arrow.setNoGravity(true);
         arrow.setDeltaMovement(Vec3.ZERO);
         h.getLevel().addFreshEntity(arrow);
@@ -414,7 +414,7 @@ final class WorldGameTests {
         @SuppressWarnings("removal")
         ServerPlayer other = h.makeMockServerPlayerInLevel();
         Vec3 at = h.absoluteVec(new Vec3(4.5, 2, 2.5));
-        other.snapTo(at.x, at.y, at.z, 0, 0);
+        other.moveTo(at.x, at.y, at.z, 0, 0);
         Vec3 far = Vec3.atCenterOf(h.absolutePos(new BlockPos(8, 2, 0)));
         castAt(h, p, "(spell :mana 50 (blink here (entities :at (pos-of caster) :radius 6 :filter (kind all))))", new BlockPos(8, 2, 0));
         h.assertTrue(other.position().distanceTo(at) < 1e-6, "without :players another player must not be moved");
@@ -429,7 +429,7 @@ final class WorldGameTests {
      */
     static void netherStep(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        p.snapTo(800.5, 70, 1600.5, 0, 0);
+        p.moveTo(800.5, 70, 1600.5, 0, 0);
         String spell = "(spell :mana 200 (blink (in-dimension @the_nether (pos-of caster))))";
         SpellInstance refused = Casting.cast(p, Casting.compile(spell), null, null);
         h.assertTrue(refused != null && refused.dead && "logos.spell.end.unvisited_dimension".equals(refused.endKey()),
@@ -495,13 +495,13 @@ final class WorldGameTests {
         p.connection.markClientLoaded();
         FamiliarGameTests.forceAround(h, 1);
         Vec3 beside = h.absoluteVec(new Vec3(3.0, 2, 5.5)); // inside the bolt's reach, clear of the fire it lights
-        p.snapTo(beside.x, beside.y, beside.z, 0, 0);
+        p.moveTo(beside.x, beside.y, beside.z, 0, 0);
         @SuppressWarnings("removal")
         ServerPlayer other = h.makeMockServerPlayerInLevel();
         other.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
         other.connection.markClientLoaded();
         Vec3 across = h.absoluteVec(new Vec3(5.5, 2, 3.0)); // as near the bolt as the caster
-        other.snapTo(across.x, across.y, across.z, 0, 0);
+        other.moveTo(across.x, across.y, across.z, 0, 0);
         var cow = h.spawn(EntityType.COW, new Vec3(5.5, 2, 5.5));
         cow.setNoAi(true);
         float full = p.getHealth();
@@ -608,7 +608,7 @@ final class WorldGameTests {
     /** A wand charges and casts the selected page; a codex in the off hand extends the list. */
     static void wandCastsSelectedPage(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        var husk = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 4.5), EntitySpawnReason.COMMAND);
+        var husk = h.spawn(EntityType.HUSK, new Vec3(4.5, 2, 4.5), MobSpawnType.COMMAND);
         husk.setNoAi(true);
         ItemStack wand = new ItemStack(LogosMod.WAND.get());
         wand.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(
@@ -619,7 +619,7 @@ final class WorldGameTests {
         p.setItemInHand(InteractionHand.MAIN_HAND, wand);
         p.setItemInHand(InteractionHand.OFF_HAND, codex);
         wand.set(LogosMod.SELECTED.get(), 1); // the codex page comes after the wand's pages
-        wand.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND);
+        wand.getItem().use(h.getLevel(), p, InteractionHand.MAIN_HAND).getResult();
         for (int i = 0; i < 20 && !dev.logos.runtime.Charging.of(p).full(); i++) wand.getItem().onUseTick(h.getLevel(), p, wand, p.getUseItemRemainingTicks());
         p.releaseUsingItem();
         h.assertTrue(StatusData.stacks(husk, new Status("#b")) == 1, "the selected (codex) spell should have been cast");
@@ -631,13 +631,13 @@ final class WorldGameTests {
     static void woodWandsCraft(GameTestHelper h) {
         for (var wand : LogosMod.WOOD_WANDS) {
             String wood = wand.getId().getPath().replace("_wand", "");
-            var log = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.withDefaultNamespace(wood + "_log"));
-            var planks = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.withDefaultNamespace(wood + "_planks"));
+            var log = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.withDefaultNamespace(wood + "_log"));
+            var planks = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.withDefaultNamespace(wood + "_planks"));
             var input = net.minecraft.world.item.crafting.CraftingInput.of(3, 3, List.of(
                     ItemStack.EMPTY, ItemStack.EMPTY, new ItemStack(Items.GOLD_NUGGET),
                     ItemStack.EMPTY, new ItemStack(planks), ItemStack.EMPTY,
                     new ItemStack(log), ItemStack.EMPTY, ItemStack.EMPTY));
-            ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
+            ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
                     .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
             h.assertTrue(out.is(wand.get()), wood + " log and planks made " + out);
             h.assertTrue(wand.get().slots() == 3, wood + " wand holds " + wand.get().slots() + " pages");
@@ -649,17 +649,17 @@ final class WorldGameTests {
     static void crystalPageNeedsAdhesive(GameTestHelper h) {
         var bare = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(Items.GOLD_NUGGET), new ItemStack(Items.AMETHYST_SHARD)));
-        h.assertTrue(h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, bare, h.getLevel()).isEmpty(),
+        h.assertTrue(h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, bare, h.getLevel()).isEmpty(),
                 "a crystal page was made without adhesive");
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(2, 2, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(Items.GOLD_NUGGET), new ItemStack(Items.AMETHYST_SHARD), new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
+        ItemStack made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
                 .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.CRYSTAL.blank()), "paper, gold nugget, amethyst and adhesive made " + made);
         ItemStack basic = SpellPages.inscribed(dev.logos.item.PageTier.BASIC, "(spell :name \"晶辉\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.AMETHYST_SHARD), basic, new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
                 .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.CRYSTAL.inscribed()), "the written basic page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("晶辉"), "the crystal page should keep the spell");
@@ -670,14 +670,14 @@ final class WorldGameTests {
     static void echoPageUpgradeKeepsSpell(GameTestHelper h) {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.ECHO_TINCTURE.get()), new ItemStack(LogosMod.ADHESIVE.get())));
-        var recipe = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel());
+        var recipe = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel());
         ItemStack made = recipe.map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.ECHO.blank()), "paper, echo tincture and adhesive made " + made);
         h.assertTrue(recipe.get().value().getRemainingItems(blank).stream().anyMatch(st -> st.is(Items.GLASS_BOTTLE)), "the tincture's bottle was not given back");
         ItemStack crystal = SpellPages.inscribed(dev.logos.item.PageTier.CRYSTAL, "(spell :name \"回响\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.ADHESIVE.get()), crystal, new ItemStack(LogosMod.ECHO_TINCTURE.get())));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
                 .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.ECHO.inscribed()), "the written crystal page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("回响"), "the echo page should keep the spell");
@@ -688,14 +688,14 @@ final class WorldGameTests {
     static void transmutedPageUpgradeKeepsSpell(GameTestHelper h) {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.RAVEN_HEAD.get()), new ItemStack(LogosMod.ADHESIVE.get())));
-        var recipe = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel());
+        var recipe = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel());
         ItemStack made = recipe.map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.TRANSMUTED.blank()), "paper, raven's head and adhesive made " + made);
         h.assertTrue(recipe.get().value().getRemainingItems(blank).stream().anyMatch(st -> st.is(Items.GLASS_BOTTLE)), "the raven's head's bottle was not given back");
         ItemStack echo = SpellPages.inscribed(dev.logos.item.PageTier.ECHO, "(spell :name \"炼成\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.RAVEN_HEAD.get()), echo, new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
                 .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.TRANSMUTED.inscribed()), "the written echo page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("炼成"), "the transmuted page should keep the spell");
@@ -706,13 +706,13 @@ final class WorldGameTests {
     static void chalkPageUpgradeKeepsSpell(GameTestHelper h) {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.CHALK.get()), new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
+        ItemStack made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
                 .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.CHALK.blank()), "paper, chalk and adhesive made " + made);
         ItemStack transmuted = SpellPages.inscribed(dev.logos.item.PageTier.TRANSMUTED, "(spell :name \"白垩\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.CHALK.get()), transmuted, new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
                 .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.CHALK.inscribed()), "the written transmuted page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("白垩"), "the chalk page should keep the spell");
@@ -723,13 +723,13 @@ final class WorldGameTests {
     static void firmamentPageUpgradeKeepsSpell(GameTestHelper h) {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.FIRMAMENT_STONE.get()), new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
+        ItemStack made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
                 .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.FIRMAMENT.blank()), "paper, the firmament stone and adhesive made " + made);
         ItemStack chalk = SpellPages.inscribed(dev.logos.item.PageTier.CHALK, "(spell :name \"天穹\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.FIRMAMENT_STONE.get()), chalk, new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
                 .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.FIRMAMENT.inscribed()), "the written chalk page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("天穹"), "the firmament page should keep the spell");
@@ -740,13 +740,13 @@ final class WorldGameTests {
     static void sagePageUpgradeKeepsSpell(GameTestHelper h) {
         var blank = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(Items.PAPER), new ItemStack(LogosMod.PHILOSOPHERS_STONE.get()), new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack made = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
+        ItemStack made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, blank, h.getLevel())
                 .map(r -> r.value().assemble(blank)).orElse(ItemStack.EMPTY);
         h.assertTrue(made.is(dev.logos.item.PageTier.SAGE.blank()), "paper, the philosophers' stone and adhesive made " + made);
         ItemStack firmament = SpellPages.inscribed(dev.logos.item.PageTier.FIRMAMENT, "(spell :name \"贤者\" :mana 5 (heal caster 1))", null);
         var upgrade = net.minecraft.world.item.crafting.CraftingInput.of(3, 1, List.of(
                 new ItemStack(LogosMod.PHILOSOPHERS_STONE.get()), firmament, new ItemStack(LogosMod.ADHESIVE.get())));
-        ItemStack out = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
+        ItemStack out = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, upgrade, h.getLevel())
                 .map(r -> r.value().assemble(upgrade)).orElse(ItemStack.EMPTY);
         h.assertTrue(out.is(dev.logos.item.PageTier.SAGE.inscribed()), "the written firmament page became " + out);
         h.assertTrue(SpellPages.spell(out) != null && SpellPages.spell(out).name().equals("贤者"), "the sage page should keep the spell");

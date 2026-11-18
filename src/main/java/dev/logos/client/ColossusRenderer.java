@@ -2,28 +2,28 @@ package dev.logos.client;
 
 import org.joml.Vector3f;
 
-import com.geckolib.cache.model.GeoBone;
+import software.bernie.geckolib.cache.object.GeoBone;
 import com.geckolib.cache.model.cuboid.CuboidGeoBone;
-import com.geckolib.cache.model.cuboid.GeoCube;
-import com.geckolib.constant.DataTickets;
-import com.geckolib.constant.dataticket.DataTicket;
-import com.geckolib.model.DefaultedEntityGeoModel;
-import com.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.cache.object.GeoCube;
+import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.constant.dataticket.DataTicket;
+import software.bernie.geckolib.model.DefaultedEntityGeoModel;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
-import com.geckolib.renderer.layer.builtin.AutoGlowingGeoLayer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.AlchemicalColossus;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -37,8 +37,8 @@ import net.minecraft.world.phys.Vec3;
  * is spent, and the spent part of each tube is drawn again in the same material, blackened.
  */
 public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState> extends GeoEntityRenderer<AlchemicalColossus, R> {
-    private static final Identifier NORMAL = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/alchemical_colossus.png");
-    private static final Identifier SCORCHED = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/alchemical_colossus_berserk.png");
+    private static final ResourceLocation NORMAL = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/alchemical_colossus.png");
+    private static final ResourceLocation SCORCHED = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/alchemical_colossus_berserk.png");
     private static final DataTicket<Boolean> SCORCHED_SHELL = DataTicket.create("logos_colossus_scorched", Boolean.class);
     private static final DataTicket<Integer> ENTITY = DataTicket.create("logos_colossus_id", Integer.class);
     private static final DataTicket<Float> ARM_YAW = DataTicket.create("logos_colossus_arm_yaw", Float.class);
@@ -54,9 +54,9 @@ public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState
     private static final String[] REPORTED = {"right_hand", "left_hand", "attachment_seat_left", "attachment_seat_right", "attachment_muzzle_right", "attachment_muzzle_left", "right_upper_arm", "left_foot", "right_foot"};
 
     public ColossusRenderer(EntityRendererProvider.Context context) {
-        super(context, new DefaultedEntityGeoModel<AlchemicalColossus>(Identifier.fromNamespaceAndPath(LogosMod.MODID, "alchemical_colossus")) {
+        super(context, new DefaultedEntityGeoModel<AlchemicalColossus>(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "alchemical_colossus")) {
             @Override
-            public Identifier getTextureResource(GeoRenderState state) {
+            public ResourceLocation getTextureResource(GeoRenderState state) {
                 return Boolean.TRUE.equals(state.getOrDefaultGeckolibData(SCORCHED_SHELL, false)) ? SCORCHED : NORMAL;
             }
         });
@@ -159,7 +159,7 @@ public class ColossusRenderer<R extends LivingEntityRenderState & GeoRenderState
     }
 
     @Override
-    public RenderType getRenderType(R state, Identifier texture) {
-        return RenderTypes.entityCutout(texture);
+    public RenderType getRenderType(R state, ResourceLocation texture) {
+        return RenderType.entityCutout(texture);
     }
 }

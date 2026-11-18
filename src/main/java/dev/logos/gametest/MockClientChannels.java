@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import net.minecraft.network.ConnectionProtocol;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
@@ -32,11 +32,11 @@ final class MockClientChannels {
 
     /** The play payloads {@code namespace} registered (NeoForge keeps them to itself, so looked up by reflection). */
     @SuppressWarnings("unchecked")
-    private static Set<Identifier> channels(String namespace) {
+    private static Set<ResourceLocation> channels(String namespace) {
         try {
             var field = NetworkRegistry.class.getDeclaredField("PAYLOAD_REGISTRATIONS");
             field.setAccessible(true);
-            var all = (Map<ConnectionProtocol, Map<Identifier, ?>>) field.get(null);
+            var all = (Map<ConnectionProtocol, Map<ResourceLocation, ?>>) field.get(null);
             return all.get(ConnectionProtocol.PLAY).keySet().stream().filter(id -> id.getNamespace().equals(namespace)).collect(Collectors.toSet());
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Could not read the registered payloads", e);

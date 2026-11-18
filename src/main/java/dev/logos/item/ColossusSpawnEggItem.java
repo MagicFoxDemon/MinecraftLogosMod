@@ -1,6 +1,6 @@
 package dev.logos.item;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
@@ -12,7 +12,7 @@ import net.minecraft.world.entity.EntityType;
 /** A vanilla spawn egg that raises the command's full-mana guardian and binds it to its user. */
 public final class ColossusSpawnEggItem extends BoundSpawnEggItem {
     public ColossusSpawnEggItem(Properties props) {
-        super(props);
+        super(LogosMod.ALCHEMICAL_COLOSSUS, props);
     }
 
     @Override

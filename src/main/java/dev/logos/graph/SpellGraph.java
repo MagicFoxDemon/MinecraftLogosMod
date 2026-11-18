@@ -3,7 +3,7 @@ package dev.logos.graph;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.lowdragmc.lowdraglib2.nodegraphtookit.api.graph.Graph;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.api.graph.GraphLogger;
@@ -13,7 +13,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.api.type.TypeHandle;
 
 import dev.logos.LogosMod;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * A spell drawn as a node graph. Every edit recompiles it through the same compiler as written
@@ -21,7 +21,7 @@ import net.minecraft.resources.Identifier;
  */
 public class SpellGraph extends Graph {
     public static final GraphNodeRegistry NODES = GraphNodeRegistry.create(
-            Identifier.fromNamespaceAndPath(LogosMod.MODID, "spell_graph"), SpellGraph.class);
+            ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "spell_graph"), SpellGraph.class);
 
     private GraphCompiler.Result last;
     private final List<Runnable> listeners = new ArrayList<>();

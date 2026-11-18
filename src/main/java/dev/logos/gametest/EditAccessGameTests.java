@@ -187,14 +187,14 @@ final class EditAccessGameTests {
             e.open(p);
             h.assertTrue(e.edit(p), e.name + " refused the first edit on an opening");
             h.assertTrue(e.edit(p), e.name + " refused a second edit on the same opening");
-            p.snapTo(e.pos.getX() + 0.5 + 7.5, e.pos.getY(), e.pos.getZ() + 0.5, 0, 0);
+            p.moveTo(e.pos.getX() + 0.5 + 7.5, e.pos.getY(), e.pos.getZ() + 0.5, 0, 0);
             h.assertTrue(e.edit(p), e.name + " refused an edit from 7.5 blocks away");
-            p.snapTo(e.pos.getX() + 0.5 + 12, e.pos.getY(), e.pos.getZ() + 0.5, 0, 0);
+            p.moveTo(e.pos.getX() + 0.5 + 12, e.pos.getY(), e.pos.getZ() + 0.5, 0, 0);
             h.assertTrue(!e.edit(p), e.name + " took an edit from 12 blocks away");
             p.getAttribute(Attributes.BLOCK_INTERACTION_RANGE).setBaseValue(16);
             h.assertTrue(e.edit(p), e.name + " refused an edit within a long reach");
             p.getAttribute(Attributes.BLOCK_INTERACTION_RANGE).setBaseValue(Attributes.BLOCK_INTERACTION_RANGE.value().getDefaultValue());
-            p.snapTo(e.pos.getX() + 0.5, e.pos.getY(), e.pos.getZ() + 2.5, 0, 0);
+            p.moveTo(e.pos.getX() + 0.5, e.pos.getY(), e.pos.getZ() + 2.5, 0, 0);
             h.assertTrue(e.edit(p), e.name + " refused an edit after coming back");
         }
         h.succeed();

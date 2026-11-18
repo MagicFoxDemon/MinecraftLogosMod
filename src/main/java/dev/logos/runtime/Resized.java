@@ -1,7 +1,7 @@
 package dev.logos.runtime;
 
 import dev.logos.LogosMod;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -20,7 +20,7 @@ public final class Resized extends MobEffect {
 
     public Resized() {
         super(MobEffectCategory.NEUTRAL, 0x9B7BD8);
-        addAttributeModifier(Attributes.SCALE, Identifier.fromNamespaceAndPath(LogosMod.MODID, "resized"),
+        addAttributeModifier(Attributes.SCALE, ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "resized"),
                 AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL, amplifier -> scaleOf(amplifier) - 1);
     }
 

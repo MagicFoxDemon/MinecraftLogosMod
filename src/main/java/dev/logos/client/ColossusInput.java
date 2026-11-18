@@ -9,7 +9,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * A colossus rider's keys. The mode key (V by default) switches between riding along and driving.
@@ -27,7 +27,7 @@ final class ColossusInput {
     }
 
     private static void send(byte action) {
-        ClientPacketDistributor.sendToServer(new ColossusControlPayload(action));
+        PacketDistributor.sendToServer(new ColossusControlPayload(action));
     }
 
     /** Each client tick: the mode key, and the cannon button's press and release. */

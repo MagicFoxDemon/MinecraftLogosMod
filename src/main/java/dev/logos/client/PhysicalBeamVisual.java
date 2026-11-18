@@ -15,29 +15,29 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Box;
 import com.lowdragmc.photon.client.gameobject.emitter.data.shape.Cone;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.lowdragmc.photon.client.render.FXCompositeMode;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import com.lowdragmc.photon.client.gameobject.emitter.renderpipeline.FXCompositeMode;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.logos.lang.Element;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
@@ -97,7 +97,7 @@ final class PhysicalBeamVisual {
         Vec3 axis = delta.normalize();
         float length = (float)delta.length();
         float scale = Math.max(.45f, Math.min(1.8f, (float)Math.sqrt(radius / .5f)));
-        double now = level.getGameTime() + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        double now = level.getGameTime() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         if (Double.isNaN(started)) {
             started = now;
             nextPulseSound = now + PULSE;
@@ -579,8 +579,8 @@ final class PhysicalBeamVisual {
         if (air) pipeline.withSampler("NoiseTex");
         var setup = RenderSetup.builder(pipeline.build()).withTexture("Sampler0", id("textures/vfx/" + texture + ".png"));
         if (air) setup.withTexture("NoiseTex", id("textures/vfx/physical_ray/wind.png"));
-        return RenderType.create("logos_physical_beam_" + name, setup.sortOnUpload().createRenderSetup());
+        return dev.logos.client.port.RenderTypes.create("logos_physical_beam_" + name, setup.sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

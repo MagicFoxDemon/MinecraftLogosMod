@@ -1,5 +1,10 @@
 package dev.logos.block;
 
+import dev.logos.port.ProblemReporter;
+import dev.logos.port.TagValueInput;
+import dev.logos.port.TagValueOutput;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import dev.logos.LogosMod;
 import dev.logos.runtime.ManaField;
 import net.minecraft.core.BlockPos;
@@ -8,10 +13,10 @@ import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
+import dev.logos.port.ItemResource;
+import dev.logos.port.ItemStacksResourceHandler;
 
 /**
  * 魔力散布器: burns mana fuel from its drawer and pours the mana into the air of its chunk, up to
@@ -77,15 +82,17 @@ public class ManaSpreaderBlockEntity extends ManaVesselBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueOutput output = TagValueOutput.of(tag, registries);
+        super.saveAdditional(tag, registries);
         fuel.serialize(output.child("fuel"));
         output.putDouble("mana", mana);
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
+        super.loadAdditional(tag, registries);
         input.child("fuel").ifPresent(fuel::deserialize);
         mana = input.getDoubleOr("mana", 0);
     }

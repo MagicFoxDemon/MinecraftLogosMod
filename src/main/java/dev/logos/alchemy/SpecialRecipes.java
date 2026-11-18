@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.JsonOps;
 
@@ -16,13 +16,13 @@ import dev.logos.item.PotionPowderItem;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemStackTemplate;
+import dev.logos.port.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.alchemy.PotionContents;
@@ -38,7 +38,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
-import net.neoforged.neoforge.transfer.item.ItemResource;
+import dev.logos.port.ItemResource;
 
 /**
  * Alchemy recipes that cannot be written out as data because they follow whatever potion is at
@@ -127,7 +127,9 @@ public final class SpecialRecipes {
             }
         }
         ItemStack potion = new ItemStack(Items.POTION);
-        potion.set(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.empty(), List.copyOf(effects.values()), Optional.of(CONJUNCTION)));
+        potion.set(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.empty(), List.copyOf(effects.values())));
+        // 1.21.1: a potion has no custom name in its contents; the item is named instead.
+        potion.set(DataComponents.ITEM_NAME, net.minecraft.network.chat.Component.translatable("item.minecraft.potion.effect." + CONJUNCTION));
         return new AlchemyRecipe(Process.DISSOLVE, takes, Optional.empty(), List.of(ItemStackTemplate.fromNonEmptyStack(potion)), CONJUNCTION_MANA * powders.size());
     }
 
@@ -150,7 +152,7 @@ public final class SpecialRecipes {
      * goes by tags and kinds of block, so other mods' things that join them wash too.
      */
     static ItemStack wash(ItemStack stack) {
-        if (stack.has(DataComponents.DYED_COLOR) && stack.is(ItemTags.CAULDRON_CAN_REMOVE_DYE)) {
+        if (stack.has(DataComponents.DYED_COLOR) && stack.is(ItemTags.DYEABLE)) {
             ItemStack clean = stack.copyWithCount(1);
             clean.remove(DataComponents.DYED_COLOR);
             return clean;
@@ -174,7 +176,7 @@ public final class SpecialRecipes {
     private static @Nullable Block concreteOf(ConcretePowderBlock powder) {
         return ConcretePowderBlock.CODEC.codec().encodeStart(JsonOps.INSTANCE, powder).result()
                 .map(json -> json.getAsJsonObject().get("concrete").getAsString())
-                .flatMap(id -> BuiltInRegistries.BLOCK.getOptional(Identifier.parse(id))).orElse(null);
+                .flatMap(id -> BuiltInRegistries.BLOCK.getOptional(ResourceLocation.parse(id))).orElse(null);
     }
 
     /** For each thing at hand that a furnace smelts, one of it into what the furnace makes of it. */
@@ -182,8 +184,8 @@ public final class SpecialRecipes {
         List<AlchemyRecipe> out = new ArrayList<>();
         for (ItemResource thing : things) {
             SingleRecipeInput input = new SingleRecipeInput(thing.toStack(1));
-            level.recipeAccess().getRecipeFor(RecipeType.SMELTING, input, level).ifPresent(recipe -> {
-                ItemStack result = recipe.value().assemble(input);
+            level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, input, level).ifPresent(recipe -> {
+                ItemStack result = recipe.value().assemble(input, level.registryAccess());
                 if (result.isEmpty()) return;
                 out.add(new AlchemyRecipe(Process.CALCINE, List.of(new SizedIngredient(DataComponentIngredient.of(true, input.item()), 1)),
                         Optional.empty(), List.of(ItemStackTemplate.fromNonEmptyStack(result))));

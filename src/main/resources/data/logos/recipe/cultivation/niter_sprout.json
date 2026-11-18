@@ -1,5 +1,7 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:niter_sprout",
+  "seed": {
+    "item": "logos:niter_sprout"
+  },
   "plant": "logos:niter_sprout_crop"
 }

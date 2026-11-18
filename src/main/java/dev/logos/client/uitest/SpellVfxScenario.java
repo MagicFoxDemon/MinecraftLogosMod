@@ -11,7 +11,7 @@ import dev.logos.lang.Examples;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.PlayerMagic;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -33,9 +33,9 @@ public class SpellVfxScenario implements UIScenario {
     private static void husks(ServerContext sc) {
         var level = sc.level();
         for (int i = 0; i < 4; i++) {
-            var h = EntityType.HUSK.create(level, EntitySpawnReason.COMMAND);
+            var h = EntityType.HUSK.create(level);
             if (h == null) continue;
-            h.snapTo(ORIGIN.getX() - 3 + i * 2.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 5 + (i % 2) * 2, 180, 0);
+            h.moveTo(ORIGIN.getX() - 3 + i * 2.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 5 + (i % 2) * 2, 180, 0);
             h.setNoAi(true);
             level.addFreshEntity(h);
         }

@@ -14,23 +14,23 @@ import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction
 import com.lowdragmc.photon.client.gameobject.emitter.data.number.color.Gradient;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleConfig;
 import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
-import com.lowdragmc.photon.client.render.FXCompositeMode;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import com.lowdragmc.photon.client.gameobject.emitter.renderpipeline.FXCompositeMode;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.logos.lang.Element;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
@@ -81,7 +81,7 @@ final class VoidBeamVisual {
         radius *= BODY;
         float length = (float)delta.length(), scale = Math.max(.2f, radius / .5f);
         final float width = radius;
-        double now = level.getGameTime() + Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        double now = level.getGameTime() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         if (terminus == null && defaultMotes) {
             terminus = TERMINUS.createRuntime();
             for (var object : terminus.objects.values()) if (object instanceof ParticleEmitter e)
@@ -271,10 +271,10 @@ final class VoidBeamVisual {
         var setup = RenderSetup.builder(pipeline.build()).withTexture("Sampler0", id("textures/vfx/void_beam/" + texture + ".png"));
         if (flow) setup.withTexture("NoiseTex", id("textures/vfx/void_beam/dissolve.png"));
         if (warp) setup.withTexture("WarpTex", id("textures/vfx/void_beam/warp.png"));
-        if (core) setup.withTexture("StarTex", Identifier.withDefaultNamespace("textures/entity/end_portal/end_portal.png"))
+        if (core) setup.withTexture("StarTex", ResourceLocation.withDefaultNamespace("textures/entity/end_portal/end_portal.png"))
                 .withTexture("AuraTex", id("textures/vfx/void_beam/aura.png"));
-        return RenderType.create("logos_void_beam_" + name, setup.sortOnUpload().createRenderSetup());
+        return dev.logos.client.port.RenderTypes.create("logos_void_beam_" + name, setup.sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

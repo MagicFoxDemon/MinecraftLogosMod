@@ -3,7 +3,7 @@ package dev.logos.client;
 import com.lowdragmc.lowdraglib2.registry.annotation.LDLRegisterClient;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.CustomShaderMaterial;
 import com.lowdragmc.photon.client.gameobject.emitter.data.material.IMaterial;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * A Photon-local material keeps the impact's starfield independent of flight rendering.
@@ -12,7 +12,7 @@ import net.minecraft.resources.Identifier;
 @LDLRegisterClient(name = "logos_void_impact_starfield", registry = "photon:material")
 public final class VoidProjectileImpactMaterial extends CustomShaderMaterial {
     public VoidProjectileImpactMaterial() {
-        super(Identifier.fromNamespaceAndPath("logos", "void_impact_starfield"));
+        super(ResourceLocation.fromNamespaceAndPath("logos", "void_impact_starfield"));
         PhotonShaderTextures.bind(this,
                 "CloudMask", "logos:textures/vfx/void_impact/cloud.png",
                 "StarTexture", "minecraft:textures/entity/end_portal/end_portal.png");

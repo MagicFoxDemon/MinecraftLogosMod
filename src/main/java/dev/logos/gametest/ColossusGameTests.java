@@ -17,8 +17,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.warden.Warden;
-import net.minecraft.world.entity.monster.zombie.Husk;
-import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.AABB;
@@ -41,7 +41,7 @@ final class ColossusGameTests {
         AlchemicalColossus c = raise(h, p, new Vec3(5, 2, 5));
         h.assertTrue(c.getMaxHealth() == 800 && c.getHealth() == 800, "800 health expected, got " + c.getMaxHealth());
         h.assertTrue(c.mana() == 50000 && c.maxMana() == 50000, "a full visible pool of 50000, got " + c.mana() + "/" + c.maxMana());
-        c.hurtServer(h.getLevel(), h.getLevel().damageSources().generic(), 40);
+        c.hurt(h.getLevel().damageSources().generic(), 40);
         h.assertTrue(Math.abs(c.getHealth() - 789) < 0.01, "40 damage should take 40/4 + 1 = 11, health " + c.getHealth());
         h.succeed();
     }
@@ -255,7 +255,7 @@ final class ColossusGameTests {
         h.succeedWhen(() -> {
             if (!struck[0]) {
                 h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
-                c.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(husk), 8);
+                c.hurt(h.getLevel().damageSources().mobAttack(husk), 8);
                 struck[0] = true;
             }
             h.assertTrue(husk.getHealth() < 200, "it should strike back at the husk");
@@ -278,7 +278,7 @@ final class ColossusGameTests {
         h.succeedWhen(() -> {
             if (!started[0]) {
                 h.assertTrue(c.act() == AlchemicalColossus.Act.NONE, "still starting up");
-                c.hurtServer(h.getLevel(), h.getLevel().damageSources().mobAttack(striker), 8);
+                c.hurt(h.getLevel().damageSources().mobAttack(striker), 8);
                 Familiars.order(c, ordered);
                 started[0] = true;
             }
@@ -421,7 +421,7 @@ final class ColossusGameTests {
         h.assertTrue(c.isBerserk() && c.isScorched(), "an unstable fuel should send it berserk");
         var adv = h.getLevel().getServer().getAdvancements().get(Colossi.FRENZY_ADVANCEMENT);
         h.assertTrue(adv != null && p.getAdvancements().getOrStartProgress(adv).isDone(), "witnesses earn 《这巨像魔了，是个魔像》");
-        c.hurtServer(h.getLevel(), h.getLevel().damageSources().generic(), 100000);
+        c.hurt(h.getLevel().damageSources().generic(), 100000);
         h.assertTrue(c.isAlive() && !c.isBerserk(), "a frenzy cannot be killed, only burnt out");
         h.assertTrue(c.isTempered() && c.isDormant() && c.maxMana() == 100000, "burnt out: tempered, powered down, its pool now 100000");
         h.assertTrue(c.isScorched(), "it keeps the scorched shell");
@@ -592,7 +592,7 @@ final class ColossusGameTests {
                 h.assertTrue(c.holdOf(p) == AlchemicalColossus.Hold.SEAT_LEFT, "not seated yet");
                 before[0] = p.getHealth();
                 p.invulnerableTime = 0;
-                p.hurtServer(h.getLevel(), h.getLevel().damageSources().magic(), 8);
+                p.hurt(h.getLevel().damageSources().magic(), 8);
                 h.assertTrue(Math.abs(before[0] - p.getHealth() - 4) < 0.01, "seated, 8 damage should take 4: took " + (before[0] - p.getHealth()));
                 p.stopRiding();
                 h.assertTrue(p.getVehicle() == c, "dismounting does not drop it off at once: it is lifted down");

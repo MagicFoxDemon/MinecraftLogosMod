@@ -2,12 +2,26 @@
   "type": "logos:alchemy",
   "process": "ferment",
   "ingredients": [
-    { "ingredient": "logos:vital_mash" },
-    { "ingredient": "logos:mana_gemstone" },
-    { "ingredient": "logos:philosophers_stone" }
+    {
+      "ingredient": {
+        "item": "logos:vital_mash"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:mana_gemstone"
+      }
+    },
+    {
+      "ingredient": {
+        "item": "logos:philosophers_stone"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:sage_mana_elixir" }
+    {
+      "id": "logos:sage_mana_elixir"
+    }
   ],
   "mana": 640
 }

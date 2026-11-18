@@ -13,7 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -49,7 +49,7 @@ public final class ConstructObj extends SpellObject implements SpellWard {
     private final Set<UUID> passed = new HashSet<>();
 
     /** Where it is travelling ({@code :to} or {@code move}), and how fast in blocks per tick; null when still. */
-    private @org.jspecify.annotations.Nullable Vec3 target;
+    private @javax.annotation.Nullable Vec3 target;
     private double speed;
 
     public ConstructObj(Node node, Ctx ctx, ConstructEntity entity, Filter solid, boolean deflect, int life, int every) {
@@ -253,7 +253,7 @@ public final class ConstructObj extends SpellObject implements SpellWard {
         BlockHitResult hit = g.clip(from, to);
         if (hit == null) return false;
         Vec3 at = hit.getLocation();
-        Vec3 n = Vec3.atLowerCornerOf(hit.getDirection().getUnitVec3i());
+        Vec3 n = Vec3.atLowerCornerOf(hit.getDirection().getNormal());
         Vec3 v = p.getDeltaMovement();
         Vec3 reflected = v.subtract(n.scale(2 * v.dot(n)));
         p.setPos(at.add(n.scale(0.05)));
@@ -282,7 +282,7 @@ public final class ConstructObj extends SpellObject implements SpellWard {
      * nor a void body dealing more than the health it has left.
      */
     @Override
-    public @org.jspecify.annotations.Nullable Vec3 wouldStop(@org.jspecify.annotations.Nullable SpellInstance other, Vec3 from, Vec3 to, Element element, double damage) {
+    public @javax.annotation.Nullable Vec3 wouldStop(@javax.annotation.Nullable SpellInstance other, Vec3 from, Vec3 to, Element element, double damage) {
         if (broken() || other == inst) return null;
         if (element == Element.VOID && damage > health) return null;
         ConstructGeometry g = entity.geometry();

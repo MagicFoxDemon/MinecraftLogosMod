@@ -15,7 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -86,10 +86,10 @@ public class SurfaceAuraScenario implements UIScenario {
     /** An armour stand on {@link FormScenes#AT}, facing south, arms showing, holding a sword. */
     static int summonStand(ServerLevel level, SurfaceAura.Style style, float hue) {
         discard(level);
-        var a = EntityType.ARMOR_STAND.create(level, EntitySpawnReason.COMMAND);
+        var a = EntityType.ARMOR_STAND.create(level);
         a.setShowArms(true);
         a.setNoGravity(true);
-        a.snapTo(AT.x, AT.y, AT.z, 0, 0);
+        a.moveTo(AT.x, AT.y, AT.z, 0, 0);
         a.setItemSlot(EquipmentSlot.MAINHAND, sword(style, hue));
         level.addFreshEntity(a);
         return a.getId();

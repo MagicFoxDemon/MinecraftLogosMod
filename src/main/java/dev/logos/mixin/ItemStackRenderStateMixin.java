@@ -1,6 +1,6 @@
 package dev.logos.mixin;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -13,7 +13,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.logos.client.SurfaceAuras;
 import dev.logos.lang.Element;
 import dev.logos.runtime.SurfaceAura;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.world.item.ItemDisplayContext;
 

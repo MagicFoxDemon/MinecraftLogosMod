@@ -42,7 +42,7 @@ public class WandBeamScenario implements UIScenario {
     private static void selectAndHold(int page) {
         var player = Minecraft.getInstance().player;
         // The server's copy is set too, through the same packet the spell wheel sends.
-        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(new dev.logos.net.SelectSpellPayload(page));
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new dev.logos.net.SelectSpellPayload(page));
         Minecraft.getInstance().options.keyUse.setDown(true);
     }
 

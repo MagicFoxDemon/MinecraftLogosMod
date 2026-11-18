@@ -121,7 +121,7 @@ final class SpellGuardGameTests {
         SpellInstance inst = cast(h, p, name, "(imbue (nearest :radius 2.5) :life 10 (on-hit (damage target 3 arcane)))");
         h.assertTrue(WrapObj.on(holder) != null, "the husk's hand should be wrapped");
         boolean[] next = {false};
-        holder.doHurtTarget(h.getLevel(), victim);
+        holder.doHurtTarget(victim);
         SpellRuntime.defer(() -> next[0] = true);
         h.succeedWhen(() -> {
             h.assertTrue(next[0], "the task deferred after the crash should still run");

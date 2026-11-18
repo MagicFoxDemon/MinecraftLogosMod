@@ -8,16 +8,16 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import dev.logos.LogosMod;
 import dev.logos.runtime.FreeManaEntity;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import dev.logos.client.port.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.util.Mth;
 
 /**
@@ -25,8 +25,8 @@ import net.minecraft.util.Mth;
  * More mana means more motes and a wider swarm. It fades in over its first moments.
  */
 final class FreeManaRenderer extends EntityRenderer<FreeManaEntity, FreeManaRenderer.State> {
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/free_mana.png");
-    private static final RenderType RENDER_TYPE = RenderTypes.eyes(TEXTURE);
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "textures/entity/free_mana.png");
+    private static final RenderType RENDER_TYPE = RenderType.eyes(TEXTURE);
     private static final int MAX_MOTES = 28;
     /** The whole swarm is drawn at this size. */
     private static final float SCALE = 0.7f;

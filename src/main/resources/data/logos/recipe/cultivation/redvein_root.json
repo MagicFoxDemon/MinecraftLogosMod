@@ -1,6 +1,8 @@
 {
   "type": "logos:cultivation",
-  "seed": "logos:redvein_root_seed",
+  "seed": {
+    "item": "logos:redvein_root_seed"
+  },
   "plant": "logos:redvein_root_crop",
   "growth": 0.35
 }

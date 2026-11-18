@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,15 +21,15 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.monster.breeze.Breeze;
-import net.minecraft.world.entity.monster.illager.AbstractIllager;
+import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ShulkerBullet;
-import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge;
-import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.WindCharge;
+import net.minecraft.world.entity.projectile.LargeFireball;
+import net.minecraft.world.entity.projectile.SmallFireball;
+import net.minecraft.world.entity.projectile.windcharge.BreezeWindCharge;
+import net.minecraft.world.entity.projectile.windcharge.WindCharge;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.EntityBasedExplosionDamageCalculator;
@@ -109,7 +109,8 @@ public final class PossessionSkills {
             Vec3 look = p.getLookAngle();
             // A player who has become a breeze throws the player's own wind charge, from their eyes.
             Projectile charge = mob instanceof Breeze b ? new BreezeWindCharge(b, level) : new WindCharge(p, level, p.getX(), p.getEyeY(), p.getZ());
-            Projectile.spawnProjectileUsingShoot(charge, level, ItemStack.EMPTY, look.x, look.y, look.z, 0.7f, 1);
+            charge.shoot(look.x, look.y, look.z, 0.7f, 1);
+            level.addFreshEntity(charge);
             sound(mob, SoundEvents.BREEZE_SHOOT, 1.5f, 1);
             return true;
         });
@@ -151,7 +152,7 @@ public final class PossessionSkills {
         for (LivingEntity hit : level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(0.4), e -> fair(p, mob, e))) {
             RAMMING.remove(mob);
             Vec3 push = hit.position().subtract(mob.position()).multiply(1, 0, 1).normalize();
-            hit.hurtServer(level, level.damageSources().mobAttack(mob), (float) blow(mob));
+            hit.hurt(level.damageSources().mobAttack(mob), (float) blow(mob));
             double resist = 1 - hit.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
             hit.push(push.x * 2.5 * resist, 0.4 * resist, push.z * 2.5 * resist);
             hit.hurtMarked = true;
@@ -276,7 +277,7 @@ public final class PossessionSkills {
         }
         sound(mob, SoundEvents.WARDEN_SONIC_BOOM, 3, 1);
         if (mob instanceof Mob) level.broadcastEntityEvent(mob, (byte) 62); // its own animation; a player has none
-        if (target.hurtServer(level, level.damageSources().sonicBoom(mob), 10)) {
+        if (target.hurt(level.damageSources().sonicBoom(mob), 10)) {
             double resist = 1 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
             target.push(dir.x * 2.5 * resist, dir.y * 0.5 * resist, dir.z * 2.5 * resist);
             target.hurtMarked = true;
@@ -287,7 +288,7 @@ public final class PossessionSkills {
     /** The ravager's: a roar that hurts and throws back what stands within four blocks (illagers are spared the hurt, as by its own). */
     private static boolean roar(ServerLevel level, LivingEntity mob, ServerPlayer p, @Nullable LivingEntity target) {
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, mob.getBoundingBox().inflate(4), e -> fair(p, mob, e))) {
-            if (!(e instanceof AbstractIllager)) e.hurtServer(level, level.damageSources().mobAttack(mob), 6);
+            if (!(e instanceof AbstractIllager)) e.hurt(level.damageSources().mobAttack(mob), 6);
             double dx = e.getX() - mob.getX(), dz = e.getZ() - mob.getZ();
             double d = Math.max(dx * dx + dz * dz, 0.001);
             e.push(dx / d * 4, 0.2, dz / d * 4);

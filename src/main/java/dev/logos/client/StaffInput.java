@@ -1,6 +1,6 @@
 package dev.logos.client;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.item.StaffItem;
 import dev.logos.net.ChargePayload;
@@ -9,7 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Left-click with a staff in the main hand fills it ({@link dev.logos.runtime.StaffCharging}): tells the
@@ -32,7 +32,7 @@ final class StaffInput {
             return;
         }
         boolean down = holding(mc.player) && mc.screen == null && !mc.player.isSpectator() && mc.options.keyAttack.isDown();
-        if (down != filling) ClientPacketDistributor.sendToServer(new StaffFillPayload(down));
+        if (down != filling) PacketDistributor.sendToServer(new StaffFillPayload(down));
         filling = down;
     }
 

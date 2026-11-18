@@ -1,18 +1,18 @@
 package dev.logos.client;
 
 import java.util.List;
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -83,7 +83,7 @@ final class LifeBeamParts {
     }
 
     /** Draws the leaves of {@code motes} (alpha-blended) and the motes of light (tinted halo, then additive core). */
-    static void motes(PoseStack stack, net.minecraft.client.renderer.SubmitNodeCollector out, List<Mote> motes, double t,
+    static void motes(PoseStack stack, dev.logos.client.port.SubmitNodeCollector out, List<Mote> motes, double t,
             Vec3 cam, Vec3 right, Vec3 up) {
         if (motes.isEmpty()) return;
         out.submitCustomGeometry(stack, LEAVES, (pose, buf) -> {
@@ -266,9 +266,9 @@ final class LifeBeamParts {
                 .withLocation(id("pipeline/life_beam_" + name)).withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(additive ? BlendFunction.LIGHTNING : BlendFunction.TRANSLUCENT)).build();
-        return RenderType.create("logos_life_beam_" + name, RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_life_beam_" + name, RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id("textures/vfx/" + texture + ".png")).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

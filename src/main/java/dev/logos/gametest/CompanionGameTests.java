@@ -6,8 +6,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.pig.Pig;
-import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -35,7 +35,7 @@ final class CompanionGameTests {
     private static TestCompanion companion(GameTestHelper h, ServerPlayer p, Vec3 at) {
         TestCompanion c = new TestCompanion(h.getLevel());
         Vec3 pos = h.absoluteVec(at);
-        c.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        c.moveTo(pos.x, pos.y, pos.z, 0, 0);
         Familiars.bindCompanion(c, p);
         h.getLevel().addFreshEntity(c);
         return c;
@@ -68,7 +68,7 @@ final class CompanionGameTests {
         h.assertTrue(c.getTarget() == z, "a companion may pick a target its master is not fighting");
         // Twenty blocks off: an ordinary familiar is fetched past twelve.
         Vec3 far = h.absoluteVec(new Vec3(1.5, 2, 24.5));
-        p.snapTo(far.x, far.y, far.z, 0, 0);
+        p.moveTo(far.x, far.y, far.z, 0, 0);
         Vec3 start = c.position();
         int born = c.tickCount;
         h.succeedWhen(() -> {

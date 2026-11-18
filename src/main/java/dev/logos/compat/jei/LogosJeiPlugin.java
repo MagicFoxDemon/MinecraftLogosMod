@@ -2,7 +2,7 @@ package dev.logos.compat.jei;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.client.ClientAlchemyRecipes;
@@ -14,7 +14,7 @@ import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 
@@ -24,8 +24,8 @@ public final class LogosJeiPlugin implements IModPlugin {
     private static @Nullable IJeiRuntime runtime;
 
     @Override
-    public Identifier getPluginUid() {
-        return Identifier.fromNamespaceAndPath(LogosMod.MODID, "jei");
+    public ResourceLocation getPluginUid() {
+        return ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "jei");
     }
 
     @Override
@@ -40,9 +40,9 @@ public final class LogosJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        registration.addCraftingStation(AlchemyRecipeCategory.TYPE, LogosMod.ALCHEMY_TABLE_ITEM.get());
+        registration.addRecipeCatalyst(new net.minecraft.world.item.ItemStack(LogosMod.ALCHEMY_TABLE_ITEM.get()), AlchemyRecipeCategory.TYPE);
         // Calcination burns whatever a furnace smelts, given a blast furnace beside the table.
-        registration.addCraftingStation(mezz.jei.api.constants.RecipeTypes.SMELTING, LogosMod.ALCHEMY_TABLE_ITEM.get());
+        registration.addRecipeCatalyst(new net.minecraft.world.item.ItemStack(LogosMod.ALCHEMY_TABLE_ITEM.get()), mezz.jei.api.constants.RecipeTypes.SMELTING);
     }
 
     @Override

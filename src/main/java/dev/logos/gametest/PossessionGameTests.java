@@ -12,16 +12,16 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.projectile.EvokerFangs;
 import net.minecraft.world.entity.projectile.ShulkerBullet;
-import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
-import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.BreezeWindCharge;
-import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
+import net.minecraft.world.entity.projectile.LargeFireball;
+import net.minecraft.world.entity.projectile.SmallFireball;
+import net.minecraft.world.entity.projectile.windcharge.BreezeWindCharge;
+import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -43,7 +43,7 @@ final class PossessionGameTests {
         p.setGameMode(GameType.SURVIVAL);
         p.connection.markClientLoaded();
         Vec3 pos = h.absoluteVec(new Vec3(0.5, 2, 0.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
@@ -76,9 +76,9 @@ final class PossessionGameTests {
         Mannequin body = bodyNear(h, start);
 
         float health = p.getHealth();
-        p.hurtServer(level, level.damageSources().generic(), 4);
+        p.hurt(level.damageSources().generic(), 4);
         h.assertTrue(p.getHealth() == health, "the hidden player should take no damage of their own");
-        body.hurtServer(level, level.damageSources().generic(), 4);
+        body.hurt(level.damageSources().generic(), 4);
         h.assertTrue(Math.abs(p.getHealth() - (health - 4)) < 1e-4, "the body's damage should go to the player, health " + p.getHealth());
         h.assertTrue(body.isAlive(), "the body itself never dies");
 
@@ -125,10 +125,10 @@ final class PossessionGameTests {
         pig.setData(LogosMod.FAMILIAR, new Familiars.Bond(p.getUUID(), Long.MAX_VALUE));
         h.assertTrue(Possession.cost(pig, p, 9) == 0, "one's own familiar should be free");
 
-        var far = EntityType.PIG.create(level, EntitySpawnReason.TRIGGERED);
+        var far = EntityType.PIG.create(level);
         far.setPos(start.add(Possession.RANGE + 2, 0, 0));
         h.assertTrue(!Possession.canStart(p, far), "a mob beyond 128 blocks should be out of reach");
-        var wither = EntityType.WITHER.create(level, EntitySpawnReason.TRIGGERED);
+        var wither = EntityType.WITHER.create(level);
         wither.setPos(start.add(4, 0, 4));
         h.assertTrue(!Possession.canStart(p, wither), "a boss should not be possessable");
         @SuppressWarnings("removal")

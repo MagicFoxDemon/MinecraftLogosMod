@@ -1,6 +1,6 @@
 package dev.logos.client;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
@@ -18,7 +18,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderHandEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
 
 /**
@@ -56,14 +56,14 @@ final class PossessionInput {
         Entity now = Possession.possessing(mc.player) ? mc.player.getVehicle() : null;
         if (now != null) {
             while (mc.options.keyInventory.consumeClick()) {
-                if (mc.screen == null) ClientPacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.INVENTORY, -1));
+                if (mc.screen == null) PacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.INVENTORY, -1));
             }
             while (INSTINCT.consumeClick()) {
                 if (Possession.instinct(now)) {
-                    ClientPacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.STEER, -1));
+                    PacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.STEER, -1));
                 } else {
                     Entity target = aimed(mc.player);
-                    ClientPacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.INSTINCT, target == null ? -1 : target.getId()));
+                    PacketDistributor.sendToServer(new PossessControlPayload(PossessControlPayload.INSTINCT, target == null ? -1 : target.getId()));
                 }
             }
         }
@@ -80,7 +80,7 @@ final class PossessionInput {
         event.setCanceled(true);
         if (event.isAttack() || event.isUseItem()) {
             Entity target = aimed(p);
-            ClientPacketDistributor.sendToServer(new PossessControlPayload(event.isUseItem() ? PossessControlPayload.SHOOT : PossessControlPayload.STRIKE,
+            PacketDistributor.sendToServer(new PossessControlPayload(event.isUseItem() ? PossessControlPayload.SHOOT : PossessControlPayload.STRIKE,
                     target == null ? -1 : target.getId()));
         }
     }

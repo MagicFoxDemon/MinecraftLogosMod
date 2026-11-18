@@ -54,8 +54,8 @@ config="${mod_id}.cosmetic.mixins.json"
 
 # The [[accessTransformers]] block allows you to declare where your AT file is.
 # If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
-#[[accessTransformers]]
-#file="META-INF/accesstransformer.cfg"
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"
 
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.${mod_id}]] #optional
@@ -95,7 +95,7 @@ config="${mod_id}.cosmetic.mixins.json"
     modId="ldlib2"
     type="required"
     reason="Node-graph spell editor (术式工坊)"
-    versionRange="[26.1.2.42,)"
+    versionRange="[2.2.45,)"
     ordering="AFTER"
     side="BOTH"
 
@@ -103,7 +103,7 @@ config="${mod_id}.cosmetic.mixins.json"
     modId="photon"
     type="required"
     reason="Spell visual effects"
-    versionRange="[26.1.2.3,)"
+    versionRange="[2.2.11,)"
     ordering="AFTER"
     side="BOTH"
 
@@ -111,7 +111,7 @@ config="${mod_id}.cosmetic.mixins.json"
     modId="geckolib"
     type="required"
     reason="Animated model of the mana lifeform (魔力生命体)"
-    versionRange="[5.5.2,)"
+    versionRange="[4.9.3,)"
     ordering="AFTER"
     side="BOTH"
 

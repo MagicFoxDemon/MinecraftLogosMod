@@ -7,40 +7,24 @@ import dev.logos.graph.Dimensions;
 import dev.logos.net.FxPayload;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
-import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
+import dev.logos.client.port.SubmitCustomGeometryEvent;
+import dev.logos.port.RegisterClientPayloadHandlersEvent;
 
 /** Client-side registrations: effect packets, the spell wheel key, dimension list for the editor. */
 @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
 public final class LogosClient {
-    public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath(LogosMod.MODID, "logos"));
+    public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "logos"));
     public static final KeyMapping SPELL_WHEEL = new KeyMapping("key.logos.spell_wheel", InputConstants.KEY_R, CATEGORY);
 
     private LogosClient() {}
 
-    @SubscribeEvent
-    static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
-        event.register(FxPayload.Batch.TYPE, (payload, ctx) -> LogosFx.handle(payload));
-        event.register(dev.logos.net.AnchorsPayload.TYPE, (payload, ctx) -> ClientAnchors.receive(payload));
-        event.register(dev.logos.net.ChargePayload.TYPE, (payload, ctx) -> {
-            ClientCharges.receive(payload);
-            StaffInput.onCharge(payload);
-        });
-        event.register(dev.logos.net.AreaWeatherPayload.TYPE, (payload, ctx) -> dev.logos.runtime.AreaWeather.receive(payload));
-        event.register(dev.logos.net.AreaWeatherPayload.Moved.TYPE, (payload, ctx) -> dev.logos.runtime.AreaWeather.receive(payload));
-        event.register(dev.logos.net.ManaFieldPayload.TYPE, (payload, ctx) -> dev.logos.runtime.ManaField.receive(ctx.player().level(), payload));
-        event.register(dev.logos.net.LifeformCorePayload.TYPE, (payload, ctx) -> dev.logos.runtime.Lifeforms.opening(ctx.player(), payload.entityId()));
-        event.register(dev.logos.net.PillarBurstPayload.TYPE, (payload, ctx) -> PillarBursts.receive(payload));
-        event.register(dev.logos.net.ManaTornadoPayload.TYPE, (payload, ctx) -> ManaTornados.receive(payload));
-        event.register(dev.logos.net.CastPosePayload.TYPE, (payload, ctx) -> CastPoses.receive(payload));
-    }
 
     @SubscribeEvent
     static void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
@@ -52,31 +36,7 @@ public final class LogosClient {
         event.registerSpriteSet(LogosMod.MANA_MOTE.get(), ManaMote.Provider::new);
     }
 
-    @SubscribeEvent
-    static void onRegisterKeys(RegisterKeyMappingsEvent event) {
-        event.registerCategory(CATEGORY);
-        event.register(SPELL_WHEEL);
-        event.register(ColossusInput.MODE);
-        event.register(PossessionInput.INSTINCT);
-        event.register(IncarnationInput.REVERT);
-    }
 
-    @SubscribeEvent
-    static void onClientSetup(FMLClientSetupEvent event) {
-        ClientAnchors.install();
-        // The editor's ◐ dimension dropdown lists whatever dimensions the connected server has.
-        var fallback = Dimensions.known;
-        Dimensions.known = () -> {
-            var conn = Minecraft.getInstance().getConnection();
-            if (conn == null) return fallback.get();
-            return conn.levels().stream().map(k -> k.identifier().toString()).sorted().toList();
-        };
-        // The editor draws what this player has not learned garbled (符文解锁); their knowledge is synced to them.
-        dev.logos.graph.Sealed.known = key -> {
-            var player = Minecraft.getInstance().player;
-            return player == null || dev.logos.runtime.RuneKnowledge.knows(player, key);
-        };
-    }
 
     @SubscribeEvent
     static void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
@@ -153,5 +113,56 @@ public final class LogosClient {
         ManaTornados.tick();
         SurfaceAuras.tick();
         while (SPELL_WHEEL.consumeClick()) SpellWheelScreen.tryOpen();
+    }
+
+    /** Its listeners on the mod bus: on 1.21.1 a subscriber listens on one bus. */
+    @EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    static final class ModBus {
+        private ModBus() {}
+
+        @SubscribeEvent
+        static void onRegisterPayloads(RegisterClientPayloadHandlersEvent event) {
+            event.register(FxPayload.Batch.TYPE, (payload, ctx) -> LogosFx.handle(payload));
+            event.register(dev.logos.net.AnchorsPayload.TYPE, (payload, ctx) -> ClientAnchors.receive(payload));
+            event.register(dev.logos.net.ChargePayload.TYPE, (payload, ctx) -> {
+                ClientCharges.receive(payload);
+                StaffInput.onCharge(payload);
+            });
+            event.register(dev.logos.net.AreaWeatherPayload.TYPE, (payload, ctx) -> dev.logos.runtime.AreaWeather.receive(payload));
+            event.register(dev.logos.net.AreaWeatherPayload.Moved.TYPE, (payload, ctx) -> dev.logos.runtime.AreaWeather.receive(payload));
+            event.register(dev.logos.net.ManaFieldPayload.TYPE, (payload, ctx) -> dev.logos.runtime.ManaField.receive(ctx.player().level(), payload));
+            event.register(dev.logos.net.LifeformCorePayload.TYPE, (payload, ctx) -> dev.logos.runtime.Lifeforms.opening(ctx.player(), payload.entityId()));
+            event.register(dev.logos.net.PillarBurstPayload.TYPE, (payload, ctx) -> PillarBursts.receive(payload));
+            event.register(dev.logos.net.ManaTornadoPayload.TYPE, (payload, ctx) -> ManaTornados.receive(payload));
+            event.register(dev.logos.net.CastPosePayload.TYPE, (payload, ctx) -> CastPoses.receive(payload));
+        }
+
+        @SubscribeEvent
+        static void onRegisterKeys(RegisterKeyMappingsEvent event) {
+            event.registerCategory(CATEGORY);
+            event.register(SPELL_WHEEL);
+            event.register(ColossusInput.MODE);
+            event.register(PossessionInput.INSTINCT);
+            event.register(IncarnationInput.REVERT);
+        }
+
+        @SubscribeEvent
+        static void onClientSetup(FMLClientSetupEvent event) {
+            // 1.21.1: asks for the payload handlers (onRegisterPayloads and the like) now (dev.logos.port.ClientPayloads).
+            event.enqueueWork(dev.logos.port.ClientPayloads::postRegistration);
+            ClientAnchors.install();
+            // The editor's ◐ dimension dropdown lists whatever dimensions the connected server has.
+            var fallback = Dimensions.known;
+            Dimensions.known = () -> {
+                var conn = Minecraft.getInstance().getConnection();
+                if (conn == null) return fallback.get();
+                return conn.levels().stream().map(k -> k.location().toString()).sorted().toList();
+            };
+            // The editor draws what this player has not learned garbled (符文解锁); their knowledge is synced to them.
+            dev.logos.graph.Sealed.known = key -> {
+                var player = Minecraft.getInstance().player;
+                return player == null || dev.logos.runtime.RuneKnowledge.knows(player, key);
+            };
+        }
     }
 }

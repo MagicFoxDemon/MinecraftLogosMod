@@ -54,7 +54,7 @@ final class ManaFieldHotPathGameTests {
     /** The count itself, not capped at MAX_INSULATION; 0 where there is no entry. */
     private static int counted(ServerLevel level, BlockPos pos) {
         Map<Long, Integer> counts = level.getExistingDataOrNull(LogosMod.CAPUT_MORTUUM_COUNTS);
-        return counts == null ? 0 : counts.getOrDefault(ChunkPos.pack(pos), 0);
+        return counts == null ? 0 : counts.getOrDefault(ChunkPos.asLong(pos), 0);
     }
 
     /** The truth the count must match: the markers actually among the chunk's block entities. */
@@ -130,7 +130,7 @@ final class ManaFieldHotPathGameTests {
                     assertCount(h, level, center, 1, "after a piston tried it");
                     level.setBlock(e, Blocks.AIR.defaultBlockState(), 3);
                     assertCount(h, level, center, 0, "with all of them gone");
-                    h.assertTrue(level.getData(LogosMod.CAPUT_MORTUUM_COUNTS).get(ChunkPos.pack(center)) == null, "an empty chunk keeps its entry");
+                    h.assertTrue(level.getData(LogosMod.CAPUT_MORTUUM_COUNTS).get(center.toLong()) == null, "an empty chunk keeps its entry");
                     free(level, center, 0);
                 })
                 .thenSucceed();

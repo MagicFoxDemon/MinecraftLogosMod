@@ -7,11 +7,21 @@
     "PDP"
   ],
   "key": {
-    "P": "minecraft:dark_oak_planks",
-    "G": "minecraft:glass",
-    "C": "minecraft:copper_ingot",
-    "A": "minecraft:amethyst_shard",
-    "D": "logos:adhesive"
+    "P": {
+      "item": "minecraft:dark_oak_planks"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "D": {
+      "item": "logos:adhesive"
+    }
   },
   "result": {
     "id": "logos:mana_collector"

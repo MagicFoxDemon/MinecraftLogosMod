@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
-import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture;
+import dev.logos.client.port.GuiTexture;
 
 import dev.logos.LogosMod;
 import dev.logos.graph.EnumValues;

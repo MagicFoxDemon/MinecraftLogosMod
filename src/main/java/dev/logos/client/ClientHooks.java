@@ -28,6 +28,6 @@ public final class ClientHooks {
     }
 
     public static void sendToServer(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
-        net.neoforged.neoforge.client.network.ClientPacketDistributor.sendToServer(payload);
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(payload);
     }
 }

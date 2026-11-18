@@ -8,12 +8,12 @@ import dev.logos.item.SpellBag;
 import dev.logos.net.AnchorsPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import dev.logos.client.port.SubmitNodeCollector;
+import net.minecraft.client.renderer.RenderType;
+import dev.logos.client.port.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.Vec3;
 
@@ -35,7 +35,7 @@ final class AnchorMarkers {
 
     static void submit(Minecraft mc, CameraRenderState cam, float pt, PoseStack pose, SubmitNodeCollector out) {
         if (!showing() || mc.level == null) return;
-        String here = mc.level.dimension().identifier().toString();
+        String here = mc.level.dimension().location().toString();
         float bob = (float) Math.sin((mc.level.getGameTime() + pt) * 0.08) * 0.08f;
         for (AnchorsPayload.Entry e : ClientAnchors.all()) {
             if (!e.dimension().equals(here)) continue;
@@ -45,7 +45,7 @@ final class AnchorMarkers {
             pose.pushPose();
             pose.translate(at.x - cam.pos.x, at.y - cam.pos.y, at.z - cam.pos.z);
             pose.mulPose(cam.orientation);
-            out.submitCustomGeometry(pose, RenderTypes.beaconBeam(AnchorScreens.ICON, true), AnchorMarkers::sigil);
+            out.submitCustomGeometry(pose, RenderType.beaconBeam(AnchorScreens.ICON, true), AnchorMarkers::sigil);
             pose.popPose();
             pose.pushPose();
             pose.translate(e.x() - cam.pos.x, e.y() - cam.pos.y, e.z() - cam.pos.z);

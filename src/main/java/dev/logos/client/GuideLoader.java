@@ -10,20 +10,20 @@ import java.util.Map;
 import dev.logos.LogosMod;
 import dev.logos.guide.GuideBook;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
 /**
  * Reads 逻各斯手记 from {@code assets/<namespace>/guide/<language>/} in every resource pack, so an addon adds chapters
  * and a resource pack rewrites pages. Each page comes in the player's language if written in it, else English, else
  * Chinese, the language the book is first written in. Loaded again with the resources, so a new language reloads it.
  */
-@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = LogosMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public final class GuideLoader {
     private static final String ROOT = "guide";
     private static GuideBook book = GuideBook.EMPTY;
@@ -35,8 +35,8 @@ public final class GuideLoader {
     }
 
     @SubscribeEvent
-    static void onReload(AddClientReloadListenersEvent event) {
-        event.addListener(Identifier.fromNamespaceAndPath(LogosMod.MODID, ROOT), (ResourceManagerReloadListener) GuideLoader::load);
+    static void onReload(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((ResourceManagerReloadListener) GuideLoader::load);
     }
 
     static void load(ResourceManager resources) {
@@ -45,7 +45,7 @@ public final class GuideLoader {
         Map<String, String> files = new LinkedHashMap<>();
         Map<String, Integer> rank = new HashMap<>();
         for (var found : resources.listResources(ROOT, id -> id.getPath().endsWith(".md")).entrySet()) {
-            Identifier id = found.getKey();
+            ResourceLocation id = found.getKey();
             // guide/<language>/<chapter>/<name>.md
             String rest = id.getPath().substring(ROOT.length() + 1);
             int slash = rest.indexOf('/');

@@ -21,15 +21,20 @@ public record RandomFamilyBook() implements LootItemFunction {
     public static final List<Kind> FAMILIES = List.of(Kind.TARGETING, Kind.CHANGE, Kind.LAW, Kind.NUMBER, Kind.MOTION);
 
     @Override
-    public MapCodec<RandomFamilyBook> codec() {
-        return CODEC;
+    public net.minecraft.world.level.storage.loot.functions.LootItemFunctionType<RandomFamilyBook> getType() {
+        return dev.logos.LogosMod.RANDOM_FAMILY_BOOK.get();
     }
 
     @Override
     public ItemStack apply(ItemStack stack, LootContext context) {
+        return pick(stack, context.getRandom());
+    }
+
+    /** A random family book in place of {@code stack}, as many. */
+    public static ItemStack pick(ItemStack stack, net.minecraft.util.RandomSource random) {
         int total = 0;
         for (Kind k : FAMILIES) total += k.pool().size();
-        int roll = context.getRandom().nextInt(Math.max(1, total));
+        int roll = random.nextInt(Math.max(1, total));
         for (Kind k : FAMILIES) {
             roll -= k.pool().size();
             if (roll < 0) return new ItemStack(LogosMod.RUNE_BOOKS.get(k).get(), stack.getCount());

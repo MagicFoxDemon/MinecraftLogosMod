@@ -19,7 +19,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -73,10 +73,10 @@ public class ManaWrapScenario implements UIScenario {
         discard(level);
         Element[] elements = Element.values();
         for (int i = 0; i < elements.length; i++) {
-            var a = EntityType.ARMOR_STAND.create(level, EntitySpawnReason.COMMAND);
+            var a = EntityType.ARMOR_STAND.create(level);
             a.setShowArms(true);
             a.setNoGravity(true);
-            a.snapTo(AT.x + (i - (elements.length - 1) / 2.0) * 0.9, AT.y, AT.z, 0, 0);
+            a.moveTo(AT.x + (i - (elements.length - 1) / 2.0) * 0.9, AT.y, AT.z, 0, 0);
             a.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(item));
             level.addFreshEntity(a);
             ManaWrap.wrap(a, elements[i], 4, 600);

@@ -16,8 +16,8 @@ import net.minecraft.tags.PoiTypeTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
-import net.minecraft.world.entity.npc.villager.Villager;
-import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -65,7 +65,7 @@ final class WarlockGameTests {
      * own. From journeyman on a family book may be offered, never 形之书 nor an element's book.
      */
     static void tradesByLevel(GameTestHelper h) {
-        List<Item> wands = List.of(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath(LogosMod.MODID, "oak_wand")), LogosMod.WAND.get(), LogosMod.ECHO_WAND.get(), LogosMod.ADEPT_WAND.get(), LogosMod.CHALK_WAND.get());
+        List<Item> wands = List.of(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(LogosMod.MODID, "oak_wand")), LogosMod.WAND.get(), LogosMod.ECHO_WAND.get(), LogosMod.ADEPT_WAND.get(), LogosMod.CHALK_WAND.get());
         Set<Item> families = new HashSet<>();
         for (RuneBookItem.Kind k : RandomFamilyBook.FAMILIES) families.add(LogosMod.RUNE_BOOKS.get(k).get());
         Set<Item> booksSeen = new HashSet<>();

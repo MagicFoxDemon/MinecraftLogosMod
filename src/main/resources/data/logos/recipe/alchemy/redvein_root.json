@@ -3,13 +3,19 @@
   "process": "ferment",
   "ingredients": [
     {
-      "ingredient": "minecraft:beetroot"
+      "ingredient": {
+        "item": "minecraft:beetroot"
+      }
     },
     {
-      "ingredient": "minecraft:bone_meal"
+      "ingredient": {
+        "item": "minecraft:bone_meal"
+      }
     },
     {
-      "ingredient": "logos:germinal_essence"
+      "ingredient": {
+        "item": "logos:germinal_essence"
+      }
     }
   ],
   "results": [

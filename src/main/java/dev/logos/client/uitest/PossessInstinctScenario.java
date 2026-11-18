@@ -13,10 +13,10 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.cow.Cow;
-import net.minecraft.world.entity.animal.wolf.Wolf;
+import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -51,11 +51,11 @@ public class PossessInstinctScenario implements UIScenario {
                 .teleportPlayer(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 0.5, 0, 10)
                 .server("go into a wolf, with a cow ahead", sc -> {
                     var p = sc.player();
-                    Wolf wolf = EntityType.WOLF.create(p.level(), EntitySpawnReason.TRIGGERED);
-                    wolf.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 2.5, 0, 0);
+                    Wolf wolf = EntityType.WOLF.create(p.level());
+                    wolf.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 2.5, 0, 0);
                     p.level().addFreshEntity(wolf);
-                    Cow cow = EntityType.COW.create(p.level(), EntitySpawnReason.TRIGGERED);
-                    cow.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 10.5, 180, 0);
+                    Cow cow = EntityType.COW.create(p.level());
+                    cow.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 10.5, 180, 0);
                     cow.setNoAi(true);
                     p.level().addFreshEntity(cow);
                     if (!Possession.start(p, wolf, 60)) throw new AssertionError("the possession did not start");

@@ -2,11 +2,20 @@
   "type": "logos:alchemy",
   "process": "distill",
   "ingredients": [
-    { "ingredient": "logos:foul_brine" }
+    {
+      "ingredient": {
+        "item": "logos:foul_brine"
+      }
+    }
   ],
   "results": [
-    { "id": "logos:sulfur_powder", "count": 2 },
-    { "id": "logos:niter_mother_liquor" }
+    {
+      "id": "logos:sulfur_powder",
+      "count": 2
+    },
+    {
+      "id": "logos:niter_mother_liquor"
+    }
   ],
   "mana": 3
 }

@@ -6,19 +6,19 @@ import java.util.Map;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
@@ -47,11 +47,11 @@ final class ChargeParts {
     }
 
     /** Alpha-blended over the block atlas: debris lifted off the ground, drawn with the ground's own texture. */
-    static final RenderType BLOCKS = RenderType.create("logos_charge_blocks", RenderSetup.builder(
+    static final RenderType BLOCKS = dev.logos.client.port.RenderTypes.create("logos_charge_blocks", RenderSetup.builder(
             RenderPipeline.builder(RenderPipelines.BEACON_BEAM_SNIPPET).withLocation(id("pipeline/charge_blocks")).withCull(false)
                     .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
                     .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT)).build())
-            .withTexture("Sampler0", Identifier.withDefaultNamespace("textures/atlas/blocks.png")).sortOnUpload().createRenderSetup());
+            .withTexture("Sampler0", ResourceLocation.withDefaultNamespace("textures/atlas/blocks.png")).sortOnUpload().createRenderSetup());
 
     private static RenderType material(String name, String texture, boolean additive) {
         String key = name.replace('/', '_');
@@ -59,11 +59,11 @@ final class ChargeParts {
                 .withLocation(id("pipeline/charge_" + (additive ? "add_" : "blend_") + key)).withCull(false)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
                 .withColorTargetState(new ColorTargetState(additive ? BlendFunction.LIGHTNING : BlendFunction.TRANSLUCENT)).build();
-        return RenderType.create("logos_charge_" + (additive ? "add_" : "blend_") + key, RenderSetup.builder(pipeline)
+        return dev.logos.client.port.RenderTypes.create("logos_charge_" + (additive ? "add_" : "blend_") + key, RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", id(texture)).sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 
     // ---- geometry ------------------------------------------------------------------------------
 
@@ -173,7 +173,7 @@ final class ChargeParts {
 
     /** Where the camera is and which way its screen axes point this frame. */
     record View(Vec3 cam, Vec3 right, Vec3 up) {
-        static View of(net.minecraft.client.renderer.state.level.CameraRenderState camera) {
+        static View of(dev.logos.client.port.CameraRenderState camera) {
             return new View(camera.pos, new Vec3(camera.orientation.transform(new Vector3f(1, 0, 0))),
                     new Vec3(camera.orientation.transform(new Vector3f(0, 1, 0))));
         }

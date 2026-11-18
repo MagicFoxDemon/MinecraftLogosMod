@@ -2,9 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "G": "minecraft:gold_nugget",
-    "L": "#minecraft:birch_logs",
-    "P": "minecraft:birch_planks"
+    "G": {
+      "item": "minecraft:gold_nugget"
+    },
+    "L": {
+      "tag": "minecraft:birch_logs"
+    },
+    "P": {
+      "item": "minecraft:birch_planks"
+    }
   },
   "pattern": [
     "  G",

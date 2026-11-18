@@ -12,20 +12,20 @@ import java.util.Objects;
 
 import org.joml.Quaternionf;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import dev.logos.client.port.BlendFunction;
+import dev.logos.client.port.ColorTargetState;
+import dev.logos.client.port.DepthStencilState;
+import dev.logos.client.port.RenderPipeline;
+import dev.logos.client.port.CompareOp;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import dev.logos.client.port.RenderPipelines;
+import dev.logos.client.port.SubmitNodeCollector;
+import dev.logos.client.port.RenderSetup;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
+import dev.logos.client.port.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
@@ -212,10 +212,10 @@ final class VoidChargeBall {
         var setup = RenderSetup.builder(pipeline.build()).withTexture("Sampler0", id("textures/vfx/void_beam/" + texture + ".png"));
         if (flow) setup.withTexture("NoiseTex", id("textures/vfx/void_beam/dissolve.png"));
         if (warp) setup.withTexture("WarpTex", id("textures/vfx/void_beam/warp.png"));
-        if (core) setup.withTexture("StarTex", Identifier.withDefaultNamespace("textures/entity/end_portal/end_portal.png"))
+        if (core) setup.withTexture("StarTex", ResourceLocation.withDefaultNamespace("textures/entity/end_portal/end_portal.png"))
                 .withTexture("AuraTex", id("textures/vfx/void_beam/aura.png"));
-        return RenderType.create("logos_void_charge_" + name, setup.sortOnUpload().createRenderSetup());
+        return dev.logos.client.port.RenderTypes.create("logos_void_charge_" + name, setup.sortOnUpload().createRenderSetup());
     }
 
-    private static Identifier id(String path) { return Identifier.fromNamespaceAndPath("logos", path); }
+    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("logos", path); }
 }

@@ -21,7 +21,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.Mannequin;
@@ -126,8 +126,8 @@ public class BeamPoseScenario implements UIScenario {
                 // From the side, on a mannequin holding the pose (any caster may), with each item in hand.
                 .server("a mannequin holds the beam pose with a wand", sc -> {
                     var level = sc.player().level();
-                    Mannequin body = EntityType.MANNEQUIN.create(level, EntitySpawnReason.TRIGGERED);
-                    body.snapTo(0.5, 101, 4.5, -90, 0);
+                    Mannequin body = EntityType.MANNEQUIN.create(level);
+                    body.moveTo(0.5, 101, 4.5, -90, 0);
                     body.setYHeadRot(-90);
                     body.setYBodyRot(-90);
                     body.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()));

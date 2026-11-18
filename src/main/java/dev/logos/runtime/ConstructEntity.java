@@ -1,11 +1,12 @@
 package dev.logos.runtime;
 
+import net.minecraft.nbt.CompoundTag;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.joml.Vector3f;
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.lang.ConstructShape;
@@ -21,8 +22,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import dev.logos.port.ValueInput;
+import dev.logos.port.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -34,17 +35,17 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class ConstructEntity extends Entity {
     private static final EntityDataAccessor<Byte> SHAPE = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.BYTE);
-    private static final EntityDataAccessor<org.joml.Vector3fc> SIZE = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
+    private static final EntityDataAccessor<org.joml.Vector3f> SIZE = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
     private static final EntityDataAccessor<Float> RADIUS = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<org.joml.Vector3fc> FACING = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
+    private static final EntityDataAccessor<org.joml.Vector3f> FACING = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
     private static final EntityDataAccessor<Byte> FLAGS = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Byte> ELEMENT = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Optional<BlockState>> LOOK = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.OPTIONAL_BLOCK_STATE);
     private static final EntityDataAccessor<Integer> CASTER = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.INT);
     /** Where the shape was built; it is drawn and collides translated by (position − origin). */
-    private static final EntityDataAccessor<org.joml.Vector3fc> ORIGIN = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
+    private static final EntityDataAccessor<org.joml.Vector3f> ORIGIN = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
     /** Follow mode: the hold distance (x) for walls and shields, else the offset from the caster's feet. */
-    private static final EntityDataAccessor<org.joml.Vector3fc> FOLLOW = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
+    private static final EntityDataAccessor<org.joml.Vector3f> FOLLOW = SynchedEntityData.defineId(ConstructEntity.class, EntityDataSerializers.VECTOR3);
 
     private static final int SNAP = 1, ONE_WAY = 2, SOLID_CASTER = 4, SOLID_OTHERS = 8, FOLLOWS = 16, SIGIL = 32;
 
@@ -52,7 +53,7 @@ public final class ConstructEntity extends Entity {
     private static final AtomicInteger LIVE = new AtomicInteger();
 
     /** Where its level's index has it, while it is in the level. */
-    private ConstructIndex.@Nullable Entry filed;
+    private @Nullable ConstructIndex.Entry filed;
 
     /** Server only: the spell body that owns this construct and judges what it stops. */
     @Nullable ConstructObj owner;
@@ -237,8 +238,8 @@ public final class ConstructEntity extends Entity {
 
     /** A construct whose chunk was not ready was never tracked, so it leaves without {@link #onRemovedFromLevel}. */
     @Override
-    public void onRemoval(RemovalReason reason) {
-        super.onRemoval(reason);
+    public void remove(RemovalReason reason) {
+        super.remove(reason);
         unfile();
     }
 
@@ -268,9 +269,9 @@ public final class ConstructEntity extends Entity {
     }
 
     @Override
-    protected AABB makeBoundingBox(Vec3 pos) {
+    protected AABB makeBoundingBox() {
         // Called from the base constructor, before the synced data exists.
-        if (entityData == null) return super.makeBoundingBox(pos);
+        if (entityData == null) return super.makeBoundingBox();
         return geometry().bounds;
     }
 
@@ -307,13 +308,14 @@ public final class ConstructEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {}
+    public void readAdditionalSaveData(CompoundTag tag) {}
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {}
+    public void addAdditionalSaveData(CompoundTag tag) {}
 
     @Override
-    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
+    public boolean hurt(DamageSource source, float damage) {
+        if (!(level() instanceof ServerLevel level)) return super.hurt(source, damage);
         return false;
     }
 

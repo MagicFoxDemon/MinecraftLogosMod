@@ -1,8 +1,9 @@
 package dev.logos.item;
 
+import java.util.List;
 import java.util.function.Consumer;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
@@ -15,19 +16,19 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 
 /** A tiered vanilla egg: a full lifeform of its level, loyal to the player who raises it. */
 public final class ManaLifeformSpawnEggItem extends BoundSpawnEggItem {
     private final int lifeLevel;
 
     public ManaLifeformSpawnEggItem(Properties props, int lifeLevel) {
-        super(props);
+        super(LogosMod.MANA_LIFEFORM, props);
         this.lifeLevel = lifeLevel;
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        Consumer<Component> builder = tooltip::add;
         builder.accept(Component.translatable("item.logos.mana_lifeform_spawn_egg.mana", Math.round(ManaLifeform.maxMana(lifeLevel)))
                 .withStyle(ChatFormatting.AQUA));
     }

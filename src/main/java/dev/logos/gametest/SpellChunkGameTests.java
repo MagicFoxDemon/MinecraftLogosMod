@@ -40,7 +40,7 @@ final class SpellChunkGameTests {
         @SuppressWarnings("removal")
         ServerPlayer p = h.makeMockServerPlayerInLevel();
         Vec3 pos = h.absoluteVec(new Vec3(0.5, 2, 0.5));
-        p.snapTo(pos.x, pos.y, pos.z, 0, 0);
+        p.moveTo(pos.x, pos.y, pos.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1e9;
         m.trace = false;
@@ -115,7 +115,7 @@ final class SpellChunkGameTests {
     /** A projectile set flying at an unloaded chunk flies up to its border and goes out there, running on-expire, without loading it. */
     static void projectile(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        Vec3 from = launch(h, 0, h.getLevel().getMaxY() - 8);
+        Vec3 from = launch(h, 0, h.getLevel().getMaxBuildHeight() - 1 - 8);
         String src = "(projectile (on-expire (mark caster #gone)))";
         Ctx c = ctx(h, p, src, from);
         var shot = new ProjectileObj(Casting.compile(src).body().getFirst(), c, from, new Vec3(1, 0, 0), 4, 400, Motion.FORWARD, 0, 0.1, Vfx.Guise.PLAIN);
@@ -130,7 +130,7 @@ final class SpellChunkGameTests {
     /** With spellsLoadChunks on, the same flight carries on over the border and loads the chunk, as spells always did. */
     static void optionKeepsFlying(GameTestHelper h) {
         ServerPlayer p = caster(h);
-        Vec3 from = launch(h, 1, h.getLevel().getMaxY() - 8);
+        Vec3 from = launch(h, 1, h.getLevel().getMaxBuildHeight() - 1 - 8);
         String src = "(projectile (on-expire (mark caster #gone)))";
         Ctx c = ctx(h, p, src, from);
         var shot = new ProjectileObj(Casting.compile(src).body().getFirst(), c, from, new Vec3(1, 0, 0), 4, 400, Motion.FORWARD, 0, 0.1, Vfx.Guise.PLAIN);
@@ -150,7 +150,7 @@ final class SpellChunkGameTests {
     static void beamRayLook(GameTestHelper h) {
         ServerPlayer p = caster(h);
         Vec3 home = p.position();
-        Vec3 from = launch(h, 2, h.getLevel().getMaxY() - 8);
+        Vec3 from = launch(h, 2, h.getLevel().getMaxBuildHeight() - 1 - 8);
         int east = east(from), z = zOf(from);
         double border = SectionPos.sectionToBlockCoord(east);
 
@@ -167,12 +167,12 @@ final class SpellChunkGameTests {
         h.assertTrue(!loaded(h, east, z), "a ray should stop at the border");
 
         // The look comes from the caster's eyes, so the caster stands there for this one call.
-        p.snapTo(from.x, from.y, from.z, -90, 0);
+        p.moveTo(from.x, from.y, from.z, -90, 0);
         try {
             // is-air is false where a spell may not look, so this also says the look ended on this side.
             Interp.run(Casting.compile("(if (is-air (look-point 64)) (mark caster #seen))").body(), ctx(h, p, beamSrc, from));
         } finally {
-            p.snapTo(home.x, home.y, home.z, 0, 0);
+            p.moveTo(home.x, home.y, home.z, 0, 0);
         }
         h.assertTrue(!loaded(h, east, z), "a look should stop at the border");
         h.assertTrue(ended(p, "#seen"), "a look should end short of x=" + border);
@@ -188,7 +188,7 @@ final class SpellChunkGameTests {
     static void vein(GameTestHelper h) {
         ServerPlayer p = caster(h);
         ServerLevel level = h.getLevel();
-        Vec3 from = launch(h, 3, level.getMaxY() - 8);
+        Vec3 from = launch(h, 3, level.getMaxBuildHeight() - 1 - 8);
         int chunkX = east(from) - 1, chunkZ = zOf(from), y = (int) Math.floor(from.y) - 1;
         // A floor right up to the border, laid without the neighbour updates that would read the next chunk and load it.
         for (int x = 0; x < 16; x++) {
@@ -211,7 +211,7 @@ final class SpellChunkGameTests {
         Vec3 home = p.position();
         Casting.cast(p, Casting.compile("(spell :mana 2000 (blink (ahead 2000)))"), null, null);
         h.assertTrue(Math.abs(p.getZ() - (home.z + 2000)) < 1e-6, "it should land 2000 blocks on, at " + p.position());
-        p.snapTo(home.x, home.y, home.z, 0, 0);
+        p.moveTo(home.x, home.y, home.z, 0, 0);
         h.succeed();
     }
 }

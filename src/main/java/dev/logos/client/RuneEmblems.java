@@ -3,7 +3,7 @@ package dev.logos.client;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * The small marginal drawing beside a rune's name, for the families other than number: what a
@@ -17,7 +17,7 @@ final class RuneEmblems {
     private RuneEmblems() {}
 
     /** The rune's own picture, or null when it has none and takes its family's. */
-    static String @Nullable [] of(String word) {
+    static @Nullable String[] of(String word) {
         return BY_WORD.get(word);
     }
 

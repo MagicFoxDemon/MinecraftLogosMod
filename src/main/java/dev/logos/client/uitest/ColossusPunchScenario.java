@@ -11,10 +11,10 @@ import dev.logos.runtime.Colossi;
 import dev.logos.runtime.Familiars;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -81,9 +81,9 @@ public class ColossusPunchScenario implements UIScenario {
                 .server("three husks before it", sc -> {
                     Husk target = null;
                     for (double x : new double[] {-0.8, 0.5, 1.8}) {
-                        Husk h = EntityType.HUSK.create(sc.level(), EntitySpawnReason.COMMAND);
+                        Husk h = EntityType.HUSK.create(sc.level());
                         // Within an arm's length: their edges 0.15 from the colossus's.
-                        h.snapTo(ORIGIN.getX() + x, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5 + 0.95 + h.getBbWidth() / 2 + 0.15, 180, 0);
+                        h.moveTo(ORIGIN.getX() + x, ORIGIN.getY() + 1, ORIGIN.getZ() + 1.5 + 0.95 + h.getBbWidth() / 2 + 0.15, 180, 0);
                         h.setNoAi(true);
                         sc.level().addFreshEntity(h);
                         if (x == 0.5) target = h;

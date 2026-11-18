@@ -1,6 +1,6 @@
 package dev.logos.block;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.MapCodec;
 

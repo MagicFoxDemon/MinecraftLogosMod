@@ -11,10 +11,10 @@ import dev.logos.runtime.Possession;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -55,8 +55,8 @@ public class PossessViewScenario implements UIScenario {
                     var p = sc.player();
                     // A mannequin never wears the player's things: a helmet on the body shows it is drawn as the player.
                     p.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.GOLDEN_HELMET));
-                    cow = EntityType.COW.create(p.level(), EntitySpawnReason.TRIGGERED);
-                    cow.snapTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 3.5, 0, 0);
+                    cow = EntityType.COW.create(p.level());
+                    cow.moveTo(ORIGIN.getX() + 0.5, ORIGIN.getY() + 1, ORIGIN.getZ() + 3.5, 0, 0);
                     p.level().addFreshEntity(cow);
                     if (!Possession.start(p, cow, 60)) throw new AssertionError("the possession did not start");
                 })
