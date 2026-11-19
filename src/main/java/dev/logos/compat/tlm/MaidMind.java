@@ -35,11 +35,11 @@ import net.minecraft.world.phys.Vec3;
  * senses how things stand, scores what she could do and does the best of it. She fights her foe at her attacks'
  * reach, a control page first for one about to hurt her or her owner (a creeper swelling, say); heals her owner, or herself;
  * wards her owner when something hunts them; lends them strength with an empowering page while they fight; slips
- * behind her owner when badly hurt;
+ * behind her owner when badly hurt, casting at her foe from there;
  * goes to free mana nearby when all is quiet; and with a staff, fills it while she can, and in a fight whenever it
  * runs too low to cast. With a wand in her off hand and a weapon in her main hand she also fights up close: she
- * casts an empowering page on herself (and a ward, if she has one) and goes in, and with nothing left to cast she
- * still hits what comes within reach. {@link MaidCaster} does the casting. With nothing worth doing she leaves her moves to the
+ * closes in on her foe, casting on the way, and hits it once there (an empowering page she can cast on herself she
+ * casts first, and a ward too if she has one); with nothing left to cast she still hits what comes within reach. {@link MaidCaster} does the casting. With nothing worth doing she leaves her moves to the
  * maid mod (following her owner, staying home). The maid mod's brain runs her, so {@link CastSpells} drives this mind
  * from a brain behaviour rather than as a goal.
  */
@@ -295,6 +295,18 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         return !affordable(MaidSpells.attacks(pages)).isEmpty();
     }
 
+    /**
+     * Whether she can pay the whole of one of her attacks right now. With a weapon she goes in only then: a trickle of
+     * mana is as good as none, and leaves her to hit only what comes to her.
+     */
+    private boolean fullyArmed() {
+        CreatureMana p = pool;
+        if (p == null) return false;
+        double have = caster.spendable(mob, p);
+        for (MaidSpells.Page page : MaidSpells.attacks(pages)) if (page.injection() <= have + 1e-9) return true;
+        return false;
+    }
+
     // ---- behaviours -------------------------------------------------------------------------------
 
     /** A base for her behaviours: whatever set where she walks is cleared when it stops. */
@@ -309,7 +321,7 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         }
     }
 
-    /** Her foe: keep at her attacks' reach and strike it. */
+    /** Her foe: keep at her attacks' reach and strike it; with a weapon, close in casting and hit it once there. */
     private final class Engage extends Act {
         Engage() {
             super("engage");
@@ -318,9 +330,10 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         @Override
         protected double score() {
             if (foe == null || MaidSpells.attacks(pages).isEmpty()) return 0;
-            // A staff too low to cast leaves the fight to filling it (see Fill); a wand low on mana holds back. With a
-            // weapon in hand and nothing left to cast she does not keep her distance either: she lets her foe come.
-            if (!armed()) return MaidSpells.melee(mob) ? 0 : 0.1;
+            // With a weapon she goes in while she can pay for a whole attack, and with less lets her foe come to her.
+            if (MaidSpells.melee(mob)) return fullyArmed() ? 0.6 : 0;
+            // A staff too low to cast leaves the fight to filling it (see Fill); a wand low on mana holds back.
+            if (!armed()) return 0.1;
             return !MaidCaster.staff(mob) && manaFraction() < 0.15 ? 0.15 : 0.6;
         }
 
@@ -328,6 +341,10 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         protected void tick(long now) {
             LivingEntity f = foe;
             if (f == null) return;
+            if (MaidSpells.melee(mob)) {
+                closeIn(f, now);
+                return;
+            }
             keepRange(f);
             attack(f);
         }
@@ -363,7 +380,7 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
     }
 
     /**
-     * Nothing left to cast and her foe has come within her weapon's reach: she hits it where she stands. She does not
+     * Not enough mana left for a whole attack and her foe has come within her weapon's reach: she hits it where she stands. She does not
      * go after it; she only answers what comes to her.
      */
     private final class SelfDefense extends Act {
@@ -373,7 +390,7 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
 
         @Override
         protected double score() {
-            if (foe == null || !MaidSpells.melee(mob) || armed() || !inReach(foe)) return 0;
+            if (foe == null || !MaidSpells.melee(mob) || fullyArmed() || !inReach(foe)) return 0;
             return 0.65;
         }
 
@@ -417,13 +434,23 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
                 if (empower != null && caster.cast(mob, p, empower, null, mob)) empoweredUntil = lasting(empower, now);
                 else if (ward != null && caster.cast(mob, p, ward, null, mob)) wardedUntil = lasting(ward, now);
             }
-            if (!inReach(f)) walkTo(f.position(), 0.8f, 0);
-            else if (steering) {
+            closeIn(f, now);
+        }
+    }
+
+    /** With a weapon: walks up to {@code f}, casting her attacks at it on the way, and hits it once it is in reach. */
+    private void closeIn(LivingEntity f, long now) {
+        if (inReach(f)) {
+            if (steering) {
                 mob.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
                 steering = false;
             }
             hit(f, now);
+            return;
         }
+        lookAt(f);
+        walkTo(f.position(), 0.8f, 0);
+        attack(f);
     }
 
     /** Her owner is hurt and she holds a heal that can reach them: close in and heal them. */
@@ -536,7 +563,7 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         }
     }
 
-    /** Badly hurt in a fight: slip behind her owner. */
+    /** Badly hurt in a fight: slip behind her owner, casting at her foe from there. */
     private final class Retreat extends Act {
         Retreat() {
             super("retreat");
@@ -552,6 +579,8 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         @Override
         protected void tick(long now) {
             if (owner != null) slipBehind(owner);
+            // From behind her owner she still casts at her foe, weapon or not.
+            if (foe != null) attack(foe);
         }
     }
 
