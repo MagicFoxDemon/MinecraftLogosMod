@@ -1,5 +1,8 @@
 package dev.logos.runtime;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
@@ -48,8 +51,22 @@ public final class FreeManaEntity extends Entity {
     /** The share of itself it gives the air each second while it seeps. */
     public static final double SEEP_SHARE = 0.02;
 
+    /** How far free mana looks for creatures that gather it besides players; those lack the attraction attribute and use its default. */
+    private static final double CREATURE_SEARCH = 16;
+    /** Creatures besides players that gather free mana (a compat's maid), into their pool from {@link ManaVessels}. */
+    private static final List<Class<? extends LivingEntity>> GATHERERS = new CopyOnWriteArrayList<>();
+
     private int age;
-    private @Nullable Player following;
+    private @Nullable LivingEntity following;
+
+    /**
+     * Lets a compat's creatures gather free mana the way a player does: it drifts to them within their attraction
+     * range and, touching them, fills the pool {@link ManaVessels#of} finds for them at their absorption. Creatures
+     * without the two attributes use the attributes' defaults.
+     */
+    public static void gatheredBy(Class<? extends LivingEntity> type) {
+        GATHERERS.add(type);
+    }
 
     public FreeManaEntity(EntityType<? extends FreeManaEntity> type, Level level) {
         super(type, level);
@@ -145,6 +162,11 @@ public final class FreeManaEntity extends Entity {
             if (!isAlive()) return;
         }
         follow();
+        if (following != null && !(following instanceof Player) && age >= PICKUP_DELAY
+                && following.getBoundingBox().inflate(1, 0.5, 1).intersects(getBoundingBox())) {
+            gatherInto(following);
+            if (!isAlive()) return;
+        }
         move(MoverType.SELF, getDeltaMovement());
         setDeltaMovement(getDeltaMovement().scale(following != null ? 0.92 : 0.85));
     }
@@ -183,9 +205,12 @@ public final class FreeManaEntity extends Entity {
         }
     }
 
-    /** Drifts towards the nearest player within their attraction range who has room for more mana. */
+    /**
+     * Drifts towards the nearest player, or creature that {@link #gatheredBy gathers it}, within their attraction
+     * range who has room for more mana. Creatures are looked for twice a second, players every tick.
+     */
     private void follow() {
-        if (following == null || !canGather(following) || following.distanceToSqr(this) > sq(range(following))) {
+        if (following == null || !following.isAlive() || !canGather(following) || following.distanceToSqr(this) > sq(range(following))) {
             following = null;
             double best = Double.MAX_VALUE;
             for (Player p : level().players()) {
@@ -193,6 +218,18 @@ public final class FreeManaEntity extends Entity {
                 if (d < best && d <= sq(range(p)) && canGather(p)) {
                     best = d;
                     following = p;
+                }
+            }
+            if (!GATHERERS.isEmpty() && (tickCount + getId()) % 10 == 0) {
+                AABB around = getBoundingBox().inflate(CREATURE_SEARCH);
+                for (Class<? extends LivingEntity> type : GATHERERS) {
+                    for (LivingEntity e : level().getEntitiesOfClass(type, around, LivingEntity::isAlive)) {
+                        double d = e.distanceToSqr(this);
+                        if (d < best && d <= sq(range(e)) && canGather(e)) {
+                            best = d;
+                            following = e;
+                        }
+                    }
                 }
             }
         }
@@ -203,17 +240,32 @@ public final class FreeManaEntity extends Entity {
         setDeltaMovement(getDeltaMovement().add(to.normalize().scale(power * power * 0.12)));
     }
 
-    private static double range(Player p) {
-        return p.getAttributeValue(LogosMod.MANA_ATTRACTION);
+    private static double range(LivingEntity e) {
+        return attribute(e, LogosMod.MANA_ATTRACTION);
+    }
+
+    /** {@code e}'s value of a gathering attribute, or the attribute's default for a creature that lacks it. */
+    private static double attribute(LivingEntity e, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> a) {
+        return e.getAttributes().hasAttribute(a) ? e.getAttributeValue(a) : a.value().getDefaultValue();
     }
 
     private static double sq(double v) {
         return v * v;
     }
 
-    private static boolean canGather(Player p) {
-        if (p.isSpectator() || p.isDeadOrDying() || !(p instanceof ServerPlayer)) return false;
-        return PlayerMagic.room(p) > 0 && p.getAttributeValue(LogosMod.MANA_ABSORPTION) > 0;
+    private static boolean canGather(LivingEntity e) {
+        if (e.isSpectator() || e.isDeadOrDying()) return false;
+        if (e instanceof Player p) return p instanceof ServerPlayer && PlayerMagic.room(p) > 0 && attribute(p, LogosMod.MANA_ABSORPTION) > 0;
+        ManaVessel v = ManaVessels.of(e);
+        return v != null && v.maxMana() - v.mana() > 1e-6 && attribute(e, LogosMod.MANA_ABSORPTION) > 0;
+    }
+
+    /** A gathering creature touched it: what fits in its pool goes in at its absorption, the rest stays here. */
+    private void gatherInto(LivingEntity e) {
+        ManaVessel v = ManaVessels.of(e);
+        if (v == null || drainInto(v, attribute(e, LogosMod.MANA_ABSORPTION)) <= 0) return;
+        level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 0.4f,
+                1.4f + random.nextFloat() * 0.4f);
     }
 
     /**
