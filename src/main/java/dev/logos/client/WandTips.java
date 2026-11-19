@@ -91,21 +91,34 @@ public final class WandTips {
 
     /** First person: {@code pose} is the item's pose before its display transform, under {@link #beginHands}. */
     public static void captureFirstPerson(LivingEntity holder, ItemStack stack, ItemDisplayContext context, Matrix4fc pose) {
-        if (!(stack.getItem() instanceof WandItem) || context.leftHand() != (holder.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT)) return;
+        boolean mainHand = context.leftHand() == (holder.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT);
+        if (!(stack.getItem() instanceof WandItem) || !castsFrom(mainHand, holder.getMainHandItem())) return;
         Minecraft mc = Minecraft.getInstance();
         ItemStackRenderState state = new ItemStackRenderState();
         mc.getItemModelResolver().updateForTopItem(state, stack, context, holder.level(), holder, 0);
         capture(holder.getId(), stack, state, context.leftHand(), inView(pose), mc.gameRenderer.getMainCamera().rotation());
     }
 
-    /** Third person: {@code pose} is camera-relative world space, before the item's display transform; only a main hand counts. */
-    public static void captureThirdPerson(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, boolean mainHand, Matrix4fc pose) {
-        if (!(stack.getItem() instanceof WandItem) || !mainHand) return;
+    /**
+     * Third person: {@code pose} is camera-relative world space, before the item's display transform; only the hand a
+     * wand casts from counts ({@code mainHandStack} is what the main hand holds).
+     */
+    public static void captureThirdPerson(int entityId, ItemStack stack, ItemStackRenderState state, boolean leftHand, boolean mainHand,
+            ItemStack mainHandStack, Matrix4fc pose) {
+        if (!(stack.getItem() instanceof WandItem) || !castsFrom(mainHand, mainHandStack)) return;
         // A shader-pack shadow pass must not replace the local first-person hand sample.
         Minecraft mc = Minecraft.getInstance();
         if (mc.getCameraEntity() != null && entityId == mc.getCameraEntity().getId()
                 && mc.options.getCameraType().isFirstPerson()) return;
         capture(entityId, stack, state, leftHand, pose, null);
+    }
+
+    /**
+     * Whether a wand drawn in the main ({@code mainHand}) or off hand is the one that casts: the main hand's when it
+     * holds a wand, else the off hand's, as a right-click reaches them.
+     */
+    private static boolean castsFrom(boolean mainHand, ItemStack mainHandStack) {
+        return mainHand || !(mainHandStack.getItem() instanceof WandItem);
     }
 
     /** {@code viewToWorld}: turns {@code pose}'s space to world axes, or null if it already has them. */

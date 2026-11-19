@@ -1498,7 +1498,7 @@
   "logos.colossus.devices.hint": "炼金术道具：装在巨像身上持续生效（如缓慢回魔、魔力护盾）。",
   "logos.colossus.devices.tempered": "历经暴走后多出两个槽位。",
   "logos.colossus.devices": "炼金术道具",
-  "logos.cast.main_hand": "法杖要拿在主手才能施放",
+  "logos.cast.main_hand": "长杖要拿在主手才能施放",
   "logos.cast.no_spell": "法杖上没有术式：潜行右键挂上术式载页，或在副手拿法式典籍",
   "logos.cast.passive": "《%s》是被动术式，会在%s自动触发，无需施放",
   "logos.cast.no_channel": "这根法杖无法汇集魔力",
