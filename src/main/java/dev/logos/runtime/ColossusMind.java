@@ -169,7 +169,7 @@ public final class ColossusMind extends UtilityMind<AlchemicalColossus> {
     // ---- sensing --------------------------------------------------------------------------------
 
     @Override
-    void sense() {
+    protected void sense() {
         UUID id = Familiars.masterOf(c);
         master = id == null ? null : c.level().getPlayerByUUID(id);
         if (c.isBerserk()) {
