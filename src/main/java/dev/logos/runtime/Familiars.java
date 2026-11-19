@@ -110,6 +110,20 @@ public final class Familiars {
         return bondOf(e) != null;
     }
 
+    /** How long after a blow given or taken a master still counts as fighting, in ticks. */
+    static final int FIGHT_MEMORY = 100;
+
+    /**
+     * Whether {@code master} is in a fight: struck a living thing, or was struck by one, within the last five seconds. A
+     * helper that lends strength in a fight (an empowering page) waits for this.
+     */
+    public static boolean fighting(Player master) {
+        int now = master.tickCount;
+        LivingEntity struck = master.getLastHurtMob(), by = master.getLastHurtByMob();
+        return struck != null && struck.isAlive() && now - master.getLastHurtMobTimestamp() < FIGHT_MEMORY
+                || by != null && by.isAlive() && now - master.getLastHurtByMobTimestamp() < FIGHT_MEMORY;
+    }
+
     /** The master of {@code e} if it is a familiar, or of the familiar that shot it; null otherwise. */
     public static @Nullable UUID masterOf(@Nullable Entity e) {
         if (e instanceof Projectile p) e = p.getOwner();

@@ -26,22 +26,29 @@ import dev.logos.runtime.Group;
  * @param declared  true if the player wrote {@code :intent}
  * @param range     roughly how far away it can act, in blocks
  * @param estimate  roughly the mana one cast spends
- * @param reach     whom each of its HEAL and WARD intents can reach (see {@link Reach}); never empty for those two
+ * @param reach     whom each of its HEAL, WARD and EMPOWER intents can reach (see {@link Reach}); never empty for those
  * @param declaredReach what {@code :reach} said, or empty if the reach was inferred
+ * @param lasting   roughly how many seconds what it lends lasts (a mana wrap's life, a potion's length), 0 if it lends nothing lasting
  */
 public record SpellProfile(Intent primary, List<Intent> intents, boolean declared, double range, double estimate, List<String> assumptions,
-                           Map<Intent, Set<Reach>> reach, Set<Reach> declaredReach) {
+                           Map<Intent, Set<Reach>> reach, Set<Reach> declaredReach, double lasting) {
     public static final int ASSUMED_TARGETS = 3, ASSUMED_BLOCKS = 5, ASSUMED_DEPTH = 3;
     /** A wrapped hand is reckoned to strike once this many seconds. */
     public static final double BLOW_SECONDS = 2;
     /** When several intents are found, the one it is filed under: harm first, then help. */
-    private static final List<Intent> PRIORITY = List.of(Intent.AREA, Intent.STRIKE, Intent.CONTROL, Intent.HEAL, Intent.WARD, Intent.MOVE, Intent.UTILITY);
+    private static final List<Intent> PRIORITY = List.of(Intent.AREA, Intent.STRIKE, Intent.CONTROL, Intent.HEAL, Intent.WARD, Intent.EMPOWER,
+            Intent.MOVE, Intent.UTILITY);
     private static final Set<String> GROUP_SELECTORS = Set.of("enemies", "entities", "players", "items", "hit-list", "marked");
-    private static final Set<String> FRIENDLY_EFFECTS = Set.of("regeneration", "speed", "strength", "resistance", "absorption", "fire_resistance",
-            "instant_health", "night_vision", "water_breathing", "invisibility", "haste", "jump_boost", "slow_falling", "luck", "health_boost",
-            "saturation", "conduit_power", "dolphins_grace", "hero_of_the_village");
+    /** Friendly potion effects by what they are for; any other effect is taken as one laid on an enemy (CONTROL). */
+    private static final Set<String> HEALING_EFFECTS = Set.of("instant_health", "regeneration");
+    private static final Set<String> WARDING_EFFECTS = Set.of("resistance", "absorption", "fire_resistance", "health_boost", "water_breathing",
+            "slow_falling");
+    private static final Set<String> EMPOWERING_EFFECTS = Set.of("strength", "haste");
+    private static final Set<String> MOVING_EFFECTS = Set.of("speed", "jump_boost", "dolphins_grace");
+    private static final Set<String> USEFUL_EFFECTS = Set.of("night_vision", "luck", "saturation", "conduit_power", "hero_of_the_village",
+            "invisibility");
     /** The intents that are for its own side and so have a {@link Reach}. */
-    public static final Set<Intent> REACHING = EnumSet.of(Intent.HEAL, Intent.WARD);
+    public static final Set<Intent> REACHING = EnumSet.of(Intent.HEAL, Intent.WARD, Intent.EMPOWER);
     /** Filter kinds that never take in the caster: written into an entities selector, they leave the caster out. */
     private static final Set<TargetKind> LEAVE_CASTER_OUT = EnumSet.of(TargetKind.ENEMIES, TargetKind.HOSTILE, TargetKind.PLAYERS,
             TargetKind.ITEMS, TargetKind.PROJECTILES, TargetKind.NOT_CASTER, TargetKind.NONE);
@@ -56,7 +63,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
         return sb.toString();
     }
 
-    /** Whom its primary intent reaches; empty unless it is filed under HEAL or WARD. */
+    /** Whom its primary intent reaches; empty unless it is filed under HEAL, WARD or EMPOWER. */
     public Set<Reach> primaryReach() {
         return reach.getOrDefault(primary, Set.of());
     }
@@ -73,7 +80,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
 
     /**
      * Reads {@code body}; {@code declared} (from {@code :intent}) overrides the inferred intents, and
-     * {@code declaredReach} (from {@code :reach}) the inferred reach of its HEAL and WARD intents. Either may be empty.
+     * {@code declaredReach} (from {@code :reach}) the inferred reach of its HEAL, WARD and EMPOWER intents. Either may be empty.
      */
     public static SpellProfile of(List<Node> body, List<Intent> declared, Set<Reach> declaredReach) {
         Reader r = new Reader();
@@ -97,7 +104,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
             reach.put(i, Set.copyOf(found.isEmpty() ? EnumSet.of(Reach.ONE) : found));
         }
         return new SpellProfile(intents.getFirst(), List.copyOf(intents), !declared.isEmpty(), r.range,
-                Math.round(cost * 10) / 10.0, List.copyOf(r.assumptions), Map.copyOf(reach), Set.copyOf(declaredReach));
+                Math.round(cost * 10) / 10.0, List.copyOf(r.assumptions), Map.copyOf(reach), Set.copyOf(declaredReach), r.lasting);
     }
 
     /** One pass over the tree: intents found, reach, and cost (each node's own price times how often it runs). */
@@ -109,6 +116,8 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
         final Deque<Frame> frames = new ArrayDeque<>();
         final Set<String> assumptions = new LinkedHashSet<>();
         double range = 0;
+        /** The longest a mana wrap or potion it lends lasts, in seconds. */
+        double lasting = 0;
         /** Whether the spell reaches more than one creature somewhere (a group selector, field, group effect). */
         boolean group;
         /** Inside a handler that runs again and again (on-tick): a group there usually catches far fewer each time. */
@@ -240,11 +249,17 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     double life = kwNum(n, "life", 10);
                     double pulses = Math.max(1, life / Math.max(0.05, kwNum(n, "every", 0.5)));
                     double blows = Math.max(1, Math.ceil(life / BLOW_SECONDS));
-                    own = 6 + 0.5 * pulses + repeated(n, "on-tick", inGroup) * pulses
-                            + (repeated(n, "on-hit", inGroup) + repeated(n, "on-swing", inGroup)) * blows
-                            + events(n, "on-kill", inGroup) + events(n, "on-expire", inGroup);
+                    // What its wearer's blows do is lent to the wearer, not the caster's own attack: harm there makes the
+                    // wrap an empowering one (support for attacking); a wrap that lends no harm guards its wearer.
+                    EnumSet<Intent> before = EnumSet.copyOf(found);
+                    found.clear();
+                    double onBlows = (repeated(n, "on-hit", inGroup) + repeated(n, "on-swing", inGroup)) * blows + events(n, "on-kill", inGroup);
+                    boolean lendsHarm = found.removeIf(i -> i.hostile);
+                    found.addAll(before);
+                    own = 6 + 0.5 * pulses + repeated(n, "on-tick", inGroup) * pulses + onBlows + events(n, "on-expire", inGroup);
                     if (n.events.containsKey("on-hit") || n.events.containsKey("on-swing")) assumptions.add("魔力缠绕按每 " + Node.fmt(BLOW_SECONDS) + " 秒一击估算");
-                    friendly(Intent.WARD, n.arg(0));
+                    friendly(lendsHarm ? Intent.EMPOWER : Intent.WARD, n.arg(0));
+                    lasting = Math.max(lasting, life);
                 }
                 case "vein" -> {
                     Motion motion = n.kw.get("motion") != null && n.kw.get("motion").value instanceof Motion m && m.crawls() ? m : Motion.FORWARD;
@@ -346,8 +361,14 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     String id = String.valueOf(n.arg(1) == null ? "" : n.arg(1).value).replace("minecraft:", "");
                     double level = argNum(n, 3, 1);
                     own = (id.startsWith("instant") ? 6 * level : argNum(n, 2, 10) * level * 0.8) * count(n.arg(0));
-                    if (FRIENDLY_EFFECTS.contains(id)) friendly(id.equals("instant_health") || id.equals("regeneration") ? Intent.HEAL : Intent.WARD, n.arg(0));
+                    if (HEALING_EFFECTS.contains(id)) friendly(Intent.HEAL, n.arg(0));
+                    else if (WARDING_EFFECTS.contains(id)) friendly(Intent.WARD, n.arg(0));
+                    else if (EMPOWERING_EFFECTS.contains(id)) friendly(Intent.EMPOWER, n.arg(0));
+                    else if (MOVING_EFFECTS.contains(id)) found.add(Intent.MOVE);
+                    else if (USEFUL_EFFECTS.contains(id)) found.add(Intent.UTILITY);
                     else found.add(Intent.CONTROL);
+                    boolean friendly = HEALING_EFFECTS.contains(id) || WARDING_EFFECTS.contains(id) || EMPOWERING_EFFECTS.contains(id);
+                    if (friendly && !id.startsWith("instant")) lasting = Math.max(lasting, argNum(n, 2, 10));
                 }
                 case "launch" -> {
                     own = argNum(n, 1, 1) * 1.5 * count(n.arg(0));

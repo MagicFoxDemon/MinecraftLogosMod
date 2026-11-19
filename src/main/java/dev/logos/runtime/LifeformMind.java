@@ -36,8 +36,8 @@ import net.minecraft.world.phys.Vec3;
  * Its master steers it with the usual familiar nodes — {@code sic}, {@code gather}, {@code stance}
  * (with {@code :hunt} and {@code :role}) — and everything else is its own: it keeps at its master's
  * shoulder, fights at its attack's reach, heals and shields its master with pages filed under HEAL
- * and WARD that can reach another (see {@link Reach}), heals itself with HEAL pages that reach itself,
- * steps between its master and what is hunting them, drinks free mana, shies away when
+ * and WARD that can reach another (see {@link Reach}), lends them strength with EMPOWER pages while
+ * they fight, heals itself with HEAL pages that reach itself, steps between its master and what is hunting them, drinks free mana, shies away when
  * hurt, pokes about when its master stands still and settles down when they sleep. Its temperament
  * (bravery, curiosity, loyalty) and role scale the scores, so no two behave quite alike.
  * <p>
@@ -71,7 +71,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     private double chargeTarget, chargeIn;
     private int chargeDone, chargeTicks, chargeTier;
     private Element chargeElement = Element.ARCANE;
-    private long supportReadyAt, wardReadyAt, mendReadyAt, nextHunger;
+    private long supportReadyAt, wardReadyAt, mendReadyAt, empowerReadyAt, nextHunger;
     /** A group heal reaches only those near it: it casts one for its master from at most this far. */
     static final double GROUP_REACH = 4;
     private int repath;
@@ -86,6 +86,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         behaviors.add(new Support());
         behaviors.add(new Mend());
         behaviors.add(new Protect());
+        behaviors.add(new Empower());
         behaviors.add(new Forage());
         behaviors.add(new Retreat());
         behaviors.add(new Curious());
@@ -532,6 +533,42 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
                 mendReadyAt = now + 60;
             }
         }
+    }
+
+    /**
+     * Its master is fighting (or it has been set on a foe) and it holds an EMPOWER page that can reach them: lend them
+     * strength, and not again until what it lent has run out.
+     */
+    private final class Empower extends Behavior {
+        Empower() {
+            super("empower");
+        }
+
+        @Override
+        protected double score() {
+            if (master == null || lf.level().getGameTime() < empowerReadyAt || !canReachMaster(Intent.EMPOWER)) return 0;
+            if (!Familiars.fighting(master) && foe == null && threats.isEmpty()) return 0;
+            return 0.75 * lf.role().support;
+        }
+
+        @Override
+        protected void tick(long now) {
+            Player m = master;
+            if (m == null) return;
+            hover(shoulder(m), 1.4);
+            lookAt(m);
+            if (!castReady()) return;
+            int page = forMaster(Intent.EMPOWER, m);
+            if (page >= 0) {
+                beginCast(page, -1, m);
+                empowerReadyAt = now + lastingTicks(page);
+            }
+        }
+    }
+
+    /** How long what the page in {@code slot} lends lasts, in ticks: at least five seconds, so it never casts it back to back. */
+    private long lastingTicks(int slot) {
+        return Math.max(100, Math.round(lf.spellIn(slot).profile().lasting() * 20));
     }
 
     /** Something is hunting its master: get between them, ward its master, strike the hunter. */

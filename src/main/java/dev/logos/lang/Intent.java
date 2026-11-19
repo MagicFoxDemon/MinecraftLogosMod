@@ -3,7 +3,10 @@ package dev.logos.lang;
 /**
  * What a spell is for, as a creature that casts it understands it. A mana lifeform chooses its
  * pages by these: it attacks with STRIKE / AREA / CONTROL pages, heals its master with HEAL pages,
- * guards with WARD pages. Inferred from the runes a spell uses, or declared with {@code :intent}.
+ * guards them with WARD pages (support for surviving) and lends them strength in a fight with EMPOWER
+ * pages (support for attacking). Each is one decision of when to cast: an intent is added only for a
+ * new such decision, and whom a spell reaches or how long it lasts is kept beside it in the profile.
+ * Inferred from the runes a spell uses, or declared with {@code :intent}.
  */
 public enum Intent {
     STRIKE("strike", "单体攻击", true),
@@ -11,6 +14,7 @@ public enum Intent {
     CONTROL("control", "控制", true),
     HEAL("heal", "治疗", false),
     WARD("ward", "守护", false),
+    EMPOWER("empower", "强化", false),
     MOVE("move", "位移", false),
     UTILITY("utility", "杂务", false);
 

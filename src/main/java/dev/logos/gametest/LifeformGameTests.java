@@ -267,6 +267,22 @@ final class LifeformGameTests {
         });
     }
 
+    /** Its master in a fight, it wraps them in its empowering page; out of one, it keeps the page. */
+    static void empowersFightingMaster(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
+        lf.core.setItem(0, page("(spell :name \"借力\" :mana 40 (imbue (master) :life 5 (on-hit (damage target 1))) (mark (master) #lent))"));
+        h.assertTrue(lf.spellIn(0).profile().primary() == dev.logos.lang.Intent.EMPOWER, "the page should be filed as empowering");
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        husk.setNoAi(true);
+        h.runAtTickTime(40, () -> {
+            h.assertTrue(!StatusData.has(p, Status.parse("#lent")), "it should not lend strength while its master is not fighting");
+            p.setLastHurtMob(husk);
+        });
+        h.succeedWhen(() -> h.assertTrue(StatusData.has(p, Status.parse("#lent")), "it should empower its master in a fight"));
+    }
+
     /** Badly hurt with only a group heal that takes it in, it heals itself with that. */
     static void mendsWithGroupHeal(GameTestHelper h) {
         ServerPlayer p = FamiliarGameTests.master(h);
