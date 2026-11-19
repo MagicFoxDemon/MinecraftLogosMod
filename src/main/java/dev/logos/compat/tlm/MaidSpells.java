@@ -11,6 +11,7 @@ import dev.logos.item.CodexItem;
 import dev.logos.item.PageContainer;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
+import dev.logos.item.StaffItem;
 import dev.logos.item.WandItem;
 import dev.logos.lang.Intent;
 import dev.logos.lang.Spell;
@@ -22,15 +23,18 @@ import dev.logos.runtime.SpellModifiers;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * What a maid in the Spellcasting mode can cast and how fast: the written pages on the wand in her main hand, then on a
- * codex in her off hand (as a player's codex counts as hung on their wand), the ones her owner's stability bears, and
- * the wand's channel flow and surge.
+ * What a maid in the Spellcasting mode can cast and how fast: the written pages on her wand, then on a codex in her off
+ * hand (as a player's codex counts as hung on their wand), the ones her owner's stability bears, and the wand's channel
+ * flow and surge. Her wand is the one in her main hand, or, as a player may hold one, a wand (not a staff) in her off
+ * hand; then her main hand is free for a melee weapon ({@link #melee}).
  */
 final class MaidSpells {
     /** A castable page and what one cast of it injects: its capacity at most, as from a wand without Formula Immolation. */
@@ -38,8 +42,34 @@ final class MaidSpells {
 
     private MaidSpells() {}
 
+    /** The wand she casts with: the one in her main hand, else a wand (a staff only from the main hand) in her off hand; empty if none. */
+    static ItemStack wand(EntityMaid maid) {
+        ItemStack main = maid.getMainHandItem();
+        if (main.getItem() instanceof WandItem) return main;
+        ItemStack off = maid.getOffhandItem();
+        return off.getItem() instanceof WandItem && !(off.getItem() instanceof StaffItem) ? off : ItemStack.EMPTY;
+    }
+
     static boolean holdsWand(EntityMaid maid) {
-        return maid.getMainHandItem().getItem() instanceof WandItem;
+        return !wand(maid).isEmpty();
+    }
+
+    /** The hand her wand is in (the main hand if she holds none). */
+    static InteractionHand wandHand(EntityMaid maid) {
+        return maid.getMainHandItem().getItem() instanceof WandItem ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+    }
+
+    /**
+     * Whether she fights in close as well: a wand in her off hand and a melee weapon in her main hand (anything that adds
+     * to attack damage there, as a sword or an axe does).
+     */
+    static boolean melee(EntityMaid maid) {
+        if (wandHand(maid) != InteractionHand.OFF_HAND || !holdsWand(maid)) return false;
+        double[] damage = {0};
+        maid.getMainHandItem().forEachModifier(EquipmentSlot.MAINHAND, (a, modifier) -> {
+            if (a.equals(Attributes.ATTACK_DAMAGE) && modifier.operation() == AttributeModifier.Operation.ADD_VALUE) damage[0] += modifier.amount();
+        });
+        return damage[0] > 0;
     }
 
     /** Her active (not passive) pages that her owner's stability bears; empty without a wand. */
@@ -47,7 +77,7 @@ final class MaidSpells {
         List<Page> out = new ArrayList<>();
         if (!holdsWand(maid)) return out;
         int stability = stability(maid);
-        add(out, maid.getMainHandItem(), stability);
+        add(out, wand(maid), stability);
         ItemStack off = maid.getOffhandItem();
         if (off.getItem() instanceof CodexItem) add(out, off, stability);
         return out;
@@ -105,13 +135,13 @@ final class MaidSpells {
 
     /** The wand's channel flow, sped up by her channel speed (as a player's is). */
     static double flow(EntityMaid maid) {
-        return channel(maid.getMainHandItem(), LogosMod.CHANNEL_FLOW) * SpellModifiers.channelSpeed(maid);
+        return channel(wand(maid), LogosMod.CHANNEL_FLOW) * SpellModifiers.channelSpeed(maid);
     }
 
     /** The wand's channel surge, grown by her pool's depth and sped up by her channel speed (as a player's is). */
     static double surge(EntityMaid maid, CreatureMana pool) {
         double speed = SpellModifiers.channelSpeed(maid);
-        return channel(maid.getMainHandItem(), LogosMod.CHANNEL_SURGE) * (1 + pool.maxMana() / LogosConfig.chargeManaScale()) * speed * speed;
+        return channel(wand(maid), LogosMod.CHANNEL_SURGE) * (1 + pool.maxMana() / LogosConfig.chargeManaScale()) * speed * speed;
     }
 
     /** What {@code wand} adds to {@code attribute} in the main hand: a maid has no channel attributes of her own. */
