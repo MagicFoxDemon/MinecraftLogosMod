@@ -176,7 +176,7 @@ final class MaidCaster {
         }
         if (target != maid) face(maid, target);
         Charging.discharge(maid, element, chargeTier);
-        maid.swing(InteractionHand.MAIN_HAND);
+        maid.swing(MaidSpells.wandHand(maid));
         double first = Math.min(page.injection(), paid);
         Casting.castAs(maid, page.spell(), first, page.tier().recovery(), target, null, true);
         if (then != null && paid - first > 0) Casting.castAs(maid, then.spell(), paid - first, then.tier().recovery(), target, null, true);
