@@ -11,7 +11,8 @@
 | LDLib2 / Photon / KilaGraph | 2.2.46.a / 2.2.11 / 21.1.0.16 |
 | GeckoLib | 4.9.3（包名 `software.bernie.geckolib`） |
 | Iris / JEI | 1.8.14-beta.1 / 19.70 |
-| 车万女仆（可选） | 1.5.3（本地 jar，`-Ptlm_jar=<路径>`）。和 26.1 的差别只在原版 API：`hasRestriction` / `getRestrictRadius`、`getOwnerUUID`、`StartAttacking` 与 `StopAttackingIfTargetInvalid` 的 lambda 不带 level、`interactOn` 不带位置 |
+| 车万女仆（可选） | 1.5.3（本地 jar，`-Ptlm_jar=<路径>`）。和 26.1 的差别只在原版 API：`hasRestriction` / `isWithinRestriction` / `getRestrictRadius`、`getOwnerUUID`、`StartAttacking` 与 `StopAttackingIfTargetInvalid` 的 lambda 不带 level、`interactOn` 不带位置、`doHurtTarget` 不带 level；女仆界面画魔力瓶用 `GuiGraphics`（`renderTooltip` 代替 `setTooltipForNextFrame`），界面贴图和 2.0.0 相同 |
+| Jade（可选） | 15.10.6+neoforge（随女仆兼容 compile-only，`-Pjade` 加进开发运行） |
 
 ## 替身层：`dev.logos.port` 与 `dev.logos.client.port`
 
