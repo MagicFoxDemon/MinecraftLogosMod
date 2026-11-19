@@ -12,6 +12,7 @@ import dev.logos.LogosConfig;
 import dev.logos.LogosMod;
 import dev.logos.item.PageContainer;
 import dev.logos.item.SpellPages;
+import dev.logos.item.StaffItem;
 import dev.logos.lang.Status;
 import dev.logos.runtime.CreatureMana;
 import dev.logos.runtime.Familiars;
@@ -51,8 +52,13 @@ final class MaidGameTests {
         functions.register("maid_takes_mana_fuel", () -> MaidGameTests::takesManaFuel);
         functions.register("maid_summoned_not_tamed", () -> MaidGameTests::summonedNotTamed);
         functions.register("maid_gathers_free_mana", () -> MaidGameTests::gathersFreeMana);
+        functions.register("maid_staff_fills_then_casts", () -> MaidGameTests::staffFillsThenCasts);
+        functions.register("maid_staff_tops_up_when_calm", () -> MaidGameTests::staffTopsUpWhenCalm);
+        functions.register("maid_forages_free_mana", () -> MaidGameTests::foragesFreeMana);
+        functions.register("maid_controls_close_hunter", () -> MaidGameTests::controlsCloseHunter);
         return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_self_heal_spares_owner", "maid_heals_herself",
-                "maid_takes_mana_fuel", "maid_summoned_not_tamed", "maid_gathers_free_mana");
+                "maid_takes_mana_fuel", "maid_summoned_not_tamed", "maid_gathers_free_mana", "maid_staff_fills_then_casts", "maid_staff_tops_up_when_calm",
+                "maid_forages_free_mana", "maid_controls_close_hunter");
     }
 
     private static EntityMaid maid(GameTestHelper h, Vec3 at) {
@@ -61,9 +67,13 @@ final class MaidGameTests {
 
     /** A tamed maid in the 施法 mode, working around the clock, with a wand holding {@code pages}. */
     private static EntityMaid caster(GameTestHelper h, ServerPlayer owner, String... pages) {
-        EntityMaid m = maid(h, new Vec3(3.5, 2, 3.5));
+        return caster(h, owner, LogosMod.WAND.get().getDefaultInstance(), new Vec3(3.5, 2, 3.5), pages);
+    }
+
+    /** The same, holding {@code wand} (a staff, say) with {@code pages}, standing at {@code at}. */
+    private static EntityMaid caster(GameTestHelper h, ServerPlayer owner, ItemStack wand, Vec3 at, String... pages) {
+        EntityMaid m = maid(h, at);
         m.tame(owner);
-        ItemStack wand = LogosMod.WAND.get().getDefaultInstance();
         for (int i = 0; i < pages.length; i++) PageContainer.set(wand, i, SpellPages.inscribed(pages[i], null));
         m.setItemSlot(EquipmentSlot.MAINHAND, wand);
         m.setSchedule(MaidSchedule.ALL);
@@ -186,5 +196,77 @@ final class MaidGameTests {
             h.assertTrue(pool.mana() >= 20 - 1e-6, "she should gather the free mana, half of it kept: " + pool.mana());
             h.assertTrue(h.getLevel().getEntitiesOfClass(FreeManaEntity.class, m.getBoundingBox().inflate(12)).isEmpty(), "the free mana should be used up: " + h.getLevel().getEntitiesOfClass(FreeManaEntity.class, m.getBoundingBox().inflate(12)).stream().map(o -> o.amount() + " at " + o.distanceTo(m)).toList());
         });
+    }
+
+    /** A staff in her hand starts empty: she fills it from her pool, then casts her attack page out of it at once. */
+    static void staffFillsThenCasts(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        PlayerMagic.of(p).baseMaxMana = 1000;
+        ItemStack staff = LogosMod.WOOD_STAFFS.getFirst().get().getDefaultInstance();
+        EntityMaid m = caster(h, p, staff, new Vec3(3.5, 2, 3.5), "(spell :name \"灼\" :intent strike :mana 20 (damage (foe) 1) (mark (foe) #struck))");
+        CreatureMana pool = (CreatureMana) ManaVessels.of(m);
+        h.assertTrue(pool != null && StaffItem.stored(m.getMainHandItem()) == 0, "her staff should start empty");
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(7.5, 2, 7.5));
+        husk.setNoAi(true);
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.has(husk, Status.parse("#struck")), "she should fill her staff and cast at the husk (staff "
+                    + StaffItem.stored(m.getMainHandItem()) + ", pool " + pool.mana() + ", doing " + doing(m) + ")");
+            h.assertTrue(pool.mana() < pool.maxMana() - 20, "the staff's mana should come out of her pool: " + pool.mana());
+        });
+    }
+
+    /** Nothing to fight, she tops her staff up from her pool. */
+    static void staffTopsUpWhenCalm(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        PlayerMagic.of(p).baseMaxMana = 1000;
+        ItemStack staff = LogosMod.WOOD_STAFFS.getFirst().get().getDefaultInstance();
+        EntityMaid m = caster(h, p, staff, new Vec3(3.5, 2, 3.5), "(spell :name \"灼\" :intent strike :mana 20 (damage (foe) 1))");
+        double capacity = ((StaffItem) staff.getItem()).capacity();
+        h.succeedWhen(() -> h.assertTrue(StaffItem.stored(m.getMainHandItem()) >= capacity - 1e-6, "she should fill her staff to "
+                + capacity + ": " + StaffItem.stored(m.getMainHandItem()) + ", doing " + doing(m)));
+    }
+
+    /** Free mana beyond its own pull (8 blocks) but within 12: she walks to it, and it flows into her pool. */
+    static void foragesFreeMana(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        PlayerMagic.of(p).mana = PlayerMagic.maxMana(p); // a full owner draws none of it
+        EntityMaid m = caster(h, p, LogosMod.WAND.get().getDefaultInstance(), new Vec3(7.5, 2, 7.5), "(spell :name \"灼\" :intent strike :mana 20 (damage (foe) 1))");
+        CreatureMana pool = (CreatureMana) ManaVessels.of(m);
+        pool.setMana(0);
+        FreeManaEntity.release(h.getLevel(), h.absoluteVec(new Vec3(0.5, 2.5, 0.5)), 40);
+        h.succeedWhen(() -> h.assertTrue(h.getLevel().getEntitiesOfClass(FreeManaEntity.class, m.getBoundingBox().inflate(16)).isEmpty(),
+                "she should walk to the free mana and take it in (pool " + pool.mana() + ", doing " + doing(m) + ")"));
+    }
+
+    /**
+     * Something hunting her at arm's length: she casts her control page at it rather than her attack. (The same holds for
+     * one hunting her owner, but no mob takes a test's mock player, which counts as creative, for its target.)
+     */
+    static void controlsCloseHunter(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        EntityMaid m = caster(h, p, LogosMod.WAND.get().getDefaultInstance(), new Vec3(5.5, 2, 5.5),
+                "(spell :name \"灼\" :intent strike :mana 20 (damage (foe) 1) (mark (foe) #struck))",
+                "(spell :name \"缚\" :intent control :mana 10 (mark (foe) #held))");
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(5.5, 2, 3.5));
+        husk.setNoAi(true);
+        husk.setTarget(m);
+        long[] first = {-1, -1};
+        h.onEachTick(() -> {
+            if (first[0] < 0 && StatusData.has(husk, Status.parse("#held"))) first[0] = h.getTick();
+            if (first[1] < 0 && StatusData.has(husk, Status.parse("#struck"))) first[1] = h.getTick();
+        });
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.has(husk, Status.parse("#held")), "she should cast her control page at the husk hunting her");
+            h.assertFalse(StatusData.has(husk, Status.parse("#struck")), "her control page should come first (held at " + first[0] + ", struck at " + first[1] + ", husk target " + husk.getTarget() + ")");
+        });
+    }
+
+    private static String doing(EntityMaid m) {
+        String mind = dev.logos.compat.tlm.MaidMind.describe(m);
+        return mind == null ? "no mind" : mind;
     }
 }
