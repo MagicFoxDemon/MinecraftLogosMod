@@ -131,7 +131,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     // ---- sensing and choosing ---------------------------------------------------------------------
 
     @Override
-    void sense() {
+    protected void sense() {
         UUID id = Familiars.masterOf(lf);
         master = id == null ? null : lf.level().getPlayerByUUID(id);
         masterHealth = master == null ? 1 : master.getHealth() / master.getMaxHealth();
@@ -359,12 +359,12 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return Familiars.onErrand(lf) ? 3 : 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Vec3 p = Familiars.orderPoint(lf);
             if (p != null) hover(p.add(0, 0.8, 0), 1.4);
         }
@@ -377,12 +377,12 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return 0.2 * lf.loyalty();
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Vec3 post = Familiars.onErrand(lf) ? null : Familiars.orderPoint(lf);
             if (post != null) {
                 hover(post.add(0, 1.2 + Math.sin(lf.tickCount / 18.0) * 0.12, 0), 1.0);
@@ -404,7 +404,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             if (foe == null || lf.attackSlots().isEmpty()) return 0;
             double s = (ordered ? 0.9 : 0.6) * lf.bravery() * lf.role().engage;
             // Low on mana it saves itself unless told to fight.
@@ -413,12 +413,12 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        void start() {
+        protected void start() {
             emote(lf, Emote.ALERT);
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             LivingEntity f = foe;
             if (f == null) return;
             double range = lf.attackRange();
@@ -476,13 +476,13 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             if (master == null || masterHealth >= 0.75 || !canReachMaster(Intent.HEAL) || lf.level().getGameTime() < supportReadyAt) return 0;
             return (1 - masterHealth) * 1.3 * lf.role().support;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Player m = master;
             if (m == null) return;
             hover(shoulder(m), 1.4);
@@ -516,14 +516,14 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             double hp = health();
             if (hp >= 0.5 || lf.level().getGameTime() < mendReadyAt || page() < 0) return 0;
             return 0.55 + (0.5 - hp) * 1.6;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             if (master != null) slipBehind(master);
             if (!castReady()) return;
             int heal = page();
@@ -547,7 +547,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             if (master == null || threats.isEmpty()) return 0;
             double s = (masterHealth < 0.6 ? 0.85 : 0.45) * lf.role().protect * lf.bravery();
             if (lf.attackSlots().isEmpty() && !canReachMaster(Intent.WARD)) s *= 0.5; // it can only stand in the way
@@ -555,7 +555,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Player m = master;
             Mob t = nearest();
             if (m == null || t == null) return;
@@ -581,13 +581,13 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             if (orb == null || foe != null || !threats.isEmpty() || lf.manaFraction() >= 0.98) return 0;
             return (0.35 + (1 - lf.manaFraction()) * 0.4) * (0.6 + 0.4 * lf.curiosity());
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             FreeManaEntity o = orb;
             if (o == null || !o.isAlive()) return;
             hover(o.position(), 1.2);
@@ -603,14 +603,14 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             double hp = lf.getHealth() / lf.getMaxHealth();
             if (master == null || hp >= 0.35 || (foe == null && threats.isEmpty())) return 0;
             return (0.6 + (0.35 - hp) * 2) * (2 - lf.bravery());
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             if (master != null) slipBehind(master);
         }
     }
@@ -626,18 +626,18 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             if (master == null || foe != null || !threats.isEmpty() || masterStill < 100) return 0;
             return 0.3 * lf.curiosity();
         }
 
         @Override
-        void start() {
+        protected void start() {
             nextPick = 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Player m = master;
             if (m == null) return;
             if (now >= nextPick || spot == null) {
@@ -669,12 +669,12 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return master != null && master.isSleeping() ? 0.9 : 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Player m = master;
             if (m == null) return;
             hover(m.position().add(0.8, 0.4 + Math.sin(lf.tickCount / 30.0) * 0.05, 0.8), 0.5);

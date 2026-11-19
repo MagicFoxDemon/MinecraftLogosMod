@@ -32,12 +32,12 @@ abstract class ColossusBehavior extends UtilityMind.Behavior {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return !c.isBerserk() && Familiars.onErrand(c) ? 3 : 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Vec3 p = Familiars.orderPoint(c);
             if (p != null) mind.walkTo(p, c.distanceToSqr(p) > 20 * 20);
         }
@@ -50,12 +50,12 @@ abstract class ColossusBehavior extends UtilityMind.Behavior {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return c.isBerserk() ? 0 : 0.2;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Vec3 post = Familiars.onErrand(c) ? null : Familiars.orderPoint(c);
             Player m = mind.master;
             Vec3 spot;
@@ -92,12 +92,12 @@ abstract class ColossusBehavior extends UtilityMind.Behavior {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return !c.isBerserk() && mind.foe != null ? 0.8 : 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             if (mind.foe != null) mind.fight(mind.foe);
         }
     }
@@ -109,12 +109,12 @@ abstract class ColossusBehavior extends UtilityMind.Behavior {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return !c.isBerserk() && mind.master != null && mind.shooter != null ? 0.95 : 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Player m = mind.master;
             Mob s = mind.shooter;
             if (m == null || s == null) return;
@@ -142,26 +142,26 @@ abstract class ColossusBehavior extends UtilityMind.Behavior {
         }
 
         @Override
-        double score() {
+        protected double score() {
             if (c.isBerserk() || mind.foe != null || mind.assailant != null) return 0;
             if (mind.master == null && Familiars.masterOf(c) != null) return 0.9;
             return mind.master != null && mind.master.isSleeping() ? 0.9 : 0;
         }
 
         @Override
-        void start() {
+        protected void start() {
             mind.halt();
             mind.standing = false;
             c.play(Act.POWER_DOWN);
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             mind.halt();
         }
 
         @Override
-        void stop() {
+        protected void stop() {
             if (c.act() == Act.DORMANT || c.act() == Act.POWER_DOWN) c.play(Act.POWER_UP);
         }
     }
@@ -173,12 +173,12 @@ abstract class ColossusBehavior extends UtilityMind.Behavior {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return mind.wantsFlower && !c.isBerserk() && mind.master != null && mind.master.getVehicle() != c && mind.foe == null && mind.assailant == null && mind.threats.isEmpty() && mind.master.distanceTo(c) < 24 ? 0.6 : 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             Player m = mind.master;
             if (m == null) return;
             if (mind.gap(m) > 1.6) {
@@ -201,12 +201,12 @@ abstract class ColossusBehavior extends UtilityMind.Behavior {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return c.isBerserk() ? 1 : 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             if (mind.foe != null) mind.fight(mind.foe);
             else mind.halt();
         }
@@ -223,12 +223,12 @@ abstract class ColossusBehavior extends UtilityMind.Behavior {
         }
 
         @Override
-        double score() {
+        protected double score() {
             return !c.isBerserk() && mind.assailant != null ? 0.7 : 0;
         }
 
         @Override
-        void tick(long now) {
+        protected void tick(long now) {
             if (mind.assailant != null) mind.fight(mind.assailant);
         }
     }

@@ -145,7 +145,7 @@ gh pr create --fill                # 或在网页上开 PR
 - `KeptFamiliar` 接口：魔力生命体和巨像这类「造出来的使魔」，随世界保存、有自己的心智，使魔系统只负责传达命令。
   - 魔力生命体：`runtime/ManaLifeform`（实体、心核槽位、连携、动画控制器）、`runtime/LifeformMind`（效用 AI，每个行为一个内部类，加新行为只需加一个类并放进构造器的列表；`/logos mind` 显示各行为分数）、`runtime/Lifeforms`（召唤规则、存档登记、心核界面）、`client/ManaLifeformRenderer`。
   - 炼金术巨像：`runtime/AlchemicalColossus`（实体、魔力、暴走与平息、动作同步；座位、手臂、脚步声的方法转给下面三个辅助类）、`runtime/ColossusHolds`（两肩座位和手里抓着的东西、乘客位置 `holdPoint`）、`runtime/ColossusArms`（伸手和炮臂瞄准：服务端定目标，客户端缓动）、`runtime/ColossusFootfalls`（客户端脚步声）、`runtime/ColossusMind`（效用 AI：感知、移动、战斗决策、外来请求）、`runtime/ColossusBehavior`（它的各个行为，每个行为一个嵌套类，加新行为要加一个类并放进 `ColossusMind` 构造器的列表）、`runtime/ColossusSequence`（按动画计时的动作序列，每个序列一个嵌套类）、`runtime/ColossusCannon`（掌心炮）、`runtime/Colossi`（召唤、驾驶、进度、道具面板）、`client/ColossusRenderer`、`client/ColossusInput`。
-  - `runtime/UtilityMind<T>`：两者共用的效用 AI 基类（感知、打分、选最高分、`/logos mind` 的输出），以后的同类生物继承它。
+  - `runtime/UtilityMind<T>`：两者共用的效用 AI 基类（感知、打分、选最高分、`/logos mind` 的输出），以后的同类生物继承它。它的部件是 protected，其他包里的生物也能继承（车万女仆的 `compat/tlm/MaidMind`）；它是原版的 `Goal`，靠大脑行动的生物在自己的大脑行为里调用 `thinkAndAct`。
   - `runtime/LifeformAugment`：炼金道具接口（道具还没做），两者共用。
   - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`。
 
