@@ -30,7 +30,8 @@ import net.minecraft.world.phys.Vec3;
  * A maid's mind in the 施法 mode, a utility AI as a mana lifeform's ({@link UtilityMind}): every half second she
  * senses how things stand, scores what she could do and does the best of it. She fights her foe at her attacks'
  * reach, a control page first for one about to hurt her or her owner (a creeper swelling, say); heals her owner, or herself;
- * wards her owner when something hunts them; slips behind her owner when badly hurt;
+ * wards her owner when something hunts them; lends them strength with an empowering page while they fight; slips
+ * behind her owner when badly hurt;
  * goes to free mana nearby when all is quiet; and with a staff, fills it while she can, and in a fight whenever it
  * runs too low to cast. {@link MaidCaster} does the casting. With nothing worth doing she leaves her moves to the
  * maid mod (following her owner, staying home). The maid mod's brain runs her, so {@link CastSpells} drives this mind
@@ -55,7 +56,7 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
     private List<Mob> threats = List.of();
     private @Nullable LivingEntity foe;
     private @Nullable FreeManaEntity orb;
-    private long supportReadyAt, wardReadyAt, mendReadyAt;
+    private long supportReadyAt, wardReadyAt, mendReadyAt, empowerReadyAt;
     /** Whether a behaviour of hers set where she walks, so she clears it when it stops. */
     private boolean steering, backing;
 
@@ -66,6 +67,7 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         behaviors.add(new Support());
         behaviors.add(new Mend());
         behaviors.add(new Protect());
+        behaviors.add(new Empower());
         behaviors.add(new Retreat());
         behaviors.add(new Forage());
         behaviors.add(new Fill());
@@ -395,6 +397,38 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
                 return;
             }
             if (caster.ready() && caster.cast(mob, p, ward, null, o)) wardReadyAt = now + 100;
+        }
+    }
+
+    /**
+     * Her owner is fighting and she holds an empowering page that can reach them: lend them strength, and not again
+     * until what she lent has run out. A group page takes her close enough to cover them.
+     */
+    private final class Empower extends Act {
+        Empower() {
+            super("empower");
+        }
+
+        @Override
+        protected double score() {
+            if (owner == null || mob.level().getGameTime() < empowerReadyAt || !canReachOwner(Intent.EMPOWER) || !Familiars.fighting(owner)) return 0;
+            return 0.65;
+        }
+
+        @Override
+        protected void tick(long now) {
+            Player o = owner;
+            CreatureMana p = pool;
+            if (o == null || p == null) return;
+            lookAt(o);
+            MaidSpells.Page page = forOwner(Intent.EMPOWER, o);
+            if (page == null) {
+                walkTo(o.position(), 0.8f, 1);
+                return;
+            }
+            if (caster.ready() && caster.cast(mob, p, page, null, o)) {
+                empowerReadyAt = now + Math.max(100, Math.round(page.spell().profile().lasting() * 20));
+            }
         }
     }
 

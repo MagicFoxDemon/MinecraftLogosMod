@@ -134,7 +134,7 @@ public final class Compiler {
                             }
                         }
                         case ":reach" -> {
-                            // Whom a heal or ward reaches, several joined by +: self+group
+                            // Whom a heal, ward or empowering reaches, several joined by +: self+group
                             for (String w : v.toString().split("[+]")) {
                                 Reach r = Reach.parse(w.strip());
                                 if (r == null) throw err(v, "未知的作用对象 '" + w + "'，可用: " + Reach.words() + "（几个用 + 连起来）");
@@ -155,7 +155,7 @@ public final class Compiler {
         if (recursive) notes.add("含有递归 (recurse)：每层递归都会重新支付魔力，最多 " + LogosConfig.maxRecursion() + " 层");
         SpellProfile profile = SpellProfile.of(body, declared, declaredReach);
         if (reachAt != null && profile.reach().isEmpty()) {
-            throw err(reachAt, ":reach 只用于治疗 (heal) 或守护 (ward) 的术式：这个术式的意图是" + profile.intentsZh());
+            throw err(reachAt, ":reach 只用于治疗 (heal)、守护 (ward) 或强化 (empower) 的术式：这个术式的意图是" + profile.intentsZh());
         }
         return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src, profile, inferElement(body));
     }

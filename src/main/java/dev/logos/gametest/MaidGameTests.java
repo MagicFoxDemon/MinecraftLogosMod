@@ -49,6 +49,7 @@ final class MaidGameTests {
         functions.register("maid_heals_owner", () -> MaidGameTests::healsOwner);
         functions.register("maid_self_heal_spares_owner", () -> MaidGameTests::selfHealSparesOwner);
         functions.register("maid_heals_herself", () -> MaidGameTests::healsHerself);
+        functions.register("maid_empowers_fighting_owner", () -> MaidGameTests::empowersFightingOwner);
         functions.register("maid_takes_mana_fuel", () -> MaidGameTests::takesManaFuel);
         functions.register("maid_summoned_not_tamed", () -> MaidGameTests::summonedNotTamed);
         functions.register("maid_gathers_free_mana", () -> MaidGameTests::gathersFreeMana);
@@ -57,8 +58,8 @@ final class MaidGameTests {
         functions.register("maid_forages_free_mana", () -> MaidGameTests::foragesFreeMana);
         functions.register("maid_controls_close_hunter", () -> MaidGameTests::controlsCloseHunter);
         return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_self_heal_spares_owner", "maid_heals_herself",
-                "maid_takes_mana_fuel", "maid_summoned_not_tamed", "maid_gathers_free_mana", "maid_staff_fills_then_casts", "maid_staff_tops_up_when_calm",
-                "maid_forages_free_mana", "maid_controls_close_hunter");
+                "maid_empowers_fighting_owner", "maid_takes_mana_fuel", "maid_summoned_not_tamed", "maid_gathers_free_mana", "maid_staff_fills_then_casts",
+                "maid_staff_tops_up_when_calm", "maid_forages_free_mana", "maid_controls_close_hunter");
     }
 
     private static EntityMaid maid(GameTestHelper h, Vec3 at) {
@@ -133,6 +134,17 @@ final class MaidGameTests {
             h.assertTrue(!StatusData.has(m, Status.parse("#mended")), "she should not cast a heal that reaches only herself for her owner");
             h.assertTrue(StatusData.has(p, Status.parse("#healed")), "she should cast the heal that reaches her owner");
         });
+    }
+
+    /** Her owner in a fight, she casts her empowering page on them. */
+    static void empowersFightingOwner(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        caster(h, p, "(spell :name \"借力\" :mana 40 (potion (master) strength 10) (mark (master) #lent))");
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(7.5, 2, 7.5));
+        husk.setNoAi(true);
+        p.setLastHurtMob(husk);
+        h.succeedWhen(() -> h.assertTrue(StatusData.has(p, Status.parse("#lent")), "she should empower her owner in a fight"));
     }
 
     /** Badly hurt, she heals herself with a heal of her own before a group heal that takes her in. */

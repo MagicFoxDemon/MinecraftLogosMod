@@ -143,6 +143,40 @@ class CompilerTest {
         return Compiler.compile(src).profile().primaryReach();
     }
 
+    private static Intent primary(String src) {
+        return Compiler.compile(src).profile().primary();
+    }
+
+    @Test
+    void empowerProfile() {
+        // Harm a mana wrap lends its wearer's blows is support for attacking, not the caster's own strike.
+        Spell blade = Compiler.compile("(spell :mana 80 (imbue caster :life 30 (on-hit (damage target 4 fire))))");
+        assertEquals(Intent.EMPOWER, blade.profile().primary());
+        assertEquals(List.of(Intent.EMPOWER), blade.profile().intents());
+        assertEquals(java.util.Set.of(Reach.SELF), blade.profile().primaryReach());
+        assertEquals(30, blade.profile().lasting(), 1e-9);
+        assertEquals(Intent.EMPOWER, primary("(spell :mana 110 (imbue :life 20 (on-swing (projectile (on-hit (damage target 5 physical))))))"));
+        assertEquals(java.util.Set.of(Reach.ONE), reach("(spell :mana 80 (imbue (master) (on-hit (freeze target 2))))"));
+        // A wrap that lends no harm still guards its wearer; harm the spell does itself is still its own attack.
+        assertEquals(Intent.WARD, primary("(spell :mana 40 (imbue))"));
+        assertEquals(List.of(Intent.STRIKE, Intent.EMPOWER),
+                Compiler.compile("(spell :mana 80 (damage (foe) 3) (imbue caster (on-hit (damage target 4))))").profile().intents());
+        // Friendly potions by what they are for.
+        assertEquals(Intent.EMPOWER, primary("(spell :mana 40 (potion (master) strength 15))"));
+        assertEquals(15, Compiler.compile("(spell :mana 40 (potion (master) haste 15))").profile().lasting(), 1e-9);
+        assertEquals(Intent.WARD, primary("(spell :mana 40 (potion caster resistance 10))"));
+        assertEquals(Intent.HEAL, primary("(spell :mana 40 (potion caster regeneration 10))"));
+        assertEquals(Intent.MOVE, primary("(spell :mana 40 (potion caster speed 10))"));
+        assertEquals(Intent.UTILITY, primary("(spell :mana 40 (potion caster night_vision 10))"));
+        assertEquals(Intent.CONTROL, primary("(spell :mana 40 (potion (foe) weakness 10))"));
+        assertEquals(0, Compiler.compile("(spell :mana 20 (heal caster 4))").profile().lasting(), 1e-9);
+        // Declared, with its reach.
+        Spell declared = Compiler.compile("(spell :intent empower :reach one :mana 20 (mark (master) #lent))");
+        assertEquals(Intent.EMPOWER, declared.profile().primary());
+        assertEquals(java.util.Set.of(Reach.ONE), declared.profile().primaryReach());
+        assertTrue(declared.profile().intentsZh().contains("强化（单体）"), declared.profile().intentsZh());
+    }
+
     @Test
     void reachProfile() {
         // Whom a heal or ward is written on says whom it reaches.
