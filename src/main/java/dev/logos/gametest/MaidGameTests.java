@@ -61,10 +61,13 @@ final class MaidGameTests {
         functions.register("maid_hits_back_out_of_mana", () -> MaidGameTests::hitsBackOutOfMana);
         functions.register("maid_waits_out_of_mana", () -> MaidGameTests::waitsOutOfMana);
         functions.register("maid_closes_in_empowered", () -> MaidGameTests::closesInEmpowered);
+        functions.register("maid_closes_in_casting", () -> MaidGameTests::closesInCasting);
+        functions.register("maid_retreat_still_casts", () -> MaidGameTests::retreatStillCasts);
         return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_self_heal_spares_owner", "maid_heals_herself",
                 "maid_empowers_fighting_owner", "maid_takes_mana_fuel", "maid_summoned_not_tamed", "maid_gathers_free_mana", "maid_staff_fills_then_casts",
                 "maid_staff_tops_up_when_calm", "maid_forages_free_mana", "maid_controls_close_hunter", "maid_offhand_wand_casts",
-                "maid_hits_back_out_of_mana", "maid_waits_out_of_mana", "maid_closes_in_empowered");
+                "maid_hits_back_out_of_mana", "maid_waits_out_of_mana", "maid_closes_in_empowered", "maid_closes_in_casting",
+                "maid_retreat_still_casts");
     }
 
     private static EntityMaid maid(GameTestHelper h, Vec3 at) {
@@ -344,6 +347,36 @@ final class MaidGameTests {
             h.assertTrue(StatusData.has(m, Status.parse("#wrapped")), "she should cast her empowering page on herself (doing " + doing(m) + ")");
             h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "she should go in and hit the husk with her sword (doing " + doing(m) + ", "
                     + m.distanceTo(husk) + " away)");
+        });
+    }
+
+    /** With a sword and mana, she walks up to her foe casting on the way, and hits it with the sword once there. */
+    static void closesInCasting(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        // A page that marks but does no harm: the husk's wounds can only be the sword's.
+        EntityMaid m = swordAndWand(h, p, new Vec3(3.5, 2, 3.5), "(spell :name \"印\" :intent strike :mana 10 (mark (foe) #struck))");
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(3.5, 2, 8.5));
+        husk.setNoAi(true);
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.has(husk, Status.parse("#struck")), "she should cast at the husk while closing in (doing " + doing(m) + ")");
+            h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "once there she should hit it with her sword (doing " + doing(m) + ", "
+                    + m.distanceTo(husk) + " away)");
+        });
+    }
+
+    /** Badly hurt, she keeps behind her owner but still casts at her foe from there. */
+    static void retreatStillCasts(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        EntityMaid m = caster(h, p, "(spell :name \"印\" :intent strike :mana 10 (mark (foe) #struck))");
+        m.setHealth(m.getMaxHealth() * 0.2f);
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(7.5, 2, 7.5));
+        husk.setNoAi(true);
+        h.succeedWhen(() -> {
+            String doing = doing(m);
+            h.assertTrue(doing.startsWith("retreat"), "badly hurt she should retreat: " + doing);
+            h.assertTrue(StatusData.has(husk, Status.parse("#struck")), "retreating she should still cast at the husk: " + doing);
         });
     }
 
