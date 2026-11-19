@@ -27,7 +27,8 @@ abstract class ItemInHandLayerMixin {
         // A held cast pose may turn the item in the hand first, so the head is reported where it is drawn.
         CastPoses.tiltItem(state, poseStack, arm, stack);
         if (state instanceof AvatarRenderState avatar) {
-            WandTips.captureThirdPerson(avatar.id, stack, item, arm == HumanoidArm.LEFT, arm == state.mainArm, poseStack.last().pose());
+            WandTips.captureThirdPerson(avatar.id, stack, item, arm == HumanoidArm.LEFT, arm == state.mainArm, state.getMainHandItemStack(),
+                    poseStack.last().pose());
         }
     }
 }

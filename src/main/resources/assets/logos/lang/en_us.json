@@ -1498,7 +1498,7 @@
   "logos.colossus.devices.hint": "Alchemical devices: fitted to the colossus, they work for as long as they stay (slow mana recovery, a mana shield…).",
   "logos.colossus.devices.tempered": "Having come through a frenzy, it has two more slots.",
   "logos.colossus.devices": "Alchemical devices",
-  "logos.cast.main_hand": "Hold the wand in your main hand to cast",
+  "logos.cast.main_hand": "Hold the staff in your main hand to cast",
   "logos.cast.no_spell": "No spell on this wand: sneak-right-click to hang a spell page on it, or hold a Spell Codex in your off hand",
   "logos.cast.passive": "\"%s\" is a passive spell: it goes off by itself (%s), no need to cast it",
   "logos.cast.no_channel": "This wand cannot gather mana",

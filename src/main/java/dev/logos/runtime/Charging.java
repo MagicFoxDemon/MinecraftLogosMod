@@ -150,10 +150,10 @@ public final class Charging {
         return PlayerMagic.of(player).charge;
     }
 
-    /** Starts charging the wand's selected spell. Returns false (and tells the player why) if it cannot. */
+    /** Starts charging the wand's selected spell, held in either {@code hand}. Returns false (and tells the player why) if it cannot. */
     public static boolean begin(ServerPlayer player, ItemStack wand, InteractionHand hand) {
         cancel(player);
-        SpellBag.Entry entry = castable(player, wand, hand);
+        SpellBag.Entry entry = castable(player, wand);
         if (entry == null) return false;
         Casting.Injection in = Casting.injection(entry.spell(), entry.tier(), Casting.immolation(player, wand));
         if (!Casting.affordable(player, entry.spell(), in.mana())) return false;
@@ -188,14 +188,11 @@ public final class Charging {
     }
 
     /**
-     * The spell {@code wand} would cast from {@code hand}: its selected page, if the wand is in the main hand
-     * and the spell is not passive. Null (and tells the player why) otherwise.
+     * The spell {@code wand} would cast: its selected page, if the spell is not passive. Null (and tells the
+     * player why) otherwise. Either hand will do: vanilla offers a right-click to the main hand first, so a wand
+     * in the off hand casts only when what the main hand holds does nothing with it.
      */
-    static SpellBag.@Nullable Entry castable(ServerPlayer player, ItemStack wand, InteractionHand hand) {
-        if (hand != InteractionHand.MAIN_HAND) {
-            PlayerMagic.alert(player, Component.translatable("logos.cast.main_hand").withStyle(ChatFormatting.YELLOW));
-            return null;
-        }
+    static SpellBag.@Nullable Entry castable(ServerPlayer player, ItemStack wand) {
         SpellBag.Entry entry = SpellBag.selected(player, wand);
         if (entry == null) {
             PlayerMagic.alert(player, Component.translatable("logos.cast.no_spell").withStyle(ChatFormatting.YELLOW));
@@ -266,7 +263,7 @@ public final class Charging {
             if (c.repeats) VoiceCasting.again(player, wand, c.entry.page());
             return;
         }
-        if (!c.repeats || !begin(player, wand, InteractionHand.MAIN_HAND)) player.stopUsingItem();
+        if (!c.repeats || !begin(player, wand, player.getUsedItemHand())) player.stopUsingItem();
     }
 
     /**

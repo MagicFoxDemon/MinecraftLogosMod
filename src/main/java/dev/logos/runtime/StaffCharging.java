@@ -128,10 +128,21 @@ public final class StaffCharging {
         if (level.getGameTime() % 2 == 0) sync(player, staff);
     }
 
-    /** Right-click: casts the staff's selected spell at once out of what it holds. False (and tells the player why) if it cannot. */
+    /**
+     * Right-click: casts the staff's selected spell at once out of what it holds. False (and tells the player why) if it
+     * cannot. Only from the main hand, unlike a wand: a staff is filled by left-click, which belongs to the main hand.
+     */
     public static boolean cast(ServerPlayer player, ItemStack staff, InteractionHand hand) {
-        SpellBag.Entry entry = Charging.castable(player, staff, hand);
+        if (!mainHand(player, hand)) return false;
+        SpellBag.Entry entry = Charging.castable(player, staff);
         return entry != null && cast(player, staff, entry);
+    }
+
+    /** False (and tells the player to take the staff in the main hand) if {@code hand} is the off hand. */
+    static boolean mainHand(ServerPlayer player, InteractionHand hand) {
+        if (hand == InteractionHand.MAIN_HAND) return true;
+        PlayerMagic.alert(player, Component.translatable("logos.cast.main_hand").withStyle(ChatFormatting.YELLOW));
+        return false;
     }
 
     /** Casts {@code entry} at once out of what {@code staff} holds. False (and tells the player why) if it cannot. */
