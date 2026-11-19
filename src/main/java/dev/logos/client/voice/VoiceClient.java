@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 
 import dev.logos.LogosMod;
 import dev.logos.item.SpellBag;
+import dev.logos.item.StaffItem;
 import dev.logos.item.WandItem;
 import dev.logos.net.VoiceCastPayload;
 import dev.logos.runtime.VoiceCasting;
@@ -150,8 +151,10 @@ public final class VoiceClient {
     @SubscribeEvent
     static void onTick(ClientTickEvent.Post event) {
         Player player = Minecraft.getInstance().player;
-        boolean pressed = player != null && player.isUsingItem() && player.getUsedItemHand() == InteractionHand.MAIN_HAND
-                && player.getUseItem().getItem() instanceof WandItem && VoiceCasting.armed(player.getUseItem());
+        // A wand listens from either hand, a staff only from the main hand (the server refuses it in the other).
+        boolean pressed = player != null && player.isUsingItem() && player.getUseItem().getItem() instanceof WandItem
+                && (player.getUsedItemHand() == InteractionHand.MAIN_HAND || !(player.getUseItem().getItem() instanceof StaffItem))
+                && VoiceCasting.armed(player.getUseItem());
         if (!pressed) {
             heard = false;
             if (casting) stopCasting();
@@ -175,7 +178,7 @@ public final class VoiceClient {
     private static void castHeard(float[] audio) {
         Player player = Minecraft.getInstance().player;
         if (player == null || !casting) return;
-        ItemStack wand = player.getMainHandItem();
+        ItemStack wand = player.getUseItem();
         List<SpellBag.Entry> all = SpellBag.entries(player, wand);
         List<String> names = VoiceCasting.spoken(player, wand).stream().map(e -> e.page().get(LogosMod.VOICE.get())).toList();
         withVoices(v -> v.recognize(audio, names)).thenAcceptAsync(r -> {

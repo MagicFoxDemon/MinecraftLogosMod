@@ -79,10 +79,7 @@ public final class VoiceCasting {
     public static boolean begin(ServerPlayer player, ItemStack wand, InteractionHand hand) {
         Charging.cancel(player);
         cancel(player);
-        if (hand != InteractionHand.MAIN_HAND) {
-            PlayerMagic.alert(player, Component.translatable("logos.cast.main_hand").withStyle(ChatFormatting.YELLOW));
-            return false;
-        }
+        if (wand.getItem() instanceof StaffItem && !StaffCharging.mainHand(player, hand)) return false;
         List<SpellBag.Entry> spells = spoken(player, wand);
         if (spells.isEmpty()) {
             PlayerMagic.alert(player, Component.translatable("logos.voice.no_spoken_spells").withStyle(ChatFormatting.YELLOW));
@@ -126,13 +123,13 @@ public final class VoiceCasting {
     }
 
     /**
-     * The player's client heard them name the spell on entry {@code index} of what the main-hand wand
+     * The player's client heard them name the spell on entry {@code index} of what the wand in use
      * reaches ({@code name} is that page's voice name, to be sure both sides mean the same page).
      */
     public static void heard(ServerPlayer player, int index, String name) {
         PlayerMagic m = PlayerMagic.of(player);
         Listen l = m.listen;
-        ItemStack wand = player.getMainHandItem();
+        ItemStack wand = player.getUseItem();
         if (l == null || !player.isUsingItem() || !armed(wand)) return;
         List<SpellBag.Entry> all = SpellBag.entries(player, wand);
         if (index < 0 || index >= all.size()) return;

@@ -112,17 +112,32 @@ final class ChargingGameTests {
         h.succeed();
     }
 
-    /** Without the mana to fill it, a charge does not start; neither does a wand in the off hand. */
+    /** Without the mana to fill it, a charge does not start. */
     static void refusesWhatItCannotFill(GameTestHelper h) {
         ServerPlayer p = caster(h, MARK);
         PlayerMagic.of(p).mana = 99;
         h.assertFalse(press(h, p), "a charge started with 99 of 100 mana");
         near(h, PlayerMagic.of(p).mana, 99, "a refused charge takes nothing");
-        PlayerMagic.of(p).mana = 1000;
+        h.succeed();
+    }
+
+    /**
+     * A wand in the off hand (beside a sword) charges as fast as in the main hand, its own flow and surge counting
+     * though they are main-hand attributes, and casts on release.
+     */
+    static void castsFromOffHand(GameTestHelper h) {
+        ServerPlayer p = caster(h, MARK);
         ItemStack w = wand(p);
-        p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(net.minecraft.world.item.Items.IRON_SWORD));
         p.setItemInHand(InteractionHand.OFF_HAND, w);
-        h.assertTrue(w.getItem().use(h.getLevel(), p, InteractionHand.OFF_HAND).getResult() == InteractionResult.FAIL, "an off-hand wand charged");
+        h.assertTrue(w.getItem().use(h.getLevel(), p, InteractionHand.OFF_HAND).getResult() == InteractionResult.CONSUME && p.isUsingItem()
+                && p.getUsedItemHand() == InteractionHand.OFF_HAND, "an off-hand wand did not start charging");
+        var c = Charging.of(p);
+        h.assertTrue(c != null && c.ticks == 29, "an off-hand charge of 100 should take 29 ticks like a main-hand one");
+        for (int i = 0; i < c.ticks; i++) w.getItem().onUseTick(h.getLevel(), p, w, p.getUseItemRemainingTicks());
+        h.assertTrue(c.full(), "the off-hand charge should be full");
+        p.releaseUsingItem();
+        h.assertTrue(StatusData.stacks(p, new Status("#charged")) == 1, "releasing a full off-hand charge casts");
         h.succeed();
     }
 
@@ -220,6 +235,8 @@ final class ChargingGameTests {
         fill(p, 20);
         h.assertTrue(PlayerMagic.of(p).fill == null, "the fill should have stopped");
         near(h, StaffItem.stored(staff), stored, "an off-hand staff takes no more");
+        h.assertTrue(staff.getItem().use(h.getLevel(), p, InteractionHand.OFF_HAND).getResult() == InteractionResult.FAIL, "an off-hand staff cast");
+        near(h, StaffItem.stored(staff), stored, "a refused off-hand cast spends nothing");
         h.succeed();
     }
 
