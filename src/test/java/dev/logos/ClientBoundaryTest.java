@@ -43,7 +43,9 @@ class ClientBoundaryTest {
             // JEI finds its plugins by annotation and loads them on a client only.
             "dev/logos/compat/jei/",
             // AI Player, a client-side mod, loads this by the name in assets/logos/ai_usage when one of its actions is used.
-            "dev/logos/compat/aiplayer/AiPlayerActions");
+            "dev/logos/compat/aiplayer/AiPlayerActions",
+            // The maid compat's screen and Jade views; its extension registers them only when the dist is a client.
+            "dev/logos/compat/tlm/client/");
 
     /** Never in the released jar, and free to use both sides: the in-world tests. */
     private static final String DEV_ONLY = "dev/logos/gametest/";
@@ -74,7 +76,9 @@ class ClientBoundaryTest {
             "dev/logos/ui/CopyTableArt", LDLIB_STAND_INS,
             "dev/logos/ui/ManaScreens", LDLIB_STAND_INS,
             "dev/logos/block/AlchemyTableUI", Set.of("dev/logos/client/port/GuiTexture"),
-            "dev/logos/block/CopyTableBlock", Set.of("dev/logos/client/port/GuiTexture"));
+            "dev/logos/block/CopyTableBlock", Set.of("dev/logos/client/port/GuiTexture"),
+            // Registers the maid's screen and Jade views as event listeners after checking the dist is a client.
+            "dev/logos/compat/tlm/LogosMaidExtension", Set.of("dev/logos/compat/tlm/client/MaidManaView", "dev/logos/compat/tlm/client/MaidManaJade"));
 
     private static Set<String> with(Set<String> base, String... more) {
         Set<String> out = new TreeSet<>(base);
@@ -86,7 +90,8 @@ class ClientBoundaryTest {
     void serverSideCodeNamesNoClientClass() throws IOException {
         Set<String> clientMixins = clientMixins(CompiledClasses.project().resolve(RESOURCES));
         Map<String, Set<String>> found = new TreeMap<>();
-        CompiledClasses.references().forEach((from, named) -> {
+        Map<String, Set<String>> references = CompiledClasses.references();
+        references.forEach((from, named) -> {
             if (from.startsWith(DEV_ONLY) || clientOnly(from, clientMixins)) return;
             for (String to : named) {
                 if (to.equals(GATE) || !clientOnly(to, clientMixins) && CLIENT_LIBRARIES.stream().noneMatch(to::startsWith)) continue;
@@ -94,7 +99,10 @@ class ClientBoundaryTest {
             }
         });
         Map<String, Set<String>> known = new TreeMap<>();
-        KNOWN.forEach((from, to) -> known.put(from, new TreeSet<>(to)));
+        // A note about a class that is not compiled here (the maid compat, built only with the maid mod's jar) is left out.
+        KNOWN.forEach((from, to) -> {
+            if (references.containsKey(from)) known.put(from, new TreeSet<>(to));
+        });
         assertEquals(describe(known), describe(found), """
                 Code that a dedicated server runs names a client-only class (or a note below is out of date).
                 A server has no such class and crashes when it reaches one, though a development server does not.

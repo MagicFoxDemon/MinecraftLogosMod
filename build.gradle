@@ -374,6 +374,9 @@ dependencies {
     // it compiles against a local jar, -Ptlm_jar=<path> or libs/touhoulittlemaid.jar, and -Ptlm adds that jar to the dev runs.
     if (tlmJar.exists()) {
         compileOnly files(tlmJar)
+        // Jade, for the maid's mana line the maid mod lets compats add to its Jade tooltip; optional, client only.
+        compileOnly "maven.modrinth:jade:${jade_version}"
+        if (project.hasProperty("jade")) localRuntime "maven.modrinth:jade:${jade_version}"
         if (project.hasProperty("tlm")) localRuntime files(tlmJar)
     }
     // -PcompatMods adds the mods players most often run with to the dev runs, for a smoke test (see CONTRIBUTING); never required or bundled.
