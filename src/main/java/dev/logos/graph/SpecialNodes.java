@@ -34,7 +34,7 @@ public final class SpecialNodes {
 
     /** What the spell is for, as a lifeform reads it: AUTO lets the compiler infer it from the runes. */
     public enum IntentChoice {
-        AUTO, STRIKE, AREA, CONTROL, HEAL, WARD, MOVE, UTILITY;
+        AUTO, STRIKE, AREA, CONTROL, HEAL, WARD, EMPOWER, MOVE, UTILITY;
 
         public dev.logos.lang.@org.jspecify.annotations.Nullable Intent intent() {
             return this == AUTO ? null : dev.logos.lang.Intent.valueOf(name());
@@ -54,7 +54,7 @@ public final class SpecialNodes {
         public static final String PLAYERS = "players";
         public static final String IMMOLATE = "immolate";
         public static final String INTENT = "intent";
-        /** Whom a heal or ward reaches, one tick box each; none ticked lets the compiler infer it. */
+        /** Whom a heal, ward or empowering reaches, one tick box each; none ticked lets the compiler infer it. */
         public static final String REACH_SELF = "reach_self", REACH_ONE = "reach_one", REACH_GROUP = "reach_group";
         public static final String START = "start";
 
