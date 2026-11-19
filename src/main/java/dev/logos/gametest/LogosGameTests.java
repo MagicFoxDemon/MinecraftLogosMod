@@ -65,7 +65,7 @@ public final class LogosGameTests {
             "lifeform_spawn_egg_levels", "lifeform_spawn_egg_dispenser", "lifeform_spawn_egg_disabled", "lifeform_spawn_egg_water",
             "lifeform_summon_rules", "lifeform_casts_attack_page", "lifeform_dormant_and_fed", "lifeform_falls_when_dry", "lifeform_executes_itself",
             "construct_index_skips_far_entities", "construct_collision_skips_projectiles", "construct_shapes_cached", "construct_index_follows_moved", "construct_index_follows_caster", "construct_index_forgets_removed",
-            "lifeform_hovers", "lifeform_combo", "lifeform_charges_its_cast", "lifeform_charge_returns_when_target_gone", "lifeform_heals_master", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_unaimed_beam_heals_master", "lifeform_unaimed_beam_strikes_foe", "lifeform_spell_strikes_master", "lifeform_forages", "lifeform_role",
+            "lifeform_hovers", "lifeform_combo", "lifeform_charges_its_cast", "lifeform_charge_returns_when_target_gone", "lifeform_heals_master", "lifeform_self_heal_spares_master", "lifeform_mends_itself", "lifeform_mends_with_group_heal", "lifeform_heal_projectile_hits_master", "lifeform_heal_ray_hits_master", "lifeform_heal_beam_hits_master", "lifeform_unaimed_beam_heals_master", "lifeform_unaimed_beam_strikes_foe", "lifeform_spell_strikes_master", "lifeform_forages", "lifeform_role",
             "colossus_spawn_egg_player", "colossus_spawn_egg_dispenser", "colossus_spawn_egg_disabled", "colossus_spawn_egg_water",
             "colossus_armour", "colossus_void_ignores_armour", "colossus_execute_as_kill", "colossus_execute_drains", "colossus_heavy_and_finish", "colossus_grab_finishes", "colossus_grab_slams",
             "mana_hud_off_action_bar", "mana_hud_sends_on_change", "mana_hud_rate_capped", "mana_hud_hides_without_wand", "mana_hud_pool_without_wand", "mana_hud_wording",
@@ -241,6 +241,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("lifeform_charges_its_cast", () -> LifeformGameTests::chargesItsCast);
         FUNCTIONS.register("lifeform_charge_returns_when_target_gone", () -> LifeformGameTests::chargeReturnsWhenTargetGone);
         FUNCTIONS.register("lifeform_heals_master", () -> LifeformGameTests::healsMaster);
+        FUNCTIONS.register("lifeform_self_heal_spares_master", () -> LifeformGameTests::selfHealSparesMaster);
+        FUNCTIONS.register("lifeform_mends_itself", () -> LifeformGameTests::mendsItself);
+        FUNCTIONS.register("lifeform_mends_with_group_heal", () -> LifeformGameTests::mendsWithGroupHeal);
         FUNCTIONS.register("lifeform_heal_projectile_hits_master", () -> LifeformGameTests::healProjectileHitsMaster);
         FUNCTIONS.register("lifeform_heal_ray_hits_master", () -> LifeformGameTests::healRayHitsMaster);
         FUNCTIONS.register("lifeform_heal_beam_hits_master", () -> LifeformGameTests::healBeamHitsMaster);

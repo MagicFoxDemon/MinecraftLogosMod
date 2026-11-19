@@ -54,7 +54,18 @@ public final class SpecialNodes {
         public static final String PLAYERS = "players";
         public static final String IMMOLATE = "immolate";
         public static final String INTENT = "intent";
+        /** Whom a heal or ward reaches, one tick box each; none ticked lets the compiler infer it. */
+        public static final String REACH_SELF = "reach_self", REACH_ONE = "reach_one", REACH_GROUP = "reach_group";
         public static final String START = "start";
+
+        /** The option that ticks {@code r}. */
+        public static String reachOption(dev.logos.lang.Reach r) {
+            return switch (r) {
+                case SELF -> REACH_SELF;
+                case ONE -> REACH_ONE;
+                case GROUP -> REACH_GROUP;
+            };
+        }
 
         @Override
         public Category category() {
@@ -84,6 +95,9 @@ public final class SpecialNodes {
             context.addOption(PLAYERS, Boolean.class).withDefaultValue(false).withDisplayName(NodeTerms.parameter(word(), PLAYERS));
             context.addOption(IMMOLATE, Boolean.class).withDefaultValue(true).withDisplayName(NodeTerms.parameter(word(), IMMOLATE));
             context.addOption(INTENT, IntentChoice.class).withDefaultValue(IntentChoice.AUTO).withDisplayName(NodeTerms.parameter(word(), INTENT));
+            for (String id : new String[] {REACH_SELF, REACH_ONE, REACH_GROUP}) {
+                context.addOption(id, Boolean.class).withDefaultValue(false).withDisplayName(NodeTerms.parameter(word(), id));
+            }
         }
 
         @Override

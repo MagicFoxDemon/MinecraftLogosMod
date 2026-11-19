@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 
 import dev.logos.lang.Element;
 import dev.logos.lang.Intent;
+import dev.logos.lang.Reach;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -35,7 +36,8 @@ import net.minecraft.world.phys.Vec3;
  * Its master steers it with the usual familiar nodes — {@code sic}, {@code gather}, {@code stance}
  * (with {@code :hunt} and {@code :role}) — and everything else is its own: it keeps at its master's
  * shoulder, fights at its attack's reach, heals and shields its master with pages filed under HEAL
- * and WARD, steps between its master and what is hunting them, drinks free mana, shies away when
+ * and WARD that can reach another (see {@link Reach}), heals itself with HEAL pages that reach itself,
+ * steps between its master and what is hunting them, drinks free mana, shies away when
  * hurt, pokes about when its master stands still and settles down when they sleep. Its temperament
  * (bravery, curiosity, loyalty) and role scale the scores, so no two behave quite alike.
  * <p>
@@ -69,7 +71,9 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
     private double chargeTarget, chargeIn;
     private int chargeDone, chargeTicks, chargeTier;
     private Element chargeElement = Element.ARCANE;
-    private long supportReadyAt, wardReadyAt, nextHunger;
+    private long supportReadyAt, wardReadyAt, mendReadyAt, nextHunger;
+    /** A group heal reaches only those near it: it casts one for its master from at most this far. */
+    static final double GROUP_REACH = 4;
     private int repath;
 
     LifeformMind(ManaLifeform lf) {
@@ -80,6 +84,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         behaviors.add(new Escort());
         behaviors.add(new Engage());
         behaviors.add(new Support());
+        behaviors.add(new Mend());
         behaviors.add(new Protect());
         behaviors.add(new Forage());
         behaviors.add(new Retreat());
@@ -266,7 +271,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         // Two ticks short of letting go, an unfinished charge holds the pose until it is in.
         if (!full && castTimer <= lf.castTicks() - lf.releaseAt() + 2) {
             lf.setCharging(true);
-            if (castAt != null && castAt.isAlive()) lf.face(castAt);
+            if (castAt != null && castAt != lf && castAt.isAlive()) lf.face(castAt);
             return;
         }
         castTimer--;
@@ -310,7 +315,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
             if (paid > 0) lf.receiveMana(paid);
             return;
         }
-        lf.face(castAt);
+        if (castAt != lf) lf.face(castAt); // cast on itself, it keeps looking where it was
         Charging.discharge(lf, chargeElement, chargeTier);
         double first = Math.min(lf.injection(castSlot), paid);
         lf.castPaid(castSlot, castAt, first);
@@ -429,7 +434,42 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         }
     }
 
-    /** Its master is hurt and it holds a HEAL page: close in and heal them. */
+    /** Its active pages filed under {@code intent} that can reach {@code r}, cheapest first. */
+    private List<Integer> reaching(Intent intent, Reach r) {
+        return lf.activeWith(intent).stream().filter(slot -> lf.spellIn(slot).profile().reaches(r)).toList();
+    }
+
+    /** Whether it holds a page filed under {@code intent} that can reach its master: one aimed at another, or a group one. */
+    private boolean canReachMaster(Intent intent) {
+        return !reaching(intent, Reach.ONE).isEmpty() || !reaching(intent, Reach.GROUP).isEmpty();
+    }
+
+    /**
+     * The page to heal or ward its master {@code m} with from where it is, or -1: one aimed at a single creature
+     * first, else a group one if it is close enough for the group to take its master in. Hurt itself too, a group
+     * heal that takes in both of them comes first. A page that reaches only its caster is never cast at its master.
+     */
+    private int forMaster(Intent intent, Player m) {
+        boolean near = lf.distanceTo(m) < GROUP_REACH;
+        if (intent == Intent.HEAL && near && lf.getHealth() < lf.getMaxHealth() * 0.75) {
+            for (int slot : reaching(intent, Reach.GROUP)) if (lf.spellIn(slot).profile().reaches(Reach.SELF)) return slot;
+        }
+        List<Integer> one = reaching(intent, Reach.ONE);
+        if (!one.isEmpty() && lf.distanceTo(m) < 8) return one.getFirst();
+        List<Integer> group = reaching(intent, Reach.GROUP);
+        return !group.isEmpty() && near ? group.getFirst() : -1;
+    }
+
+    /** Behind its master, away from what threatens them (or from where they look), at head height. */
+    private void slipBehind(Player m) {
+        Entity danger = foe != null ? foe : threats.isEmpty() ? null : threats.getFirst();
+        Vec3 away = danger == null ? m.getLookAngle().scale(-1) : m.position().subtract(danger.position());
+        away = away.multiply(1, 0, 1);
+        if (away.lengthSqr() < 1e-4) away = new Vec3(0, 0, 1);
+        hover(m.position().add(away.normalize().scale(2)).add(0, m.getBbHeight() * 0.9, 0), 1.6);
+    }
+
+    /** Its master is hurt and it holds a HEAL page that can reach them: close in and heal them. */
     private final class Support extends Behavior {
         Support() {
             super("support");
@@ -437,7 +477,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
 
         @Override
         double score() {
-            if (master == null || masterHealth >= 0.75 || lf.activeWith(Intent.HEAL).isEmpty() || lf.level().getGameTime() < supportReadyAt) return 0;
+            if (master == null || masterHealth >= 0.75 || !canReachMaster(Intent.HEAL) || lf.level().getGameTime() < supportReadyAt) return 0;
             return (1 - masterHealth) * 1.3 * lf.role().support;
         }
 
@@ -447,10 +487,49 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
             if (m == null) return;
             hover(shoulder(m), 1.4);
             lookAt(m);
-            List<Integer> heal = lf.activeWith(Intent.HEAL);
-            if (!heal.isEmpty() && castReady() && lf.distanceTo(m) < 8) {
-                beginCast(heal.getFirst(), -1, m);
+            if (!castReady()) return;
+            int heal = forMaster(Intent.HEAL, m);
+            if (heal >= 0) {
+                beginCast(heal, -1, m);
                 supportReadyAt = now + 60;
+            }
+        }
+    }
+
+    /**
+     * Badly hurt and it holds a HEAL page that reaches itself: heal itself, with a page that heals only it
+     * first, a group heal that takes it in if that is all it has. It keeps behind its master meanwhile.
+     */
+    private final class Mend extends Behavior {
+        Mend() {
+            super("mend");
+        }
+
+        private double health() {
+            return lf.getHealth() / lf.getMaxHealth();
+        }
+
+        private int page() {
+            List<Integer> own = reaching(Intent.HEAL, Reach.SELF);
+            for (int slot : own) if (!lf.spellIn(slot).profile().reaches(Reach.GROUP)) return slot;
+            return own.isEmpty() ? -1 : own.getFirst();
+        }
+
+        @Override
+        double score() {
+            double hp = health();
+            if (hp >= 0.5 || lf.level().getGameTime() < mendReadyAt || page() < 0) return 0;
+            return 0.55 + (0.5 - hp) * 1.6;
+        }
+
+        @Override
+        void tick(long now) {
+            if (master != null) slipBehind(master);
+            if (!castReady()) return;
+            int heal = page();
+            if (heal >= 0) {
+                beginCast(heal, -1, lf);
+                mendReadyAt = now + 60;
             }
         }
     }
@@ -471,7 +550,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
         double score() {
             if (master == null || threats.isEmpty()) return 0;
             double s = (masterHealth < 0.6 ? 0.85 : 0.45) * lf.role().protect * lf.bravery();
-            if (lf.attackSlots().isEmpty() && lf.activeWith(Intent.WARD).isEmpty()) s *= 0.5; // it can only stand in the way
+            if (lf.attackSlots().isEmpty() && !canReachMaster(Intent.WARD)) s *= 0.5; // it can only stand in the way
             return s;
         }
 
@@ -484,9 +563,9 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
             hover(between, 1.6);
             lookAt(t);
             if (!castReady()) return;
-            List<Integer> ward = lf.activeWith(Intent.WARD);
-            if (!ward.isEmpty() && now >= wardReadyAt) {
-                beginCast(ward.getFirst(), -1, m);
+            int ward = now >= wardReadyAt ? forMaster(Intent.WARD, m) : -1;
+            if (ward >= 0) {
+                beginCast(ward, -1, m);
                 wardReadyAt = now + 100;
             } else if (Familiars.order(lf, t)) {
                 // It takes the hunter on as its foe, so (foe) in its attack page means the hunter.
@@ -532,13 +611,7 @@ public final class LifeformMind extends UtilityMind<ManaLifeform> {
 
         @Override
         void tick(long now) {
-            Player m = master;
-            if (m == null) return;
-            Entity danger = foe != null ? foe : threats.isEmpty() ? null : threats.getFirst();
-            Vec3 away = danger == null ? m.getLookAngle().scale(-1) : m.position().subtract(danger.position());
-            away = away.multiply(1, 0, 1);
-            if (away.lengthSqr() < 1e-4) away = new Vec3(0, 0, 1);
-            hover(m.position().add(away.normalize().scale(2)).add(0, m.getBbHeight() * 0.9, 0), 1.6);
+            if (master != null) slipBehind(master);
         }
     }
 

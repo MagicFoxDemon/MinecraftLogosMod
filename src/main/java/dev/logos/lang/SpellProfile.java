@@ -1,9 +1,13 @@
 package dev.logos.lang;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import dev.logos.runtime.Group;
@@ -22,8 +26,11 @@ import dev.logos.runtime.Group;
  * @param declared  true if the player wrote {@code :intent}
  * @param range     roughly how far away it can act, in blocks
  * @param estimate  roughly the mana one cast spends
+ * @param reach     whom each of its HEAL and WARD intents can reach (see {@link Reach}); never empty for those two
+ * @param declaredReach what {@code :reach} said, or empty if the reach was inferred
  */
-public record SpellProfile(Intent primary, List<Intent> intents, boolean declared, double range, double estimate, List<String> assumptions) {
+public record SpellProfile(Intent primary, List<Intent> intents, boolean declared, double range, double estimate, List<String> assumptions,
+                           Map<Intent, Set<Reach>> reach, Set<Reach> declaredReach) {
     public static final int ASSUMED_TARGETS = 3, ASSUMED_BLOCKS = 5, ASSUMED_DEPTH = 3;
     /** A wrapped hand is reckoned to strike once this many seconds. */
     public static final double BLOW_SECONDS = 2;
@@ -33,15 +40,42 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
     private static final Set<String> FRIENDLY_EFFECTS = Set.of("regeneration", "speed", "strength", "resistance", "absorption", "fire_resistance",
             "instant_health", "night_vision", "water_breathing", "invisibility", "haste", "jump_boost", "slow_falling", "luck", "health_boost",
             "saturation", "conduit_power", "dolphins_grace", "hero_of_the_village");
+    /** The intents that are for its own side and so have a {@link Reach}. */
+    public static final Set<Intent> REACHING = EnumSet.of(Intent.HEAL, Intent.WARD);
+    /** Filter kinds that never take in the caster: written into an entities selector, they leave the caster out. */
+    private static final Set<TargetKind> LEAVE_CASTER_OUT = EnumSet.of(TargetKind.ENEMIES, TargetKind.HOSTILE, TargetKind.PLAYERS,
+            TargetKind.ITEMS, TargetKind.PROJECTILES, TargetKind.NOT_CASTER, TargetKind.NONE);
 
     public String intentsZh() {
         StringBuilder sb = new StringBuilder();
-        for (Intent i : intents) sb.append(sb.isEmpty() ? "" : "、").append(i.zh);
+        for (Intent i : intents) {
+            sb.append(sb.isEmpty() ? "" : "、").append(i.zh);
+            Set<Reach> r = reach.get(i);
+            if (r != null) sb.append("（").append(Reach.zh(r, "·")).append("）");
+        }
         return sb.toString();
+    }
+
+    /** Whom its primary intent reaches; empty unless it is filed under HEAL or WARD. */
+    public Set<Reach> primaryReach() {
+        return reach.getOrDefault(primary, Set.of());
+    }
+
+    /** Whether its primary intent can reach {@code r}. */
+    public boolean reaches(Reach r) {
+        return primaryReach().contains(r);
     }
 
     /** Reads {@code body}; {@code declared} (from {@code :intent}, may be empty) overrides the inferred intents. */
     public static SpellProfile of(List<Node> body, List<Intent> declared) {
+        return of(body, declared, Set.of());
+    }
+
+    /**
+     * Reads {@code body}; {@code declared} (from {@code :intent}) overrides the inferred intents, and
+     * {@code declaredReach} (from {@code :reach}) the inferred reach of its HEAL and WARD intents. Either may be empty.
+     */
+    public static SpellProfile of(List<Node> body, List<Intent> declared, Set<Reach> declaredReach) {
         Reader r = new Reader();
         double cost = 0;
         for (Node n : body) cost += r.cost(n, false);
@@ -52,13 +86,27 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
             for (Intent i : PRIORITY) if (r.found.contains(i)) intents.add(i);
             if (intents.isEmpty()) intents.add(Intent.UTILITY);
         }
+        Map<Intent, Set<Reach>> reach = new EnumMap<>(Intent.class);
+        EnumSet<Reach> any = EnumSet.noneOf(Reach.class);
+        for (EnumSet<Reach> found : r.reach.values()) any.addAll(found);
+        for (Intent i : intents) {
+            if (!REACHING.contains(i)) continue;
+            // A declared heal or ward with nothing of its own kind to read takes whom the spell's other helping reaches;
+            // one that names no one it can be told by is taken as aimed at a single creature, as it always was.
+            Set<Reach> found = !declaredReach.isEmpty() ? declaredReach : r.reach.containsKey(i) ? r.reach.get(i) : any;
+            reach.put(i, Set.copyOf(found.isEmpty() ? EnumSet.of(Reach.ONE) : found));
+        }
         return new SpellProfile(intents.getFirst(), List.copyOf(intents), !declared.isEmpty(), r.range,
-                Math.round(cost * 10) / 10.0, List.copyOf(r.assumptions));
+                Math.round(cost * 10) / 10.0, List.copyOf(r.assumptions), Map.copyOf(reach), Set.copyOf(declaredReach));
     }
 
     /** One pass over the tree: intents found, reach, and cost (each node's own price times how often it runs). */
     private static final class Reader {
         final EnumSet<Intent> found = EnumSet.noneOf(Intent.class);
+        /** Whom each heal or ward found reaches, from whom it is written on; absent for one that could not be told. */
+        final Map<Intent, EnumSet<Reach>> reach = new EnumMap<>(Intent.class);
+        /** The handlers (and bodies) being read, innermost first: what {@code target} and {@code self} stand for there. */
+        final Deque<Frame> frames = new ArrayDeque<>();
         final Set<String> assumptions = new LinkedHashSet<>();
         double range = 0;
         /** Whether the spell reaches more than one creature somewhere (a group selector, field, group effect). */
@@ -137,7 +185,12 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
             }
             for (Node k : n.kw.values()) children += cost(k, inGroup);
             double body = 0;
-            for (Node b : n.body) body += cost(b, inGroup);
+            frames.push(new Frame(n, null));
+            try {
+                for (Node b : n.body) body += cost(b, inGroup);
+            } finally {
+                frames.pop();
+            }
             if (GROUP_SELECTORS.contains(r)) {
                 group = true;
                 reach(kwNum(n, "radius", 6));
@@ -191,7 +244,7 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                             + (repeated(n, "on-hit", inGroup) + repeated(n, "on-swing", inGroup)) * blows
                             + events(n, "on-kill", inGroup) + events(n, "on-expire", inGroup);
                     if (n.events.containsKey("on-hit") || n.events.containsKey("on-swing")) assumptions.add("魔力缠绕按每 " + Node.fmt(BLOW_SECONDS) + " 秒一击估算");
-                    found.add(Intent.WARD);
+                    friendly(Intent.WARD, n.arg(0));
                 }
                 case "vein" -> {
                     Motion motion = n.kw.get("motion") != null && n.kw.get("motion").value instanceof Motion m && m.crawls() ? m : Motion.FORWARD;
@@ -231,11 +284,11 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                 }
                 case "heal" -> {
                     own = argNum(n, 1, 4) * 1.5 * count(n.arg(0));
-                    found.add(Intent.HEAL);
+                    friendly(Intent.HEAL, n.arg(0));
                 }
                 case "shield" -> {
                     own = argNum(n, 1, 4) * 1.5 * count(n.arg(0));
-                    found.add(Intent.WARD);
+                    friendly(Intent.WARD, n.arg(0));
                 }
                 case "infuse", "infuse-block" -> {
                     own = argNum(n, 1, 10) * dev.logos.runtime.ManaInfusion.COST * count(n.arg(0));
@@ -293,7 +346,8 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     String id = String.valueOf(n.arg(1) == null ? "" : n.arg(1).value).replace("minecraft:", "");
                     double level = argNum(n, 3, 1);
                     own = (id.startsWith("instant") ? 6 * level : argNum(n, 2, 10) * level * 0.8) * count(n.arg(0));
-                    found.add(FRIENDLY_EFFECTS.contains(id) ? (id.equals("instant_health") || id.equals("regeneration") ? Intent.HEAL : Intent.WARD) : Intent.CONTROL);
+                    if (FRIENDLY_EFFECTS.contains(id)) friendly(id.equals("instant_health") || id.equals("regeneration") ? Intent.HEAL : Intent.WARD, n.arg(0));
+                    else found.add(Intent.CONTROL);
                 }
                 case "launch" -> {
                     own = argNum(n, 1, 1) * 1.5 * count(n.arg(0));
@@ -419,9 +473,93 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
             List<Node> handlers = n.events.get(event);
             if (handlers == null) return 0;
             double sum = 0;
-            for (Node h : handlers) sum += cost(h, inGroup);
+            frames.push(new Frame(n, event));
+            try {
+                for (Node h : handlers) sum += cost(h, inGroup);
+            } finally {
+                frames.pop();
+            }
             return sum;
         }
+
+        /** A heal or ward written on {@code target}: files the intent and whom it reaches. */
+        private void friendly(Intent intent, Node target) {
+            found.add(intent);
+            EnumSet<Reach> r = reachOf(target, List.copyOf(frames));
+            if (!r.isEmpty()) reach.computeIfAbsent(intent, k -> EnumSet.noneOf(Reach.class)).addAll(r);
+        }
+
+        /**
+         * Whom {@code t} can stand for, read from the words alone (as {@code Targeting} decides): {@code caster} is
+         * itself; a projectile, ray, beam or vein never strikes its caster, so the {@code target} of their handlers is
+         * one other creature; a field takes in its caster with the rest; {@code entities} takes in its caster unless its
+         * filter leaves it out; {@code players} and {@code enemies} never do. Empty when it cannot be told (a variable,
+         * a computed choice). {@code frames} are the handlers around it, innermost first.
+         */
+        private static EnumSet<Reach> reachOf(Node t, List<Frame> frames) {
+            // An unwritten target is its caster's.
+            if (t == null) return EnumSet.of(Reach.SELF);
+            if (t.kind == Node.Kind.CTX) {
+                return switch (String.valueOf(t.value)) {
+                    case "caster" -> EnumSet.of(Reach.SELF);
+                    case "target" -> boundTarget(frames);
+                    case "self" -> wrapped(frames);
+                    default -> EnumSet.noneOf(Reach.class);
+                };
+            }
+            if (t.kind != Node.Kind.CALL || t.rune == null) return EnumSet.noneOf(Reach.class);
+            return switch (t.rune.name) {
+                case "master", "foe", "nearest", "nearest-player", "familiar" -> EnumSet.of(Reach.ONE);
+                case "players", "enemies", "marked", "hit-list" -> EnumSet.of(Reach.GROUP);
+                case "entities" -> leavesCasterOut(t.kw.get("filter")) ? EnumSet.of(Reach.GROUP) : EnumSet.of(Reach.GROUP, Reach.SELF);
+                default -> EnumSet.noneOf(Reach.class);
+            };
+        }
+
+        /** What {@code target} stands for in the innermost handler or body that binds it. */
+        private static EnumSet<Reach> boundTarget(List<Frame> frames) {
+            for (int i = 0; i < frames.size(); i++) {
+                Frame f = frames.get(i);
+                Rune r = f.node.rune;
+                if (r == null) continue;
+                if (f.event == null) {
+                    if (!r.bodyBindsTarget) continue;
+                    // each: one of the group at a time, so whomever the group takes in.
+                    return reachOf(f.node.arg(0), frames.subList(i + 1, frames.size()));
+                }
+                Rune.EventSpec spec = r.events.get(f.event);
+                if (spec == null || !spec.bindsTarget()) continue;
+                return r.name.equals("field") ? EnumSet.of(Reach.GROUP, Reach.SELF) : EnumSet.of(Reach.ONE);
+            }
+            // A passive page's own target (who hurt it, whom it struck): one creature.
+            return EnumSet.of(Reach.ONE);
+        }
+
+        /** What {@code self} stands for: in a mana wrap's handlers, the creature it is wrapped round; a construct's, no creature. */
+        private static EnumSet<Reach> wrapped(List<Frame> frames) {
+            for (int i = 0; i < frames.size(); i++) {
+                Frame f = frames.get(i);
+                if (f.event == null || f.node.rune == null) continue;
+                if (f.node.rune.name.equals("imbue")) return reachOf(f.node.arg(0), frames.subList(i + 1, frames.size()));
+                if (f.node.rune.name.equals("construct")) break;
+            }
+            return EnumSet.noneOf(Reach.class);
+        }
+
+        /** Whether an entities filter is written so that it never takes in the caster. */
+        private static boolean leavesCasterOut(Node filter) {
+            if (filter == null || filter.kind != Node.Kind.CALL || filter.rune == null) return false;
+            return switch (filter.rune.name) {
+                case "kind" -> filter.arg(0) != null && filter.arg(0).value instanceof TargetKind k && LEAVE_CASTER_OUT.contains(k);
+                case "any-of" -> !filter.args.isEmpty() && filter.args.stream().allMatch(Reader::leavesCasterOut);
+                case "all-of" -> filter.args.stream().anyMatch(Reader::leavesCasterOut);
+                case "except" -> leavesCasterOut(filter.arg(0));
+                default -> false;
+            };
+        }
+
+        /** A handler ({@code event}) of {@code node} or, with no event, its body. */
+        private record Frame(Node node, String event) {}
     }
 
     /** The lifeform's level rules without a dependency on the runtime (the language is compiled in tests too). */

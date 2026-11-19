@@ -81,6 +81,7 @@ public final class GraphBuilder {
         root.setOption(SpellRoot.IMMOLATE, spell.immolate());
         // Only a declared intent is kept on the node; an inferred one is worked out again on compiling.
         root.setOption(SpellRoot.INTENT, spell.profile().declared() ? SpecialNodes.IntentChoice.of(spell.profile().primary()) : SpecialNodes.IntentChoice.AUTO);
+        for (dev.logos.lang.Reach r : dev.logos.lang.Reach.values()) root.setOption(SpellRoot.reachOption(r), spell.profile().declaredReach().contains(r));
         SourceNotes.Note head = notes.head();
         if (head != null) {
             // The whole spell's note hangs above the root, its title as the first line.

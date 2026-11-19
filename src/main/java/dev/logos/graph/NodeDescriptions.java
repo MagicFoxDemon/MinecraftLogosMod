@@ -48,7 +48,7 @@ public final class NodeDescriptions {
         } else if (node instanceof SpecialNodes.EmitterRoot) {
             for (String id : new String[] {"name", "mana", "players", "mode", "interval", "start"}) line(lines, word, id, "");
         } else if (node instanceof SpecialNodes.SpellRoot) {
-            for (String id : new String[] {"name", "mana", "trigger", "players", "immolate", "intent", "start"}) line(lines, word, id, "");
+            for (String id : new String[] {"name", "mana", "trigger", "players", "immolate", "intent", "reach_self", "reach_one", "reach_group", "start"}) line(lines, word, id, "");
         } else if (node instanceof SpecialNodes.Remember) {
             for (String id : new String[] {"kind", "value", "remembered"}) line(lines, word, id, "");
             lines.add(new Line("流程", "上方箭头接入行动；下方箭头连接使用铭记结果的后续行动。"));
@@ -82,6 +82,9 @@ public final class NodeDescriptions {
             Map.entry("spell/param/players", "开启后，术式可以影响施法者以外的玩家；默认关闭。"),
             Map.entry("spell/param/immolate", "允许焚式法杖放大载页承载上限并焚毁载页；主动施放与被动触发都适用。"),
             Map.entry("spell/param/intent", "标明术式的用途，供魔力生命体决定何时施放；自动推测时由节点组合判断。"),
+            Map.entry("spell/param/reach_self", "治疗或守护术式能作用于施法者自己。三项都不勾时，按治疗、护盾写给了谁自动推测。"),
+            Map.entry("spell/param/reach_one", "治疗或守护术式能对准另一个生物（例如主人）。三项都不勾时自动推测。"),
+            Map.entry("spell/param/reach_group", "治疗或守护术式一次作用于一群生物。三项都不勾时自动推测。"),
             Map.entry("spell/param/start", "连接本次施放首先执行的行动。"),
             Map.entry("emitter/intro", "术式发射器本身，在发射器里编辑载页时代替启式：决定术式名、注入魔力，以及发射器何时施放。保存后载页恢复为主动施放的启式，取出来照样能挂在法杖上。"),
             Map.entry("emitter/param/name", "为术式命名，用于辨认载页与施放记录。"),

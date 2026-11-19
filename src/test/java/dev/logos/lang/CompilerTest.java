@@ -139,6 +139,46 @@ class CompilerTest {
         assertThrows(LogosError.class, () -> Compiler.compile("(spell :intent dance (damage (foe) 6))"));
     }
 
+    private static java.util.Set<Reach> reach(String src) {
+        return Compiler.compile(src).profile().primaryReach();
+    }
+
+    @Test
+    void reachProfile() {
+        // Whom a heal or ward is written on says whom it reaches.
+        assertEquals(java.util.Set.of(Reach.SELF), reach("(spell :mana 20 (heal caster 4))"));
+        assertEquals(java.util.Set.of(Reach.ONE), reach("(spell :mana 20 (heal (master) 4))"));
+        // A projectile, ray or beam never strikes its caster.
+        assertEquals(java.util.Set.of(Reach.ONE), reach("(spell :mana 30 (ray :range 16 (on-hit (heal target 2))))"));
+        assertEquals(java.util.Set.of(Reach.ONE), reach("(spell :mana 30 (projectile (on-hit (shield target 2))))"));
+        // A field takes in its caster with the rest, on entering or each tick.
+        assertEquals(java.util.Set.of(Reach.GROUP, Reach.SELF), reach("(spell :mana 200 (field :life 2 (on-enter (heal target 2))))"));
+        assertEquals(java.util.Set.of(Reach.GROUP, Reach.SELF), reach("(spell :mana 200 (field :life 2 :every 0.25 (on-tick (heal (entities) 2))))"));
+        // entities takes in the caster unless its filter leaves it out; players never do.
+        assertEquals(java.util.Set.of(Reach.GROUP), reach("(spell :mana 50 (heal (entities :filter (kind not-caster)) 2))"));
+        assertEquals(java.util.Set.of(Reach.GROUP, Reach.SELF), reach("(spell :mana 50 :players true (heal (entities :filter (any-of (kind players) (kind living))) 2))"));
+        assertEquals(java.util.Set.of(Reach.GROUP), reach("(spell :mana 50 :players true (heal (players :radius 8) 6))"));
+        // each hands its body one of the group at a time.
+        assertEquals(java.util.Set.of(Reach.GROUP, Reach.SELF), reach("(spell :mana 50 (each (entities) (heal target 2)))"));
+        // Several heals add up; a friendly potion counts as one.
+        assertEquals(java.util.Set.of(Reach.SELF, Reach.ONE), reach("(spell :mana 40 (heal caster 2) (heal (master) 2))"));
+        assertEquals(java.util.Set.of(Reach.SELF), reach("(spell :mana 40 (potion caster regeneration 10))"));
+        // A mana wrap is round its caster unless written on another; self in its handlers is whoever it wraps.
+        assertEquals(java.util.Set.of(Reach.SELF), reach("(spell :mana 40 (imbue))"));
+        assertEquals(java.util.Set.of(Reach.ONE), reach("(spell :mana 40 (imbue (master) :life 4 (on-tick (heal self 1))))"));
+        // Nothing to read: one creature, as before.
+        assertEquals(java.util.Set.of(Reach.ONE), reach("(spell :name \"回春\" :intent heal :mana 10 (mark (master) #healed))"));
+        // Not a heal or ward: no reach.
+        assertTrue(reach("(spell :mana 20 (damage (foe) 6))").isEmpty());
+        // :reach overrides the inferred reach, and is only for heals and wards.
+        Spell declared = Compiler.compile("(spell :reach self+group :mana 20 (heal (master) 4))");
+        assertEquals(java.util.Set.of(Reach.SELF, Reach.GROUP), declared.profile().primaryReach());
+        assertEquals(java.util.Set.of(Reach.SELF, Reach.GROUP), declared.profile().declaredReach());
+        assertTrue(declared.profile().intentsZh().contains("治疗（自己·群体）"), declared.profile().intentsZh());
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell :reach self (damage (foe) 6))"));
+        assertThrows(LogosError.class, () -> Compiler.compile("(spell :reach everyone (heal caster 1))"));
+    }
+
     @Test
     void prismaticBarrageUsesSixExclusiveRaysWithCappedHitCosts() {
         Spell s = Compiler.compile(PRISMATIC_BARRAGE);

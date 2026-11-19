@@ -182,6 +182,15 @@ public final class ManuscriptControls {
         return p;
     }
 
+    /** A tick box on the parchment: a paper slip, inked with a tick when on. */
+    public static void paperCheck(Toggle toggle) {
+        toggle.addClass(INKED);
+        Style.importantPipeline(toggle.getToggleStyle(), s -> s.baseTexture(new Paper(Slip.REST))
+                .hoverTexture(new Paper(Slip.HOVER))
+                .markTexture(Icons.CHECK.copy().setColor(Manuscript.INK))
+                .unmarkTexture(IGuiTexture.EMPTY));
+    }
+
     /** A toolbar switch: a paper slip whose icon is inked when on and faint when off. */
     static void paper(Toggle toggle, IGuiTexture icon) {
         toggle.addClass(INKED);

@@ -102,6 +102,14 @@ public final class GraphCompiler {
                 items.add(atom(root, ":intent"));
                 items.add(atom(root, intent.intent().word));
             }
+            java.util.EnumSet<dev.logos.lang.Reach> reach = java.util.EnumSet.noneOf(dev.logos.lang.Reach.class);
+            for (dev.logos.lang.Reach r : dev.logos.lang.Reach.values()) {
+                if (Boolean.TRUE.equals(root.option(SpellRoot.reachOption(r), Boolean.class))) reach.add(r);
+            }
+            if (!reach.isEmpty()) {
+                items.add(atom(root, ":reach"));
+                items.add(atom(root, dev.logos.lang.Reach.written(reach)));
+            }
             List<SExpr> body = chain(root.out(SpellRoot.START));
             if (body.isEmpty()) throw new GraphError(root, "启式的 ▶ 施放 还没有连接任何行动");
             items.addAll(body);

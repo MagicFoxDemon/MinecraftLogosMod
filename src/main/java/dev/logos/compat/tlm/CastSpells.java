@@ -9,6 +9,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 
 import dev.logos.lang.Element;
 import dev.logos.lang.Intent;
+import dev.logos.lang.Reach;
 import dev.logos.runtime.Casting;
 import dev.logos.runtime.Charging;
 import dev.logos.runtime.CreatureMana;
@@ -28,7 +29,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The Spellcasting mode's mind, as a mana lifeform's: she heals her owner (or herself) with HEAL pages when hurt, wards
- * them with WARD pages when something is hunting them, and strikes her foe with her attack pages, the cheapest each time
+ * them with WARD pages when something is hunting them, each with a page that can reach whom it is for (see
+ * {@link Reach}), and strikes her foe with her attack pages, the cheapest each time
  * and the dearest with it if her pool can spare both, AREA pages first when the foe has company. Each cast charges from
  * her pool at the wand's flow and surge, the charge showing as a player's does, and lets go once full.
  */
@@ -39,6 +41,8 @@ final class CastSpells extends Behavior<EntityMaid> {
     static final double REACH = 16;
     /** Share of her pool a combo must leave, as a lifeform keeps. */
     static final double COMBO_RESERVE = 0.3;
+    /** A group heal or ward reaches only those near her: she casts one for her owner from at most this far. */
+    static final double GROUP_REACH = 4;
 
     private @Nullable MaidSpells.Page casting, combo;
     private @Nullable LivingEntity at;
@@ -77,21 +81,24 @@ final class CastSpells extends Behavior<EntityMaid> {
 
         List<MaidSpells.Page> heals = MaidSpells.with(pages, Intent.HEAL);
         if (!heals.isEmpty() && now >= supportReadyAt) {
-            if (owner != null && owner.getHealth() < owner.getMaxHealth() * 0.75 && maid.distanceTo(owner) < 12) {
+            MaidSpells.Page forOwner = owner != null && owner.getHealth() < owner.getMaxHealth() * 0.75 ? forOwner(maid, owner, heals, true) : null;
+            if (forOwner != null) {
                 supportReadyAt = now + 60;
-                begin(maid, pool, heals.getFirst(), null, owner);
+                begin(maid, pool, forOwner, null, owner);
                 return;
             }
-            if (maid.getHealth() < maid.getMaxHealth() * 0.5) {
+            MaidSpells.Page forHerself = maid.getHealth() < maid.getMaxHealth() * 0.5 ? forHerself(heals) : null;
+            if (forHerself != null) {
                 supportReadyAt = now + 60;
-                begin(maid, pool, heals.getFirst(), null, maid);
+                begin(maid, pool, forHerself, null, maid);
                 return;
             }
         }
         List<MaidSpells.Page> wards = MaidSpells.with(pages, Intent.WARD);
-        if (owner != null && !wards.isEmpty() && now >= wardReadyAt && maid.distanceTo(owner) < 12 && hunted(level, owner)) {
+        MaidSpells.Page ward = owner != null && !wards.isEmpty() && now >= wardReadyAt && hunted(level, owner) ? forOwner(maid, owner, wards, false) : null;
+        if (ward != null) {
             wardReadyAt = now + 100;
-            begin(maid, pool, wards.getFirst(), null, owner);
+            begin(maid, pool, ward, null, owner);
             return;
         }
         LivingEntity foe = maid.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
@@ -106,6 +113,30 @@ final class CastSpells extends Behavior<EntityMaid> {
         MaidSpells.Page strong = pick.size() > 1 ? pick.getLast() : null;
         if (strong != null && pool.mana() - basic.injection() - strong.injection() < COMBO_RESERVE * pool.maxMana()) strong = null;
         begin(maid, pool, basic, strong, foe);
+    }
+
+    /**
+     * Of her heal or ward pages, the one to cast at her owner from where she stands, or null: one aimed at a single
+     * creature first, else a group one if she is close enough for it to take her owner in. Hurt herself too, a group
+     * heal that takes in both of them comes first. A page that reaches only its caster is never cast at her owner.
+     */
+    private static MaidSpells.@Nullable Page forOwner(EntityMaid maid, Player owner, List<MaidSpells.Page> pages, boolean heal) {
+        double d = maid.distanceTo(owner);
+        boolean near = d < GROUP_REACH;
+        List<MaidSpells.Page> group = MaidSpells.reaching(pages, Reach.GROUP);
+        if (heal && near && maid.getHealth() < maid.getMaxHealth() * 0.75) {
+            for (MaidSpells.Page p : group) if (p.spell().profile().reaches(Reach.SELF)) return p;
+        }
+        List<MaidSpells.Page> one = MaidSpells.reaching(pages, Reach.ONE);
+        if (!one.isEmpty() && d < 12) return one.getFirst();
+        return !group.isEmpty() && near ? group.getFirst() : null;
+    }
+
+    /** Of her heal pages, the one to heal herself with: one that heals only its caster first, else a group heal that takes her in. */
+    private static MaidSpells.@Nullable Page forHerself(List<MaidSpells.Page> heals) {
+        List<MaidSpells.Page> own = MaidSpells.reaching(heals, Reach.SELF);
+        for (MaidSpells.Page p : own) if (!p.spell().profile().reaches(Reach.GROUP)) return p;
+        return own.isEmpty() ? null : own.getFirst();
     }
 
     /** Whether something near her owner, not one of their own familiars, has them as its target. */
