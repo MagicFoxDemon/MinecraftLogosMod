@@ -1,6 +1,8 @@
 package dev.logos.graph;
 
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.joml.Vector2f;
 import org.jspecify.annotations.Nullable;
@@ -12,18 +14,19 @@ import dev.logos.graph.SpecialNodes.EmitterRoot;
 import dev.logos.graph.SpecialNodes.IntentChoice;
 import dev.logos.graph.SpecialNodes.SpellRoot;
 import dev.logos.graph.SpecialNodes.Trigger;
+import dev.logos.lang.Reach;
 
 /**
  * A page edited inside a spell emitter shows the emitter's node where its invocation node stands,
  * and gets its own invocation back when saved, so the page still works on a wand. What the emitter
- * node does not show (intent, immolation) is kept aside in {@link Kept} and put back.
+ * node does not show (intent, reach, immolation) is kept aside in {@link Kept} and put back.
  */
 public final class EmitterGraphs {
     private EmitterGraphs() {}
 
     /** The page's invocation settings the emitter node has no place for. */
-    public record Kept(boolean immolate, IntentChoice intent) {
-        public static final Kept DEFAULT = new Kept(true, IntentChoice.AUTO);
+    public record Kept(boolean immolate, IntentChoice intent, Set<Reach> reach) {
+        public static final Kept DEFAULT = new Kept(true, IntentChoice.AUTO, Set.of());
     }
 
     /** The graph's root of exactly {@code type} (not a subclass), or null. */
@@ -45,8 +48,10 @@ public final class EmitterGraphs {
         copy(old, root);
         Boolean immolate = old.option(SpellRoot.IMMOLATE, Boolean.class);
         IntentChoice intent = old.option(SpellRoot.INTENT, IntentChoice.class);
+        EnumSet<Reach> reach = EnumSet.noneOf(Reach.class);
+        for (Reach r : Reach.values()) if (Boolean.TRUE.equals(old.option(SpellRoot.reachOption(r), Boolean.class))) reach.add(r);
         rewire(graph, old, root);
-        return new Kept(!Boolean.FALSE.equals(immolate), intent == null ? IntentChoice.AUTO : intent);
+        return new Kept(!Boolean.FALSE.equals(immolate), intent == null ? IntentChoice.AUTO : intent, Set.copyOf(reach));
     }
 
     /** Gives the page its invocation back in place of the emitter's node: cast by hand, with what was kept aside. */
@@ -60,6 +65,7 @@ public final class EmitterGraphs {
         root.setOption(SpellRoot.TRIGGER, Trigger.CAST);
         root.setOption(SpellRoot.IMMOLATE, kept.immolate());
         root.setOption(SpellRoot.INTENT, kept.intent());
+        for (Reach r : Reach.values()) root.setOption(SpellRoot.reachOption(r), kept.reach().contains(r));
         rewire(graph, old, root);
     }
 

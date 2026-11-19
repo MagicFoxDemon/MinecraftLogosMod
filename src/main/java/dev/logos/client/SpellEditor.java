@@ -20,6 +20,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Selector;
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Toggle;
 import com.lowdragmc.lowdraglib2.gui.ui.utils.UIElementProvider;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.nodegraphtookit.editor.GraphEditorView;
@@ -91,6 +92,8 @@ public final class SpellEditor {
     private final Label overview = new Label();
     private final Label runeDescription = new Label();
     private final Selector<SpecialNodes.IntentChoice> intent = new Selector<>();
+    /** One tick box for each way a heal or ward can reach, in {@link dev.logos.lang.Reach} order; made with the editor, as the graph loads before the sidebar. */
+    private final List<Toggle> reach = reachBoxes();
     /** The wax seal on the inscribe button: grey while the drawing does not hold. */
     private final ManuscriptControls.Seal seal = new ManuscriptControls.Seal(() -> this.graph != null && this.graph.result().ok());
     /** Set while the selector is being matched to the graph, so that does not count as the player choosing. */
@@ -365,7 +368,14 @@ public final class SpellEditor {
                 status,
                 new Label().setText(Component.translatable("logos.editor.overview_heading")));
         // The emitter casts on its own trigger; the intent a lifeform reads stays as the page had it.
-        if (emitter == null) details.addChildren(new Label().setText(Component.translatable("logos.editor.intent")), intent);
+        if (emitter == null) {
+            details.addChildren(new Label().setText(Component.translatable("logos.editor.intent")), intent,
+                    new Label().setText(Component.translatable("logos.editor.reach")));
+            UIElement reachRow = new UIElement().layout(l -> l.flexDirection(FlexDirection.COLUMN).gapAll(2).widthPercent(100));
+            reachRow.setId("reach");
+            for (Toggle t : reach) reachRow.addChildren(t.layout(l -> l.widthPercent(100)));
+            details.addChildren(reachRow);
+        }
         details.addChildren(runeDescription, overview);
         for (UIElement child : details.getChildren()) {
             if (child instanceof Label label) {
@@ -593,6 +603,10 @@ public final class SpellEditor {
         SpecialNodes.IntentChoice chosen = root == null ? null : root.option(SpecialNodes.SpellRoot.INTENT, SpecialNodes.IntentChoice.class);
         syncingIntent = true;
         intent.setValue(chosen == null ? SpecialNodes.IntentChoice.AUTO : chosen, false);
+        for (dev.logos.lang.Reach way : dev.logos.lang.Reach.values()) {
+            Boolean on = root == null ? null : root.option(SpecialNodes.SpellRoot.reachOption(way), Boolean.class);
+            reach.get(way.ordinal()).setOn(Boolean.TRUE.equals(on), false);
+        }
         syncingIntent = false;
     }
 
@@ -611,6 +625,28 @@ public final class SpellEditor {
         Component help = node == null ? Component.empty() : Component.literal(node.title() + "\n\n" + node.doc());
         // A word the player has not learned keeps its help to itself, as its node does (符文解锁).
         runeDescription.setText(node != null && Sealed.node(node) ? Sealed.garble(help) : help);
+    }
+
+    /** Whom a heal or ward reaches: inferred while none is ticked; ticking one writes it on the spell's root. */
+    private List<Toggle> reachBoxes() {
+        List<Toggle> boxes = new ArrayList<>();
+        for (dev.logos.lang.Reach r : dev.logos.lang.Reach.values()) {
+            Toggle t = new Toggle();
+            t.setId("reach_" + r.word);
+            t.setText(dev.logos.graph.NodeTerms.parameter("spell", SpecialNodes.SpellRoot.reachOption(r)));
+            t.setOn(false, false);
+            t.toggleLabel(l -> l.textStyle(s -> s.textColor(0xFF392719).textShadow(false)));
+            ManuscriptControls.paperCheck(t);
+            t.setOnToggleChanged(on -> {
+                if (syncingIntent) return;
+                SpecialNodes.SpellRoot root = root();
+                if (root == null) return;
+                root.setOption(SpecialNodes.SpellRoot.reachOption(r), on);
+                graph.invalidate();
+            });
+            boxes.add(t);
+        }
+        return boxes;
     }
 
     private SpecialNodes.@org.jspecify.annotations.Nullable SpellRoot root() {

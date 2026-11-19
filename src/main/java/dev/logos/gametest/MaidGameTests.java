@@ -46,11 +46,13 @@ final class MaidGameTests {
         functions.register("maid_mana_follows_owner", () -> MaidGameTests::manaFollowsOwner);
         functions.register("maid_casts_attack_page", () -> MaidGameTests::castsAttackPage);
         functions.register("maid_heals_owner", () -> MaidGameTests::healsOwner);
+        functions.register("maid_self_heal_spares_owner", () -> MaidGameTests::selfHealSparesOwner);
+        functions.register("maid_heals_herself", () -> MaidGameTests::healsHerself);
         functions.register("maid_takes_mana_fuel", () -> MaidGameTests::takesManaFuel);
         functions.register("maid_summoned_not_tamed", () -> MaidGameTests::summonedNotTamed);
         functions.register("maid_gathers_free_mana", () -> MaidGameTests::gathersFreeMana);
-        return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_takes_mana_fuel", "maid_summoned_not_tamed",
-                "maid_gathers_free_mana");
+        return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_self_heal_spares_owner", "maid_heals_herself",
+                "maid_takes_mana_fuel", "maid_summoned_not_tamed", "maid_gathers_free_mana");
     }
 
     private static EntityMaid maid(GameTestHelper h, Vec3 at) {
@@ -107,6 +109,33 @@ final class MaidGameTests {
         p.getFoodData().setFoodLevel(10); // too hungry to heal by itself
         p.setHealth(6);
         h.succeedWhen(() -> h.assertTrue(StatusData.has(p, Status.parse("#healed")), "she should cast her heal page on her owner"));
+    }
+
+    /** Her owner hurt, she passes over a cheaper heal that reaches only its caster and casts the one that reaches her owner. */
+    static void selfHealSparesOwner(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        EntityMaid m = caster(h, p, "(spell :name \"自愈\" :mana 10 (heal caster 1) (mark caster #mended))",
+                "(spell :name \"回春\" :mana 20 (heal (master) 1) (mark (master) #healed))");
+        p.getFoodData().setFoodLevel(10);
+        p.setHealth(6);
+        h.succeedWhen(() -> {
+            h.assertTrue(!StatusData.has(m, Status.parse("#mended")), "she should not cast a heal that reaches only herself for her owner");
+            h.assertTrue(StatusData.has(p, Status.parse("#healed")), "she should cast the heal that reaches her owner");
+        });
+    }
+
+    /** Badly hurt, she heals herself with a heal of her own before a group heal that takes her in. */
+    static void healsHerself(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        EntityMaid m = caster(h, p, "(spell :name \"群愈\" :mana 20 (heal (entities :radius 3) 1) (mark caster #group))",
+                "(spell :name \"自愈\" :mana 30 (heal caster 1) (mark caster #own))");
+        m.setHealth(m.getMaxHealth() * 0.3f);
+        h.succeedWhen(() -> {
+            h.assertTrue(!StatusData.has(m, Status.parse("#group")), "she should heal herself with her own heal first, not the group one");
+            h.assertTrue(StatusData.has(m, Status.parse("#own")), "she should heal herself");
+        });
     }
 
     /** In the 施法 mode her owner refills her with mana fuel, one at a time. */

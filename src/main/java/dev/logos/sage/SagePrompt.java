@@ -52,7 +52,7 @@ public final class SagePrompt {
 
                 # 语法
                 术式是 S 表达式。最外层写一个 (spell …)，关键字 :name 名字、:mana 注入魔力、:trigger 启式（cast 手动施放，hurt 受伤，attack 攻击，kill 击杀）、
-                :intent 意图、:players 是否作用于其他玩家、:immolate 是否允许焚式，之后依次写行动。
+                :intent 意图、:reach 治疗或守护的作用对象（self 自己、one 单体、group 群体，几个用 + 连起来，平常省略让它自动推测）、:players 是否作用于其他玩家、:immolate 是否允许焚式，之后依次写行动。
                 - 符文调用：(符文名 位置参数… :关键字 值 … (on-事件 行动…) 行动…)。签名里 [ ] 表示可省略，… 表示可以写多个。
                 - 事件 (on-hit …)、(on-expire …) 等只能写在会产生它的符文里面；在事件和 each 里，target 指被选中的对象。
                 - 变量：(let $名字 值 行动…)；条件：(if 命题 行动 [否则的行动])，多个行动用 (do …) 包起来。
