@@ -15,6 +15,7 @@ import dev.logos.item.SpellPages;
 import dev.logos.lang.Status;
 import dev.logos.runtime.CreatureMana;
 import dev.logos.runtime.Familiars;
+import dev.logos.runtime.FreeManaEntity;
 import dev.logos.runtime.ManaVessel;
 import dev.logos.runtime.ManaVessels;
 import dev.logos.runtime.PlayerMagic;
@@ -47,7 +48,9 @@ final class MaidGameTests {
         functions.register("maid_heals_owner", () -> MaidGameTests::healsOwner);
         functions.register("maid_takes_mana_fuel", () -> MaidGameTests::takesManaFuel);
         functions.register("maid_summoned_not_tamed", () -> MaidGameTests::summonedNotTamed);
-        return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_takes_mana_fuel", "maid_summoned_not_tamed");
+        functions.register("maid_gathers_free_mana", () -> MaidGameTests::gathersFreeMana);
+        return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_takes_mana_fuel", "maid_summoned_not_tamed",
+                "maid_gathers_free_mana");
     }
 
     private static EntityMaid maid(GameTestHelper h, Vec3 at) {
@@ -133,5 +136,26 @@ final class MaidGameTests {
         p.interactOn(wild, InteractionHand.MAIN_HAND, wild.position());
         h.assertTrue(wild.isTame() && wild.isOwnedBy(p), "a wild maid that is not a familiar should still be tamed by cake");
         h.succeed();
+    }
+
+    /**
+     * Free mana drifts to a tamed maid with room in her pool and goes in at the default absorption (half). Her own
+     * regeneration fills it too meanwhile, so what shows it was her is the free mana being used up.
+     */
+    static void gathersFreeMana(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        PlayerMagic.of(p).mana = PlayerMagic.maxMana(p); // a full owner draws none of it
+        EntityMaid m = maid(h, new Vec3(3.5, 2, 3.5));
+        m.tame(p);
+        m.setNoAi(true);
+        CreatureMana pool = (CreatureMana) ManaVessels.of(m);
+        h.assertTrue(pool != null && pool.maxMana() >= 40, "a tamed maid should hold mana: " + pool);
+        pool.setMana(0);
+        FreeManaEntity.release(h.getLevel(), h.absoluteVec(new Vec3(7.5, 2.5, 7.5)), 40);
+        h.succeedWhen(() -> {
+            h.assertTrue(pool.mana() >= 20 - 1e-6, "she should gather the free mana, half of it kept: " + pool.mana());
+            h.assertTrue(h.getLevel().getEntitiesOfClass(FreeManaEntity.class, m.getBoundingBox().inflate(12)).isEmpty(), "the free mana should be used up: " + h.getLevel().getEntitiesOfClass(FreeManaEntity.class, m.getBoundingBox().inflate(12)).stream().map(o -> o.amount() + " at " + o.distanceTo(m)).toList());
+        });
     }
 }
