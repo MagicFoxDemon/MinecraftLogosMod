@@ -238,6 +238,45 @@ final class LifeformGameTests {
         h.succeedWhen(() -> h.assertTrue(StatusData.has(p, Status.parse("#healed")), "it should cast its heal page on its master"));
     }
 
+    /** Its master hurt, it passes over a cheaper heal that reaches only its caster and casts the one that reaches its master. */
+    static void selfHealSparesMaster(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 1000 (summon mana_lifeform :level 3 :at (pos-of caster)))"); // two active slots
+        lf.core.setItem(0, page("(spell :name \"自愈\" :mana 10 (heal caster 1) (mark caster #mended))"));
+        lf.core.setItem(1, page("(spell :name \"回春\" :mana 20 (heal (master) 1) (mark (master) #healed))"));
+        p.getFoodData().setFoodLevel(10);
+        p.setHealth(6);
+        h.succeedWhen(() -> {
+            h.assertTrue(!StatusData.has(lf, Status.parse("#mended")), "it should not cast a heal that reaches only itself for its master");
+            h.assertTrue(StatusData.has(p, Status.parse("#healed")), "it should cast the heal that reaches its master");
+        });
+    }
+
+    /** Badly hurt, it heals itself with a heal of its own before a group heal that takes it in. */
+    static void mendsItself(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 1000 (summon mana_lifeform :level 3 :at (pos-of caster)))"); // two active slots
+        lf.core.setItem(0, page("(spell :name \"群愈\" :mana 20 (heal (entities :radius 3) 1) (mark caster #group))"));
+        lf.core.setItem(1, page("(spell :name \"自愈\" :mana 30 (heal caster 1) (mark caster #own))"));
+        lf.setHealth(lf.getMaxHealth() * 0.3f);
+        h.succeedWhen(() -> {
+            h.assertTrue(!StatusData.has(lf, Status.parse("#group")), "it should heal itself with its own heal first, not the group one");
+            h.assertTrue(StatusData.has(lf, Status.parse("#own")), "it should heal itself");
+        });
+    }
+
+    /** Badly hurt with only a group heal that takes it in, it heals itself with that. */
+    static void mendsWithGroupHeal(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        ManaLifeform lf = summon(h, p, "(spell :mana 300 (summon mana_lifeform :at (pos-of caster)))");
+        lf.core.setItem(0, page("(spell :name \"群愈\" :mana 40 (field :life 1 (on-enter (heal target 1) (mark target #group))))"));
+        lf.setHealth(lf.getMaxHealth() * 0.3f);
+        h.succeedWhen(() -> h.assertTrue(StatusData.has(lf, Status.parse("#group")), "it should heal itself with the group heal"));
+    }
+
     /** A healing projectile, ray or beam it aims at its master lands on them instead of passing through. */
     static void healProjectileHitsMaster(GameTestHelper h) {
         healFormHitsMaster(h, "projectile");

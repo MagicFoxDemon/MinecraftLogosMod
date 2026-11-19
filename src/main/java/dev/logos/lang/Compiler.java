@@ -2,10 +2,12 @@ package dev.logos.lang;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import dev.logos.LogosConfig;
@@ -87,6 +89,8 @@ public final class Compiler {
         String trigger = "cast";
         double mana = DEFAULT_MANA;
         List<Intent> declared = new ArrayList<>();
+        Set<Reach> declaredReach = EnumSet.noneOf(Reach.class);
+        SExpr reachAt = null;
         List<SExpr> bodyRaw = top;
         if (top.size() == 1 && top.getFirst() instanceof ListExpr l && "spell".equals(l.head())) {
             bodyRaw = new ArrayList<>();
@@ -129,7 +133,16 @@ public final class Compiler {
                                 if (!declared.contains(in)) declared.add(in);
                             }
                         }
-                        default -> throw err(a, "spell 没有 " + a.text() + " 插槽，可用: :name :mana :trigger :players :immolate :intent");
+                        case ":reach" -> {
+                            // Whom a heal or ward reaches, several joined by +: self+group
+                            for (String w : v.toString().split("[+]")) {
+                                Reach r = Reach.parse(w.strip());
+                                if (r == null) throw err(v, "未知的作用对象 '" + w + "'，可用: " + Reach.words() + "（几个用 + 连起来）");
+                                declaredReach.add(r);
+                            }
+                            reachAt = v;
+                        }
+                        default -> throw err(a, "spell 没有 " + a.text() + " 插槽，可用: :name :mana :trigger :players :immolate :intent :reach");
                     }
                 } else {
                     bodyRaw.add(it);
@@ -140,7 +153,11 @@ public final class Compiler {
         Scope root = new Scope(!trigger.equals("cast"), Map.of(), List.of(), 0, false, false);
         List<Node> body = statements(bodyRaw, root);
         if (recursive) notes.add("含有递归 (recurse)：每层递归都会重新支付魔力，最多 " + LogosConfig.maxRecursion() + " 层");
-        return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src, SpellProfile.of(body, declared), inferElement(body));
+        SpellProfile profile = SpellProfile.of(body, declared, declaredReach);
+        if (reachAt != null && profile.reach().isEmpty()) {
+            throw err(reachAt, ":reach 只用于治疗 (heal) 或守护 (ward) 的术式：这个术式的意图是" + profile.intentsZh());
+        }
+        return new Spell(name, trigger, affectsPlayers, immolate, mana, Math.round(stability * 10) / 10.0, body, notes, src, profile, inferElement(body));
     }
 
     private List<Node> statements(List<SExpr> raw, Scope s) {

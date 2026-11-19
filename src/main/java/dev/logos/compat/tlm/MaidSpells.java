@@ -80,6 +80,11 @@ final class MaidSpells {
         return out;
     }
 
+    /** Of {@code pages}, those that can reach {@code r} (see {@link dev.logos.lang.Reach}), in the same order. */
+    static List<Page> reaching(List<Page> pages, dev.logos.lang.Reach r) {
+        return pages.stream().filter(p -> p.spell().profile().reaches(r)).toList();
+    }
+
     /** Her attack pages: meant for enemies, or of no particular intent. */
     static List<Page> attacks(List<Page> pages) {
         return with(pages, Intent.STRIKE, Intent.AREA, Intent.CONTROL, Intent.UTILITY);
