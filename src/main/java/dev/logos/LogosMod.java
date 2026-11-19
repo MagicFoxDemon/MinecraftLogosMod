@@ -819,7 +819,8 @@ public class LogosMod {
                     .sync(dev.logos.runtime.Familiars.Bond.STREAM_CODEC).build());
     /** On another mod's creature that holds mana through a compat (a Touhou Little Maid maid): its pool, saved with it. */
     public static final Supplier<AttachmentType<dev.logos.runtime.CreatureMana>> CREATURE_MANA = ATTACHMENTS.register("creature_mana",
-            () -> AttachmentType.builder(() -> new dev.logos.runtime.CreatureMana()).serialize(dev.logos.runtime.CreatureMana.CODEC).build());
+            () -> AttachmentType.builder(() -> new dev.logos.runtime.CreatureMana()).serialize(dev.logos.runtime.CreatureMana.CODEC)
+                    .sync(dev.logos.runtime.CreatureMana.STREAM_CODEC).build());
     public static final Supplier<AttachmentType<dev.logos.runtime.Anchors>> ANCHORS = ATTACHMENTS.register("anchors",
             () -> AttachmentType.builder(() -> new dev.logos.runtime.Anchors()).serialize(dev.logos.runtime.Anchors.CODEC).copyOnDeath().build());
     /** On a level, on either side: its constructs by where they stand (dev.logos.runtime.ConstructIndex); never saved, as they are not. */

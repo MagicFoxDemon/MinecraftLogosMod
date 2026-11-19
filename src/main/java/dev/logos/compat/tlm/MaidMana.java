@@ -60,7 +60,10 @@ final class MaidMana {
         return PlayerMagic.maxMana(owner) * (1 + LogosConfig.maidManaPerFavorLevel() * level);
     }
 
-    /** Every {@link #REFRESH} ticks on the server: her cap follows her owner and favorability, and her pool refills. */
+    /**
+     * Every {@link #REFRESH} ticks on the server: her cap follows her owner and favorability, her pool refills, and
+     * clients get it again if its whole points changed.
+     */
     static void tick(EntityMaid maid) {
         if (maid.level().isClientSide() || (maid.tickCount + maid.getId()) % REFRESH != 0) return;
         CreatureMana pool = of(maid);
@@ -68,5 +71,7 @@ final class MaidMana {
         pool.setMax(cap(maid, pool.maxMana()));
         var regen = maid.getAttributes().hasAttribute(SpellModifiers.MANA_REGENERATION) ? maid.getAttributeValue(SpellModifiers.MANA_REGENERATION) : 0;
         pool.receiveMana(regen * REFRESH / 20.0);
+        // Clients show it (her screen, Jade); what she spent or gathered since reaches them here too.
+        if (pool.resend()) maid.syncData(LogosMod.CREATURE_MANA);
     }
 }
