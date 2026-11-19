@@ -18,26 +18,30 @@ import net.minecraft.world.entity.ai.goal.Goal;
  * one; the one it is already doing gets a little extra, so it does not flicker between two. A new
  * behaviour is one class (an inner class of the mind, or a nested class beside it as in
  * {@link ColossusBehavior}) plus an entry in the list the mind's constructor fills.
+ * <p>
+ * Its parts are protected, so another mod's creature can have one too (a Touhou Little Maid maid, in
+ * {@code compat/tlm}). It is a {@link Goal} for creatures run by goals; one run by a brain instead calls
+ * {@link #thinkAndAct} from a brain behaviour of its own.
  */
 public abstract class UtilityMind<T extends Mob> extends Goal {
     static final int THINK_EVERY = 10;
     private static final double HYSTERESIS = 0.1;
 
-    final T mob;
+    protected final T mob;
     /** How long a freshly chosen behaviour is stuck to unless something is far more pressing; 0: not at all. */
     private final int commit;
-    final List<Behavior> behaviors = new ArrayList<>();
-    @Nullable Behavior current;
+    protected final List<Behavior> behaviors = new ArrayList<>();
+    protected @Nullable Behavior current;
     private long committedUntil;
-    final Map<Behavior, Double> lastScores = new LinkedHashMap<>();
+    protected final Map<Behavior, Double> lastScores = new LinkedHashMap<>();
 
-    UtilityMind(T mob, int commit) {
+    protected UtilityMind(T mob, int commit) {
         this.mob = mob;
         this.commit = commit;
     }
 
     /** Refreshes what it knows of its surroundings, just before it thinks. */
-    abstract void sense();
+    protected abstract void sense();
 
     /** What it is doing: the id of a behaviour or act, or of what it does with none ({@code logos.mind.<id>} reads it out). */
     public abstract String doing();
@@ -53,13 +57,19 @@ public abstract class UtilityMind<T extends Mob> extends Goal {
     }
 
     /** Thinks when it is time to (or it has nothing to do), then carries on with what it chose. */
-    final void thinkAndAct() {
+    protected final void thinkAndAct() {
         long now = mob.level().getGameTime();
         if (current == null || now % THINK_EVERY == 0) {
             sense();
             think(now);
         }
         if (current != null) current.tick(now);
+    }
+
+    /** Stops what it is doing, so it chooses afresh when it next thinks (its creature stopped thinking a while). */
+    protected final void stopCurrent() {
+        if (current != null) current.stop();
+        current = null;
     }
 
     private void think(long now) {
@@ -93,20 +103,20 @@ public abstract class UtilityMind<T extends Mob> extends Goal {
         return Component.translatable("logos.mind.describe", doingName(), scores);
     }
 
-    abstract static class Behavior {
+    protected abstract static class Behavior {
         /** Its id, read out as {@code logos.mind.<id>}. */
-        final String id;
+        public final String id;
 
-        Behavior(String id) {
+        protected Behavior(String id) {
             this.id = id;
         }
 
-        abstract double score();
+        protected abstract double score();
 
-        void start() {}
+        protected void start() {}
 
-        abstract void tick(long now);
+        protected abstract void tick(long now);
 
-        void stop() {}
+        protected void stop() {}
     }
 }
