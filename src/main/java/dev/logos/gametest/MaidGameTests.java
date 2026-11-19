@@ -56,9 +56,14 @@ final class MaidGameTests {
         functions.register("maid_staff_tops_up_when_calm", () -> MaidGameTests::staffTopsUpWhenCalm);
         functions.register("maid_forages_free_mana", () -> MaidGameTests::foragesFreeMana);
         functions.register("maid_controls_close_hunter", () -> MaidGameTests::controlsCloseHunter);
+        functions.register("maid_offhand_wand_casts", () -> MaidGameTests::offhandWandCasts);
+        functions.register("maid_hits_back_out_of_mana", () -> MaidGameTests::hitsBackOutOfMana);
+        functions.register("maid_waits_out_of_mana", () -> MaidGameTests::waitsOutOfMana);
+        functions.register("maid_closes_in_empowered", () -> MaidGameTests::closesInEmpowered);
         return List.of("maid_mana_follows_owner", "maid_casts_attack_page", "maid_heals_owner", "maid_self_heal_spares_owner", "maid_heals_herself",
                 "maid_empowers_fighting_owner", "maid_takes_mana_fuel", "maid_summoned_not_tamed", "maid_gathers_free_mana", "maid_staff_fills_then_casts",
-                "maid_staff_tops_up_when_calm", "maid_forages_free_mana", "maid_controls_close_hunter");
+                "maid_staff_tops_up_when_calm", "maid_forages_free_mana", "maid_controls_close_hunter", "maid_offhand_wand_casts",
+                "maid_hits_back_out_of_mana", "maid_waits_out_of_mana", "maid_closes_in_empowered");
     }
 
     private static EntityMaid maid(GameTestHelper h, Vec3 at) {
@@ -273,6 +278,71 @@ final class MaidGameTests {
         h.succeedWhen(() -> {
             h.assertTrue(StatusData.has(husk, Status.parse("#held")), "she should cast her control page at the husk hunting her");
             h.assertFalse(StatusData.has(husk, Status.parse("#struck")), "her control page should come first (held at " + first[0] + ", struck at " + first[1] + ", husk target " + husk.getTarget() + ")");
+        });
+    }
+
+    /** A sword in her main hand and a wand with {@code pages} in her off hand, at {@code at}. */
+    private static EntityMaid swordAndWand(GameTestHelper h, ServerPlayer owner, Vec3 at, String... pages) {
+        EntityMaid m = caster(h, owner, LogosMod.WAND.get().getDefaultInstance(), at, pages);
+        ItemStack wand = m.getMainHandItem();
+        m.setItemSlot(EquipmentSlot.OFFHAND, wand);
+        m.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+        return m;
+    }
+
+    /** A wand in her off hand casts as one in her main hand would. */
+    static void offhandWandCasts(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        EntityMaid m = swordAndWand(h, p, new Vec3(3.5, 2, 3.5), "(spell :name \"灼\" :intent strike :mana 20 (damage (foe) 1) (mark (foe) #struck))");
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(7.5, 2, 7.5));
+        husk.setNoAi(true);
+        h.succeedWhen(() -> h.assertTrue(StatusData.has(husk, Status.parse("#struck")), "she should cast from the wand in her off hand (doing " + doing(m) + ")"));
+    }
+
+    /** Out of mana, with a sword in hand, she hits a foe that has come within reach. */
+    static void hitsBackOutOfMana(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        EntityMaid m = swordAndWand(h, p, new Vec3(3.5, 2, 3.5), "(spell :name \"灼\" :intent strike :mana 20 (damage (foe) 1) (mark (foe) #struck))");
+        CreatureMana pool = (CreatureMana) ManaVessels.of(m);
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(4.7, 2, 3.5));
+        husk.setNoAi(true);
+        h.onEachTick(() -> pool.setMana(0));
+        h.succeedWhen(() -> {
+            h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "she should hit the husk with her sword (doing " + doing(m) + ")");
+            h.assertFalse(StatusData.has(husk, Status.parse("#struck")), "with no mana she should not cast");
+        });
+    }
+
+    /** Out of mana she does not go after a foe that stays away: she only answers what comes to her. */
+    static void waitsOutOfMana(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        EntityMaid m = swordAndWand(h, p, new Vec3(3.5, 2, 3.5), "(spell :name \"灼\" :intent strike :mana 20 (damage (foe) 1))");
+        CreatureMana pool = (CreatureMana) ManaVessels.of(m);
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(3.5, 2, 8.5));
+        husk.setNoAi(true);
+        h.onEachTick(() -> pool.setMana(0));
+        h.runAtTickTime(120, () -> {
+            h.assertTrue(dev.logos.compat.tlm.MaidMind.describe(m) != null, "her mind should be running");
+            h.assertTrue(husk.getHealth() >= husk.getMaxHealth(), "she should not go and hit a husk that stays away (doing " + doing(m) + ")");
+            h.assertTrue(m.distanceTo(husk) > 3, "she should not walk up to it: " + m.distanceTo(husk));
+            h.succeed();
+        });
+    }
+
+    /** With an empowering page she can cast on herself, she casts it and goes in with her sword. */
+    static void closesInEmpowered(GameTestHelper h) {
+        ServerPlayer p = FamiliarGameTests.master(h);
+        FamiliarGameTests.forceAround(h, 1);
+        EntityMaid m = swordAndWand(h, p, new Vec3(3.5, 2, 3.5), "(spell :name \"缠\" :intent empower :reach self :mana 10 (mark caster #wrapped))");
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(3.5, 2, 8.5));
+        husk.setNoAi(true);
+        h.succeedWhen(() -> {
+            h.assertTrue(StatusData.has(m, Status.parse("#wrapped")), "she should cast her empowering page on herself (doing " + doing(m) + ")");
+            h.assertTrue(husk.getHealth() < husk.getMaxHealth(), "she should go in and hit the husk with her sword (doing " + doing(m) + ", "
+                    + m.distanceTo(husk) + " away)");
         });
     }
 

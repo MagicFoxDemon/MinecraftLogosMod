@@ -22,7 +22,7 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * 施法: the work mode in which a maid casts Logos spells. With a wand or staff in her main hand (and a codex in her off
- * hand if her owner likes) she chooses what to do as a mana lifeform does ({@link MaidMind}): picks pages by their
+ * hand if her owner likes), or a wand in her off hand beside a weapon, she chooses what to do as a mana lifeform does ({@link MaidMind}): picks pages by their
  * intent, keeps at her attacks' reach, and pays from her own pool ({@link MaidMana}), a staff through filling it. It is an attack mode to the
  * maid mod, so its attack list and target rules apply, and she does not panic when hurt.
  */
@@ -71,10 +71,12 @@ final class SpellcastingTask implements IRangedAttackTask {
                 Pair.of(5, new CastSpells()));
     }
 
-    /** She takes on foes only with an attack page to strike them with and mana to do it. */
+    /** She takes on foes with an attack page and mana to cast it, or, with a wand in her off hand, a weapon in her main hand. */
     private static boolean canFight(EntityMaid maid) {
         var pool = MaidMana.of(maid);
-        return pool != null && (pool.mana() > 0 || dev.logos.item.StaffItem.stored(maid.getMainHandItem()) > 0) && !MaidSpells.attacks(MaidSpells.active(maid)).isEmpty();
+        if (pool == null) return false;
+        if (MaidSpells.melee(maid)) return true;
+        return (pool.mana() > 0 || dev.logos.item.StaffItem.stored(maid.getMainHandItem()) > 0) && !MaidSpells.attacks(MaidSpells.active(maid)).isEmpty();
     }
 
     private boolean farAway(LivingEntity target, EntityMaid maid) {
@@ -93,7 +95,8 @@ final class SpellcastingTask implements IRangedAttackTask {
 
     @Override
     public boolean isWeapon(EntityMaid maid, ItemStack stack) {
-        return stack.getItem() instanceof WandItem;
+        // A weapon counts too beside a wand in her off hand: then she fights up close as well.
+        return stack.getItem() instanceof WandItem || (stack == maid.getMainHandItem() && MaidSpells.melee(maid));
     }
 
     @Override
@@ -104,6 +107,6 @@ final class SpellcastingTask implements IRangedAttackTask {
 
     @Override
     public String getMaidActionSummary() {
-        return "Cast Logos spells from the wand or staff in the main hand (and a spell codex in the off hand): strike enemies, heal and ward the owner, gather free mana, keep a staff filled. Needs a wand or staff with written spell pages";
+        return "Cast Logos spells from the wand or staff in the main hand (and a spell codex in the off hand): strike enemies, heal and ward the owner, gather free mana, keep a staff filled; with a wand in the off hand and a weapon in the main hand, also fight up close. Needs a wand or staff with written spell pages";
     }
 }

@@ -16,9 +16,13 @@ import dev.logos.runtime.Familiars;
 import dev.logos.runtime.FreeManaEntity;
 import dev.logos.runtime.UtilityMind;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -33,7 +37,9 @@ import net.minecraft.world.phys.Vec3;
  * wards her owner when something hunts them; lends them strength with an empowering page while they fight; slips
  * behind her owner when badly hurt;
  * goes to free mana nearby when all is quiet; and with a staff, fills it while she can, and in a fight whenever it
- * runs too low to cast. {@link MaidCaster} does the casting. With nothing worth doing she leaves her moves to the
+ * runs too low to cast. With a wand in her off hand and a weapon in her main hand she also fights up close: she
+ * casts an empowering page on herself (and a ward, if she has one) and goes in, and with nothing left to cast she
+ * still hits what comes within reach. {@link MaidCaster} does the casting. With nothing worth doing she leaves her moves to the
  * maid mod (following her owner, staying home). The maid mod's brain runs her, so {@link CastSpells} drives this mind
  * from a brain behaviour rather than as a goal.
  */
@@ -57,6 +63,8 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
     private @Nullable LivingEntity foe;
     private @Nullable FreeManaEntity orb;
     private long supportReadyAt, wardReadyAt, mendReadyAt, empowerReadyAt;
+    // Close in: when her weapon is ready again, and until when what she cast on herself lasts.
+    private long meleeReadyAt, empoweredUntil, wardedUntil;
     /** Whether a behaviour of hers set where she walks, so she clears it when it stops. */
     private boolean steering, backing;
 
@@ -64,6 +72,8 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         super(maid, COMMIT);
         this.caster = caster;
         behaviors.add(new Engage());
+        behaviors.add(new SelfDefense());
+        behaviors.add(new Melee());
         behaviors.add(new Support());
         behaviors.add(new Mend());
         behaviors.add(new Protect());
@@ -308,8 +318,9 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
         @Override
         protected double score() {
             if (foe == null || MaidSpells.attacks(pages).isEmpty()) return 0;
-            // A staff too low to cast leaves the fight to filling it (see Fill); a wand low on mana holds back.
-            if (!armed()) return 0.1;
+            // A staff too low to cast leaves the fight to filling it (see Fill); a wand low on mana holds back. With a
+            // weapon in hand and nothing left to cast she does not keep her distance either: she lets her foe come.
+            if (!armed()) return MaidSpells.melee(mob) ? 0 : 0.1;
             return !MaidCaster.staff(mob) && manaFraction() < 0.15 ? 0.15 : 0.6;
         }
 
@@ -319,6 +330,99 @@ public final class MaidMind extends UtilityMind<EntityMaid> {
             if (f == null) return;
             keepRange(f);
             attack(f);
+        }
+    }
+
+    // ---- close in (a wand in her off hand, a weapon in her main hand) ---------------------------------
+
+    /** Whether {@code f} is within her weapon's reach and in sight. */
+    private boolean inReach(LivingEntity f) {
+        return mob.isWithinMeleeAttackRange(f) && mob.hasLineOfSight(f);
+    }
+
+    /** Hits {@code f} with her weapon if it is in reach and her weapon is ready again (by her attack speed). */
+    private void hit(LivingEntity f, long now) {
+        lookAt(f);
+        if (now < meleeReadyAt || !inReach(f) || !(mob.level() instanceof ServerLevel level)) return;
+        double speed = mob.getAttributes().hasAttribute(Attributes.ATTACK_SPEED) ? mob.getAttributeValue(Attributes.ATTACK_SPEED) : 1;
+        meleeReadyAt = now + Mth.clamp(Math.round(20 / Math.max(0.1, speed)), 5, 40);
+        mob.swing(InteractionHand.MAIN_HAND);
+        mob.doHurtTarget(f);
+    }
+
+    /** Of her pages filed under {@code intent}, one she can cast on herself now: one that reaches only her first. */
+    private @Nullable MaidSpells.Page onHerself(Intent intent) {
+        List<MaidSpells.Page> own = reaching(intent, Reach.SELF);
+        for (MaidSpells.Page p : own) if (!p.spell().profile().reaches(Reach.GROUP)) return p;
+        return own.isEmpty() ? null : own.getFirst();
+    }
+
+    /** Until when what {@code page} lends her lasts, from {@code now} (5 seconds at least). */
+    private static long lasting(MaidSpells.Page page, long now) {
+        return now + Math.max(100, Math.round(page.spell().profile().lasting() * 20));
+    }
+
+    /**
+     * Nothing left to cast and her foe has come within her weapon's reach: she hits it where she stands. She does not
+     * go after it; she only answers what comes to her.
+     */
+    private final class SelfDefense extends Act {
+        SelfDefense() {
+            super("self_defense");
+        }
+
+        @Override
+        protected double score() {
+            if (foe == null || !MaidSpells.melee(mob) || armed() || !inReach(foe)) return 0;
+            return 0.65;
+        }
+
+        @Override
+        protected void tick(long now) {
+            if (foe != null) hit(foe, now);
+        }
+    }
+
+    /**
+     * She holds an empowering page she can cast on herself (a mana wrap, say): she casts it, then goes in with her
+     * weapon. Empowered she is keener still, more so warded as well (she casts her ward on herself first if she has
+     * one) and with a weapon that hits hard. Badly hurt, much less keen.
+     */
+    private final class Melee extends Act {
+        Melee() {
+            super("melee");
+        }
+
+        @Override
+        protected double score() {
+            LivingEntity f = foe;
+            if (f == null || !MaidSpells.melee(mob)) return 0;
+            long now = mob.level().getGameTime();
+            boolean empowered = now < empoweredUntil, warded = now < wardedUntil;
+            if (!empowered && onHerself(Intent.EMPOWER) == null) return 0;
+            double damage = mob.getAttributes().hasAttribute(Attributes.ATTACK_DAMAGE) ? mob.getAttributeValue(Attributes.ATTACK_DAMAGE) : 1;
+            double s = 0.7 + (empowered ? 0.15 : 0) + (warded ? 0.1 : 0) + Mth.clamp((damage - 5) / 10, 0, 0.2);
+            if (mob.getHealth() < mob.getMaxHealth() * 0.35) s *= 0.5;
+            return s;
+        }
+
+        @Override
+        protected void tick(long now) {
+            LivingEntity f = foe;
+            CreatureMana p = pool;
+            if (f == null || p == null) return;
+            if (caster.ready()) {
+                MaidSpells.Page empower = now >= empoweredUntil ? onHerself(Intent.EMPOWER) : null;
+                MaidSpells.Page ward = empower == null && now >= wardedUntil ? onHerself(Intent.WARD) : null;
+                if (empower != null && caster.cast(mob, p, empower, null, mob)) empoweredUntil = lasting(empower, now);
+                else if (ward != null && caster.cast(mob, p, ward, null, mob)) wardedUntil = lasting(ward, now);
+            }
+            if (!inReach(f)) walkTo(f.position(), 0.8f, 0);
+            else if (steering) {
+                mob.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+                steering = false;
+            }
+            hit(f, now);
         }
     }
 
