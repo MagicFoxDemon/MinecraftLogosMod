@@ -45,10 +45,16 @@ final class ManaHudGameTests {
         return hung(new ItemStack(LogosMod.WOOD_WANDS.getFirst().get()), SpellPages.inscribed(PageTier.CRYSTAL, SPELL, null));
     }
 
-    /** A player with 1000 of 1000 mana holding {@code held}. Mock players only tick when told to: see {@link #ticking}. */
+    /**
+     * A player with 1000 of 1000 mana holding {@code held}. Mock players only tick when told to: see {@link #ticking}.
+     * Moved to the middle of the test, out of the pull of free mana: a mock player joins at the world spawn, where the
+     * other tests' mock players and the free mana they leave behind gather and would top this one up.
+     */
     private static ServerPlayer holder(GameTestHelper h, ItemStack held) {
         @SuppressWarnings("removal")
         ServerPlayer p = MockPlayers.inLevel(h);
+        net.minecraft.world.phys.Vec3 middle = h.absoluteVec(new net.minecraft.world.phys.Vec3(16, 2, 20));
+        p.moveTo(middle.x, middle.y, middle.z, 0, 0);
         PlayerMagic m = PlayerMagic.of(p);
         m.baseMaxMana = m.mana = 1000;
         m.trace = false;
