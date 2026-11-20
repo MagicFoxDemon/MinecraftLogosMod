@@ -174,40 +174,55 @@ class GuideParserTest {
     }
 
     /**
-     * Every page shipped in Chinese: its links lead to pages that exist and its tags are ones the book draws. The
-     * codex's own pages are made in game, so every word to learn stands in for them here.
+     * Every page shipped in Chinese and English: their relative file sets match, links lead to pages that exist, and
+     * tags are ones the book draws. The codex's own pages are made in game, so every word to learn stands in for them here.
      */
     @Test
     void theShippedPagesHold() throws IOException {
-        Path root = shipped();
-        Map<String, String> files = new LinkedHashMap<>();
-        List<Path> pages;
-        try (Stream<Path> walk = Files.walk(root)) {
-            pages = walk.filter(p -> p.toString().endsWith(".md")).toList();
-        }
-        for (Path p : pages) {
-            String rel = root.relativize(p).toString().replace('\\', '/');
-            files.put("logos:" + rel.substring(0, rel.length() - 3), Files.readString(p, StandardCharsets.UTF_8));
-        }
-        List<GuideBook.Entry> codex = new ArrayList<>();
-        for (String key : dev.logos.lang.Unlocks.all()) codex.add(made(RuneCodex.page(key), key, 1, "", key, ""));
-        GuideBook book = GuideBook.build(files).withGenerated(codex);
-        assertFalse(book.isEmpty(), "no pages under " + root);
-        assertEquals(List.of(), book.brokenLinks());
-        List<String> unknown = new ArrayList<>();
-        for (var chapter : book.chapters()) {
-            for (var entry : chapter.entries()) {
-                assertFalse(entry.title().equals(entry.id().substring(entry.id().lastIndexOf('/') + 1)), entry.id() + " has no title");
-                for (var block : entry.doc().blocks()) {
-                    if (block instanceof GuideDoc.Tag t && !GuideBook.TAGS.contains(t.name())) unknown.add(entry.id() + ": " + t.name());
+        assertEquals(relativePages(shipped("zh_cn")), relativePages(shipped("en_us")),
+                "en_us and zh_cn guide directories must ship the exact same set of pages");
+        for (String lang : List.of("zh_cn", "en_us")) {
+            Path root = shipped(lang);
+            Map<String, String> files = new LinkedHashMap<>();
+            List<Path> pages;
+            try (Stream<Path> walk = Files.walk(root)) {
+                pages = walk.filter(p -> p.toString().endsWith(".md")).toList();
+            }
+            for (Path p : pages) {
+                String rel = root.relativize(p).toString().replace('\\', '/');
+                files.put("logos:" + rel.substring(0, rel.length() - 3), Files.readString(p, StandardCharsets.UTF_8));
+            }
+            List<GuideBook.Entry> codex = new ArrayList<>();
+            for (String key : dev.logos.lang.Unlocks.all()) codex.add(made(RuneCodex.page(key), key, 1, "", key, ""));
+            GuideBook book = GuideBook.build(files).withGenerated(codex);
+            assertFalse(book.isEmpty(), "no pages under " + root);
+            assertEquals(List.of(), book.brokenLinks(), "broken links in " + lang);
+            List<String> unknown = new ArrayList<>();
+            for (var chapter : book.chapters()) {
+                for (var entry : chapter.entries()) {
+                    assertFalse(entry.title().equals(entry.id().substring(entry.id().lastIndexOf('/') + 1)),
+                            lang + "/" + entry.id() + " has no title");
+                    for (var block : entry.doc().blocks()) {
+                        if (block instanceof GuideDoc.Tag t && !GuideBook.TAGS.contains(t.name())) {
+                            unknown.add(lang + "/" + entry.id() + ": " + t.name());
+                        }
+                    }
                 }
             }
+            assertEquals(List.of(), unknown);
         }
-        assertEquals(List.of(), unknown);
     }
 
-    private static Path shipped() {
-        Path relative = Path.of("src/main/resources/assets/logos/guide/zh_cn");
+    private static java.util.Set<String> relativePages(Path root) throws IOException {
+        try (Stream<Path> walk = Files.walk(root)) {
+            return walk.filter(p -> p.toString().endsWith(".md"))
+                    .map(p -> root.relativize(p).toString().replace('\\', '/'))
+                    .collect(java.util.stream.Collectors.toCollection(java.util.TreeSet::new));
+        }
+    }
+
+    private static Path shipped(String lang) {
+        Path relative = Path.of("src/main/resources/assets/logos/guide/" + lang);
         for (Path dir = Path.of("").toAbsolutePath(); dir != null; dir = dir.getParent()) {
             if (Files.isDirectory(dir.resolve(relative))) return dir.resolve(relative);
         }
