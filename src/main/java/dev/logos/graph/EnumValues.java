@@ -12,6 +12,7 @@ import com.lowdragmc.lowdraglib2.nodegraphtookit.model.node.definition.IPortDefi
 
 import dev.logos.lang.Category;
 import dev.logos.lang.Type;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
 /** Typed, reusable literals. Their string keys survive registry reordering, language changes and missing mods. */
@@ -79,7 +80,8 @@ public final class EnumValues {
         @Override public String title() { return names.apply(kind, value()).getString(); }
         @Override public String doc() {
             return Component.translatable("logos.enum.value_help").getString() + "\n"
-                    + Component.translatable("logos.enum.id").getString() + "：" + value()
+                    + Component.translatable("logos.enum.id").getString()
+                    + Language.getInstance().getOrDefault("logos.desc.sep", ": ") + value()
                     + (kind.filterable() ? "\n" + Component.translatable("logos.enum.filter_description").getString() : "");
         }
         @Override public void onDefineOptions(IOptionDefinitionContext context) {
