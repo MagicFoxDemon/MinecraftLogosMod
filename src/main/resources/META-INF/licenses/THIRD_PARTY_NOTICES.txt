@@ -1,0 +1,21 @@
+Logos bundles the following mods, unmodified, as nested jars (NeoForge Jar-in-Jar) under META-INF/jarjar/.
+Each keeps its own license, reproduced in this folder. They are not covered by the license of Logos.
+NeoForge loads the highest version present, so a newer copy installed separately replaces the bundled one.
+
+LDLib2 (ldlib2-neoforge-26.1) by KilaBash / Low-Drag-MC
+  License: GNU LGPL 3.0 (ldlib2-LGPL-3.0.txt, with the GNU GPL 3.0 it builds on, ldlib2-GPL-3.0.txt)
+  Source:  https://github.com/Low-Drag-MC/LDLib2
+  LDLib2 bundles Kotlin, Taffy and other libraries of its own, each under its own license.
+
+Photon (photon-neoforge-26.1) by KilaBash
+  License: CC BY-NC-SA 4.0 with additional terms (photon-LICENSE.txt)
+  Source:  https://github.com/Low-Drag-MC/Photon
+  Bundled under its terms for mod distributors: Logos is not sold or directly monetized.
+
+KilaGraph (kilagraph-neoforge-26.1) by KilaBash / Low-Drag-MC
+  License: MIT (kilagraph-LICENSE.txt)
+  Source:  https://github.com/Low-Drag-MC/KilaGraph
+
+GeckoLib (geckolib-neoforge-26.1.2)
+  License: MIT (geckolib-LICENSE.txt)
+  Source:  https://github.com/bernie-g/geckolib
