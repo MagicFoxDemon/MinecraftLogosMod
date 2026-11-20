@@ -40,7 +40,12 @@ if (!tlmJar.exists()) {
 repositories {
     // LDLib2 (UI + node graph toolkit), Photon (VFX), KilaGraph (Photon dependency)
     maven { url = "https://maven.firstdark.dev/snapshots" }
-    // GeckoLib (animated entity models), from Modrinth's Maven; only the modrinth group is looked up there.
+    // GeckoLib (animated entity models), from its own Maven, so the bundled jar carries its real version number.
+    exclusiveContent {
+        forRepository { maven { url = "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/" } }
+        filter { includeGroup "software.bernie.geckolib" }
+    }
+    // Optional mods compiled against (Iris, Jade) and the smoke-test mods, from Modrinth's Maven; only the modrinth group is looked up there.
     exclusiveContent {
         forRepository { maven { url = "https://api.modrinth.com/maven" } }
         filter { includeGroup "maven.modrinth" }
@@ -359,11 +364,22 @@ neoForge {
 }
 
 dependencies {
-    implementation "com.lowdragmc.ldlib2:ldlib2-neoforge-1.21.1:${ldlib2_version}"
-    implementation("com.lowdragmc.photon:photon-neoforge-1.21.1:${photon_version}") { transitive = false }
-    implementation("com.lowdragmc.kilagraph:kilagraph-neoforge-1.21.1:${kilagraph_version}") { transitive = false }
-    // geckolib-neoforge-1.21.1-4.9.3 (Modrinth version id; the version number is shared with the Fabric build)
-    implementation "maven.modrinth:geckolib:${geckolib_version}"
+    // The required mods ship inside the Logos jar (Jar-in-Jar), so players need only the one file. NeoForge loads the
+    // highest version on hand: a newer copy a player installs on its own, or one another mod bundles, wins over these.
+    // The ranges start at the versions built against. Photon for 1.21.1 is GPL 3.0, not main's CC BY-NC-SA.
+    jarJar(implementation("com.lowdragmc.ldlib2:ldlib2-neoforge-1.21.1")) {
+        version { strictly "[${ldlib2_version},)"; prefer ldlib2_version }
+    }
+    jarJar(implementation("com.lowdragmc.photon:photon-neoforge-1.21.1") { transitive = false }) {
+        version { strictly "[${photon_version},)"; prefer photon_version }
+    }
+    // Photon needs KilaGraph and does not bundle it for 1.21.1.
+    jarJar(implementation("com.lowdragmc.kilagraph:kilagraph-neoforge-1.21.1") { transitive = false }) {
+        version { strictly "[${kilagraph_version},)"; prefer kilagraph_version }
+    }
+    jarJar(implementation("software.bernie.geckolib:geckolib-neoforge-${minecraft_version}")) {
+        version { strictly "[${geckolib_version},)"; prefer geckolib_version }
+    }
     // Iris is optional: compiled against for IrisCompat, never required or bundled.
     compileOnly("maven.modrinth:iris:${iris_version}") { transitive = false }
     // JEI is optional: the alchemy table's recipes show in it when it is installed. -Pjei adds it to the dev runs.
