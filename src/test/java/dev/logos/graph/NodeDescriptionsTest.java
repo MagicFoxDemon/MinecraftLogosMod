@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,6 +37,8 @@ class NodeDescriptionsTest {
         Set<String> zhKeys = JsonParser.parseString(Files.readString(langFile("zh_cn"), StandardCharsets.UTF_8)).getAsJsonObject().keySet();
         var enJson = JsonParser.parseString(Files.readString(langFile("en_us"), StandardCharsets.UTF_8)).getAsJsonObject();
         assertEquals(zhKeys, enJson.keySet(), "zh_cn and en_us must define the exact same key set");
+        var jaJson = JsonParser.parseString(Files.readString(langFile("ja_jp"), StandardCharsets.UTF_8)).getAsJsonObject();
+        assertEquals(zhKeys, jaJson.keySet(), "zh_cn and ja_jp must define the exact same key set");
 
         for (String key : enJson.keySet()) {
             String value = enJson.get(key).getAsString();
@@ -46,6 +50,19 @@ class NodeDescriptionsTest {
                         || (c >= '\u3000' && c <= '\u303f')
                         || (c >= '\uff00' && c <= '\uffef');
                 assertFalse(cjk, "unexpected CJK character in en_us.json at " + key + ": " + value);
+            }
+        }
+
+        CharsetEncoder ms932 = Charset.forName("MS932").newEncoder();
+        for (String key : jaJson.keySet()) {
+            String value = jaJson.get(key).getAsString();
+            assertFalse(value.isEmpty(), "empty ja_jp entry for " + key);
+            for (int i = 0; i < value.length(); i++) {
+                char c = value.charAt(i);
+                if (c >= '\u4e00' && c <= '\u9fff') {
+                    assertTrue(ms932.canEncode(c),
+                            "non-JIS kanji '" + c + "' in ja_jp.json at " + key + ": " + value);
+                }
             }
         }
     }
@@ -65,7 +82,7 @@ class NodeDescriptionsTest {
 
         Language previous = Language.getInstance();
         try {
-            for (String lang : List.of("zh_cn", "en_us")) {
+            for (String lang : List.of("zh_cn", "en_us", "ja_jp")) {
                 Map<String, String> entries = loadLang(lang);
                 Language.inject(mapLanguage(entries));
 

@@ -106,7 +106,8 @@ public class GuideScenario implements UIScenario {
                 .ticks(5)
                 .step("back returns to the wand page", ctx -> ctx.check("wand page again: " + GuideScreen.lastRead(), WANDS.equals(GuideScreen.lastRead())))
                 .step("search for charging", ctx -> {
-                    String query = Minecraft.getInstance().getLanguageManager().getSelected().startsWith("zh") ? "蓄力" : "charge";
+                    String lang = Minecraft.getInstance().getLanguageManager().getSelected();
+                    String query = lang.startsWith("zh") ? "蓄力" : lang.startsWith("ja") ? "チャージ" : "charge";
                     ctx.ui().select("#guide_search", TextField.class).findFirst().orElseThrow().setValue(query, true);
                 })
                 .ticks(5)

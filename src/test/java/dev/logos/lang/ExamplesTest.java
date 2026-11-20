@@ -37,7 +37,7 @@ class ExamplesTest {
 
     @Test
     void everyExampleAndGroupIsNamedInBothLanguages() throws IOException {
-        for (String lang : List.of("zh_cn", "en_us")) {
+        for (String lang : List.of("zh_cn", "en_us", "ja_jp")) {
             JsonObject keys = JsonParser.parseString(Files.readString(langFile(lang))).getAsJsonObject();
             for (String id : Examples.ALL.keySet()) assertTrue(keys.has("logos.example." + id), lang + " has no name for " + id);
             for (String group : Examples.GROUPS) assertTrue(keys.has("logos.example.group." + group), lang + " has no name for group " + group);
