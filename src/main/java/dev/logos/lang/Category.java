@@ -1,6 +1,9 @@
 package dev.logos.lang;
 
+import java.util.Locale;
+
 import net.minecraft.ChatFormatting;
+import net.minecraft.locale.Language;
 
 /**
  * The grammatical families of runes, after the alchemical Tria Prima.
@@ -28,7 +31,12 @@ public enum Category {
         this.argb = argb;
     }
 
+    /** Localized family name read from the language files, falling back to Chinese when resources are absent. */
+    public String localizedName() {
+        return Language.getInstance().getOrDefault("logos.category." + name().toLowerCase(Locale.ROOT), zh);
+    }
+
     public String label() {
-        return glyph + " " + zh;
+        return glyph + " " + localizedName();
     }
 }

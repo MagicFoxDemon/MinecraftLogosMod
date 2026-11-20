@@ -128,7 +128,7 @@ public final class GuideRunes {
             index++;
             boolean context = family.getKey().equals("CONTEXT");
             Category ink = context ? Category.BINDING : Category.valueOf(family.getKey());
-            String label = context ? t("logos.editor.library.context") : ink.zh;
+            String label = context ? t("logos.editor.library.context") : ink.localizedName();
             List<Word> words = new ArrayList<>();
             int n = 0;
             for (LogosNode node : family.getValue()) {
@@ -197,16 +197,17 @@ public final class GuideRunes {
         List<Block> blocks = new ArrayList<>();
         blocks.add(heading(family, node.word()));
         NodeDescriptions.Help help = NodeDescriptions.help(node);
+        String sep = t("logos.guide.runes.sep");
         if (help != null) {
             blocks.add(paragraph(help.intro()));
             if (!help.lines().isEmpty()) {
                 blocks.add(new GuideDoc.Heading(2, List.of(Span.plain(t("logos.guide.runes.ports")))));
                 for (var line : help.lines()) {
-                    blocks.add(new GuideDoc.Bullet(0, List.of(bold(line.label()), Span.plain("：" + line.text()))));
+                    blocks.add(new GuideDoc.Bullet(0, List.of(bold(line.label()), Span.plain(sep + line.text()))));
                 }
             }
-            if (help.result() != null) blocks.add(new GuideDoc.Paragraph(List.of(bold(t("logos.guide.runes.result") + "："), Span.plain(help.result()))));
-            if (help.note() != null) blocks.add(new GuideDoc.Paragraph(List.of(bold(t("logos.guide.runes.note") + "："), Span.plain(help.note()))));
+            if (help.result() != null) blocks.add(new GuideDoc.Paragraph(List.of(bold(t("logos.guide.runes.result") + sep), Span.plain(help.result()))));
+            if (help.note() != null) blocks.add(new GuideDoc.Paragraph(List.of(bold(t("logos.guide.runes.note") + sep), Span.plain(help.note()))));
         } else if (!node.doc().isBlank()) {
             blocks.add(paragraph(node.doc()));
         }
@@ -217,8 +218,9 @@ public final class GuideRunes {
 
     /** The line under a page's title: its family, and the word it is written as in a spell's source. */
     private static Block heading(String family, String word) {
-        return new GuideDoc.Paragraph(List.of(bold(t("logos.guide.runes.family") + "："), Span.plain(family + "　"),
-                bold(t("logos.guide.runes.word") + "："), new Span(word, false, false, true, null)));
+        String sep = t("logos.guide.runes.sep");
+        return new GuideDoc.Paragraph(List.of(bold(t("logos.guide.runes.family") + sep), Span.plain(family + t("logos.guide.runes.pair_sep")),
+                bold(t("logos.guide.runes.word") + sep), new Span(word, false, false, true, null)));
     }
 
     /** How the word is learned: by everyone, from the start, from these books, or by none. */
@@ -250,7 +252,7 @@ public final class GuideRunes {
     private static void uses(@Nullable List<String> examples, List<Block> blocks) {
         if (examples == null || examples.isEmpty()) return;
         blocks.add(new GuideDoc.Heading(2, List.of(Span.plain(t("logos.guide.runes.examples")))));
-        blocks.add(paragraph(String.join("、", examples)));
+        blocks.add(paragraph(String.join(t("logos.guide.runes.list_sep"), examples)));
     }
 
     /** For every word to learn, the names of the example spells that write it. */

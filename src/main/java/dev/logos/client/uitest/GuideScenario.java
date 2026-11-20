@@ -13,6 +13,7 @@ import com.lowdragmc.lowdraglib2.uitest.UIScenario;
 import dev.logos.client.ClientHooks;
 import dev.logos.client.GuidePage;
 import dev.logos.client.GuideScreen;
+import net.minecraft.client.Minecraft;
 
 /**
  * Real-client test of 逻各斯手记: it opens at its first page with the starter chapter listed; the contents open a page;
@@ -104,7 +105,10 @@ public class GuideScenario implements UIScenario {
                 .click("#guide_back")
                 .ticks(5)
                 .step("back returns to the wand page", ctx -> ctx.check("wand page again: " + GuideScreen.lastRead(), WANDS.equals(GuideScreen.lastRead())))
-                .step("search for 蓄力", ctx -> ctx.ui().select("#guide_search", TextField.class).findFirst().orElseThrow().setValue("蓄力", true))
+                .step("search for charging", ctx -> {
+                    String query = Minecraft.getInstance().getLanguageManager().getSelected().startsWith("zh") ? "蓄力" : "charge";
+                    ctx.ui().select("#guide_search", TextField.class).findFirst().orElseThrow().setValue(query, true);
+                })
                 .ticks(5)
                 .step("search finds the casting page by its text", ctx -> ctx.check("casting page found",
                         ctx.ui().select("#toc_" + GuideScreen.safe(CASTING)).count() == 1))
