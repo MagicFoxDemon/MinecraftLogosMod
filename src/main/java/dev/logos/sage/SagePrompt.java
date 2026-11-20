@@ -90,7 +90,8 @@ public final class SagePrompt {
     }
 
     static String persona(String lang) {
-        String file = lang != null && lang.toLowerCase(Locale.ROOT).startsWith("zh") ? "persona_zh.txt" : "persona_en.txt";
+        String lower = lang == null ? "" : lang.toLowerCase(Locale.ROOT);
+        String file = lower.startsWith("zh") ? "persona_zh.txt" : lower.startsWith("ja") ? "persona_ja.txt" : "persona_en.txt";
         try (InputStream in = SagePrompt.class.getResourceAsStream("/logos/sage/" + file)) {
             if (in != null) return new String(in.readAllBytes(), StandardCharsets.UTF_8).strip();
         } catch (IOException e) {

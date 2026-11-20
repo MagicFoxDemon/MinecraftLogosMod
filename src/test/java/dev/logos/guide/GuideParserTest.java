@@ -181,7 +181,9 @@ class GuideParserTest {
     void theShippedPagesHold() throws IOException {
         assertEquals(relativePages(shipped("zh_cn")), relativePages(shipped("en_us")),
                 "en_us and zh_cn guide directories must ship the exact same set of pages");
-        for (String lang : List.of("zh_cn", "en_us")) {
+        assertEquals(relativePages(shipped("zh_cn")), relativePages(shipped("ja_jp")),
+                "ja_jp and zh_cn guide directories must ship the exact same set of pages");
+        for (String lang : List.of("zh_cn", "en_us", "ja_jp")) {
             Path root = shipped(lang);
             Map<String, String> files = new LinkedHashMap<>();
             List<Path> pages;

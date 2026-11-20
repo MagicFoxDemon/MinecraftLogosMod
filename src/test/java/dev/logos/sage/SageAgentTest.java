@@ -74,6 +74,7 @@ class SageAgentTest {
         assertTrue(prompt.contains("(damage "));
         assertTrue(prompt.contains("fireball"), "examples are listed by id");
         assertTrue(SagePrompt.system("en_us", all()).startsWith("You are the \"Book Sprite\""));
+        assertTrue(SagePrompt.system("ja_jp", all()).contains("書霊"));
     }
 
     @Test
