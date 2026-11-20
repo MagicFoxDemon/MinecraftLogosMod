@@ -22,9 +22,10 @@ Logos 是一个 Minecraft 模组原型：**魔法是一门受限制、事件驱�
    ```
 
 3. 用 `./gradlew runClient` 启动游戏，进入创造模式世界后执行 `/logos kit`，可以拿到法杖、典籍、示例术式和工作台，先玩一遍。
-4. 依赖会自动下载，它们也是玩家必装的前置（写在 `neoforge.mods.toml` 里）：
+4. 依赖会自动下载。它们是必需的前置（写在 `neoforge.mods.toml` 里），但原样打进了 Logos 的 jar（Jar-in-Jar，`build.gradle` 里的 `jarJar`），玩家只装 Logos 一个文件就行；玩家另装了更新版时 NeoForge 用更新的那份。各自的许可证在 `META-INF/licenses/`，改版本或加前置时一起改。
    - LDLib2、Photon、KilaGraph：来自 `maven.firstdark.dev`；
-   - GeckoLib 5：来自 Modrinth 的 Maven，坐标 `maven.modrinth:geckolib:<版本 id>`，版本 id 在 `gradle.properties` 的 `geckolib_version`。
+   - GeckoLib 5：来自它自己的 Maven，坐标 `com.geckolib:geckolib-neoforge-<MC 版本>:<版本>`，版本在 `gradle.properties` 的 `geckolib_version`。
+   - Photon 的许可证允许这样内嵌，条件是 Logos 不出售、不直接盈利；要收费前先取得作者的书面许可。
 
 玩法与设计的详细说明目前是维护者本地的工作笔记，不在仓库里；面向玩家的 README 会在发布时写。想了解某个机制，先读对应代码的类注释和各符文文件（`lang/` 下的 `FormRunes`、`EffectRunes` 等，见第 4 节）里每个符文的 `doc(...)`，还不清楚就在 issue 或 PR 里问。
 
