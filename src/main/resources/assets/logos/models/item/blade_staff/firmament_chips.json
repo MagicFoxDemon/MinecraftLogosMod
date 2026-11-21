@@ -1,0 +1,2605 @@
+{
+  "parent": "minecraft:item/handheld",
+  "gui_light": "side",
+  "ambientocclusion": false,
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        -25,
+        -8,
+        -128
+      ],
+      "translation": [
+        -9.05,
+        4.92,
+        -2.82
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        -25,
+        8,
+        128
+      ],
+      "translation": [
+        -9.05,
+        4.92,
+        -2.82
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -17,
+        -146
+      ],
+      "translation": [
+        -4.96,
+        8.89,
+        -0.78
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        17,
+        146
+      ],
+      "translation": [
+        -4.96,
+        8.89,
+        -0.78
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ]
+    },
+    "gui": {
+      "rotation": [
+        12,
+        -16,
+        -35
+      ],
+      "translation": [
+        0.05,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.355,
+        0.355,
+        0.355
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.28,
+        0.28,
+        0.28
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        -35
+      ],
+      "translation": [
+        0.05,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.355,
+        0.355,
+        0.355
+      ]
+    },
+    "on_shelf": {
+      "rotation": [
+        0,
+        0,
+        -32
+      ],
+      "translation": [
+        0,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.33,
+        0.33,
+        0.33
+      ]
+    }
+  },
+  "textures": {
+    "chips": "logos:block/blade_staff/firmament_chips",
+    "particle": "logos:block/blade_staff/firmament_chips"
+  },
+  "elements": [
+    {
+      "name": "firmament_orbit_01",
+      "from": [
+        10.4258,
+        29.4291,
+        8.056
+      ],
+      "to": [
+        10.7534,
+        29.9439,
+        8.368
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "firmament_orbit_02",
+      "from": [
+        10.376,
+        29.5489,
+        8.4641
+      ],
+      "to": [
+        10.7036,
+        30.0637,
+        8.7761
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "firmament_orbit_03",
+      "from": [
+        10.2287,
+        29.6459,
+        8.8484
+      ],
+      "to": [
+        10.5563,
+        30.1607,
+        9.1604
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.3925,
+          29.9033,
+          9.0044
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_04",
+      "from": [
+        9.9894,
+        29.7165,
+        9.1941
+      ],
+      "to": [
+        10.317,
+        30.2313,
+        9.5061
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.1532,
+          29.9739,
+          9.3501
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_05",
+      "from": [
+        9.6673,
+        29.7579,
+        9.4879
+      ],
+      "to": [
+        9.9949,
+        30.2727,
+        9.7999
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.8311,
+          30.0153,
+          9.6439
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "firmament_orbit_06",
+      "from": [
+        9.2749,
+        29.7686,
+        9.7186
+      ],
+      "to": [
+        9.6025,
+        30.2834,
+        10.0306
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.4387,
+          30.026,
+          9.8746
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "firmament_orbit_07",
+      "from": [
+        8.8272,
+        29.7481,
+        9.8772
+      ],
+      "to": [
+        9.1548,
+        30.2629,
+        10.1892
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.991,
+          30.0055,
+          10.0332
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_08",
+      "from": [
+        8.3414,
+        29.6973,
+        9.9576
+      ],
+      "to": [
+        8.669,
+        30.2121,
+        10.2696
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.5052,
+          29.9547,
+          10.1136
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_09",
+      "from": [
+        7.8362,
+        29.618,
+        9.9569
+      ],
+      "to": [
+        8.1638,
+        30.1328,
+        10.2689
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "firmament_orbit_10",
+      "from": [
+        7.331,
+        29.5134,
+        9.8749
+      ],
+      "to": [
+        7.6586,
+        30.0282,
+        10.1869
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "firmament_orbit_11",
+      "from": [
+        6.8452,
+        29.3874,
+        9.7149
+      ],
+      "to": [
+        7.1728,
+        29.9022,
+        10.0269
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.009,
+          29.6448,
+          9.8709
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_12",
+      "from": [
+        6.3975,
+        29.2449,
+        9.483
+      ],
+      "to": [
+        6.7251,
+        29.7597,
+        9.795
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.5613,
+          29.5023,
+          9.639
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_13",
+      "from": [
+        6.0051,
+        29.0914,
+        9.1881
+      ],
+      "to": [
+        6.3327,
+        29.6062,
+        9.5001
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.1689,
+          29.3488,
+          9.3441
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "firmament_orbit_14",
+      "from": [
+        5.683,
+        28.9327,
+        8.8416
+      ],
+      "to": [
+        6.0106,
+        29.4475,
+        9.1536
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.8468,
+          29.1901,
+          8.9976
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "firmament_orbit_15",
+      "from": [
+        5.4437,
+        28.775,
+        8.4567
+      ],
+      "to": [
+        5.7713,
+        29.2898,
+        8.7687
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.6075,
+          29.0324,
+          8.6127
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_16",
+      "from": [
+        5.2964,
+        28.6243,
+        8.0483
+      ],
+      "to": [
+        5.624,
+        29.1391,
+        8.3603
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.4602,
+          28.8817,
+          8.2043
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_17",
+      "from": [
+        5.2466,
+        28.4865,
+        7.632
+      ],
+      "to": [
+        5.5742,
+        29.0013,
+        7.944
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "firmament_orbit_18",
+      "from": [
+        5.2964,
+        28.3667,
+        7.2239
+      ],
+      "to": [
+        5.624,
+        28.8815,
+        7.5359
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "firmament_orbit_19",
+      "from": [
+        5.4437,
+        28.2697,
+        6.8396
+      ],
+      "to": [
+        5.7713,
+        28.7845,
+        7.1516
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.6075,
+          28.5271,
+          6.9956
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_20",
+      "from": [
+        5.683,
+        28.1991,
+        6.4939
+      ],
+      "to": [
+        6.0106,
+        28.7139,
+        6.8059
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.8468,
+          28.4565,
+          6.6499
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_21",
+      "from": [
+        6.0051,
+        28.1577,
+        6.2001
+      ],
+      "to": [
+        6.3327,
+        28.6725,
+        6.5121
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.1689,
+          28.4151,
+          6.3561
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "firmament_orbit_22",
+      "from": [
+        6.3975,
+        28.147,
+        5.9694
+      ],
+      "to": [
+        6.7251,
+        28.6618,
+        6.2814
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.5613,
+          28.4044,
+          6.1254
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "firmament_orbit_23",
+      "from": [
+        6.8452,
+        28.1675,
+        5.8108
+      ],
+      "to": [
+        7.1728,
+        28.6823,
+        6.1228
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.009,
+          28.4249,
+          5.9668
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_24",
+      "from": [
+        7.331,
+        28.2183,
+        5.7304
+      ],
+      "to": [
+        7.6586,
+        28.7331,
+        6.0424
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.4948,
+          28.4757,
+          5.8864
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_25",
+      "from": [
+        7.8362,
+        28.2976,
+        5.7311
+      ],
+      "to": [
+        8.1638,
+        28.8124,
+        6.0431
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "firmament_orbit_26",
+      "from": [
+        8.3414,
+        28.4022,
+        5.8131
+      ],
+      "to": [
+        8.669,
+        28.917,
+        6.1251
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "firmament_orbit_27",
+      "from": [
+        8.8272,
+        28.5282,
+        5.9731
+      ],
+      "to": [
+        9.1548,
+        29.043,
+        6.2851
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.991,
+          28.7856,
+          6.1291
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_28",
+      "from": [
+        9.2749,
+        28.6707,
+        6.205
+      ],
+      "to": [
+        9.6025,
+        29.1855,
+        6.517
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.4387,
+          28.9281,
+          6.361
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_29",
+      "from": [
+        9.6673,
+        28.8242,
+        6.4999
+      ],
+      "to": [
+        9.9949,
+        29.339,
+        6.8119
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.8311,
+          29.0816,
+          6.6559
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "firmament_orbit_30",
+      "from": [
+        9.9894,
+        28.9829,
+        6.8464
+      ],
+      "to": [
+        10.317,
+        29.4977,
+        7.1584
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.1532,
+          29.2403,
+          7.0024
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "firmament_orbit_31",
+      "from": [
+        10.2287,
+        29.1406,
+        7.2313
+      ],
+      "to": [
+        10.5563,
+        29.6554,
+        7.5433
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.3925,
+          29.398,
+          7.3873
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "firmament_orbit_32",
+      "from": [
+        10.376,
+        29.2913,
+        7.6397
+      ],
+      "to": [
+        10.7036,
+        29.8061,
+        7.9517
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.5398,
+          29.5487,
+          7.7957
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    }
+  ]
+}

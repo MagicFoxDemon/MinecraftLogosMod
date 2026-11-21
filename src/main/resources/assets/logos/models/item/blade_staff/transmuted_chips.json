@@ -1,0 +1,2605 @@
+{
+  "parent": "minecraft:item/handheld",
+  "gui_light": "side",
+  "ambientocclusion": false,
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        -25,
+        -8,
+        -128
+      ],
+      "translation": [
+        -9.05,
+        4.92,
+        -2.82
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        -25,
+        8,
+        128
+      ],
+      "translation": [
+        -9.05,
+        4.92,
+        -2.82
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -17,
+        -146
+      ],
+      "translation": [
+        -4.96,
+        8.89,
+        -0.78
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        17,
+        146
+      ],
+      "translation": [
+        -4.96,
+        8.89,
+        -0.78
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ]
+    },
+    "gui": {
+      "rotation": [
+        12,
+        -16,
+        -35
+      ],
+      "translation": [
+        0.05,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.355,
+        0.355,
+        0.355
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.28,
+        0.28,
+        0.28
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        -35
+      ],
+      "translation": [
+        0.05,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.355,
+        0.355,
+        0.355
+      ]
+    },
+    "on_shelf": {
+      "rotation": [
+        0,
+        0,
+        -32
+      ],
+      "translation": [
+        0,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.33,
+        0.33,
+        0.33
+      ]
+    }
+  },
+  "textures": {
+    "chips": "logos:block/blade_staff/transmuted_chips",
+    "particle": "logos:block/blade_staff/transmuted_chips"
+  },
+  "elements": [
+    {
+      "name": "transmuted_orbit_01",
+      "from": [
+        10.2776,
+        29.2217,
+        8.0074
+      ],
+      "to": [
+        10.6676,
+        29.5805,
+        8.3974
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "transmuted_orbit_02",
+      "from": [
+        10.2301,
+        29.3046,
+        8.3971
+      ],
+      "to": [
+        10.6201,
+        29.6634,
+        8.7871
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "transmuted_orbit_03",
+      "from": [
+        10.0894,
+        29.3718,
+        8.764
+      ],
+      "to": [
+        10.4794,
+        29.7306,
+        9.154
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.2844,
+          29.5512,
+          8.959
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_04",
+      "from": [
+        9.8609,
+        29.4207,
+        9.0941
+      ],
+      "to": [
+        10.2509,
+        29.7795,
+        9.4841
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.0559,
+          29.6001,
+          9.2891
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_05",
+      "from": [
+        9.5534,
+        29.4493,
+        9.3746
+      ],
+      "to": [
+        9.9434,
+        29.8081,
+        9.7646
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.7484,
+          29.6287,
+          9.5696
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "transmuted_orbit_06",
+      "from": [
+        9.1787,
+        29.4567,
+        9.5949
+      ],
+      "to": [
+        9.5687,
+        29.8155,
+        9.9849
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.3737,
+          29.6361,
+          9.7899
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "transmuted_orbit_07",
+      "from": [
+        8.7512,
+        29.4426,
+        9.7463
+      ],
+      "to": [
+        9.1412,
+        29.8014,
+        10.1363
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.9462,
+          29.622,
+          9.9413
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_08",
+      "from": [
+        8.2874,
+        29.4074,
+        9.8231
+      ],
+      "to": [
+        8.6774,
+        29.7662,
+        10.2131
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.4824,
+          29.5868,
+          10.0181
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_09",
+      "from": [
+        7.805,
+        29.3525,
+        9.8224
+      ],
+      "to": [
+        8.195,
+        29.7113,
+        10.2124
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "transmuted_orbit_10",
+      "from": [
+        7.3226,
+        29.28,
+        9.7441
+      ],
+      "to": [
+        7.7126,
+        29.6388,
+        10.1341
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "transmuted_orbit_11",
+      "from": [
+        6.8588,
+        29.1928,
+        9.5914
+      ],
+      "to": [
+        7.2488,
+        29.5516,
+        9.9814
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.0538,
+          29.3722,
+          9.7864
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_12",
+      "from": [
+        6.4313,
+        29.0942,
+        9.37
+      ],
+      "to": [
+        6.8213,
+        29.453,
+        9.76
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.6263,
+          29.2736,
+          9.565
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_13",
+      "from": [
+        6.0566,
+        28.9879,
+        9.0884
+      ],
+      "to": [
+        6.4466,
+        29.3467,
+        9.4784
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.2516,
+          29.1673,
+          9.2834
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "transmuted_orbit_14",
+      "from": [
+        5.7491,
+        28.878,
+        8.7575
+      ],
+      "to": [
+        6.1391,
+        29.2368,
+        9.1475
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.9441,
+          29.0574,
+          8.9525
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "transmuted_orbit_15",
+      "from": [
+        5.5206,
+        28.7688,
+        8.39
+      ],
+      "to": [
+        5.9106,
+        29.1276,
+        8.78
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.7156,
+          28.9482,
+          8.585
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_16",
+      "from": [
+        5.3799,
+        28.6645,
+        8.0
+      ],
+      "to": [
+        5.7699,
+        29.0233,
+        8.39
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.5749,
+          28.8439,
+          8.195
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_17",
+      "from": [
+        5.3324,
+        28.5691,
+        7.6026
+      ],
+      "to": [
+        5.7224,
+        28.9279,
+        7.9926
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "transmuted_orbit_18",
+      "from": [
+        5.3799,
+        28.4862,
+        7.2129
+      ],
+      "to": [
+        5.7699,
+        28.845,
+        7.6029
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "transmuted_orbit_19",
+      "from": [
+        5.5206,
+        28.419,
+        6.846
+      ],
+      "to": [
+        5.9106,
+        28.7778,
+        7.236
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.7156,
+          28.5984,
+          7.041
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_20",
+      "from": [
+        5.7491,
+        28.3701,
+        6.5159
+      ],
+      "to": [
+        6.1391,
+        28.7289,
+        6.9059
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.9441,
+          28.5495,
+          6.7109
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_21",
+      "from": [
+        6.0566,
+        28.3415,
+        6.2354
+      ],
+      "to": [
+        6.4466,
+        28.7003,
+        6.6254
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.2516,
+          28.5209,
+          6.4304
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "transmuted_orbit_22",
+      "from": [
+        6.4313,
+        28.3341,
+        6.0151
+      ],
+      "to": [
+        6.8213,
+        28.6929,
+        6.4051
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.6263,
+          28.5135,
+          6.2101
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "transmuted_orbit_23",
+      "from": [
+        6.8588,
+        28.3482,
+        5.8637
+      ],
+      "to": [
+        7.2488,
+        28.707,
+        6.2537
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.0538,
+          28.5276,
+          6.0587
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_24",
+      "from": [
+        7.3226,
+        28.3834,
+        5.7869
+      ],
+      "to": [
+        7.7126,
+        28.7422,
+        6.1769
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.5176,
+          28.5628,
+          5.9819
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_25",
+      "from": [
+        7.805,
+        28.4383,
+        5.7876
+      ],
+      "to": [
+        8.195,
+        28.7971,
+        6.1776
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "transmuted_orbit_26",
+      "from": [
+        8.2874,
+        28.5108,
+        5.8659
+      ],
+      "to": [
+        8.6774,
+        28.8696,
+        6.2559
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "transmuted_orbit_27",
+      "from": [
+        8.7512,
+        28.598,
+        6.0186
+      ],
+      "to": [
+        9.1412,
+        28.9568,
+        6.4086
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.9462,
+          28.7774,
+          6.2136
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_28",
+      "from": [
+        9.1787,
+        28.6966,
+        6.24
+      ],
+      "to": [
+        9.5687,
+        29.0554,
+        6.63
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.3737,
+          28.876,
+          6.435
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_29",
+      "from": [
+        9.5534,
+        28.8029,
+        6.5216
+      ],
+      "to": [
+        9.9434,
+        29.1617,
+        6.9116
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.7484,
+          28.9823,
+          6.7166
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "transmuted_orbit_30",
+      "from": [
+        9.8609,
+        28.9128,
+        6.8525
+      ],
+      "to": [
+        10.2509,
+        29.2716,
+        7.2425
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.0559,
+          29.0922,
+          7.0475
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "transmuted_orbit_31",
+      "from": [
+        10.0894,
+        29.022,
+        7.22
+      ],
+      "to": [
+        10.4794,
+        29.3808,
+        7.61
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.2844,
+          29.2014,
+          7.415
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "transmuted_orbit_32",
+      "from": [
+        10.2301,
+        29.1263,
+        7.61
+      ],
+      "to": [
+        10.6201,
+        29.4851,
+        8.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.4251,
+          29.3057,
+          7.805
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    }
+  ]
+}

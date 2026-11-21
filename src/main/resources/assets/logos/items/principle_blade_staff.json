@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/principle_body"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/principle_chips"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/principle_runes"
+      }
+    ]
+  }
+}

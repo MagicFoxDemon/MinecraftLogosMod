@@ -55,19 +55,25 @@ public class WandItem extends Item implements HeldItemUIMenuType.HeldItemUI {
      * a better wand holds and draws more.
      */
     public WandItem(Properties properties, int slots, double flow, double surge, double maxMana, double regeneration) {
+        this(properties, slots, flow, surge, maxMana, regeneration, b -> b);
+    }
+
+    /** As above, with {@code extra} adding more modifiers (a blade staff's edge) to the wand's own. */
+    protected WandItem(Properties properties, int slots, double flow, double surge, double maxMana, double regeneration,
+            java.util.function.UnaryOperator<ItemAttributeModifiers.Builder> extra) {
         super(properties.component(DataComponents.USE_EFFECTS, new UseEffects(true, false, 1.0f))
-                .attributes(attributes(flow, surge, regeneration)));
+                .attributes(extra.apply(attributes(flow, surge, regeneration)).build()));
         this.slots = slots;
         this.maxMana = maxMana;
     }
 
-    private static ItemAttributeModifiers attributes(double flow, double surge, double regeneration) {
+    private static ItemAttributeModifiers.Builder attributes(double flow, double surge, double regeneration) {
         var b = ItemAttributeModifiers.builder()
                 .add(LogosMod.CHANNEL_FLOW, new AttributeModifier(FLOW_ID, flow, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
                 .add(LogosMod.CHANNEL_SURGE, new AttributeModifier(SURGE_ID, surge, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND);
         if (regeneration != 0) b.add(SpellModifiers.MANA_REGENERATION, new AttributeModifier(REGENERATION_ID, regeneration,
                 AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND);
-        return b.build();
+        return b;
     }
 
     private static final Identifier FLOW_ID = Identifier.fromNamespaceAndPath(LogosMod.MODID, "wand_flow");

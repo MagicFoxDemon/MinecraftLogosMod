@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import dev.logos.client.BladeStaffStance;
 import dev.logos.client.CastPoses;
 import dev.logos.client.WandTips;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -27,6 +28,7 @@ abstract class ItemInHandLayerMixin {
         // A held cast pose may turn the item in the hand first, so the head is reported where it is drawn.
         CastPoses.tiltItem(state, poseStack, arm, stack);
         if (state instanceof AvatarRenderState avatar) {
+            BladeStaffStance.turn(avatar.id, stack, item, arm == HumanoidArm.LEFT, arm == state.mainArm, poseStack, state.partialTick);
             WandTips.captureThirdPerson(avatar.id, stack, item, arm == HumanoidArm.LEFT, arm == state.mainArm, state.getMainHandItemStack(),
                     poseStack.last().pose());
         }
