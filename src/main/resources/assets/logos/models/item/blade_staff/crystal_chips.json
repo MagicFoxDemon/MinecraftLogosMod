@@ -1,0 +1,2605 @@
+{
+  "parent": "minecraft:item/handheld",
+  "gui_light": "side",
+  "ambientocclusion": false,
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        -25,
+        -8,
+        -128
+      ],
+      "translation": [
+        -9.05,
+        4.92,
+        -2.82
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        -25,
+        8,
+        128
+      ],
+      "translation": [
+        -9.05,
+        4.92,
+        -2.82
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -17,
+        -146
+      ],
+      "translation": [
+        -4.96,
+        8.89,
+        -0.78
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        17,
+        146
+      ],
+      "translation": [
+        -4.96,
+        8.89,
+        -0.78
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ]
+    },
+    "gui": {
+      "rotation": [
+        12,
+        -16,
+        -35
+      ],
+      "translation": [
+        0.05,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.355,
+        0.355,
+        0.355
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.28,
+        0.28,
+        0.28
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        -35
+      ],
+      "translation": [
+        0.05,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.355,
+        0.355,
+        0.355
+      ]
+    },
+    "on_shelf": {
+      "rotation": [
+        0,
+        0,
+        -32
+      ],
+      "translation": [
+        0,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.33,
+        0.33,
+        0.33
+      ]
+    }
+  },
+  "textures": {
+    "chips": "logos:block/blade_staff/crystal_chips",
+    "particle": "logos:block/blade_staff/crystal_chips"
+  },
+  "elements": [
+    {
+      "name": "crystal_orbit_01",
+      "from": [
+        10.2152,
+        29.2318,
+        8.0232
+      ],
+      "to": [
+        10.5428,
+        29.7622,
+        8.3664
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "crystal_orbit_02",
+      "from": [
+        10.1695,
+        29.3331,
+        8.3981
+      ],
+      "to": [
+        10.4971,
+        29.8635,
+        8.7413
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "crystal_orbit_03",
+      "from": [
+        10.0341,
+        29.4152,
+        8.7511
+      ],
+      "to": [
+        10.3617,
+        29.9456,
+        9.0943
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.1979,
+          29.6804,
+          8.9227
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_04",
+      "from": [
+        9.8143,
+        29.475,
+        9.0687
+      ],
+      "to": [
+        10.1419,
+        30.0054,
+        9.4119
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.9781,
+          29.7402,
+          9.2403
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_05",
+      "from": [
+        9.5184,
+        29.51,
+        9.3386
+      ],
+      "to": [
+        9.846,
+        30.0404,
+        9.6818
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.6822,
+          29.7752,
+          9.5102
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "crystal_orbit_06",
+      "from": [
+        9.1579,
+        29.5191,
+        9.5505
+      ],
+      "to": [
+        9.4855,
+        30.0495,
+        9.8937
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.3217,
+          29.7843,
+          9.7221
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "crystal_orbit_07",
+      "from": [
+        8.7466,
+        29.5017,
+        9.6962
+      ],
+      "to": [
+        9.0742,
+        30.0321,
+        10.0394
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.9104,
+          29.7669,
+          9.8678
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_08",
+      "from": [
+        8.3003,
+        29.4587,
+        9.7701
+      ],
+      "to": [
+        8.6279,
+        29.9891,
+        10.1133
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.4641,
+          29.7239,
+          9.9417
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_09",
+      "from": [
+        7.8362,
+        29.3916,
+        9.7694
+      ],
+      "to": [
+        8.1638,
+        29.922,
+        10.1126
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "crystal_orbit_10",
+      "from": [
+        7.3721,
+        29.3031,
+        9.6941
+      ],
+      "to": [
+        7.6997,
+        29.8335,
+        10.0373
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "crystal_orbit_11",
+      "from": [
+        6.9258,
+        29.1965,
+        9.5472
+      ],
+      "to": [
+        7.2534,
+        29.7269,
+        9.8904
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.0896,
+          29.4617,
+          9.7188
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_12",
+      "from": [
+        6.5145,
+        29.0759,
+        9.3341
+      ],
+      "to": [
+        6.8421,
+        29.6063,
+        9.6773
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.6783,
+          29.3411,
+          9.5057
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_13",
+      "from": [
+        6.154,
+        28.946,
+        9.0632
+      ],
+      "to": [
+        6.4816,
+        29.4764,
+        9.4064
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.3178,
+          29.2112,
+          9.2348
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "crystal_orbit_14",
+      "from": [
+        5.8581,
+        28.8118,
+        8.7448
+      ],
+      "to": [
+        6.1857,
+        29.3422,
+        9.088
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.0219,
+          29.077,
+          8.9164
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "crystal_orbit_15",
+      "from": [
+        5.6383,
+        28.6783,
+        8.3913
+      ],
+      "to": [
+        5.9659,
+        29.2087,
+        8.7345
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.8021,
+          28.9435,
+          8.5629
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_16",
+      "from": [
+        5.5029,
+        28.5508,
+        8.0161
+      ],
+      "to": [
+        5.8305,
+        29.0812,
+        8.3593
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.6667,
+          28.816,
+          8.1877
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_17",
+      "from": [
+        5.4572,
+        28.4342,
+        7.6336
+      ],
+      "to": [
+        5.7848,
+        28.9646,
+        7.9768
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "crystal_orbit_18",
+      "from": [
+        5.5029,
+        28.3329,
+        7.2587
+      ],
+      "to": [
+        5.8305,
+        28.8633,
+        7.6019
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "crystal_orbit_19",
+      "from": [
+        5.6383,
+        28.2508,
+        6.9057
+      ],
+      "to": [
+        5.9659,
+        28.7812,
+        7.2489
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.8021,
+          28.516,
+          7.0773
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_20",
+      "from": [
+        5.8581,
+        28.191,
+        6.5881
+      ],
+      "to": [
+        6.1857,
+        28.7214,
+        6.9313
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.0219,
+          28.4562,
+          6.7597
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_21",
+      "from": [
+        6.154,
+        28.156,
+        6.3182
+      ],
+      "to": [
+        6.4816,
+        28.6864,
+        6.6614
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.3178,
+          28.4212,
+          6.4898
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "crystal_orbit_22",
+      "from": [
+        6.5145,
+        28.1469,
+        6.1063
+      ],
+      "to": [
+        6.8421,
+        28.6773,
+        6.4495
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.6783,
+          28.4121,
+          6.2779
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "crystal_orbit_23",
+      "from": [
+        6.9258,
+        28.1643,
+        5.9606
+      ],
+      "to": [
+        7.2534,
+        28.6947,
+        6.3038
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.0896,
+          28.4295,
+          6.1322
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_24",
+      "from": [
+        7.3721,
+        28.2073,
+        5.8867
+      ],
+      "to": [
+        7.6997,
+        28.7377,
+        6.2299
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.5359,
+          28.4725,
+          6.0583
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_25",
+      "from": [
+        7.8362,
+        28.2744,
+        5.8874
+      ],
+      "to": [
+        8.1638,
+        28.8048,
+        6.2306
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "crystal_orbit_26",
+      "from": [
+        8.3003,
+        28.3629,
+        5.9627
+      ],
+      "to": [
+        8.6279,
+        28.8933,
+        6.3059
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "crystal_orbit_27",
+      "from": [
+        8.7466,
+        28.4695,
+        6.1096
+      ],
+      "to": [
+        9.0742,
+        28.9999,
+        6.4528
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.9104,
+          28.7347,
+          6.2812
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_28",
+      "from": [
+        9.1579,
+        28.5901,
+        6.3227
+      ],
+      "to": [
+        9.4855,
+        29.1205,
+        6.6659
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.3217,
+          28.8553,
+          6.4943
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_29",
+      "from": [
+        9.5184,
+        28.72,
+        6.5936
+      ],
+      "to": [
+        9.846,
+        29.2504,
+        6.9368
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.6822,
+          28.9852,
+          6.7652
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "crystal_orbit_30",
+      "from": [
+        9.8143,
+        28.8542,
+        6.912
+      ],
+      "to": [
+        10.1419,
+        29.3846,
+        7.2552
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.9781,
+          29.1194,
+          7.0836
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "crystal_orbit_31",
+      "from": [
+        10.0341,
+        28.9877,
+        7.2655
+      ],
+      "to": [
+        10.3617,
+        29.5181,
+        7.6087
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.1979,
+          29.2529,
+          7.4371
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "crystal_orbit_32",
+      "from": [
+        10.1695,
+        29.1152,
+        7.6407
+      ],
+      "to": [
+        10.4971,
+        29.6456,
+        7.9839
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.3333,
+          29.3804,
+          7.8123
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    }
+  ]
+}

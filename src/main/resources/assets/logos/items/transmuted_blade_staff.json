@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/transmuted_body"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/transmuted_chips"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/transmuted_runes"
+      }
+    ]
+  }
+}

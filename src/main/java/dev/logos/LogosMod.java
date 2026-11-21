@@ -142,6 +142,26 @@ public class LogosMod {
             p -> new dev.logos.item.StaffItem(p, 12, 103, 2099, 38400, 3000, 30), p -> p.stacksTo(1).rarity(Rarity.EPIC));
     public static final List<DeferredItem<dev.logos.item.StaffItem>> TIER_STAFFS = List.of(
             CRYSTAL_STAFF, ECHO_STAFF, TRANSMUTED_STAFF, CHALK_STAFF, FIRMAMENT_STAFF, SAGE_STAFF, PRINCIPLE_STAFF);
+    /**
+     * 杖剑, tiers 1 to 8: one slot fewer than the same-tier wand, and 0.8 of its flow, surge, mana cap and refill;
+     * sword damage (as shown, the player's 1 included) and speed besides. See CONTRIBUTING, 法杖数值.
+     */
+    public static final List<DeferredItem<dev.logos.item.BladeStaffItem>> BLADE_STAFFS = List.of(
+            bladeStaff("oak", 2, 32, 16, 0, 0, 4, Rarity.COMMON),
+            bladeStaff("crystal", 2, 44, 48, 40, 0.4, 5, Rarity.COMMON),
+            bladeStaff("echo", 4, 56, 104, 80, 0.8, 5.5, Rarity.UNCOMMON),
+            bladeStaff("transmuted", 5, 72, 147, 160, 1.6, 6, Rarity.RARE),
+            bladeStaff("chalk", 7, 88, 226, 280, 2.4, 6.5, Rarity.RARE),
+            bladeStaff("firmament", 8, 108, 356, 400, 4, 7, Rarity.EPIC),
+            bladeStaff("sage", 10, 128, 576, 640, 6.4, 8, Rarity.EPIC),
+            bladeStaff("principle", 11, 240, 4880, 1600, 16, 10, Rarity.EPIC));
+
+    private static DeferredItem<dev.logos.item.BladeStaffItem> bladeStaff(String name, int slots, double flow, double surge, double maxMana,
+            double regeneration, double attackDamage, Rarity rarity) {
+        return ITEMS.registerItem(name + "_blade_staff",
+                p -> new dev.logos.item.BladeStaffItem(p, slots, flow, surge, maxMana, regeneration, attackDamage),
+                p -> p.stacksTo(1).enchantable(14).rarity(rarity));
+    }
     /** Every grade of 术式载页: an empty and a written item each. */
     public static final Map<PageTier, PageTier.Items> PAGES = new EnumMap<>(PageTier.class);
 
@@ -682,6 +702,7 @@ public class LogosMod {
                     out.accept(TIER_WANDS.get(i).get());
                     out.accept(TIER_STAFFS.get(i).get());
                 }
+                for (var bladeStaff : BLADE_STAFFS) out.accept(bladeStaff.get());
                 for (PageTier t : PageTier.values()) out.accept(t.blank());
                 out.accept(SPELL_EMBER.get());
                 out.accept(SPELL_CODEX.get());

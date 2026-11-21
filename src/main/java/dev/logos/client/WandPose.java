@@ -47,6 +47,7 @@ public final class WandPose {
         LogosMod.TIER_STAFFS.forEach(s -> wands.add(s.get()));
         LogosMod.WOOD_WANDS.forEach(w -> wands.add(w.get()));
         LogosMod.WOOD_STAFFS.forEach(s -> wands.add(s.get()));
+        LogosMod.BLADE_STAFFS.forEach(s -> wands.add(s.get()));
         event.registerItem(new IClientItemExtensions() {
             @Override
             public HumanoidModel.@Nullable ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {

@@ -38,7 +38,7 @@ public final class LogosGameTests {
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS = DeferredRegister.create(Registries.TEST_FUNCTION, LogosMod.MODID);
 
     private static final List<String> TESTS = List.of(
-            "tier_wands_charge_and_cast", "tier_staffs_fill_and_cast", "tier_last_slot_persists",
+            "tier_wands_charge_and_cast", "tier_staffs_fill_and_cast", "tier_last_slot_persists", "blade_staff_weaker_wand_with_an_edge", "blade_staff_sword_and_wand_enchantments", "blade_staff_favours_wraps",
             "player_refusals",
             "projectile_impact_expiry", "projectile_impact_wall", "projectile_impact_piercing",
             "example_npc_heal", "root_mana_cap", "example_npc_group_heal", "rune_species_filter", "example_prismatic_volley_budget",
@@ -346,6 +346,9 @@ public final class LogosGameTests {
         FUNCTIONS.register("tier_wands_charge_and_cast", () -> WandTierGameTests::wandsChargeAndCast);
         FUNCTIONS.register("tier_staffs_fill_and_cast", () -> WandTierGameTests::staffsFillAndCast);
         FUNCTIONS.register("tier_last_slot_persists", () -> WandTierGameTests::lastSlotPersists);
+        FUNCTIONS.register("blade_staff_weaker_wand_with_an_edge", () -> BladeStaffGameTests::weakerWandWithAnEdge);
+        FUNCTIONS.register("blade_staff_sword_and_wand_enchantments", () -> BladeStaffGameTests::swordAndWandEnchantments);
+        FUNCTIONS.register("blade_staff_favours_wraps", () -> BladeStaffGameTests::favoursWraps);
         FUNCTIONS.register("staff_fills_then_casts", () -> ChargingGameTests::staffFillsThenCasts);
         FUNCTIONS.register("staff_fill_needs_main_hand", () -> ChargingGameTests::staffFillNeedsMainHand);
         FUNCTIONS.register("chant_repeats_wand_charge", () -> ChargingGameTests::chantRepeatsWandCharge);

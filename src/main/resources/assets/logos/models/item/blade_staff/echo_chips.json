@@ -1,0 +1,2605 @@
+{
+  "parent": "minecraft:item/handheld",
+  "gui_light": "side",
+  "ambientocclusion": false,
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        -25,
+        -8,
+        -128
+      ],
+      "translation": [
+        -9.05,
+        4.92,
+        -2.82
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        -25,
+        8,
+        128
+      ],
+      "translation": [
+        -9.05,
+        4.92,
+        -2.82
+      ],
+      "scale": [
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        -17,
+        -146
+      ],
+      "translation": [
+        -4.96,
+        8.89,
+        -0.78
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        17,
+        146
+      ],
+      "translation": [
+        -4.96,
+        8.89,
+        -0.78
+      ],
+      "scale": [
+        0.42,
+        0.42,
+        0.42
+      ]
+    },
+    "gui": {
+      "rotation": [
+        12,
+        -16,
+        -35
+      ],
+      "translation": [
+        0.05,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.355,
+        0.355,
+        0.355
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.28,
+        0.28,
+        0.28
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        -35
+      ],
+      "translation": [
+        0.05,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.355,
+        0.355,
+        0.355
+      ]
+    },
+    "on_shelf": {
+      "rotation": [
+        0,
+        0,
+        -32
+      ],
+      "translation": [
+        0,
+        0.05,
+        0
+      ],
+      "scale": [
+        0.33,
+        0.33,
+        0.33
+      ]
+    }
+  },
+  "textures": {
+    "chips": "logos:block/blade_staff/echo_chips",
+    "particle": "logos:block/blade_staff/echo_chips"
+  },
+  "elements": [
+    {
+      "name": "echo_orbit_01",
+      "from": [
+        10.2932,
+        29.337,
+        8.0211
+      ],
+      "to": [
+        10.6052,
+        29.8986,
+        8.3799
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            0.5,
+            1.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "echo_orbit_02",
+      "from": [
+        10.2461,
+        29.2124,
+        7.6274
+      ],
+      "to": [
+        10.5581,
+        29.774,
+        7.9862
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            0.5,
+            3.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "echo_orbit_03",
+      "from": [
+        10.1068,
+        29.0762,
+        7.2411
+      ],
+      "to": [
+        10.4188,
+        29.6378,
+        7.5999
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            0.5,
+            5.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.2628,
+          29.357,
+          7.4205
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "echo_orbit_04",
+      "from": [
+        9.8804,
+        28.9337,
+        6.8771
+      ],
+      "to": [
+        10.1924,
+        29.4953,
+        7.2359
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            0.5,
+            7.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.0364,
+          29.2145,
+          7.0565
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "echo_orbit_05",
+      "from": [
+        9.5758,
+        28.7903,
+        6.5494
+      ],
+      "to": [
+        9.8878,
+        29.3519,
+        6.9082
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            0.5,
+            9.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.7318,
+          29.0711,
+          6.7288
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "echo_orbit_06",
+      "from": [
+        9.2047,
+        28.6515,
+        6.2705
+      ],
+      "to": [
+        9.5167,
+        29.2131,
+        6.6293
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            0.5,
+            11.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.3607,
+          28.9323,
+          6.4499
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "echo_orbit_07",
+      "from": [
+        8.7813,
+        28.5227,
+        6.0511
+      ],
+      "to": [
+        9.0933,
+        29.0843,
+        6.4099
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            0.5,
+            13.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.9373,
+          28.8035,
+          6.2305
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "echo_orbit_08",
+      "from": [
+        8.3218,
+        28.4088,
+        5.8998
+      ],
+      "to": [
+        8.6338,
+        28.9704,
+        6.2586
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            0.5,
+            15.5,
+            1.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.4778,
+          28.6896,
+          6.0792
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "echo_orbit_09",
+      "from": [
+        7.844,
+        28.3143,
+        5.8223
+      ],
+      "to": [
+        8.156,
+        28.8759,
+        6.1811
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            2.5,
+            1.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "echo_orbit_10",
+      "from": [
+        7.3662,
+        28.2426,
+        5.8216
+      ],
+      "to": [
+        7.6782,
+        28.8042,
+        6.1804
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            2.5,
+            3.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "echo_orbit_11",
+      "from": [
+        6.9067,
+        28.1967,
+        5.8977
+      ],
+      "to": [
+        7.2187,
+        28.7583,
+        6.2565
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            2.5,
+            5.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.0627,
+          28.4775,
+          6.0771
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "echo_orbit_12",
+      "from": [
+        6.4833,
+        28.1782,
+        6.0477
+      ],
+      "to": [
+        6.7953,
+        28.7398,
+        6.4065
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            2.5,
+            7.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.6393,
+          28.459,
+          6.2271
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "echo_orbit_13",
+      "from": [
+        6.1122,
+        28.1878,
+        6.2658
+      ],
+      "to": [
+        6.4242,
+        28.7494,
+        6.6246
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            2.5,
+            9.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.2682,
+          28.4686,
+          6.4452
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "echo_orbit_14",
+      "from": [
+        5.8076,
+        28.2253,
+        6.5437
+      ],
+      "to": [
+        6.1196,
+        28.7869,
+        6.9025
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            2.5,
+            11.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.9636,
+          28.5061,
+          6.7231
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "echo_orbit_15",
+      "from": [
+        5.5812,
+        28.2891,
+        6.8706
+      ],
+      "to": [
+        5.8932,
+        28.8507,
+        7.2294
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            2.5,
+            13.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.7372,
+          28.5699,
+          7.05
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "echo_orbit_16",
+      "from": [
+        5.4419,
+        28.3768,
+        7.2341
+      ],
+      "to": [
+        5.7539,
+        28.9384,
+        7.5929
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            2.5,
+            15.5,
+            3.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.5979,
+          28.6576,
+          7.4135
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "echo_orbit_17",
+      "from": [
+        5.3948,
+        28.485,
+        7.6201
+      ],
+      "to": [
+        5.7068,
+        29.0466,
+        7.9789
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            4.5,
+            1.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "echo_orbit_18",
+      "from": [
+        5.4419,
+        28.6096,
+        8.0138
+      ],
+      "to": [
+        5.7539,
+        29.1712,
+        8.3726
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            4.5,
+            3.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "echo_orbit_19",
+      "from": [
+        5.5812,
+        28.7458,
+        8.4001
+      ],
+      "to": [
+        5.8932,
+        29.3074,
+        8.7589
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            4.5,
+            5.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.7372,
+          29.0266,
+          8.5795
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "echo_orbit_20",
+      "from": [
+        5.8076,
+        28.8883,
+        8.7641
+      ],
+      "to": [
+        6.1196,
+        29.4499,
+        9.1229
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            4.5,
+            7.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          5.9636,
+          29.1691,
+          8.9435
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "echo_orbit_21",
+      "from": [
+        6.1122,
+        29.0317,
+        9.0918
+      ],
+      "to": [
+        6.4242,
+        29.5933,
+        9.4506
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            4.5,
+            9.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.2682,
+          29.3125,
+          9.2712
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "echo_orbit_22",
+      "from": [
+        6.4833,
+        29.1705,
+        9.3707
+      ],
+      "to": [
+        6.7953,
+        29.7321,
+        9.7295
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            4.5,
+            11.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          6.6393,
+          29.4513,
+          9.5501
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "echo_orbit_23",
+      "from": [
+        6.9067,
+        29.2993,
+        9.5901
+      ],
+      "to": [
+        7.2187,
+        29.8609,
+        9.9489
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            4.5,
+            13.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.0627,
+          29.5801,
+          9.7695
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "echo_orbit_24",
+      "from": [
+        7.3662,
+        29.4132,
+        9.7414
+      ],
+      "to": [
+        7.6782,
+        29.9748,
+        10.1002
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            4.5,
+            15.5,
+            5.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          7.5222,
+          29.694,
+          9.9208
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "echo_orbit_25",
+      "from": [
+        7.844,
+        29.5077,
+        9.8189
+      ],
+      "to": [
+        8.156,
+        30.0693,
+        10.1777
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            0.5,
+            6.5,
+            1.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "echo_orbit_26",
+      "from": [
+        8.3218,
+        29.5794,
+        9.8196
+      ],
+      "to": [
+        8.6338,
+        30.141,
+        10.1784
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            6.5,
+            3.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5
+    },
+    {
+      "name": "echo_orbit_27",
+      "from": [
+        8.7813,
+        29.6253,
+        9.7435
+      ],
+      "to": [
+        9.0933,
+        30.1869,
+        10.1023
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            4.5,
+            6.5,
+            5.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          8.9373,
+          29.9061,
+          9.9229
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "echo_orbit_28",
+      "from": [
+        9.2047,
+        29.6438,
+        9.5935
+      ],
+      "to": [
+        9.5167,
+        30.2054,
+        9.9523
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            6.5,
+            6.5,
+            7.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.3607,
+          29.9246,
+          9.7729
+        ],
+        "axis": "y",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "echo_orbit_29",
+      "from": [
+        9.5758,
+        29.6342,
+        9.3754
+      ],
+      "to": [
+        9.8878,
+        30.1958,
+        9.7342
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            8.5,
+            6.5,
+            9.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          9.7318,
+          29.915,
+          9.5548
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "echo_orbit_30",
+      "from": [
+        9.8804,
+        29.5967,
+        9.0975
+      ],
+      "to": [
+        10.1924,
+        30.1583,
+        9.4563
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            10.5,
+            6.5,
+            11.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.0364,
+          29.8775,
+          9.2769
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    },
+    {
+      "name": "echo_orbit_31",
+      "from": [
+        10.1068,
+        29.5329,
+        8.7706
+      ],
+      "to": [
+        10.4188,
+        30.0945,
+        9.1294
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            12.5,
+            6.5,
+            13.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.2628,
+          29.8137,
+          8.95
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "echo_orbit_32",
+      "from": [
+        10.2461,
+        29.4452,
+        8.4071
+      ],
+      "to": [
+        10.5581,
+        30.0068,
+        8.7659
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "west": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "east": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            6.5,
+            15.5,
+            7.5
+          ],
+          "texture": "#chips"
+        }
+      },
+      "light_emission": 5,
+      "rotation": {
+        "origin": [
+          10.4021,
+          29.726,
+          8.5865
+        ],
+        "axis": "y",
+        "angle": -22.5
+      }
+    }
+  ]
+}

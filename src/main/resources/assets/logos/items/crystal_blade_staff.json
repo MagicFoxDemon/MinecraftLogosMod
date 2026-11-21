@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/crystal_body"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/crystal_chips"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/crystal_runes"
+      }
+    ]
+  }
+}

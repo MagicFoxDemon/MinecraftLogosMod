@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/firmament_body"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/firmament_chips"
+      },
+      {
+        "type": "minecraft:model",
+        "model": "logos:item/blade_staff/firmament_runes"
+      }
+    ]
+  }
+}

@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import dev.logos.client.BladeStaffStance;
 import dev.logos.client.WandTips;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -26,6 +27,8 @@ abstract class ItemInHandRendererMixin {
     @Inject(method = "renderItem", at = @At("HEAD"))
     private void logos$wandTip(LivingEntity mob, ItemStack stack, ItemDisplayContext type, PoseStack poseStack, SubmitNodeCollector collector, int light,
             CallbackInfo ci) {
-        if (type.firstPerson()) WandTips.captureFirstPerson(mob, stack, type, poseStack.last().pose());
+        if (!type.firstPerson()) return;
+        BladeStaffStance.turnInView(mob, stack, type, poseStack);
+        WandTips.captureFirstPerson(mob, stack, type, poseStack.last().pose());
     }
 }
