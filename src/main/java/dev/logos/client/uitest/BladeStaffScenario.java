@@ -105,6 +105,9 @@ public class BladeStaffScenario implements UIScenario {
                 })
                 .teleportPlayer(0.5, 101, 7.5, 180, 0)
                 .step("hide the HUD", ctx -> Minecraft.getInstance().options.hideGui = true);
+        // The long staff, for reference: the blade staff's crown-up hold should match it.
+        hold(s, LogosMod.WOOD_STAFFS.getFirst().get());
+        s.ticks(5).screenshot("staff_side");
         hold(s, LogosMod.BLADE_STAFFS.getFirst().get());
         stances(s, "side");
         s.teleportPlayer(3.5, 101, 4.5, 90, 0);
@@ -120,6 +123,10 @@ public class BladeStaffScenario implements UIScenario {
         s.server("remove the mannequin", sc -> mannequins(sc.player().level()).forEach(b -> b.discard()))
                 .step("show the hand", ctx -> Minecraft.getInstance().options.hideGui = false)
                 .teleportPlayer(0.5, 101, 0.5, 0, 10)
+                .server("give the player an oak staff", sc -> sc.player().setItemInHand(InteractionHand.MAIN_HAND,
+                        new ItemStack(LogosMod.WOOD_STAFFS.getFirst().get())))
+                .ticks(20)
+                .screenshot("view_staff")
                 .server("give the player an oak blade staff with a page", sc -> {
                     PlayerMagic m = PlayerMagic.of(sc.player());
                     m.baseMaxMana = m.mana = 100000;
