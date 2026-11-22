@@ -99,8 +99,9 @@ public final class Runes {
                 && level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), Direction.UP);
     }
 
-    /** The nearest standable spot in the same column (searching up and down), so a blink never lands inside rock. */
-    static Vec3 safeSpot(ServerLevel level, Vec3 at) {
+    /** The nearest standable spot in the same column (searching up and down), so a blink never lands inside rock;
+     * falls back to {@code at} when the column has none. Public so addon movement (e.g. a cat step) can reuse it. */
+    public static Vec3 safeSpot(ServerLevel level, Vec3 at) {
         BlockPos start = BlockPos.containing(at.x, Math.max(level.getMinY() + 1, Math.min(level.getMaxY() - 2, at.y)), at.z);
         for (int d = 0; d < level.getHeight(); d++) {
             for (int sign : new int[] {1, -1}) {
