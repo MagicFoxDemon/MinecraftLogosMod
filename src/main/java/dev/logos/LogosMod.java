@@ -965,9 +965,9 @@ public class LogosMod {
                 var table = dev.logos.block.AlchemyTableBlock.table(level, pos, state);
                 return table == null ? null : table.automation();
             }, ALCHEMY_TABLE.get());
-            // A spreader's drawer takes fuel from hoppers and pipes.
+            // A spreader's drawer takes fuel from hoppers and pipes, and gives up the empty caskets of spent 魔匣.
             e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
-                    be instanceof dev.logos.block.ManaSpreaderBlockEntity spreader ? spreader.fuel() : null, MANA_SPREADER.get());
+                    be instanceof dev.logos.block.ManaSpreaderBlockEntity spreader ? spreader.automation() : null, MANA_SPREADER.get());
             // A storage tank takes mana items and seeds from hoppers and pipes, and gives up grown crystals.
             e.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.Item.BLOCK, (level, pos, state, be, side) ->
                     be instanceof dev.logos.block.ManaStorageTankBlockEntity tank ? tank.automation() : null, MANA_STORAGE_TANK.get());

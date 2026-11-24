@@ -83,6 +83,10 @@ public class CultivationJarBlock extends BaseEntityBlock implements Bonemealable
             level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1, 1);
             return InteractionResult.SUCCESS;
         }
+        if (jar.fillMana(stack, player)) {
+            level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 1, 1.2f);
+            return InteractionResult.SUCCESS;
+        }
         return InteractionResult.TRY_WITH_EMPTY_HAND;
     }
 

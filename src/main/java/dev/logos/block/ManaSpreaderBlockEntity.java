@@ -1,6 +1,7 @@
 package dev.logos.block;
 
 import dev.logos.LogosMod;
+import dev.logos.item.ManaCasketItem;
 import dev.logos.runtime.ManaField;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -10,13 +11,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.transfer.CombinedResourceHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 
 /**
  * 魔力散布器: burns mana fuel from its drawer and pours the mana into the air of its chunk, up to
  * {@link ManaField#CAP}; from there it spreads to the chunks around ({@link ManaField}). A collector
- * facing it can feed it too, to carry mana on from another field.
+ * facing it can feed it too, to carry mana on from another field. A 魔匣 in the drawer is opened and
+ * gives what the spreader lacks ({@link OpenedCasket}); its empty casket goes to a slot of its own.
  */
 public class ManaSpreaderBlockEntity extends ManaVesselBlockEntity {
     /** Mana it holds before pouring: room for the richest fuel. */
@@ -27,7 +31,7 @@ public class ManaSpreaderBlockEntity extends ManaVesselBlockEntity {
     private final ItemStacksResourceHandler fuel = new ItemStacksResourceHandler(1) {
         @Override
         public boolean isValid(int index, ItemResource resource) {
-            return AlchemyTableBlockEntity.fuelValue(resource.toStack()) > 0;
+            return AlchemyTableBlockEntity.fuelValue(resource.toStack()) > 0 || resource.getItem() instanceof ManaCasketItem;
         }
 
         @Override
@@ -35,6 +39,12 @@ public class ManaSpreaderBlockEntity extends ManaVesselBlockEntity {
             setChanged();
         }
     };
+    private final OpenedCasket casket = new OpenedCasket(this::setChanged);
+    /** The empty caskets of spent 魔匣; only taken from. */
+    private final ItemStacksResourceHandler empties = OpenedCasket.emptiesSlot(this::setChanged);
+    /** What hoppers and pipes see: fuel in, empty caskets out. */
+    private final ResourceHandler<ItemResource> automation = new CombinedResourceHandler<>(
+            AlchemyTableBlockEntity.OneWay.in(fuel, 0, 1), AlchemyTableBlockEntity.OneWay.out(empties, 0, 1));
 
     public ManaSpreaderBlockEntity(BlockPos pos, BlockState state) {
         super(LogosMod.MANA_SPREADER_BE.get(), pos, state, MAX_MANA);
@@ -52,9 +62,24 @@ public class ManaSpreaderBlockEntity extends ManaVesselBlockEntity {
         return fuel;
     }
 
-    /** Once a second: burn a fuel that fits, then pour what it holds into its chunk's air. */
+    /** Where spent 魔匣 leave their empty caskets. */
+    public ItemStacksResourceHandler empties() {
+        return empties;
+    }
+
+    /** The 魔匣 taken from the drawer, for the screen; nothing can be put in or taken out. */
+    public ItemStacksResourceHandler openedCasket() {
+        return casket.slot();
+    }
+
+    public ResourceHandler<ItemResource> automation() {
+        return automation;
+    }
+
+    /** Once a second: top up from an opened casket, burn a fuel that fits, then pour what it holds into its chunk's air. */
     public static void serverTick(Level level, BlockPos pos, BlockState state, ManaSpreaderBlockEntity spreader) {
         if (!(level instanceof ServerLevel server) || !ManaField.working(level, pos)) return;
+        spreader.casket.work(spreader.fuel, MAX_MANA - spreader.mana, spreader::receiveMana, s -> OpenedCasket.stackInto(spreader.empties, s));
         ItemStack f = spreader.fuel.getResource(0).toStack(spreader.fuel.getAmountAsInt(0));
         int value = AlchemyTableBlockEntity.fuelValue(f);
         if (value > 0 && spreader.mana + value <= MAX_MANA) {
@@ -72,14 +97,20 @@ public class ManaSpreaderBlockEntity extends ManaVesselBlockEntity {
 
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
-        ItemStack f = fuel.getResource(0).toStack(fuel.getAmountAsInt(0));
-        if (level != null && !f.isEmpty()) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), f);
+        if (level == null) return;
+        for (ItemStacksResourceHandler h : new ItemStacksResourceHandler[]{fuel, empties}) {
+            ItemStack s = h.getResource(0).toStack(h.getAmountAsInt(0));
+            if (!s.isEmpty()) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), s);
+        }
+        casket.drop(level, pos);
     }
 
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         fuel.serialize(output.child("fuel"));
+        empties.serialize(output.child("empties"));
+        casket.save(output);
         output.putDouble("mana", mana);
     }
 
@@ -87,6 +118,8 @@ public class ManaSpreaderBlockEntity extends ManaVesselBlockEntity {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         input.child("fuel").ifPresent(fuel::deserialize);
+        input.child("empties").ifPresent(empties::deserialize);
+        casket.load(input);
         mana = input.getDoubleOr("mana", 0);
     }
 }

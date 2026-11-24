@@ -9,6 +9,7 @@ import dev.logos.LogosMod;
 import dev.logos.alchemy.CultivationMedium;
 import dev.logos.alchemy.CultivationRecipe;
 import dev.logos.alchemy.JarPlant;
+import dev.logos.item.ManaCasketItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -195,6 +196,25 @@ public class CultivationJarBlockEntity extends SyncedManaVesselBlockEntity {
         reserve.set(0, res, held + 1);
         stack.consume(1, player);
         return true;
+    }
+
+    /**
+     * Mana given by hand: a 魔匣 gives what the jar lacks (the opened casket goes into the player's
+     * inventory, {@link ManaCasketItem#feed}); other mana fuel only when all of it fits, as the alchemy
+     * table burns it, so none is wasted. False if {@code stack} gives no mana here or the jar has no room for it.
+     */
+    public boolean fillMana(ItemStack stack, Player player) {
+        double given;
+        if (stack.getItem() instanceof ManaCasketItem) {
+            given = mana < maxMana() ? ManaCasketItem.feed(player, stack, this::receiveMana) : 0;
+        } else {
+            int value = AlchemyTableBlockEntity.fuelValue(stack);
+            if (value <= 0 || mana + value > maxMana()) return false;
+            given = receiveMana(value);
+            stack.consume(1, player);
+        }
+        if (given > 0) changed();
+        return given > 0;
     }
 
     /** At a random tick: a ripe crop is harvested into the outputs if they have room; an unripe one may grow. */
