@@ -1,0 +1,13 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "firmament_blade_staff",
+  "ingredients": [
+    "logos:firmament_staff",
+    "logos:living_gold_ingot",
+    "logos:living_gold_ingot"
+  ],
+  "result": {
+    "id": "logos:firmament_blade_staff"
+  }
+}

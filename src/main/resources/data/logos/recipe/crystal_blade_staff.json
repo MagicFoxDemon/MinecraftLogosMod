@@ -1,0 +1,12 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "crystal_blade_staff",
+  "ingredients": [
+    "logos:crystal_staff",
+    "minecraft:stone_sword"
+  ],
+  "result": {
+    "id": "logos:crystal_blade_staff"
+  }
+}

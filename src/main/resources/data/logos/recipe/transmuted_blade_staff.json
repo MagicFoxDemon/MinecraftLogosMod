@@ -1,0 +1,13 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "transmuted_blade_staff",
+  "ingredients": [
+    "logos:transmuted_staff",
+    "logos:living_iron_ingot",
+    "logos:living_iron_ingot"
+  ],
+  "result": {
+    "id": "logos:transmuted_blade_staff"
+  }
+}

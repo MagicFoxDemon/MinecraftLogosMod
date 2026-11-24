@@ -1,0 +1,13 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "chalk_blade_staff",
+  "ingredients": [
+    "logos:chalk_staff",
+    "logos:living_gold_ingot",
+    "logos:living_gold_ingot"
+  ],
+  "result": {
+    "id": "logos:chalk_blade_staff"
+  }
+}

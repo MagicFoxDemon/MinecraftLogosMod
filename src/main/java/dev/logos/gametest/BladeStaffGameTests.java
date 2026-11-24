@@ -181,4 +181,78 @@ final class BladeStaffGameTests {
             h.assertTrue(Math.abs((before - inst.mana) - cost) < 1e-6, "the on-hit runes should cost " + cost + ", cost " + (before - inst.mana));
         });
     }
+
+    private static ItemStack craft(GameTestHelper h, List<ItemStack> items) {
+        net.minecraft.world.item.crafting.CraftingInput input = net.minecraft.world.item.crafting.CraftingInput.of(3, 3,
+                java.util.stream.Stream.concat(items.stream(), java.util.stream.Stream.generate(() -> ItemStack.EMPTY)).limit(9).toList());
+        return h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
+                .map(r -> r.value().assemble(input)).orElse(ItemStack.EMPTY);
+    }
+
+    private static ItemStack of(net.minecraft.world.level.ItemLike item) {
+        return new ItemStack(item);
+    }
+
+    /**
+     * Every survival blade staff is made two ways: from the staff of its grade, or from the blade staff below
+     * with that grade's materials (a wooden one from any wooden staff and a wooden sword). Upgrading keeps
+     * the pages and enchantments.
+     */
+    static void craftedEveryTier(GameTestHelper h) {
+        var b = LogosMod.BLADE_STAFFS;
+        record Way(ItemStack made, int tier, String how) {}
+        List<Way> ways = List.of(
+                new Way(craft(h, List.of(of(LogosMod.WOOD_STAFFS.get(3).get()), of(net.minecraft.world.item.Items.WOODEN_SWORD))), 0, "a wooden staff and a wooden sword"),
+                new Way(craft(h, List.of(of(LogosMod.CRYSTAL_STAFF.get()), of(net.minecraft.world.item.Items.STONE_SWORD))), 1, "the crystal staff"),
+                new Way(craft(h, List.of(of(b.get(0).get()), of(net.minecraft.world.item.Items.AMETHYST_SHARD), of(net.minecraft.world.item.Items.STONE_SWORD))), 1, "the oak blade staff"),
+                new Way(craft(h, List.of(of(LogosMod.ECHO_STAFF.get()), of(LogosMod.LIVING_COPPER_INGOT.get()), of(LogosMod.LIVING_COPPER_INGOT.get()))), 2, "the echo staff"),
+                new Way(craft(h, List.of(of(b.get(1).get()), of(LogosMod.ECHO_TINCTURE.get()), of(LogosMod.LIVING_COPPER_INGOT.get()), of(LogosMod.LIVING_COPPER_INGOT.get()))), 2, "the crystal blade staff"),
+                new Way(craft(h, List.of(of(LogosMod.TRANSMUTED_STAFF.get()), of(LogosMod.LIVING_IRON_INGOT.get()), of(LogosMod.LIVING_IRON_INGOT.get()))), 3, "the transmuted staff"),
+                new Way(craft(h, List.of(of(b.get(2).get()), of(LogosMod.RAVEN_HEAD.get()), of(LogosMod.LIVING_IRON_INGOT.get()), of(LogosMod.LIVING_IRON_INGOT.get()))), 3, "the echo blade staff"),
+                new Way(craft(h, List.of(of(LogosMod.CHALK_STAFF.get()), of(LogosMod.LIVING_GOLD_INGOT.get()), of(LogosMod.LIVING_GOLD_INGOT.get()))), 4, "the chalk staff"),
+                new Way(craft(h, List.of(of(b.get(3).get()), of(LogosMod.CHALK.get()), of(LogosMod.LIVING_GOLD_INGOT.get()), of(LogosMod.LIVING_GOLD_INGOT.get()),
+                        of(net.minecraft.world.item.Items.QUARTZ))), 4, "the transmuted blade staff"),
+                new Way(craft(h, List.of(of(LogosMod.FIRMAMENT_STAFF.get()), of(LogosMod.LIVING_GOLD_INGOT.get()), of(LogosMod.LIVING_GOLD_INGOT.get()))), 5, "the firmament staff"),
+                new Way(craft(h, List.of(of(b.get(4).get()), of(LogosMod.FIRMAMENT_STONE.get()), of(LogosMod.LIVING_GOLD_INGOT.get()), of(LogosMod.LIVING_GOLD_INGOT.get()),
+                        of(net.minecraft.world.item.Items.DIAMOND))), 5, "the chalk blade staff"),
+                new Way(craft(h, List.of(of(LogosMod.SAGE_STAFF.get()), of(LogosMod.LIVING_NETHERITE_INGOT.get()))), 6, "the sage staff"),
+                new Way(craft(h, List.of(of(LogosMod.SAGE_UPGRADE_TEMPLATE.get()), of(b.get(5).get()), of(LogosMod.LIVING_NETHERITE_INGOT.get()),
+                        of(LogosMod.LIVING_NETHERITE_INGOT.get()))), 6, "the firmament blade staff"));
+        for (Way w : ways) {
+            h.assertTrue(w.made.is(b.get(w.tier).get()), "crafting " + w.how + " should make the " + b.get(w.tier).getId().getPath() + ", made " + w.made);
+        }
+
+        ItemStack old = of(b.get(2).get());
+        ItemStack page = SpellPages.inscribed(PageTier.BASIC, "(spell :mana 50 (mark caster #blade_staff))", null);
+        old.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(page, page.copy())));
+        old.enchant(h.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SHARPNESS), 2);
+        ItemStack up = craft(h, List.of(old, of(LogosMod.RAVEN_HEAD.get()), of(LogosMod.LIVING_IRON_INGOT.get()), of(LogosMod.LIVING_IRON_INGOT.get())));
+        h.assertTrue(up.is(b.get(3).get()) && dev.logos.item.PageContainer.pages(up).size() == 2 && up.isEnchanted(),
+                "the upgrade should keep the pages and the enchantment, made " + up);
+        h.succeed();
+    }
+
+    /**
+     * A blade staff has one slot fewer than the staff it is made from: a full oak staff's pages are packed
+     * into the oak blade staff's two slots and the third is handed back where the staff lay; the staff's
+     * stored mana does not carry over.
+     */
+    static void staffPageHandedBack(GameTestHelper h) {
+        ItemStack staff = of(LogosMod.WOOD_STAFFS.getFirst().get());
+        ItemStack first = SpellPages.inscribed(PageTier.BASIC, "(spell :mana 10 (mark caster #a))", null);
+        ItemStack second = SpellPages.inscribed(PageTier.BASIC, "(spell :mana 10 (mark caster #b))", null);
+        ItemStack third = SpellPages.inscribed(PageTier.BASIC, "(spell :mana 10 (mark caster #c))", null);
+        staff.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(first, ItemStack.EMPTY, second, third)));
+        staff.set(LogosMod.STORED_MANA.get(), 120.0);
+        var input = net.minecraft.world.item.crafting.CraftingInput.of(2, 1, List.of(staff, of(net.minecraft.world.item.Items.WOODEN_SWORD)));
+        var recipe = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel()).orElseThrow().value();
+        ItemStack made = recipe.assemble(input);
+        List<ItemStack> kept = dev.logos.item.PageContainer.pages(made);
+        h.assertTrue(made.is(LogosMod.BLADE_STAFFS.getFirst().get()) && kept.size() == 2
+                && ItemStack.matches(kept.get(0), first) && ItemStack.matches(kept.get(1), second), "the blade staff should keep the first two pages, kept " + kept);
+        h.assertTrue(!made.has(LogosMod.STORED_MANA.get()), "the staff's stored mana should not carry over");
+        var left = recipe.getRemainingItems(input);
+        h.assertTrue(ItemStack.matches(left.get(0), third), "the third page should come back where the staff lay, got " + left.get(0));
+        h.succeed();
+    }
 }

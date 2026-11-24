@@ -1,0 +1,15 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "chalk_blade_staff",
+  "ingredients": [
+    "logos:transmuted_blade_staff",
+    "logos:chalk",
+    "logos:living_gold_ingot",
+    "logos:living_gold_ingot",
+    "minecraft:quartz"
+  ],
+  "result": {
+    "id": "logos:chalk_blade_staff"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "sage_blade_staff",
+  "ingredients": [
+    "logos:sage_staff",
+    "logos:living_netherite_ingot"
+  ],
+  "result": {
+    "id": "logos:sage_blade_staff"
+  }
+}
