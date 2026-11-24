@@ -1,9 +1,0 @@
-{
-  "type": "logos:casing_salvage",
-  "category": "misc",
-  "casing": "logos:basic_mana_casing",
-  "result": {
-    "id": "minecraft:copper_ingot",
-    "count": 2
-  }
-}

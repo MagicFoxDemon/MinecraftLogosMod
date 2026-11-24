@@ -39,9 +39,12 @@ final class ManaStorageTankUI {
         Label modeText = ManaDeviceUI.line("tank_mode_text", () -> Component.translatable("logos.mana_storage_tank.mode", tank.mode().displayName()));
 
         ItemSlot input = ManaDeviceUI.slot(tank.input(), 0, "tank_input");
+        // The 魔匣 the tank has opened, and the empty caskets it has left.
+        ItemSlot opened = ManaDeviceUI.shownSlot(tank.openedCasket(), "tank_opened_casket");
+        ItemSlot empties = ManaDeviceUI.slot(tank.empties(), 0, "tank_empties");
         Label inputHint = new Label();
         inputHint.setText(Component.translatable("logos.mana_storage_tank.input"));
-        inputHint.layout(l -> l.width(140));
+        inputHint.layout(l -> l.width(98));
         inputHint.textStyle(s -> s.textWrap(com.lowdragmc.lowdraglib2.gui.ui.data.TextWrap.WRAP).adaptiveHeight(true));
 
         ItemSlot seed = ManaDeviceUI.slot(tank.seed(), 0, "tank_seed");
@@ -53,7 +56,7 @@ final class ManaStorageTankUI {
         UIElement page = ManaDeviceUI.page(176,
                 ManaDeviceUI.title("block.logos.mana_storage_tank"),
                 manaText, gauge, ManaDeviceUI.row(mode, modeText),
-                ManaDeviceUI.row(input, inputHint),
+                ManaDeviceUI.row(input, opened, empties, inputHint),
                 new Label().setText(Component.translatable("logos.mana_storage_tank.condense")),
                 ManaDeviceUI.row(seed, growth, output),
                 status, new InventorySlots());

@@ -148,7 +148,7 @@ gh pr create --fill                # 或在网页上开 PR
   - 炼金术巨像：`runtime/AlchemicalColossus`（实体、魔力、暴走与平息、动作同步；座位、手臂、脚步声的方法转给下面三个辅助类）、`runtime/ColossusHolds`（两肩座位和手里抓着的东西、乘客位置 `holdPoint`）、`runtime/ColossusArms`（伸手和炮臂瞄准：服务端定目标，客户端缓动）、`runtime/ColossusFootfalls`（客户端脚步声）、`runtime/ColossusMind`（效用 AI：感知、移动、战斗决策、外来请求）、`runtime/ColossusBehavior`（它的各个行为，每个行为一个嵌套类，加新行为要加一个类并放进 `ColossusMind` 构造器的列表）、`runtime/ColossusSequence`（按动画计时的动作序列，每个序列一个嵌套类）、`runtime/ColossusCannon`（掌心炮）、`runtime/Colossi`（召唤、驾驶、进度、道具面板）、`client/ColossusRenderer`、`client/ColossusInput`。
   - `runtime/UtilityMind<T>`：两者共用的效用 AI 基类（感知、打分、选最高分、`/logos mind` 的输出），以后的同类生物继承它。它的部件是 protected，其他包里的生物也能继承（车万女仆的 `compat/tlm/MaidMind`）；它是原版的 `Goal`，靠大脑行动的生物在自己的大脑行为里调用 `thinkAndAct`。
   - `runtime/LifeformAugment`：炼金道具接口（道具还没做），两者共用。
-  - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`。
+  - 模型与动画在 `assets/logos/geckolib/{models,animations}/entity/`。补魔物品是数据映射 `data/logos/data_maps/item/mana_fuel.json`，整个烧掉。魔匣（`item/ManaCasketItem`，200 / 750 / 2500 / 10000）不在这张表里：它只放出对方缺的那部分，没放完的那个开封（`logos:stored_mana` 记剩余，不再叠加），下次先用它；放空后留下空匣，在炼金台上蒸馏重新装填。炼金台和储魔罐把开封的那个留在机器里（`block/OpenedCasket`），喂食时开封的进玩家背包。新的补魔入口要同时认这两种。
 
 ### 包之间的依赖方向
 

@@ -6,9 +6,6 @@
     "logos:tainted_mana_shard": { "mana": 500, "unstable": true },
     "logos:mana_shard": { "mana": 500 },
     "logos:mana_crystal": { "mana": 1000 },
-    "logos:mana_gemstone": { "mana": 5000 },
-    "logos:basic_mana_battery": { "mana": 1000 },
-    "logos:advanced_mana_battery": { "mana": 2000 },
-    "logos:superior_mana_battery": { "mana": 4000 }
+    "logos:mana_gemstone": { "mana": 5000 }
   }
 }

@@ -16,7 +16,7 @@ import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 
 import dev.logos.LogosMod;
-import dev.logos.item.ManaBatteryItem;
+import dev.logos.item.ManaCasketItem;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
 import dev.logos.lang.Intent;
@@ -637,14 +637,19 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
         Lifeforms.ManaFuel fuel = held.isEmpty() ? null : held.typeHolder().getData(LogosMod.MANA_FUEL);
-        if (fuel != null) {
+        boolean casket = held.getItem() instanceof ManaCasketItem;
+        if (fuel != null || casket) {
             if (level().isClientSide()) return InteractionResult.SUCCESS;
             if (mana() >= maxMana()) {
                 player.sendOverlayMessage(Component.translatable("logos.mana.full").withStyle(ChatFormatting.GRAY));
                 return InteractionResult.CONSUME;
             }
-            receiveMana(fuel.mana());
-            ManaBatteryItem.useUp(player, held);
+            if (casket) {
+                ManaCasketItem.feed(player, held, this::receiveMana);
+            } else {
+                receiveMana(fuel.mana());
+                if (!player.getAbilities().instabuild) held.shrink(1);
+            }
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 1.2f + random.nextFloat() * 0.4f);
             LifeformMind.emote(this, LifeformMind.Emote.HAPPY);
             player.sendOverlayMessage(status());

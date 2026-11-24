@@ -62,10 +62,6 @@ public class LogosMod {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> STORED_MANA = COMPONENTS.registerComponentType("stored_mana",
             b -> b.persistent(Codec.DOUBLE).ignoreSwapAnimation().networkSynchronized(ByteBufCodecs.DOUBLE));
 
-    /** How many uses the 魔力外壳 a 魔力电池 is sealed in had already been through; its empty casing comes back one more worn. */
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CASING_WEAR = COMPONENTS.registerComponentType("casing_wear",
-            b -> b.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
-
     /** Which spell (index into wand pages + off-hand codex pages) the wand will cast. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SELECTED = COMPONENTS.registerComponentType("selected",
             b -> b.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
@@ -301,26 +297,6 @@ public class LogosMod {
     public static final DeferredItem<net.minecraft.world.item.Item> MANA_GEMSTONE = ITEMS.registerSimpleItem("mana_gemstone",
             p -> p.rarity(net.minecraft.world.item.Rarity.EPIC));
 
-    /**
-     * 魔力外壳: the reusable casings mana batteries are sealed in, one per grade; each use wears one point
-     * (4 / 8 / 16 uses). An empty one is taken apart for part of its metal (logos:casing_salvage).
-     */
-    public static final DeferredItem<net.minecraft.world.item.Item> BASIC_MANA_CASING = ITEMS.registerSimpleItem("basic_mana_casing", p -> p.durability(4));
-    public static final DeferredItem<net.minecraft.world.item.Item> ADVANCED_MANA_CASING = ITEMS.registerSimpleItem("advanced_mana_casing",
-            p -> p.durability(8).rarity(net.minecraft.world.item.Rarity.UNCOMMON));
-    public static final DeferredItem<net.minecraft.world.item.Item> SUPERIOR_MANA_CASING = ITEMS.registerSimpleItem("superior_mana_casing",
-            p -> p.durability(16).rarity(net.minecraft.world.item.Rarity.RARE));
-    /**
-     * 魔力电池: mana fuel sealed from vanilla mana materials (初级, 1000), basic alchemy products (中级, 2000) or
-     * complex ones (高级, 4000); their mana is in data/logos/data_maps/item/mana_fuel.json.
-     */
-    public static final DeferredItem<dev.logos.item.ManaBatteryItem> BASIC_MANA_BATTERY = ITEMS.registerItem("basic_mana_battery",
-            p -> new dev.logos.item.ManaBatteryItem(p, BASIC_MANA_CASING), p -> p.stacksTo(16));
-    public static final DeferredItem<dev.logos.item.ManaBatteryItem> ADVANCED_MANA_BATTERY = ITEMS.registerItem("advanced_mana_battery",
-            p -> new dev.logos.item.ManaBatteryItem(p, ADVANCED_MANA_CASING), p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.UNCOMMON));
-    public static final DeferredItem<dev.logos.item.ManaBatteryItem> SUPERIOR_MANA_BATTERY = ITEMS.registerItem("superior_mana_battery",
-            p -> new dev.logos.item.ManaBatteryItem(p, SUPERIOR_MANA_CASING), p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.RARE));
-
     // Alchemy materials: the fermentation line. The alchemy table's processes make most of them.
     /**
      * A bottled alchemy liquid one can drink like a potion (same animation and sound): it stacks to 16
@@ -496,6 +472,34 @@ public class LogosMod {
     /** 贤者之石: the tincture of life, the red lion and the quintessence settled together; it raises a page to the sage grade. */
     public static final DeferredItem<net.minecraft.world.item.Item> PHILOSOPHERS_STONE = ITEMS.registerSimpleItem("philosophers_stone",
             p -> p.rarity(net.minecraft.world.item.Rarity.EPIC));
+
+    // 魔匣: metal pods fermented into living metal, settled into empty caskets, and the latent mana of
+    // alchemy products distilled into them; a casket gives only what is lacking (dev.logos.item.ManaCasketItem).
+    /** 活铜锭…: a metal pod fermented in a mash, the metal still alive; the caskets are settled from it. */
+    public static final DeferredItem<net.minecraft.world.item.Item> LIVING_COPPER_INGOT = ITEMS.registerSimpleItem("living_copper_ingot");
+    public static final DeferredItem<net.minecraft.world.item.Item> LIVING_IRON_INGOT = ITEMS.registerSimpleItem("living_iron_ingot");
+    public static final DeferredItem<net.minecraft.world.item.Item> LIVING_GOLD_INGOT = ITEMS.registerSimpleItem("living_gold_ingot",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<net.minecraft.world.item.Item> LIVING_NETHERITE_INGOT = ITEMS.registerSimpleItem("living_netherite_ingot",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE).fireResistant());
+    /** 铜空匣…: a casket of living metal, empty; filled on the alchemy table, and left again when its mana is spent. */
+    public static final DeferredItem<net.minecraft.world.item.Item> EMPTY_COPPER_CASKET = ITEMS.registerSimpleItem("empty_copper_casket");
+    public static final DeferredItem<net.minecraft.world.item.Item> EMPTY_IRON_CASKET = ITEMS.registerSimpleItem("empty_iron_casket");
+    public static final DeferredItem<net.minecraft.world.item.Item> EMPTY_GOLD_CASKET = ITEMS.registerSimpleItem("empty_gold_casket",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<net.minecraft.world.item.Item> EMPTY_NETHERITE_CASKET = ITEMS.registerSimpleItem("empty_netherite_casket",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE).fireResistant());
+    /** 铜魔匣… (200 / 750 / 2500 / 10000): each between two of the solid mana's grades, so no casket stands in for one. */
+    public static final DeferredItem<dev.logos.item.ManaCasketItem> COPPER_MANA_CASKET = ITEMS.registerItem("copper_mana_casket",
+            p -> new dev.logos.item.ManaCasketItem(p, 200, EMPTY_COPPER_CASKET));
+    public static final DeferredItem<dev.logos.item.ManaCasketItem> IRON_MANA_CASKET = ITEMS.registerItem("iron_mana_casket",
+            p -> new dev.logos.item.ManaCasketItem(p, 750, EMPTY_IRON_CASKET), p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<dev.logos.item.ManaCasketItem> GOLD_MANA_CASKET = ITEMS.registerItem("gold_mana_casket",
+            p -> new dev.logos.item.ManaCasketItem(p, 2500, EMPTY_GOLD_CASKET), p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+    public static final DeferredItem<dev.logos.item.ManaCasketItem> NETHERITE_MANA_CASKET = ITEMS.registerItem("netherite_mana_casket",
+            p -> new dev.logos.item.ManaCasketItem(p, 10000, EMPTY_NETHERITE_CASKET), p -> p.rarity(net.minecraft.world.item.Rarity.EPIC).fireResistant());
+    public static final List<DeferredItem<dev.logos.item.ManaCasketItem>> MANA_CASKETS = List.of(
+            COPPER_MANA_CASKET, IRON_MANA_CASKET, GOLD_MANA_CASKET, NETHERITE_MANA_CASKET);
     /** 药粉: a potion settled into powder; eaten for the potion's effects, and dissolved back into it. */
     public static final DeferredItem<dev.logos.item.PotionPowderItem> POTION_POWDER = ITEMS.registerItem("potion_powder", dev.logos.item.PotionPowderItem::new,
             p -> p.component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -623,12 +627,6 @@ public class LogosMod {
             RECIPE_SERIALIZERS.register("page_upgrade", () -> dev.logos.item.PageUpgradeRecipe.SERIALIZER);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.WandUpgradeRecipe>> WAND_UPGRADE_SERIALIZER =
             RECIPE_SERIALIZERS.register("wand_upgrade", () -> dev.logos.item.WandUpgradeRecipe.SERIALIZER);
-    /** Sealing a mana battery, its casing's wear kept (type logos:mana_battery). */
-    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.ManaBatteryRecipe>> MANA_BATTERY_SERIALIZER =
-            RECIPE_SERIALIZERS.register("mana_battery", () -> dev.logos.item.ManaBatteryRecipe.SERIALIZER);
-    /** Taking an empty casing apart, less back the more worn it is (type logos:casing_salvage). */
-    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.CasingSalvageRecipe>> CASING_SALVAGE_SERIALIZER =
-            RECIPE_SERIALIZERS.register("casing_salvage", () -> dev.logos.item.CasingSalvageRecipe.SERIALIZER);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeBookCategory, net.minecraft.world.item.crafting.RecipeBookCategory> ALCHEMY_BOOK_CATEGORY =
             RECIPE_BOOK_CATEGORIES.register("alchemy", net.minecraft.world.item.crafting.RecipeBookCategory::new);
 
@@ -779,12 +777,8 @@ public class LogosMod {
                 out.accept(MANA_SHARD.get());
                 out.accept(MANA_CRYSTAL.get());
                 out.accept(MANA_GEMSTONE.get());
-                out.accept(BASIC_MANA_CASING.get());
-                out.accept(ADVANCED_MANA_CASING.get());
-                out.accept(SUPERIOR_MANA_CASING.get());
-                out.accept(BASIC_MANA_BATTERY.get());
-                out.accept(ADVANCED_MANA_BATTERY.get());
-                out.accept(SUPERIOR_MANA_BATTERY.get());
+                for (var empty : List.of(EMPTY_COPPER_CASKET, EMPTY_IRON_CASKET, EMPTY_GOLD_CASKET, EMPTY_NETHERITE_CASKET)) out.accept(empty.get());
+                for (var casket : MANA_CASKETS) out.accept(casket.get());
                 out.accept(STARTER_CULTURE.get());
                 out.accept(RAW_MASH.get());
                 out.accept(FOUL_BRINE.get());
@@ -808,6 +802,7 @@ public class LogosMod {
                 for (JarMetal metal : JarMetal.values()) out.accept(metal.embryo.get());
                 for (JarMetal metal : JarMetal.values()) out.accept(metal.seed.get());
                 for (JarMetal metal : JarMetal.values()) out.accept(metal.pod.get());
+                for (var ingot : List.of(LIVING_COPPER_INGOT, LIVING_IRON_INGOT, LIVING_GOLD_INGOT, LIVING_NETHERITE_INGOT)) out.accept(ingot.get());
                 out.accept(MANDRAKE_SEED.get());
                 out.accept(MANDRAKE_ROOT.get());
                 out.accept(MERCURY_SPORE.get());

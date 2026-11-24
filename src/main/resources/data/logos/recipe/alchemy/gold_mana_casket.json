@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "distill",
+  "ingredients": [
+    { "ingredient": "logos:empty_gold_casket" },
+    { "ingredient": "logos:solar_blossom" },
+    { "ingredient": "logos:incandescent_white_stone" }
+  ],
+  "results": [
+    { "id": "logos:gold_mana_casket" }
+  ],
+  "mana": 100
+}

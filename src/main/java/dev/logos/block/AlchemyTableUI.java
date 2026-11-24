@@ -222,9 +222,11 @@ public final class AlchemyTableUI {
         Label manaText = new Label();
         manaText.bind(DataBindingBuilder.componentS2C(() -> Component.translatable("logos.alchemy_table.mana",
                 (int) table.mana(), AlchemyTableBlockEntity.MAX_MANA)).build());
-        ProgressBar manaGauge = gauge(() -> (float) table.mana(), AlchemyTableBlockEntity.MAX_MANA, 9 * 18 - 26, MANA_COLOUR);
+        // The 魔匣 the table has opened, beside the slot it came from.
+        ItemSlot opened = ManaDeviceUI.shownSlot(table.openedCasket(), "opened_casket");
+        ProgressBar manaGauge = gauge(() -> (float) table.mana(), AlchemyTableBlockEntity.MAX_MANA, 9 * 18 - 50, MANA_COLOUR);
         manaGauge.setId("mana_gauge");
-        UIElement manaRow = row(fuel, column(manaText, manaGauge));
+        UIElement manaRow = row(fuel, opened, column(manaText, manaGauge));
 
         // The tank slot (buckets and bottles can be clicked on it) beside the fluid gauge and the button that empties it.
         FluidSlot tank = new FluidSlot().bind(table.tank(), 0).setCapacity(AlchemyTableBlockEntity.TANK_CAPACITY);

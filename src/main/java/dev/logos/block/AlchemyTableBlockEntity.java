@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.LogosMod;
 import dev.logos.alchemy.Process;
 import dev.logos.alchemy.ProcessCard;
-import dev.logos.item.ManaBatteryItem;
+import dev.logos.item.ManaCasketItem;
 import dev.logos.runtime.FreeManaEntity;
 import dev.logos.runtime.Lifeforms;
 import dev.logos.runtime.ManaVessel;
@@ -52,7 +52,8 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * 炼金术桌, kept on its main half: a raw-material area and a product area, a mana pool and a fluid
  * tank. Hoppers and other mods' pipes may only put into the raw area (or the fuel slot) and only
  * take from the product area; the tank is open both ways. The pool fills from mana fuel, from free
- * mana that drifts onto the table, and from a wand's holder.
+ * mana that drifts onto the table, and from a wand's holder. A 魔匣 in the fuel slot is opened and
+ * gives what the pool lacks ({@link OpenedCasket}); its empty casket comes out among the products.
  */
 public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEntity, ManaVessel {
     public static final int RAW_SLOTS = 18, PRODUCT_SLOTS = 9, SLOTS = RAW_SLOTS + PRODUCT_SLOTS;
@@ -80,7 +81,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     private final ItemStacksResourceHandler fuel = new ItemStacksResourceHandler(1) {
         @Override
         public boolean isValid(int index, ItemResource resource) {
-            return fuelValue(resource.toStack()) > 0;
+            return fuelValue(resource.toStack()) > 0 || resource.getItem() instanceof ManaCasketItem;
         }
 
         @Override
@@ -88,6 +89,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
             setChanged();
         }
     };
+    private final OpenedCasket casket = new OpenedCasket(this::changed);
     private final FluidStacksResourceHandler tank = new FluidStacksResourceHandler(1, TANK_CAPACITY) {
         @Override
         protected void onContentsChanged(int index, FluidStack previousContents) {
@@ -119,6 +121,11 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
 
     public ItemStacksResourceHandler fuel() {
         return fuel;
+    }
+
+    /** The 魔匣 taken from the fuel slot, for the screen; nothing can be put in or taken out. */
+    public ItemStacksResourceHandler openedCasket() {
+        return casket.slot();
     }
 
     public FluidStacksResourceHandler tank() {
@@ -213,12 +220,6 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         return taken;
     }
 
-    /** The first empty slot of the product area, or -1. */
-    private int freeProductSlot() {
-        for (int i = RAW_SLOTS; i < SLOTS; i++) if (items.getAmountAsInt(i) == 0) return i;
-        return -1;
-    }
-
     /** The mana a fuel item gives the table; unstable fuel (a tainted shard) is not accepted. */
     public static int fuelValue(ItemStack stack) {
         Lifeforms.ManaFuel f = stack.typeHolder().getData(LogosMod.MANA_FUEL);
@@ -227,16 +228,13 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
 
     /** Every tick on the server: burn fuel that fits, work the process cards, take in free mana on the table, and tell clients what changed. */
     public static void serverTick(Level level, BlockPos pos, BlockState state, AlchemyTableBlockEntity table) {
+        table.casket.work(table.fuel, MAX_MANA - table.mana, table::receiveMana, table::putProduct);
         ItemStack f = table.fuel.getResource(0).toStack(table.fuel.getAmountAsInt(0));
         int value = fuelValue(f);
-        // A battery leaves its empty casing in the product area, so it waits for a free product slot.
-        ItemStack shell = ManaBatteryItem.shellOf(f);
-        int shellSlot = shell.isEmpty() ? -1 : table.freeProductSlot();
         // Only burnt when it all fits, so no fuel is wasted.
-        if (value > 0 && table.mana + value <= MAX_MANA && (shell.isEmpty() || shellSlot >= 0)) {
+        if (value > 0 && table.mana + value <= MAX_MANA) {
             table.fuel.set(0, table.fuel.getResource(0), f.getCount() - 1);
             table.setMana(table.mana + value);
-            if (shellSlot >= 0) table.items.set(shellSlot, ItemResource.of(shell), 1);
         }
         int working = 0;
         // Switched off, or held by a redstone signal: the cards wait where they are.
@@ -262,6 +260,16 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         if (table.dirty && level.getGameTime() % SYNC_INTERVAL == 0) {
             table.dirty = false;
             level.sendBlockUpdated(pos, state, state, 3);
+        }
+    }
+
+    /** Puts {@code stack} among the products, all of it or nothing; answers how many went in. */
+    private int putProduct(ItemStack stack) {
+        try (Transaction tx = Transaction.openRoot()) {
+            int in = productArea.insert(ItemResource.of(stack), stack.getCount(), tx);
+            if (in < stack.getCount()) return 0;
+            tx.commit();
+            return in;
         }
     }
 
@@ -312,6 +320,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         super.saveAdditional(output);
         items.serialize(output.child("items"));
         fuel.serialize(output.child("fuel"));
+        casket.save(output);
         tank.serialize(output.child("tank"));
         output.putDouble("mana", mana);
         output.putBoolean("enabled", enabled);
@@ -324,6 +333,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         super.loadAdditional(input);
         input.child("items").ifPresent(items::deserialize);
         input.child("fuel").ifPresent(fuel::deserialize);
+        casket.load(input);
         input.child("tank").ifPresent(tank::deserialize);
         mana = input.getDoubleOr("mana", 0);
         enabled = input.getBooleanOr("enabled", true);
@@ -362,6 +372,7 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         for (ProcessCard card : cards) {
             for (ItemStack s : card.contents()) Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), s);
         }
+        casket.drop(level, pos);
     }
 
     /**

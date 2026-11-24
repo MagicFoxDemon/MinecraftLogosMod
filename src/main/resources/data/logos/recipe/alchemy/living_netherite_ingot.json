@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:netherite_pod" },
+    { "ingredient": "logos:tincture_of_life" }
+  ],
+  "results": [
+    { "id": "logos:living_netherite_ingot" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 30
+}

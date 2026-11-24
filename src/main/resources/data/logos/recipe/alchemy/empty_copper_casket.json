@@ -1,0 +1,12 @@
+{
+  "type": "logos:alchemy",
+  "process": "settle",
+  "ingredients": [
+    { "ingredient": "logos:living_copper_ingot" },
+    { "ingredient": "logos:adhesive" }
+  ],
+  "results": [
+    { "id": "logos:empty_copper_casket" }
+  ],
+  "mana": 5
+}
