@@ -51,8 +51,11 @@ public final class ManaDeviceUI {
         Level level = player.level();
         BlockPos pos = holder.pos;
         ItemSlot fuel = slot(spreader.fuel(), 0, "fuel");
+        // The 魔匣 the spreader has opened, and the empty caskets it has left.
+        ItemSlot opened = shownSlot(spreader.openedCasket(), "spreader_opened_casket");
+        ItemSlot empties = slot(spreader.empties(), 0, "spreader_empties");
         Label manaText = manaText(spreader);
-        ProgressBar gauge = gauge(spreader, 120);
+        ProgressBar gauge = gauge(spreader, 84);
         gauge.setId("mana_gauge");
 
         // The survey of the chunks around it, worked out at most once a second and only while the screen is open.
@@ -80,7 +83,7 @@ public final class ManaDeviceUI {
         UIElement page = page(176,
                 title("block.logos.mana_spreader"),
                 new Label().setText(Component.translatable("logos.mana_spreader.fuel")),
-                row(fuel, column(manaText, gauge)),
+                row(fuel, opened, empties, column(manaText, gauge)),
                 new Label().setText(Component.translatable("logos.mana_spreader.map")),
                 new UIElement().layout(l -> l.widthPercent(100).alignItems(AlignItems.CENTER)).addChildren(map),
                 status, surveyValue, poured, new InventorySlots());

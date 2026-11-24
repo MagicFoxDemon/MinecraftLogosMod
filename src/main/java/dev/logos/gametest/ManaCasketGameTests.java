@@ -6,8 +6,11 @@ import java.util.Set;
 import dev.logos.LogosMod;
 import dev.logos.alchemy.Process;
 import dev.logos.block.AlchemyTableBlockEntity;
+import dev.logos.block.CultivationJarBlockEntity;
+import dev.logos.block.ManaSpreaderBlockEntity;
 import dev.logos.block.ManaStorageTankBlockEntity;
 import dev.logos.item.ManaCasketItem;
+import dev.logos.runtime.ManaField;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -17,11 +20,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
  * 魔匣: a casket gives only what is lacking and is opened for the rest (the alchemy table and the storage
  * tank keep the open one, a player carries it); spent, it leaves its empty casket; and every casket is
- * made and filled without anything that gives mana itself.
+ * made and filled without anything that gives mana itself. The spreader takes them too, and a jar takes mana by hand.
  */
 final class ManaCasketGameTests {
     private ManaCasketGameTests() {}
@@ -87,6 +91,48 @@ final class ManaCasketGameTests {
         tank.empties().set(0, ItemResource.EMPTY, 0);
         tank.work(h.getLevel(), h.absolutePos(at));
         h.assertTrue(tank.mana() == 500 && tank.input().getAmountAsInt(0) == 0, "once the empties slot is free the last casket should open");
+        h.succeed();
+    }
+
+    /** A copper casket in a spreader's drawer is opened and spent into it; its empty casket goes to the empties slot. */
+    static void spreaderTakesCaskets(GameTestHelper h) {
+        BlockPos at = new BlockPos(1, 2, 1);
+        h.setBlock(at, LogosMod.MANA_SPREADER.get().defaultBlockState());
+        ManaSpreaderBlockEntity spreader = (ManaSpreaderBlockEntity) h.getBlockEntity(at, ManaSpreaderBlockEntity.class);
+        try (Transaction tx = Transaction.openRoot()) {
+            h.assertTrue(spreader.automation().insert(ItemResource.of(LogosMod.COPPER_MANA_CASKET.get()), 1, tx) == 1, "the drawer refused a casket");
+            tx.commit();
+        }
+        h.succeedWhen(() -> {
+            h.assertTrue(spreader.fuel().getAmountAsInt(0) == 0 && in(spreader.openedCasket(), 0).isEmpty(), "the casket should be taken and spent");
+            h.assertTrue(in(spreader.empties(), 0).is(LogosMod.EMPTY_COPPER_CASKET.get()), "its empty casket should be in the empties slot");
+            h.assertTrue(spreader.mana() + ManaField.spread(h.getLevel(), h.absolutePos(at)) > 0, "the spreader got no mana");
+        });
+    }
+
+    /**
+     * Mana by hand into a cultivation jar (500): a crystal (1000) does not fit and is refused, a shard fills
+     * it and a second is refused; a gold casket gives an empty jar 500 and goes on opened with 2000.
+     */
+    static void jarTakesManaByHand(GameTestHelper h) {
+        Player player = h.makeMockPlayer(GameType.SURVIVAL);
+        BlockPos at = new BlockPos(1, 2, 1), other = new BlockPos(3, 2, 1);
+        h.setBlock(at, LogosMod.CULTIVATION_JAR.get());
+        h.setBlock(other, LogosMod.CULTIVATION_JAR.get());
+        CultivationJarBlockEntity jar = (CultivationJarBlockEntity) h.getBlockEntity(at, CultivationJarBlockEntity.class);
+        ItemStack crystal = new ItemStack(LogosMod.MANA_CRYSTAL.get());
+        h.assertTrue(!jar.fillMana(crystal, player) && crystal.getCount() == 1 && jar.mana() == 0, "a crystal does not fit and must be refused");
+        ItemStack shards = new ItemStack(LogosMod.MANA_SHARD.get(), 2);
+        h.assertTrue(jar.fillMana(shards, player) && shards.getCount() == 1 && jar.mana() == 500, "a shard should fill the jar");
+        h.assertTrue(!jar.fillMana(shards, player) && shards.getCount() == 1, "a full jar must refuse the next shard");
+
+        CultivationJarBlockEntity empty = (CultivationJarBlockEntity) h.getBlockEntity(other, CultivationJarBlockEntity.class);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(LogosMod.GOLD_MANA_CASKET.get(), 2));
+        ItemStack held = player.getMainHandItem();
+        h.assertTrue(empty.fillMana(held, player) && empty.mana() == 500 && held.getCount() == 1, "a gold casket should fill the jar, held " + held);
+        h.assertTrue(player.getInventory().getNonEquipmentItems().stream().anyMatch(s -> ManaCasketItem.isOpened(s) && ManaCasketItem.manaIn(s) == 2000),
+                "the opened casket should go on with 2000");
+        h.assertTrue(!empty.fillMana(held, player), "a full jar must refuse a casket");
         h.succeed();
     }
 

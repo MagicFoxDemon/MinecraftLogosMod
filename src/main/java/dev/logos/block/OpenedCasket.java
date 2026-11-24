@@ -75,6 +75,29 @@ final class OpenedCasket {
         if (!ItemStack.matches(before, after)) slot.set(0, after.isEmpty() ? ItemResource.EMPTY : ItemResource.of(after), after.getCount());
     }
 
+    /** Stacks an empty casket into a machine's one-slot {@code empties}; 0 when it holds something else or is full. */
+    static int stackInto(ItemStacksResourceHandler empties, ItemStack stack) {
+        int held = empties.getAmountAsInt(0);
+        if (held > 0 && !empties.getResource(0).equals(ItemResource.of(stack)) || held + stack.getCount() > stack.getMaxStackSize()) return 0;
+        empties.set(0, ItemResource.of(stack), held + stack.getCount());
+        return stack.getCount();
+    }
+
+    /** A machine's slot for the empty caskets its 魔匣 leave: only taken from. */
+    static ItemStacksResourceHandler emptiesSlot(Runnable changed) {
+        return new ItemStacksResourceHandler(1) {
+            @Override
+            public boolean isValid(int index, ItemResource resource) {
+                return false;
+            }
+
+            @Override
+            protected void onContentsChanged(int index, ItemStack previousContents) {
+                changed.run();
+            }
+        };
+    }
+
     void save(ValueOutput output) {
         slot.serialize(output.child("opened_casket"));
     }

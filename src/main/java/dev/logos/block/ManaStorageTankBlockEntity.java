@@ -73,17 +73,7 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     };
     private final OpenedCasket casket = new OpenedCasket(this::setChanged);
     /** The empty caskets of spent 魔匣; only taken from. */
-    private final ItemStacksResourceHandler empties = new ItemStacksResourceHandler(1) {
-        @Override
-        public boolean isValid(int index, ItemResource resource) {
-            return false;
-        }
-
-        @Override
-        protected void onContentsChanged(int index, ItemStack previousContents) {
-            setChanged();
-        }
-    };
+    private final ItemStacksResourceHandler empties = OpenedCasket.emptiesSlot(this::setChanged);
     /** The seed a crystal grows from. */
     private final ItemStacksResourceHandler seed = new ItemStacksResourceHandler(1) {
         @Override
@@ -154,7 +144,7 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
         casket.work(input, MAX_MANA - mana, amount -> {
             mana += amount;
             return amount;
-        }, this::putEmpty);
+        }, s -> OpenedCasket.stackInto(empties, s));
         boolean changed = mana != before;
         // Mana items dissolve whole, one a second, when all of one fits.
         ItemStack in = input.getResource(0).toStack(input.getAmountAsInt(0));
@@ -233,14 +223,6 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     /** The 魔匣 taken from the input, for the screen; nothing can be put in or taken out. */
     public ItemStacksResourceHandler openedCasket() {
         return casket.slot();
-    }
-
-    /** Puts an empty casket with the others; 0 when the slot holds something else or is full. */
-    private int putEmpty(ItemStack stack) {
-        int held = empties.getAmountAsInt(0);
-        if (held > 0 && !empties.getResource(0).equals(ItemResource.of(stack)) || held + stack.getCount() > stack.getMaxStackSize()) return 0;
-        empties.set(0, ItemResource.of(stack), held + stack.getCount());
-        return stack.getCount();
     }
 
     public ResourceHandler<ItemResource> automation() {

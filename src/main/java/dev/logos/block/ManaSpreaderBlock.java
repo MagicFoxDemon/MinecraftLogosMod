@@ -86,10 +86,11 @@ public class ManaSpreaderBlock extends HorizontalDirectionalBlock implements Ent
         return serverTicker(level, type, LogosMod.MANA_SPREADER_BE.get(), ManaSpreaderBlockEntity::serverTick);
     }
 
-    /** Mana fuel in hand goes into the drawer, as much as fits. */
+    /** Mana fuel or 魔匣 in hand goes into the drawer, as much as fits. */
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (AlchemyTableBlockEntity.fuelValue(stack) <= 0 || !(level.getBlockEntity(pos) instanceof ManaSpreaderBlockEntity spreader)) {
+        if (AlchemyTableBlockEntity.fuelValue(stack) <= 0 && !(stack.getItem() instanceof dev.logos.item.ManaCasketItem)
+                || !(level.getBlockEntity(pos) instanceof ManaSpreaderBlockEntity spreader)) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (!level.isClientSide()) {
