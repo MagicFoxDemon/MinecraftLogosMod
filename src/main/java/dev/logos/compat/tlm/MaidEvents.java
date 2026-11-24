@@ -12,6 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 
 import dev.logos.LogosMod;
 import dev.logos.item.CodexItem;
+import dev.logos.item.ManaBatteryItem;
 import dev.logos.item.PageContainer;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
@@ -75,7 +76,7 @@ final class MaidEvents {
             return;
         }
         pool.receiveMana(fuel.mana());
-        if (!event.getPlayer().getAbilities().instabuild) held.shrink(1);
+        ManaBatteryItem.useUp(event.getPlayer(), held);
         maid.level().playSound(null, maid.getX(), maid.getY(), maid.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f,
                 1.2f + maid.getRandom().nextFloat() * 0.4f);
         event.getPlayer().sendOverlayMessage(status(maid, pool));

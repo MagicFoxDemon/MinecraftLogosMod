@@ -1,0 +1,18 @@
+{
+  "type": "logos:mana_battery",
+  "category": "misc",
+  "ingredients": [
+    "logos:advanced_mana_casing",
+    "logos:philosophers_mercury",
+    "logos:echo_tincture",
+    "logos:echo_tincture",
+    "logos:sulfur_powder",
+    "logos:sulfur_powder",
+    "minecraft:lapis_lazuli",
+    "minecraft:lapis_lazuli",
+    "minecraft:blaze_powder"
+  ],
+  "result": {
+    "id": "logos:advanced_mana_battery"
+  }
+}

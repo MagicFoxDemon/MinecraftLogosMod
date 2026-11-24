@@ -747,7 +747,7 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             }
             if (isBerserk()) return InteractionResult.PASS;
             feed(fuel.mana(), player);
-            if (!player.getAbilities().instabuild) held.shrink(1);
+            dev.logos.item.ManaBatteryItem.useUp(player, held);
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 0.7f);
             if (mind != null && !isBerserk()) mind.maybeOfferFlower(player, 0.3);
             player.sendOverlayMessage(status());

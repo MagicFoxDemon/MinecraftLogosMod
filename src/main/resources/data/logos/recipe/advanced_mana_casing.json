@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IAI",
+    "IGI",
+    "IAI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "A": "logos:adhesive",
+    "G": "minecraft:glass"
+  },
+  "result": {
+    "id": "logos:advanced_mana_casing"
+  }
+}

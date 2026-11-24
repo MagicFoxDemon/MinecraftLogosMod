@@ -5,6 +5,7 @@ import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
+import dev.logos.item.ManaBatteryItem;
 import dev.logos.runtime.ManaInfusion;
 import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
@@ -28,7 +29,7 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 
 /**
  * 魔力存储罐: holds up to 5000 mana. Collectors, the infusing rune and mana items dropped in its input
- * (dissolved whole, nothing lost) fill it. Once a second it works its mode: storing keeps the mana; supplying
+ * (dissolved whole, nothing lost; a mana battery leaves its empty casing in the output) fill it. Once a second it works its mode: storing keeps the mana; supplying
  * gives each neighbouring vessel some (not collectors or other tanks, so mana does not run in circles);
  * condensing grows the seed in its seed slot into the next solid mana (amethyst shard → mana shard → mana
  * crystal → mana gemstone) at 90%. A redstone signal pauses supplying and condensing.
@@ -86,7 +87,7 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
             changed();
         }
     };
-    /** Grown crystals; only taken from. */
+    /** Grown crystals and the empty casings of spent batteries; only taken from. */
     private final ItemStacksResourceHandler output = new ItemStacksResourceHandler(1) {
         @Override
         public boolean isValid(int index, ItemResource resource) {
@@ -136,12 +137,15 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     /** One second of work. */
     public void work(Level level, BlockPos pos) {
         boolean changed = false;
-        // Mana items dissolve whole, one a second, when all of one fits.
+        // Mana items dissolve whole, one a second, when all of one fits. A battery leaves its empty casing in
+        // the output, so it waits until the output is free.
         ItemStack in = input.getResource(0).toStack(input.getAmountAsInt(0));
         int value = AlchemyTableBlockEntity.fuelValue(in);
-        if (value > 0 && mana + value <= MAX_MANA) {
+        ItemStack shell = ManaBatteryItem.shellOf(in);
+        if (value > 0 && mana + value <= MAX_MANA && (shell.isEmpty() || output.getAmountAsInt(0) == 0)) {
             input.set(0, input.getResource(0), in.getCount() - 1);
             mana += value;
+            if (!shell.isEmpty()) output.set(0, ItemResource.of(shell), 1);
             changed = true;
         }
         lastSupplied = 0;

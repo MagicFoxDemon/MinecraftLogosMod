@@ -1,0 +1,9 @@
+{
+  "type": "logos:casing_salvage",
+  "category": "misc",
+  "casing": "logos:superior_mana_casing",
+  "result": {
+    "id": "minecraft:gold_ingot",
+    "count": 4
+  }
+}

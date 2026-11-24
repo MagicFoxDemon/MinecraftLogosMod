@@ -62,6 +62,10 @@ public class LogosMod {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> STORED_MANA = COMPONENTS.registerComponentType("stored_mana",
             b -> b.persistent(Codec.DOUBLE).ignoreSwapAnimation().networkSynchronized(ByteBufCodecs.DOUBLE));
 
+    /** How many uses the 魔力外壳 a 魔力电池 is sealed in had already been through; its empty casing comes back one more worn. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> CASING_WEAR = COMPONENTS.registerComponentType("casing_wear",
+            b -> b.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
+
     /** Which spell (index into wand pages + off-hand codex pages) the wand will cast. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SELECTED = COMPONENTS.registerComponentType("selected",
             b -> b.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
@@ -296,6 +300,26 @@ public class LogosMod {
     /** 魔力晶石: a mana crystal grown on in a storage tank; 5000 mana, a full tank, which only a tank can take back. */
     public static final DeferredItem<net.minecraft.world.item.Item> MANA_GEMSTONE = ITEMS.registerSimpleItem("mana_gemstone",
             p -> p.rarity(net.minecraft.world.item.Rarity.EPIC));
+
+    /**
+     * 魔力外壳: the reusable casings mana batteries are sealed in, one per grade; each use wears one point
+     * (4 / 8 / 16 uses). An empty one is taken apart for part of its metal (logos:casing_salvage).
+     */
+    public static final DeferredItem<net.minecraft.world.item.Item> BASIC_MANA_CASING = ITEMS.registerSimpleItem("basic_mana_casing", p -> p.durability(4));
+    public static final DeferredItem<net.minecraft.world.item.Item> ADVANCED_MANA_CASING = ITEMS.registerSimpleItem("advanced_mana_casing",
+            p -> p.durability(8).rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<net.minecraft.world.item.Item> SUPERIOR_MANA_CASING = ITEMS.registerSimpleItem("superior_mana_casing",
+            p -> p.durability(16).rarity(net.minecraft.world.item.Rarity.RARE));
+    /**
+     * 魔力电池: mana fuel sealed from vanilla mana materials (初级, 1000), basic alchemy products (中级, 2000) or
+     * complex ones (高级, 4000); their mana is in data/logos/data_maps/item/mana_fuel.json.
+     */
+    public static final DeferredItem<dev.logos.item.ManaBatteryItem> BASIC_MANA_BATTERY = ITEMS.registerItem("basic_mana_battery",
+            p -> new dev.logos.item.ManaBatteryItem(p, BASIC_MANA_CASING), p -> p.stacksTo(16));
+    public static final DeferredItem<dev.logos.item.ManaBatteryItem> ADVANCED_MANA_BATTERY = ITEMS.registerItem("advanced_mana_battery",
+            p -> new dev.logos.item.ManaBatteryItem(p, ADVANCED_MANA_CASING), p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<dev.logos.item.ManaBatteryItem> SUPERIOR_MANA_BATTERY = ITEMS.registerItem("superior_mana_battery",
+            p -> new dev.logos.item.ManaBatteryItem(p, SUPERIOR_MANA_CASING), p -> p.stacksTo(16).rarity(net.minecraft.world.item.Rarity.RARE));
 
     // Alchemy materials: the fermentation line. The alchemy table's processes make most of them.
     /**
@@ -599,6 +623,12 @@ public class LogosMod {
             RECIPE_SERIALIZERS.register("page_upgrade", () -> dev.logos.item.PageUpgradeRecipe.SERIALIZER);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.WandUpgradeRecipe>> WAND_UPGRADE_SERIALIZER =
             RECIPE_SERIALIZERS.register("wand_upgrade", () -> dev.logos.item.WandUpgradeRecipe.SERIALIZER);
+    /** Sealing a mana battery, its casing's wear kept (type logos:mana_battery). */
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.ManaBatteryRecipe>> MANA_BATTERY_SERIALIZER =
+            RECIPE_SERIALIZERS.register("mana_battery", () -> dev.logos.item.ManaBatteryRecipe.SERIALIZER);
+    /** Taking an empty casing apart, less back the more worn it is (type logos:casing_salvage). */
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeSerializer<?>, net.minecraft.world.item.crafting.RecipeSerializer<dev.logos.item.CasingSalvageRecipe>> CASING_SALVAGE_SERIALIZER =
+            RECIPE_SERIALIZERS.register("casing_salvage", () -> dev.logos.item.CasingSalvageRecipe.SERIALIZER);
     public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeBookCategory, net.minecraft.world.item.crafting.RecipeBookCategory> ALCHEMY_BOOK_CATEGORY =
             RECIPE_BOOK_CATEGORIES.register("alchemy", net.minecraft.world.item.crafting.RecipeBookCategory::new);
 
@@ -749,6 +779,12 @@ public class LogosMod {
                 out.accept(MANA_SHARD.get());
                 out.accept(MANA_CRYSTAL.get());
                 out.accept(MANA_GEMSTONE.get());
+                out.accept(BASIC_MANA_CASING.get());
+                out.accept(ADVANCED_MANA_CASING.get());
+                out.accept(SUPERIOR_MANA_CASING.get());
+                out.accept(BASIC_MANA_BATTERY.get());
+                out.accept(ADVANCED_MANA_BATTERY.get());
+                out.accept(SUPERIOR_MANA_BATTERY.get());
                 out.accept(STARTER_CULTURE.get());
                 out.accept(RAW_MASH.get());
                 out.accept(FOUL_BRINE.get());

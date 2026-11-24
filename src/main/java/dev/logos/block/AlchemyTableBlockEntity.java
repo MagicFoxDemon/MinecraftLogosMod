@@ -17,6 +17,7 @@ import org.jspecify.annotations.Nullable;
 import dev.logos.LogosMod;
 import dev.logos.alchemy.Process;
 import dev.logos.alchemy.ProcessCard;
+import dev.logos.item.ManaBatteryItem;
 import dev.logos.runtime.FreeManaEntity;
 import dev.logos.runtime.Lifeforms;
 import dev.logos.runtime.ManaVessel;
@@ -212,6 +213,12 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
         return taken;
     }
 
+    /** The first empty slot of the product area, or -1. */
+    private int freeProductSlot() {
+        for (int i = RAW_SLOTS; i < SLOTS; i++) if (items.getAmountAsInt(i) == 0) return i;
+        return -1;
+    }
+
     /** The mana a fuel item gives the table; unstable fuel (a tainted shard) is not accepted. */
     public static int fuelValue(ItemStack stack) {
         Lifeforms.ManaFuel f = stack.typeHolder().getData(LogosMod.MANA_FUEL);
@@ -222,10 +229,14 @@ public class AlchemyTableBlockEntity extends BlockEntity implements GeoBlockEnti
     public static void serverTick(Level level, BlockPos pos, BlockState state, AlchemyTableBlockEntity table) {
         ItemStack f = table.fuel.getResource(0).toStack(table.fuel.getAmountAsInt(0));
         int value = fuelValue(f);
+        // A battery leaves its empty casing in the product area, so it waits for a free product slot.
+        ItemStack shell = ManaBatteryItem.shellOf(f);
+        int shellSlot = shell.isEmpty() ? -1 : table.freeProductSlot();
         // Only burnt when it all fits, so no fuel is wasted.
-        if (value > 0 && table.mana + value <= MAX_MANA) {
+        if (value > 0 && table.mana + value <= MAX_MANA && (shell.isEmpty() || shellSlot >= 0)) {
             table.fuel.set(0, table.fuel.getResource(0), f.getCount() - 1);
             table.setMana(table.mana + value);
+            if (shellSlot >= 0) table.items.set(shellSlot, ItemResource.of(shell), 1);
         }
         int working = 0;
         // Switched off, or held by a redstone signal: the cards wait where they are.

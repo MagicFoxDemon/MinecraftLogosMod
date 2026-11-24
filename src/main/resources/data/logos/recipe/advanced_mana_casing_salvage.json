@@ -1,0 +1,9 @@
+{
+  "type": "logos:casing_salvage",
+  "category": "misc",
+  "casing": "logos:advanced_mana_casing",
+  "result": {
+    "id": "minecraft:iron_ingot",
+    "count": 3
+  }
+}

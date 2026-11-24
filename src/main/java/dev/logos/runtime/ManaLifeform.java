@@ -16,6 +16,7 @@ import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 
 import dev.logos.LogosMod;
+import dev.logos.item.ManaBatteryItem;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
 import dev.logos.lang.Intent;
@@ -643,7 +644,7 @@ public class ManaLifeform extends PathfinderMob implements GeoEntity, ManaVessel
                 return InteractionResult.CONSUME;
             }
             receiveMana(fuel.mana());
-            if (!player.getAbilities().instabuild) held.shrink(1);
+            ManaBatteryItem.useUp(player, held);
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 1.2f + random.nextFloat() * 0.4f);
             LifeformMind.emote(this, LifeformMind.Emote.HAPPY);
             player.sendOverlayMessage(status());

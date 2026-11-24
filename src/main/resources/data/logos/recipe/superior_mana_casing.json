@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GRG",
+    "GQG",
+    "GRG"
+  ],
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "R": "logos:rebis",
+    "Q": "minecraft:quartz"
+  },
+  "result": {
+    "id": "logos:superior_mana_casing"
+  }
+}
