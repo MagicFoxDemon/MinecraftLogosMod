@@ -1,0 +1,15 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "firmament_blade_staff",
+  "ingredients": [
+    "logos:chalk_blade_staff",
+    "logos:firmament_stone",
+    "logos:living_gold_ingot",
+    "logos:living_gold_ingot",
+    "minecraft:diamond"
+  ],
+  "result": {
+    "id": "logos:firmament_blade_staff"
+  }
+}

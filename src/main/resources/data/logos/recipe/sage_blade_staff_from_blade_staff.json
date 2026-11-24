@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": "logos:sage_upgrade_smithing_template",
+  "base": "logos:firmament_blade_staff",
+  "addition": "logos:living_netherite_ingot",
+  "result": {
+    "id": "logos:sage_blade_staff"
+  }
+}

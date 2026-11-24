@@ -1,0 +1,13 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "echo_blade_staff",
+  "ingredients": [
+    "logos:echo_staff",
+    "logos:living_copper_ingot",
+    "logos:living_copper_ingot"
+  ],
+  "result": {
+    "id": "logos:echo_blade_staff"
+  }
+}

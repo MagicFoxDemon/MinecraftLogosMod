@@ -1,0 +1,13 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "crystal_blade_staff",
+  "ingredients": [
+    "logos:oak_blade_staff",
+    "minecraft:amethyst_shard",
+    "minecraft:stone_sword"
+  ],
+  "result": {
+    "id": "logos:crystal_blade_staff"
+  }
+}

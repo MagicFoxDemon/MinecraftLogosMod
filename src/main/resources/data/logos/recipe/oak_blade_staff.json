@@ -1,0 +1,12 @@
+{
+  "type": "logos:wand_upgrade",
+  "category": "equipment",
+  "group": "oak_blade_staff",
+  "ingredients": [
+    "#logos:wood_staffs",
+    "minecraft:wooden_sword"
+  ],
+  "result": {
+    "id": "logos:oak_blade_staff"
+  }
+}
