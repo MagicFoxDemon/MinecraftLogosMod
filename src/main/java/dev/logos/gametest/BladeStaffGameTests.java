@@ -215,12 +215,21 @@ final class BladeStaffGameTests {
                 new Way(craft(h, List.of(of(LogosMod.FIRMAMENT_STAFF.get()), of(LogosMod.LIVING_GOLD_INGOT.get()), of(LogosMod.LIVING_GOLD_INGOT.get()))), 5, "the firmament staff"),
                 new Way(craft(h, List.of(of(b.get(4).get()), of(LogosMod.FIRMAMENT_STONE.get()), of(LogosMod.LIVING_GOLD_INGOT.get()), of(LogosMod.LIVING_GOLD_INGOT.get()),
                         of(net.minecraft.world.item.Items.DIAMOND))), 5, "the chalk blade staff"),
-                new Way(craft(h, List.of(of(LogosMod.SAGE_STAFF.get()), of(LogosMod.LIVING_NETHERITE_INGOT.get()))), 6, "the sage staff"),
-                new Way(craft(h, List.of(of(LogosMod.SAGE_UPGRADE_TEMPLATE.get()), of(b.get(5).get()), of(LogosMod.LIVING_NETHERITE_INGOT.get()),
-                        of(LogosMod.LIVING_NETHERITE_INGOT.get()))), 6, "the firmament blade staff"));
+                new Way(craft(h, List.of(of(LogosMod.SAGE_STAFF.get()), of(LogosMod.LIVING_NETHERITE_INGOT.get()))), 6, "the sage staff"));
         for (Way w : ways) {
             h.assertTrue(w.made.is(b.get(w.tier).get()), "crafting " + w.how + " should make the " + b.get(w.tier).getId().getPath() + ", made " + w.made);
         }
+
+        // The sage grade from the firmament blade staff is smithed, like the sage wand and staff, and keeps its pages.
+        ItemStack firmament = of(b.get(5).get());
+        firmament.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(
+                SpellPages.inscribed(PageTier.BASIC, "(spell :mana 50 (mark caster #blade_staff))", null))));
+        var smith = new net.minecraft.world.item.crafting.SmithingRecipeInput(of(LogosMod.SAGE_UPGRADE_TEMPLATE.get()), firmament,
+                of(LogosMod.LIVING_NETHERITE_INGOT.get()));
+        ItemStack sage = h.getLevel().recipeAccess().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.SMITHING, smith, h.getLevel())
+                .map(r -> r.value().assemble(smith)).orElse(ItemStack.EMPTY);
+        h.assertTrue(sage.is(b.get(6).get()) && dev.logos.item.PageContainer.pages(sage).size() == 1,
+                "smithing the firmament blade staff should make the sage blade staff with its page, made " + sage);
 
         ItemStack old = of(b.get(2).get());
         ItemStack page = SpellPages.inscribed(PageTier.BASIC, "(spell :mana 50 (mark caster #blade_staff))", null);
