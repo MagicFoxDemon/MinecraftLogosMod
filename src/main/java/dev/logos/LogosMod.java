@@ -472,6 +472,34 @@ public class LogosMod {
     /** 贤者之石: the tincture of life, the red lion and the quintessence settled together; it raises a page to the sage grade. */
     public static final DeferredItem<net.minecraft.world.item.Item> PHILOSOPHERS_STONE = ITEMS.registerSimpleItem("philosophers_stone",
             p -> p.rarity(net.minecraft.world.item.Rarity.EPIC));
+
+    // 魔匣: metal pods fermented into living metal, settled into empty caskets, and the latent mana of
+    // alchemy products distilled into them; a casket gives only what is lacking (dev.logos.item.ManaCasketItem).
+    /** 活铜锭…: a metal pod fermented in a mash, the metal still alive; the caskets are settled from it. */
+    public static final DeferredItem<net.minecraft.world.item.Item> LIVING_COPPER_INGOT = ITEMS.registerSimpleItem("living_copper_ingot");
+    public static final DeferredItem<net.minecraft.world.item.Item> LIVING_IRON_INGOT = ITEMS.registerSimpleItem("living_iron_ingot");
+    public static final DeferredItem<net.minecraft.world.item.Item> LIVING_GOLD_INGOT = ITEMS.registerSimpleItem("living_gold_ingot",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<net.minecraft.world.item.Item> LIVING_NETHERITE_INGOT = ITEMS.registerSimpleItem("living_netherite_ingot",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE).fireResistant());
+    /** 铜空匣…: a casket of living metal, empty; filled on the alchemy table, and left again when its mana is spent. */
+    public static final DeferredItem<net.minecraft.world.item.Item> EMPTY_COPPER_CASKET = ITEMS.registerSimpleItem("empty_copper_casket");
+    public static final DeferredItem<net.minecraft.world.item.Item> EMPTY_IRON_CASKET = ITEMS.registerSimpleItem("empty_iron_casket");
+    public static final DeferredItem<net.minecraft.world.item.Item> EMPTY_GOLD_CASKET = ITEMS.registerSimpleItem("empty_gold_casket",
+            p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<net.minecraft.world.item.Item> EMPTY_NETHERITE_CASKET = ITEMS.registerSimpleItem("empty_netherite_casket",
+            p -> p.rarity(net.minecraft.world.item.Rarity.RARE).fireResistant());
+    /** 铜魔匣… (200 / 750 / 2500 / 10000): each between two of the solid mana's grades, so no casket stands in for one. */
+    public static final DeferredItem<dev.logos.item.ManaCasketItem> COPPER_MANA_CASKET = ITEMS.registerItem("copper_mana_casket",
+            p -> new dev.logos.item.ManaCasketItem(p, 200, EMPTY_COPPER_CASKET));
+    public static final DeferredItem<dev.logos.item.ManaCasketItem> IRON_MANA_CASKET = ITEMS.registerItem("iron_mana_casket",
+            p -> new dev.logos.item.ManaCasketItem(p, 750, EMPTY_IRON_CASKET), p -> p.rarity(net.minecraft.world.item.Rarity.UNCOMMON));
+    public static final DeferredItem<dev.logos.item.ManaCasketItem> GOLD_MANA_CASKET = ITEMS.registerItem("gold_mana_casket",
+            p -> new dev.logos.item.ManaCasketItem(p, 2500, EMPTY_GOLD_CASKET), p -> p.rarity(net.minecraft.world.item.Rarity.RARE));
+    public static final DeferredItem<dev.logos.item.ManaCasketItem> NETHERITE_MANA_CASKET = ITEMS.registerItem("netherite_mana_casket",
+            p -> new dev.logos.item.ManaCasketItem(p, 10000, EMPTY_NETHERITE_CASKET), p -> p.rarity(net.minecraft.world.item.Rarity.EPIC).fireResistant());
+    public static final List<DeferredItem<dev.logos.item.ManaCasketItem>> MANA_CASKETS = List.of(
+            COPPER_MANA_CASKET, IRON_MANA_CASKET, GOLD_MANA_CASKET, NETHERITE_MANA_CASKET);
     /** 药粉: a potion settled into powder; eaten for the potion's effects, and dissolved back into it. */
     public static final DeferredItem<dev.logos.item.PotionPowderItem> POTION_POWDER = ITEMS.registerItem("potion_powder", dev.logos.item.PotionPowderItem::new,
             p -> p.component(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
@@ -749,6 +777,8 @@ public class LogosMod {
                 out.accept(MANA_SHARD.get());
                 out.accept(MANA_CRYSTAL.get());
                 out.accept(MANA_GEMSTONE.get());
+                for (var empty : List.of(EMPTY_COPPER_CASKET, EMPTY_IRON_CASKET, EMPTY_GOLD_CASKET, EMPTY_NETHERITE_CASKET)) out.accept(empty.get());
+                for (var casket : MANA_CASKETS) out.accept(casket.get());
                 out.accept(STARTER_CULTURE.get());
                 out.accept(RAW_MASH.get());
                 out.accept(FOUL_BRINE.get());
@@ -772,6 +802,7 @@ public class LogosMod {
                 for (JarMetal metal : JarMetal.values()) out.accept(metal.embryo.get());
                 for (JarMetal metal : JarMetal.values()) out.accept(metal.seed.get());
                 for (JarMetal metal : JarMetal.values()) out.accept(metal.pod.get());
+                for (var ingot : List.of(LIVING_COPPER_INGOT, LIVING_IRON_INGOT, LIVING_GOLD_INGOT, LIVING_NETHERITE_INGOT)) out.accept(ingot.get());
                 out.accept(MANDRAKE_SEED.get());
                 out.accept(MANDRAKE_ROOT.get());
                 out.accept(MERCURY_SPORE.get());

@@ -52,10 +52,11 @@ public class ManaStorageTankBlock extends BaseEntityBlock implements BlockUIMenu
         return ManaSpreaderBlock.serverTicker(level, type, LogosMod.MANA_STORAGE_TANK_BE.get(), ManaStorageTankBlockEntity::serverTick);
     }
 
-    /** A mana item in hand goes into the input, as much as fits. */
+    /** A mana item or 魔匣 in hand goes into the input, as much as fits. */
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (AlchemyTableBlockEntity.fuelValue(stack) <= 0 || !(level.getBlockEntity(pos) instanceof ManaStorageTankBlockEntity tank)) {
+        if (AlchemyTableBlockEntity.fuelValue(stack) <= 0 && !(stack.getItem() instanceof dev.logos.item.ManaCasketItem)
+                || !(level.getBlockEntity(pos) instanceof ManaStorageTankBlockEntity tank)) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (!level.isClientSide()) {

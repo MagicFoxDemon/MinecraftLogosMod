@@ -183,6 +183,24 @@ public final class ManaDeviceUI {
         return slot;
     }
 
+    /** A slot that only shows what a machine holds (the 魔匣 it has opened): nothing goes in or comes out. */
+    static ItemSlot shownSlot(ItemStacksResourceHandler handler, String id) {
+        ItemSlot slot = new ItemSlot();
+        slot.setId(id);
+        slot.bind(new ResourceHandlerSlot(handler, handler::set, 0, 0, 0) {
+            @Override
+            public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+                return false;
+            }
+
+            @Override
+            public boolean mayPickup(net.minecraft.world.entity.player.Player player) {
+                return false;
+            }
+        });
+        return slot;
+    }
+
     static ProgressBar gauge(ManaVessel vessel, int width) {
         return bar(() -> (float) vessel.mana(), (float) vessel.maxMana(), MANA_COLOUR, width);
     }

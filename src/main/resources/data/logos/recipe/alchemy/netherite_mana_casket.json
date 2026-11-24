@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "distill",
+  "ingredients": [
+    { "ingredient": "logos:empty_netherite_casket" },
+    { "ingredient": "logos:red_lion" },
+    { "ingredient": "logos:quintessence" }
+  ],
+  "results": [
+    { "id": "logos:netherite_mana_casket" }
+  ],
+  "mana": 300
+}

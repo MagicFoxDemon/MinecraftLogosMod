@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "settle",
+  "ingredients": [
+    { "ingredient": "logos:living_gold_ingot" },
+    { "ingredient": "logos:adhesive" },
+    { "ingredient": "logos:caput_mortuum" }
+  ],
+  "results": [
+    { "id": "logos:empty_gold_casket" }
+  ],
+  "mana": 20
+}

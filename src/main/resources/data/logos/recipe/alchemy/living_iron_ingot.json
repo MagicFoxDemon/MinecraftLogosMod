@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:iron_pod" },
+    { "ingredient": "logos:vital_mash" }
+  ],
+  "results": [
+    { "id": "logos:living_iron_ingot" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 10
+}

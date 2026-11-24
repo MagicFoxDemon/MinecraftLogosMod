@@ -1,0 +1,15 @@
+{
+  "type": "logos:alchemy",
+  "process": "distill",
+  "ingredients": [
+    { "ingredient": "logos:empty_copper_casket" },
+    { "ingredient": "logos:sulfur_powder" },
+    { "ingredient": "logos:saltpeter" },
+    { "ingredient": "logos:mercury_bottle" }
+  ],
+  "results": [
+    { "id": "logos:copper_mana_casket" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 10
+}

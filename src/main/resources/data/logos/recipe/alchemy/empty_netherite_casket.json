@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "settle",
+  "ingredients": [
+    { "ingredient": "logos:living_netherite_ingot" },
+    { "ingredient": "logos:adhesive" },
+    { "ingredient": "logos:caput_mortuum", "count": 2 }
+  ],
+  "results": [
+    { "id": "logos:empty_netherite_casket" }
+  ],
+  "mana": 40
+}

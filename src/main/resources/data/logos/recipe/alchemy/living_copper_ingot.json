@@ -1,0 +1,13 @@
+{
+  "type": "logos:alchemy",
+  "process": "ferment",
+  "ingredients": [
+    { "ingredient": "logos:copper_pod" },
+    { "ingredient": "logos:raw_mash" }
+  ],
+  "results": [
+    { "id": "logos:living_copper_ingot" },
+    { "id": "minecraft:glass_bottle" }
+  ],
+  "mana": 5
+}

@@ -1,0 +1,15 @@
+{
+  "type": "logos:alchemy",
+  "process": "distill",
+  "ingredients": [
+    { "ingredient": "logos:empty_iron_casket" },
+    { "ingredient": "logos:philosophers_mercury" },
+    { "ingredient": "logos:raven_head" },
+    { "ingredient": "logos:echo_tincture" }
+  ],
+  "results": [
+    { "id": "logos:iron_mana_casket" },
+    { "id": "minecraft:glass_bottle", "count": 3 }
+  ],
+  "mana": 30
+}

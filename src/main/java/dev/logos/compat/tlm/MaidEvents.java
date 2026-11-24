@@ -12,6 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 
 import dev.logos.LogosMod;
 import dev.logos.item.CodexItem;
+import dev.logos.item.ManaCasketItem;
 import dev.logos.item.PageContainer;
 import dev.logos.item.PageTier;
 import dev.logos.item.SpellPages;
@@ -65,7 +66,8 @@ final class MaidEvents {
         ItemStack held = event.getStack();
         if (held.isEmpty() || !casting(maid)) return;
         Lifeforms.ManaFuel fuel = held.typeHolder().getData(LogosMod.MANA_FUEL);
-        if (fuel == null) return;
+        boolean casket = held.getItem() instanceof ManaCasketItem;
+        if (fuel == null && !casket) return;
         event.setCanceled(true);
         if (event.getWorld().isClientSide()) return;
         CreatureMana pool = MaidMana.of(maid);
@@ -74,8 +76,12 @@ final class MaidEvents {
             event.getPlayer().sendOverlayMessage(Component.translatable("logos.mana.full").withStyle(ChatFormatting.GRAY));
             return;
         }
-        pool.receiveMana(fuel.mana());
-        if (!event.getPlayer().getAbilities().instabuild) held.shrink(1);
+        if (casket) {
+            ManaCasketItem.feed(event.getPlayer(), held, pool::receiveMana);
+        } else {
+            pool.receiveMana(fuel.mana());
+            if (!event.getPlayer().getAbilities().instabuild) held.shrink(1);
+        }
         maid.level().playSound(null, maid.getX(), maid.getY(), maid.getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f,
                 1.2f + maid.getRandom().nextFloat() * 0.4f);
         event.getPlayer().sendOverlayMessage(status(maid, pool));

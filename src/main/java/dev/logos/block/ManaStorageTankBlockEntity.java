@@ -5,6 +5,7 @@ import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 import dev.logos.LogosMod;
+import dev.logos.item.ManaCasketItem;
 import dev.logos.runtime.ManaInfusion;
 import dev.logos.runtime.ManaVessel;
 import net.minecraft.core.BlockPos;
@@ -28,7 +29,8 @@ import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 
 /**
  * 魔力存储罐: holds up to 5000 mana. Collectors, the infusing rune and mana items dropped in its input
- * (dissolved whole, nothing lost) fill it. Once a second it works its mode: storing keeps the mana; supplying
+ * (dissolved whole, nothing lost) fill it; a 魔匣 there is opened and gives what the tank lacks
+ * ({@link OpenedCasket}), its empty casket going to a slot of its own. Once a second it works its mode: storing keeps the mana; supplying
  * gives each neighbouring vessel some (not collectors or other tanks, so mana does not run in circles);
  * condensing grows the seed in its seed slot into the next solid mana (amethyst shard → mana shard → mana
  * crystal → mana gemstone) at 90%. A redstone signal pauses supplying and condensing.
@@ -61,7 +63,20 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     private final ItemStacksResourceHandler input = new ItemStacksResourceHandler(1) {
         @Override
         public boolean isValid(int index, ItemResource resource) {
-            return AlchemyTableBlockEntity.fuelValue(resource.toStack()) > 0;
+            return AlchemyTableBlockEntity.fuelValue(resource.toStack()) > 0 || resource.getItem() instanceof ManaCasketItem;
+        }
+
+        @Override
+        protected void onContentsChanged(int index, ItemStack previousContents) {
+            setChanged();
+        }
+    };
+    private final OpenedCasket casket = new OpenedCasket(this::setChanged);
+    /** The empty caskets of spent 魔匣; only taken from. */
+    private final ItemStacksResourceHandler empties = new ItemStacksResourceHandler(1) {
+        @Override
+        public boolean isValid(int index, ItemResource resource) {
+            return false;
         }
 
         @Override
@@ -98,10 +113,10 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
             setChanged();
         }
     };
-    /** What hoppers and pipes see: mana items and seeds in, grown crystals out. */
+    /** What hoppers and pipes see: mana items and seeds in, grown crystals and empty caskets out. */
     private final ResourceHandler<ItemResource> automation = new CombinedResourceHandler<>(
             AlchemyTableBlockEntity.OneWay.in(input, 0, 1), AlchemyTableBlockEntity.OneWay.in(seed, 0, 1),
-            AlchemyTableBlockEntity.OneWay.out(output, 0, 1));
+            AlchemyTableBlockEntity.OneWay.out(output, 0, 1), AlchemyTableBlockEntity.OneWay.out(empties, 0, 1));
 
     private Mode mode = Mode.STORE;
     /** Mana poured into the crystal growing on the seed so far. */
@@ -135,7 +150,12 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
 
     /** One second of work. */
     public void work(Level level, BlockPos pos) {
-        boolean changed = false;
+        double before = mana;
+        casket.work(input, MAX_MANA - mana, amount -> {
+            mana += amount;
+            return amount;
+        }, this::putEmpty);
+        boolean changed = mana != before;
         // Mana items dissolve whole, one a second, when all of one fits.
         ItemStack in = input.getResource(0).toStack(input.getAmountAsInt(0));
         int value = AlchemyTableBlockEntity.fuelValue(in);
@@ -205,6 +225,24 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
         return output;
     }
 
+    /** Where spent 魔匣 leave their empty caskets. */
+    public ItemStacksResourceHandler empties() {
+        return empties;
+    }
+
+    /** The 魔匣 taken from the input, for the screen; nothing can be put in or taken out. */
+    public ItemStacksResourceHandler openedCasket() {
+        return casket.slot();
+    }
+
+    /** Puts an empty casket with the others; 0 when the slot holds something else or is full. */
+    private int putEmpty(ItemStack stack) {
+        int held = empties.getAmountAsInt(0);
+        if (held > 0 && !empties.getResource(0).equals(ItemResource.of(stack)) || held + stack.getCount() > stack.getMaxStackSize()) return 0;
+        empties.set(0, ItemResource.of(stack), held + stack.getCount());
+        return stack.getCount();
+    }
+
     public ResourceHandler<ItemResource> automation() {
         return automation;
     }
@@ -255,6 +293,8 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
         input.serialize(output.child("input"));
         seed.serialize(output.child("seed"));
         this.output.serialize(output.child("output"));
+        empties.serialize(output.child("empties"));
+        casket.save(output);
         output.putDouble("mana", mana);
         output.putDouble("grown", grown);
         output.putString("mode", mode.getSerializedName());
@@ -266,6 +306,8 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
         input.child("input").ifPresent(this.input::deserialize);
         input.child("seed").ifPresent(seed::deserialize);
         input.child("output").ifPresent(output::deserialize);
+        input.child("empties").ifPresent(empties::deserialize);
+        casket.load(input);
         mana = input.getDoubleOr("mana", 0);
         grown = input.getDoubleOr("grown", 0);
         String m = input.getStringOr("mode", "store");
@@ -289,9 +331,10 @@ public class ManaStorageTankBlockEntity extends SyncedManaVesselBlockEntity {
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         if (level == null) return;
-        for (ItemStacksResourceHandler h : new ItemStacksResourceHandler[]{input, seed, output}) {
+        for (ItemStacksResourceHandler h : new ItemStacksResourceHandler[]{input, seed, output, empties}) {
             ItemStack s = h.getResource(0).toStack(h.getAmountAsInt(0));
             if (!s.isEmpty()) Block.popResource(level, pos, s);
         }
+        casket.drop(level, pos);
     }
 }

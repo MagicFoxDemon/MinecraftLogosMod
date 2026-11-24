@@ -739,6 +739,20 @@ public class AlchemicalColossus extends PathfinderMob implements GeoEntity, Mana
             return InteractionResult.SUCCESS;
         }
         Lifeforms.ManaFuel fuel = held.isEmpty() ? null : held.typeHolder().getData(LogosMod.MANA_FUEL);
+        if (held.getItem() instanceof dev.logos.item.ManaCasketItem && !isBerserk()) {
+            // A 魔匣 gives up to the top of the reserve, so it can still bring on a frenzy, but nothing past it.
+            double given = dev.logos.item.ManaCasketItem.feed(player, held, amount -> {
+                double taken = Math.min(amount, Math.max(0, (isTempered() ? TEMPERED_CAP : FRENZY_AT) - mana));
+                if (taken > 0) feed(taken, player);
+                return taken;
+            });
+            if (given > 0) {
+                level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.NEUTRAL, 1f, 0.7f);
+                if (mind != null && !isBerserk()) mind.maybeOfferFlower(player, 0.3);
+            }
+            player.sendOverlayMessage(status());
+            return InteractionResult.SUCCESS;
+        }
         if (fuel != null) {
             if (fuel.unstable() && !isTempered()) {
                 if (!player.getAbilities().instabuild) held.shrink(1);
