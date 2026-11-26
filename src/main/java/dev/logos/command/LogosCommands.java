@@ -198,7 +198,7 @@ public final class LogosCommands {
             List<String> words = new ArrayList<>();
             int total = 0;
             for (Rune r : Runes.all()) {
-                if (r.category != cat) continue;
+                if (r.category != cat || r.hosted) continue;
                 total++;
                 if (RuneKnowledge.learned(p, Unlocks.rune(r.name))) words.add(r.name);
             }

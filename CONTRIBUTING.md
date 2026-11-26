@@ -179,6 +179,7 @@ gh pr create --fill                # 或在网页上开 PR
 ### 常见改动要碰的地方
 
 - **新符文**：在所属家族的文件（`FormRunes`、`BindingRunes`、`EffectRunes`、`BlockEffectRunes`、`LogicRunes`、`ValueRunes`）里 `def(...)`（写清 `doc`，含魔力价格）→ `RuneNodes` 加节点类并在 `BY_RUNE` 登记 → 语言文件加 `logos.rune.<名字>` → 会花魔力的符文在 `SpellProfile.Reader.cost` 补上价格和意图（否则总览按 0 估算）→ 单元测试 + 世界内测试。新符文默认要领悟才能写（见下文「符文解锁」）。
+- **附属包的寄托形体**（箭矢、弹丸这类由附属包的东西承载的形体）：在附属包的构造器里 `Runes.hosted(名字, 说明, 事件…)` 登记（没有参数，只有事件）→ 附属包写一个继承 `RuneNode` 的节点类（`@NodeAttribute`，构造器里 `super(名字)`），放进 `RuneNodes.BY_RUNE` → 语言文件加 `logos.rune.<名字>`（事件名沿用 `logos.event.*`）→ 东西打中时用 `runtime/HostedSpells`：`form` 看术式是不是写成「启式 → 寄托形体 → 事件」，`carry` 让一件东西带上它（魔力在做这件东西时就注入了，施法者是射出它的人），`fire` 在命中点触发事件，`end` 收尾，剩下的魔力像施法结束一样放出。寄托形体不用领悟，谁都能写，书也不教；挂在法杖上直接施放只会结束术式。总览把每个事件按触发一次估算。
 - **新的字面量类型**（如 ⚗ 药水效果）：`Type` → `Compiler`（解析与注册表检查，检查函数在 `LogosMod` 构造器里接上真实注册表）→ `Node` 打印 → `graph/` 下 `RuneNode`、`GraphCompiler`、`GraphBuilder`、`LTypes` 四处。
 - **新物品 / 方块**：在 `LogosMod` 注册，`assets/logos/{items,models,textures}` 放资源，语言文件加名字，需要时加 `data/logos/{recipe,loot_table}`。
 - **新法杖**：同新物品，另外按下文「法杖数值」定好档位、槽数、注入流量和汇集加速；模型要带 `wand_tip` 特效挂点（见 6.3）。

@@ -1418,6 +1418,7 @@
   "logos.spell.end.too_many_steps": "法則崩壊：1ティック内の処理が %s ステップを超過し、世界が耐えられない",
   "logos.spell.end.world_closed": "世界が閉じた",
   "logos.spell.end.faded": "自然消滅",
+  "logos.spell.end.hosted": "「%s」は担い手に宿ってはじめて効く。単独では唱えられない",
   "logos.spell.broken_off": "『%s』中断：%s",
   "logos.spell.report.ended": "『%s』 %s",
   "logos.spell.report.numbers": " | マナ %s → %s%s | 影響エンティティ %s 体 | %s 秒",

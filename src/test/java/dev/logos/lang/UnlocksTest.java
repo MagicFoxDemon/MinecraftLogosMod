@@ -73,12 +73,14 @@ class UnlocksTest {
 
     @Test
     void everyRuneElementAndMotionCanBeLearnedAndNothingElse() {
-        for (Rune r : Runes.all()) assertTrue(Unlocks.lockable(Unlocks.rune(r.name)), r.name);
+        // Hosted forms (another mod's rounds and arrows, HostedFormTest) are written by anyone and learned by no one.
+        long hosted = Runes.all().stream().filter(r -> r.hosted).count();
+        for (Rune r : Runes.all()) assertTrue(Unlocks.lockable(Unlocks.rune(r.name)) != r.hosted, r.name);
         for (Element e : Element.values()) assertTrue(Unlocks.lockable(Unlocks.element(e)), e.name());
         for (Motion m : Motion.values()) assertTrue(Unlocks.lockable(Unlocks.motion(m)), m.name());
         assertFalse(Unlocks.lockable("rune:spell"));
         assertFalse(Unlocks.lockable("shape:wall"));
-        assertEquals(Runes.all().size() + Element.values().length + Motion.values().length, Unlocks.all().size());
+        assertEquals(Runes.all().size() - hosted + Element.values().length + Motion.values().length, Unlocks.all().size());
         assertTrue(Unlocks.all().containsAll(Unlocks.STARTING));
     }
 }

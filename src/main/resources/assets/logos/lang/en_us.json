@@ -1418,6 +1418,7 @@
   "logos.spell.end.too_many_steps": "The law gives way: more than %s steps in one tick, more than the world can bear",
   "logos.spell.end.world_closed": "The world closed",
   "logos.spell.end.faded": "Faded away",
+  "logos.spell.end.hosted": "%s only works carried by the thing it belongs to; it cannot be cast on its own",
   "logos.spell.broken_off": "\"%s\" broke off: %s",
   "logos.spell.report.ended": "\"%s\" %s",
   "logos.spell.report.numbers": " | Mana %s → %s%s | Affected %s entities | %ss",

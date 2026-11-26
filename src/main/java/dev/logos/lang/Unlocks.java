@@ -49,7 +49,8 @@ public final class Unlocks {
             List<String> keys = new ArrayList<>();
             for (Category c : Category.values()) {
                 if (c == Category.INVOCATION) continue;
-                for (Rune r : Runes.all()) if (r.category == c) keys.add(rune(r.name));
+                // A hosted form (another mod's round or arrow) is not learned: anyone may write it.
+                for (Rune r : Runes.all()) if (r.category == c && !r.hosted) keys.add(rune(r.name));
             }
             for (Element e : Element.values()) keys.add(element(e));
             for (Motion m : Motion.values()) keys.add(motion(m));
