@@ -4,6 +4,7 @@ import dev.logos.runtime.Casting;
 import dev.logos.runtime.Familiars;
 import dev.logos.runtime.PlayerMagic;
 import dev.logos.runtime.SpellInstance;
+import dev.logos.runtime.Taunts;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
@@ -535,6 +536,84 @@ final class FamiliarGameTests {
         Casting.cast(p, Casting.compile("(sic (familiar \"乙\") :familiar (familiar \"甲\"))"), null, null);
         h.assertTrue(a.getTarget() == husk, "a familiar must not be ordered onto its master's other familiar");
         h.succeed();
+    }
+
+    /** A bait that outlasts a few blows, so the taunt is not ended by its death. */
+    private static net.minecraft.world.entity.animal.pig.Pig sturdyPig(GameTestHelper h, Vec3 at) {
+        var pig = h.spawn(EntityType.PIG, at);
+        pig.setNoAi(true);
+        pig.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(500);
+        pig.setHealth(500);
+        return pig;
+    }
+
+    /** taunt holds a creature on its bait, whatever else it is given or struck by, and lets go when the time is up. */
+    static void tauntHoldsThenReleases(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        p.setGameMode(GameType.CREATIVE);
+        forceAround(h, 1);
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        var pig = sturdyPig(h, new Vec3(3.5, 2, 6.5));
+        var cow = h.spawn(EntityType.COW, new Vec3(6.5, 2, 3.5));
+        cow.setNoAi(true);
+        long start = h.getLevel().getGameTime();
+        Casting.cast(p, Casting.compile("(taunt (nearest :radius 12 :filter \"minecraft:husk\") :to (nearest :radius 12 :filter \"minecraft:pig\") :seconds 2)"), null, null);
+        h.assertTrue(husk.getTarget() == pig && Taunts.baitOf(husk) == pig, "the husk should be taunted onto the pig, has " + husk.getTarget());
+        husk.setTarget(cow);
+        h.assertTrue(husk.getTarget() == pig, "any other target is turned back to the bait, has " + husk.getTarget());
+        // Struck by the cow, it would turn on the cow: the taunt holds it.
+        husk.hurtServer(h.getLevel(), husk.damageSources().mobAttack(cow), 1);
+        boolean[] held = {false};
+        h.runAfterDelay(20, () -> {
+            h.assertTrue(husk.getTarget() == pig, "a second in, still on the pig, has " + husk.getTarget());
+            held[0] = true;
+        });
+        h.succeedWhen(() -> {
+            h.assertTrue(held[0] && h.getLevel().getGameTime() >= start + 40, "still within the taunt");
+            h.assertTrue(Taunts.baitOf(husk) == null, "the taunt should be over");
+            h.assertTrue(husk.getTarget() != pig, "let go, it leaves the pig alone, has " + husk.getTarget());
+        });
+    }
+
+    /** taunt's bait defaults to the caster; a bait it cannot attack (now in creative) is let go; familiars are never taunted. */
+    static void tauntCasterSparesFamiliars(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        p.setGameMode(GameType.CREATIVE);
+        forceAround(h, 1);
+        Mob z = summon(h, p, "zombie");
+        p.setGameMode(GameType.SURVIVAL);
+        Husk husk = h.spawn(EntityType.HUSK, new Vec3(6.5, 2, 6.5));
+        husk.setNoAi(true);
+        Casting.cast(p, Casting.compile("(taunt (familiar) :to (nearest :radius 12))"), null, null);
+        h.assertTrue(Taunts.baitOf(z) == null, "a familiar answers to its master alone and is not taunted");
+        Casting.cast(p, Casting.compile("(taunt (nearest :radius 12 :filter \"minecraft:husk\"))"), null, null);
+        // A mock player always reports creative, which getTarget hides: read the target as it was set.
+        h.assertTrue(husk.getTargetUnchecked() == p && Taunts.baitOf(husk) == p, "with no :to the caster is the bait, has " + husk.getTargetUnchecked());
+        p.setGameMode(GameType.CREATIVE);
+        h.succeedWhen(() -> {
+            h.assertTrue(Taunts.baitOf(husk) == null, "a bait it may no longer attack is let go");
+            h.assertTrue(husk.getTargetUnchecked() != p, "and it leaves them alone, has " + husk.getTargetUnchecked());
+        });
+    }
+
+    /** A neutral creature taunted onto a bait grows angry at it; let go, it bears no grudge. */
+    static void tauntLeavesNoGrudge(GameTestHelper h) {
+        ServerPlayer p = master(h);
+        p.setGameMode(GameType.CREATIVE);
+        forceAround(h, 1);
+        var wolf = h.spawn(EntityType.WOLF, new Vec3(6.5, 2, 6.5));
+        var pig = sturdyPig(h, new Vec3(3.5, 2, 6.5));
+        Casting.cast(p, Casting.compile("(taunt (nearest :radius 12 :filter \"minecraft:wolf\") :to (nearest :radius 12 :filter \"minecraft:pig\") :seconds 1)"), null, null);
+        h.assertTrue(Taunts.baitOf(wolf) == pig, "the wolf should be taunted onto the pig");
+        boolean[] angry = {false};
+        h.succeedWhen(() -> {
+            var grudge = wolf.getPersistentAngerTarget();
+            if (Taunts.baitOf(wolf) == pig && grudge != null && grudge.matches(pig)) angry[0] = true;
+            h.assertTrue(angry[0], "taunted, the wolf should grow angry at the pig");
+            h.assertTrue(Taunts.baitOf(wolf) == null, "the taunt should be over");
+            h.assertTrue(grudge == null || !grudge.matches(pig), "let go, it bears the pig no grudge");
+            h.assertTrue(wolf.getTarget() != pig, "nor keeps after it, has " + wolf.getTarget());
+        });
     }
 
     /** A hunting stance: unordered, it goes after the nearest hostile creature, never the cow nearer by; (kind none) calls it off. */

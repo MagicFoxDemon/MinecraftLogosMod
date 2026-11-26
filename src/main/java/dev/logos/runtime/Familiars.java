@@ -488,6 +488,11 @@ public final class Familiars {
     static void aim(Mob m, @Nullable LivingEntity target) {
         // A companion picks its own targets; its master's fight reaches it through orderedTarget.
         if (m instanceof LastingCompanion) return;
+        fightTarget(m, target);
+    }
+
+    /** Sets what {@code m} fights, however its mind keeps that: its target, its brain's memory, a warden's fury. */
+    static void fightTarget(Mob m, @Nullable LivingEntity target) {
         m.setTarget(target);
         // A warden attacks only what it is furious at, and otherwise listens and sniffs its way there slowly:
         // its master's fight makes it furious at once.
