@@ -520,6 +520,22 @@ final class EffectRunes {
                     }
                     return null;
                 });
+        def("taunt", EFFECT, ACTION).each("target").kw("to", ENTITY, "caster").kw("seconds", NUM, "6").stab(1)
+                .doc("嘲讽：目标在 :seconds 秒内（1～" + (int) dev.logos.runtime.Taunts.MAX_SECONDS + "，默认 6）只攻击 :to（默认施法者自己），"
+                        + "被别的东西打了也不换。时间到、:to 倒下或相隔超过 " + (int) dev.logos.runtime.Taunts.REACH
+                        + " 格时放开，回到它自己的打算。使魔只听主人的，不受嘲讽；打不了 :to 的（如创造模式的玩家）不受影响；"
+                        + "没有攻击手段的生物只会盯着它。每只每秒 0.5 魔力")
+                .exec((n, c) -> {
+                    if (!(entity(kw(n, "to"), c) instanceof LivingEntity bait) || !bait.isAlive()) return null;
+                    double s = clamp(num(kw(n, "seconds"), c), 1, dev.logos.runtime.Taunts.MAX_SECONDS);
+                    for (LivingEntity t : living(n.arg(0), c)) {
+                        if (!(t instanceof net.minecraft.world.entity.Mob m) || !dev.logos.runtime.Taunts.mayTaunt(m, bait)) continue;
+                        if (!c.inst().spend(0.5 * s, "taunt")) return null;
+                        dev.logos.runtime.Taunts.taunt(m, bait, (int) Math.round(s * 20));
+                        c.inst().affected.add(t.getUUID());
+                    }
+                    return null;
+                });
         def("anchor", EFFECT, ACTION).p("anchor", ANCHOR).opt("at", POS, "here").stab(1)
                 .doc("在某处立下（或移动）锚点 ^名字，之后 ^名字 就能当位置用，跨维度也行。"
                         + "消耗背包里的一枚锚钉（创造模式不消耗）；没有锚钉或锚点已满时法术熄灭")

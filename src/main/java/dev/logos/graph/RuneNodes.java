@@ -362,6 +362,13 @@ public final class RuneNodes {
         }
     }
 
+    @NodeAttribute(name = "taunt", group = EFFECT, graphTypes = SpellGraph.class)
+    public static class Taunt extends RuneNode {
+        public Taunt() {
+            super("taunt");
+        }
+    }
+
     @NodeAttribute(name = "stance", group = EFFECT, graphTypes = SpellGraph.class)
     public static class Stance extends RuneNode {
         public Stance() {
@@ -1047,6 +1054,7 @@ public final class RuneNodes {
         BY_RUNE.put("summon", Summon::new);
         BY_RUNE.put("gather", Gather::new);
         BY_RUNE.put("sic", Sic::new);
+        BY_RUNE.put("taunt", Taunt::new);
         BY_RUNE.put("stance", Stance::new);
         BY_RUNE.put("familiar", Familiar::new);
         BY_RUNE.put("master", Master::new);

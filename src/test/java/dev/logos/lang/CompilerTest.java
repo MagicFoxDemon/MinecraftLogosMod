@@ -139,6 +139,16 @@ class CompilerTest {
         assertThrows(LogosError.class, () -> Compiler.compile("(spell :intent dance (damage (foe) 6))"));
     }
 
+    @Test
+    void tauntProfile() {
+        // 0.5 a second for each creature, the bait defaulting to the caster; held to 30 seconds.
+        Spell taunt = Compiler.compile("(spell :mana 20 (taunt (foe) :seconds 4))");
+        assertEquals(Intent.CONTROL, taunt.profile().primary());
+        assertEquals(2, taunt.profile().estimate(), 1e-6);
+        assertEquals(3, Compiler.compile("(spell :mana 20 (taunt (foe)))").profile().estimate(), 1e-6);
+        assertEquals(15, Compiler.compile("(spell :mana 20 (taunt (foe) :to (familiar) :seconds 99))").profile().estimate(), 1e-6);
+    }
+
     private static java.util.Set<Reach> reach(String src) {
         return Compiler.compile(src).profile().primaryReach();
     }

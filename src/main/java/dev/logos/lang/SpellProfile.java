@@ -378,6 +378,10 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                     own = argNum(n, 1, 1) * 1.5 * count(n.arg(0));
                     found.add(Intent.CONTROL);
                 }
+                case "taunt" -> {
+                    own = 0.5 * Math.clamp(kwNum(n, "seconds", 6), 1, 30) * count(n.arg(0));
+                    found.add(Intent.CONTROL);
+                }
                 case "mark" -> own = argNum(n, 2, 1) * count(n.arg(0));
                 case "unmark" -> own = 0.5 * count(n.arg(0));
                 case "glow" -> own = argNum(n, 1, 5) * 0.2 * count(n.arg(0));
