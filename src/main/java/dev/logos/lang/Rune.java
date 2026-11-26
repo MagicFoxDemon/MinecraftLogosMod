@@ -49,6 +49,11 @@ public final class Rune {
     public double stability;
     public String doc = "";
     public Exec exec;
+    /**
+     * A hosted form (寄托形体, {@link Runes#hosted}): another mod's thing carries it (a round, an arrow) and sets off
+     * its events; it is not one of the words a player learns, and cast on its own it only ends the spell.
+     */
+    public boolean hosted;
 
     public Rune(String name, Category category, Type returns) {
         this.name = name;

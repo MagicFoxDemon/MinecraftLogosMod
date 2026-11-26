@@ -469,6 +469,8 @@ public record SpellProfile(Intent primary, List<Intent> intents, boolean declare
                 default -> {
                     // Events not priced above (on-kill of damage etc. are included there) still run at most once.
                     if (!priced(r)) for (String e : n.events.keySet()) own += events(n, e, inGroup);
+                    // A hosted form's events go off as its host decides (a round's on-hit once per target it strikes).
+                    if (n.rune.hosted && !n.events.isEmpty()) assumptions.add("寄托形体的每个事件按触发一次估算");
                     return own + children + body;
                 }
             }

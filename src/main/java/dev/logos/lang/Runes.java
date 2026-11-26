@@ -51,6 +51,41 @@ public final class Runes {
         return r;
     }
 
+    /** What a hosted form adds to a spell's complexity: less than a form that moves on its own. */
+    public static final double HOSTED_STABILITY = 2;
+
+    /**
+     * Registers a hosted form (寄托形体) for another mod: a 🜔 form that is not cast but carried by something that mod
+     * makes, such as a round from a gun or an arrow from a bow. A spell is written around it as
+     * {@code (spell … (rifle-round (on-hit …) (on-impact …)))}; the mod keeps the spell with the thing and, when the
+     * thing hits, sets off the events itself ({@code runtime.HostedSpells}). It takes no arguments and is not a word
+     * a player learns (any player may write it, and books never teach it). Cast on its own, from a wand, it only ends
+     * the spell. Call this from the mod's constructor, before any spell is compiled; the editor node and the names
+     * ({@code logos.rune.<name>}, the events' {@code logos.event.*}) are the mod's to add.
+     *
+     * @param name   the word, lower case with hyphens, not already a rune
+     * @param doc    what it is and when each event goes off, as the rune files write theirs
+     * @param events its events: each {@code on-…}, whether it binds a target, and when it goes off
+     */
+    public static synchronized Rune hosted(String name, String doc, Rune.EventSpec... events) {
+        if (!name.matches("[a-z][a-z0-9-]*")) throw new IllegalArgumentException("hosted form name '" + name + "' must be lower case with hyphens");
+        if (RUNES.containsKey(name)) throw new IllegalArgumentException("'" + name + "' is already a rune");
+        if (events.length == 0) throw new IllegalArgumentException("hosted form '" + name + "' has no events");
+        for (Rune.EventSpec e : events) {
+            if (!e.name().matches("on-[a-z][a-z0-9-]*")) throw new IllegalArgumentException("event '" + e.name() + "' must be on- and a lower-case word");
+        }
+        Rune r = def(name, Category.FORM, Type.ACTION).stab(HOSTED_STABILITY).doc(doc);
+        for (Rune.EventSpec e : events) r.on(e.name(), e.bindsTarget(), e.doc());
+        r.hosted = true;
+        // Cast by hand there is nothing to carry it: the spell ends, and the caster is told why.
+        r.exec((n, c) -> {
+            c.inst().terminate(net.minecraft.network.chat.Component.translatable("logos.spell.end.hosted",
+                    net.minecraft.network.chat.Component.translatable("logos.rune." + name)));
+            return null;
+        });
+        return r;
+    }
+
     static double clamp(double v, double lo, double hi) {
         return Math.max(lo, Math.min(hi, v));
     }

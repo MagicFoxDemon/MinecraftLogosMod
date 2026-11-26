@@ -1418,6 +1418,7 @@
   "logos.spell.end.too_many_steps": "法则失稳：一刻之内运转超过 %s 步，世界承载不住",
   "logos.spell.end.world_closed": "世界关闭",
   "logos.spell.end.faded": "自然消散",
+  "logos.spell.end.hosted": "「%s」要随承载它的器物生效，不能直接施放",
   "logos.spell.broken_off": "《%s》中断：%s",
   "logos.spell.report.ended": "《%s》 %s",
   "logos.spell.report.numbers": " | 魔力 %s → %s%s | 影响 %s 个实体 | %s 秒",
